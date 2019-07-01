@@ -70,7 +70,7 @@
   "job_unemployed2": "The number of unemployed citizens. Unemployed citizens lower morale and do not pay taxes however they also consume half rations.",
   "job_hunter1": "Hunter",
   "job_hunter2": "Citizens not assigned to any other task will hunt for food. Military technology will boost effectiveness.",
-  "craftsman_assigned": "Craftsman Assigned",
+  "craftsman_assigned": "工匠分配",
   "job_craftsman1": "Craftsman will work to produce the assigned resources, all produced materials will be delivered on the new moon each month.",
   "job_craftsman2": "Craftsman will work to produce the assigned resources, all produced materials will be delivered on the new moon and full moon each month.",
   "event_dna": "Some DNA molecules have replicated, you gain %0 DNA.",

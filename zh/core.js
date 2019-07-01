@@ -101,7 +101,7 @@ var cnItems = {
     'Club': '俱乐部',
     'Make a basic club': '做一个基本的俱乐部',
     'Bone Tools': '骨制工具',
-    '': '',
+    'Add a house to every farm': '为每个农场添加房屋',
     '': '',
     '': '',
     '': '',

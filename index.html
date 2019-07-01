@@ -1,7 +1,7 @@
 <!DOCTYPE HTML>
 <html>
 <head>
-    <title>Evolve</title>
+    <title>进化 - Evolve</title>
     <meta http-equiv="Content-type" content="text/html;charset=utf-8">
     <link rel="icon" href="evolved.ico" type="images/x-icon">
     <link rel="stylesheet" href="https://unpkg.com/buefy@0.7.7/dist/buefy.min.css">
@@ -108,9 +108,7 @@
                                     <b-switch v-model="disableReset" slot="trigger">Enable Reset Buttons</b-switch>
                                     <div class="notification">
                                         <div class="content">
-                                            <h4 class="has-text-danger">
-                                                Warning: This completely resets all your progress and can not be undone
-                                            </h4>
+                                            <h4 class="has-text-danger">Warning: This completely resets all your progress and can not be undone</h4>
                                             <p>
                                                 <button class="button" :disabled="!disableReset" @click="soft_reset()"><b-tooltip :label="soft()" position="is-top" size="is-small" multilined animated>Soft Reset Game</b-tooltip></button>
                                                 <button class="button" :disabled="!disableReset" @click="reset()"><b-tooltip :label="hard()" position="is-top" size="is-small" multilined animated>Hard Reset Game</b-tooltip></button>

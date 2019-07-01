@@ -1,0 +1,130 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <title>Evolve</title>
+    <meta http-equiv="Content-type" content="text/html;charset=utf-8">
+    <link rel="icon" href="evolved.ico" type="images/x-icon">
+    <link rel="stylesheet" href="https://unpkg.com/buefy@0.7.7/dist/buefy.min.css">
+    <link rel="stylesheet" type="text/css" href="lib/weather-icons.min.css">
+    <link rel="stylesheet" type="text/css" href="evolved.css">
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/vue@2.6.10/dist/vue.min.js"></script>
+    <script src="https://unpkg.com/buefy@0.7.7/dist/buefy.min.js"></script>
+    <script src="https://unpkg.com/popper.js@1.15.0/dist/umd/popper.min.js"></script>
+    <script src="lib/lz-string.min.js"></script>
+    <script src="vars.js" type="module"></script>
+    <script src="locale.js" type="module"></script>
+    <script src="achieve.js" type="module"></script>
+    <script src="races.js" type="module"></script>
+    <script src="resources.js" type="module"></script>
+    <script src="jobs.js" type="module"></script>
+    <script src="civics.js" type="module"></script>
+    <script src="actions.js" type="module"></script>
+    <script src="space.js" type="module"></script>
+    <script src="arpa.js" type="module"></script>
+    <script src="events.js" type="module"></script>
+    <script src="main.js" type="module"></script>
+</head>
+<body>
+    <div id="topBar" class="topBar">
+        <h2 class="is-sr-only">Top Bar</h2>
+        <span class="planet">{{ race.species | planet }}</span>
+        <span class="calendar" v-show="city.calendar.day">
+            <b-tooltip :label="moon()" :aria-label="moon()" position="is-bottom" size="is-small" multilined animated><i id="moon" class="moon wi"></i></b-tooltip>
+            <span class="year">Year <span class="has-text-warning">{{ city.calendar.year }}</span></span> 
+            <span class="day">Day <span class="has-text-warning">{{ city.calendar.day }}</span></span>
+            <b-tooltip :label="weather()" :aria-label="weather()" position="is-bottom" size="is-small" multilined animated><i id="weather" class="weather wi"></i></b-tooltip>
+            <b-tooltip :label="temp()" :aria-label="temp()" position="is-bottom" size="is-small" multilined animated><i id="temp" class="temp wi"></i></b-tooltip>
+        </span>
+        <span class="version"><a href="https://github.com/pmotschmann/Evolve/blob/master/changelog.md" target="_blank"></a></span>
+    </div>
+    <div id="main" class="main">
+        <div class="columns is-gapless">
+            <div class="column is-one-quarter">
+                <div id="race" class="race columns is-mobile is-gapless">
+                    <h2 class="is-sr-only">Race Info</h2>
+                    <div class="column is-one-quarter"><b-tooltip :label="desc()" position="is-right" size="is-large" multilined animated>{{ name() }}</b-tooltip></div>
+                    <div class="column is-half morale-contain"><span id="morale" v-show="city.morale.current" class="morale">Morale <span class="has-text-warning">{{ city.morale.current }}%</span></div>
+                    <div class="column is-one-quarter power"><span id="powerStatus" class="has-text-warning" v-show="city.powered"><span>kW</span> <span id="powerMeter" class="meter">{{ city.power }}</span></span></div>
+                </div>
+                <div id="sideQueue">
+                    <h2 class="is-sr-only">Message Queue</h2>
+                    <div id="msgQueue" class="msgQueue has-text-info" aria-live="polite"></div>
+                </div>
+                <div id="resources" class="resources"><h2 class="is-sr-only">Resources</h2></div>
+            </div>
+            <div id="mainColumn" class="column is-three-quarters">
+                <div id="tabs" class="content">
+                    <h2 class="is-sr-only">Tab Navigation</h2>
+                    <b-tabs v-model="civTabs" :animated="animated">
+                        <b-tab-item id="evolution" :visible="showEvolve" label="Evolve"></b-tab-item>
+                        <b-tab-item id="city" :visible="showCity" label="Village"><h2 class="is-sr-only">City</h2></b-tab-item>
+                        <b-tab-item id="space" :visible="showSpace" label="Space"></b-tab-item>
+                        <b-tab-item id="civic" :visible="showCivic" label="Civics" class="columns"></b-tab-item>
+                        <b-tab-item id="industry" :visible="showIndustry" label="Industry" class="columns"></b-tab-item>
+                        <b-tab-item id="research" :visible="showResearch" label="Research">
+                            <b-tabs class="resTabs" v-model="resTabs" :animated="animated">
+                                <b-tab-item id="tech" label="New"><h2 class="is-sr-only">New Research</h2></b-tab-item>
+                                <b-tab-item id="oldTech" label="Completed"><h2 class="is-sr-only">Completed Research</h2></b-tab-item>
+                            </b-tabs>
+                        </b-tab-item>
+                        <b-tab-item id="market" :visible="showMarket" label="Market"></b-tab-item>
+                        <b-tab-item id="genetics" :visible="showGenetics" label="A.R.P.A.">
+                            <div id="apra" class="arpa">
+                                <b-tabs v-model="arpa.arpaTabs" :animated="animated">
+                                    <b-tab-item id="arpaPhysics" :visible="arpa.physics" label="Projects"></b-tab-item>
+                                    <b-tab-item id="arpaGenetics" :visible="arpa.genetics" label="Genetics"></b-tab-item>
+                                    <b-tab-item id="arpaCrispr" :visible="arpa.crispr" label="Crispr"></b-tab-item>
+                                </b-tabs>
+                            </div>
+                        </b-tab-item>
+                        <b-tab-item id="achieve" :visible="showAchieve" label="Stats"></b-tab-item>
+                        <b-tab-item id="settings" label="Settings">
+                            <div class="theme">
+                                <span>Theme </span>
+                                <b-dropdown hoverable>
+                                    <button class="button is-primary" slot="trigger">
+                                        <span>{{ theme | namecase }}</span>
+                                        <i class="fas fa-sort-down"></i>
+                                    </button>
+                                    <b-dropdown-item v-on:click="dark">Dark</b-dropdown-item>
+                                    <b-dropdown-item v-on:click="light">Light</b-dropdown-item>
+                                    <b-dropdown-item v-on:click="night">Night</b-dropdown-item>
+                                    <b-dropdown-item v-on:click="redgreen">Red Green CB</b-dropdown-item>
+                                </b-dropdown>
+                            </div>
+                            <div id="localization" class="localization"></div>
+                            <b-switch v-model="mKeys"><b-tooltip :label="keys()" position="is-bottom" size="is-small" multilined animated>Multiplier Keys</b-tooltip></b-switch>
+                            <div class="importExport">
+                                <b-field label="Import/Export Save">
+                                    <b-input id="importExport" type="textarea"></b-input>
+                                </b-field>
+                                <button class="button" onclick="importGame()">Import Game</button>
+                                <button class="button" onclick="exportGame()">Export Game</button>
+                            </div>
+                            <div class="reset">
+                                <b-collapse :open="false">
+                                    <b-switch v-model="disableReset" slot="trigger">Enable Reset Buttons</b-switch>
+                                    <div class="notification">
+                                        <div class="content">
+                                            <h4 class="has-text-danger">
+                                                Warning: This completely resets all your progress and can not be undone
+                                            </h4>
+                                            <p>
+                                                <button class="button" :disabled="!disableReset" @click="soft_reset()"><b-tooltip :label="soft()" position="is-top" size="is-small" multilined animated>Soft Reset Game</b-tooltip></button>
+                                                <button class="button" :disabled="!disableReset" @click="reset()"><b-tooltip :label="hard()" position="is-top" size="is-small" multilined animated>Hard Reset Game</b-tooltip></button>
+                                            </p>
+                                        </div>
+                                    </div>
+                                </b-collapse>
+                            </div>
+                        </b-tab-item>
+                    </b-tabs>
+                </div>
+            </div>
+            <div id="queueColumn" class="column"></div>
+        </div>
+    </div>
+    <div class="promoBar"><span class="left"><h1 class="has-text-warning">Evolve</span> by <span class="has-text-success">Demagorddon</h1></span><span class="right"><h2 class="is-sr-only">External Links</h2><a href="https://www.reddit.com/r/EvolveIdle/" target="_blank">Reddit</a> | <a href="https://discord.gg/dcwdQEr" target="_blank">Discord</a> | <a href="https://github.com/pmotschmann/Evolve" target="_blank">GitHub</a></span></div>
+</body>
+</html>

@@ -28,7 +28,7 @@ function getString(locale) {
 
     let defaultString;
     let localeString;
-    $.getJSON("strings/strings.json", (data) => { defaultString = data; });
+    $.getJSON("strings/strings-chs.json", (data) => { defaultString = data; });
     const defSize = defaultString.length;
     try {
         $.getJSON(`strings/strings.${locale}.json`, (data) => { localeString = data; })

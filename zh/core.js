@@ -90,10 +90,10 @@ var cnItems = {
     'Evolve Multicellular': '进化多细胞',
     'Evolve Membranes': '进化膜',
     'Spores': '孢子',
-    '': '',
-    '': '',
-    '': '',
-    '': '',
+    'Increases the effect of membranes and eukaryotic cells': '增加膜和真核细胞的作用',
+    'Increases DNA capacity by': '增加DNA容量',
+    'Increases DNA generation from nucleus': '增加细胞核的DNA生成',
+    'Increases RNA capacity by': '增加RNA容量',
     '': '',
     '': '',
     '': '',
@@ -212,6 +212,7 @@ var cnRegReplace = new Map([
 	[/^Achievements Earned: (\d+) of$/, '成就获得：$1 \/'],
 	[/^Automatically consume (\d+) RNA to create (\d+) DNA$/, '自动消耗$1个RNA以产生$2个DNA'],
 	[/^Automatically generate (\d+) RNA$/, '自动生成$1个RNA'],
+    [/^Turn (\d+) RNA into (\d+) DNA$/, '将$1个RNA转化为$2个DNA'],
 
 ]);
 

@@ -563,7 +563,7 @@ const spaceProjects = {
                     desc = desc + `<div>${loc('space_red_factory_effect2')}</div>`;
                 }
                 let helium = +(fuel_adjust(1)).toFixed(2);
-                desc = desc + `<div>${loc('space_red_factory_effect3'),[helium]}</div>`;
+                desc = desc + `<div>${loc('space_red_factory_effect3',[helium])}</div>`;
                 return desc;
             },
             powered: 3,
@@ -707,7 +707,7 @@ const spaceProjects = {
             },
             action(){
                 if (payCosts(spaceProjects.spc_hell.hell_mission.cost)){
-                    messageQueue(loc('',[races[global.race.species].solar.hell]),'success');
+                    messageQueue(loc('space_hell_mission_action',[races[global.race.species].solar.hell]),'success');
                     global.space['geothermal'] = { count: 0, on: 0 };
                     return true;
                 }
@@ -871,10 +871,10 @@ const spaceProjects = {
         gas_mission: {
             id: 'space-gas_mission',
             title(){
-                return loc('races[global.race.species].solar.gas');
+                return loc('space_gas_mission_title',[races[global.race.species].solar.gas]);
             },
             desc(){
-                return loc('races[global.race.species].solar.gas');
+                return loc('space_gas_mission_desc',[races[global.race.species].solar.gas]);
             },
             reqs: { space: 4, space_explore: 4 },
             grant: ['space',5],
@@ -882,7 +882,7 @@ const spaceProjects = {
                 Helium_3(){ return +fuel_adjust(12500).toFixed(0); }
             },
             effect(){
-                return `<div>${loc('space_gas_mission_effect1',[races[global.race.species].solar.gas])}</div>`; //TODO: the effect here was separated in two div's
+                return `<div>${loc('space_gas_mission_effect1')}</div><div>${loc('space_gas_mission_effect2',[races[global.race.species].solar.gas])}</div>`;
             },
             action(){
                 if (payCosts(spaceProjects.spc_gas.gas_mission.cost)){
@@ -1531,15 +1531,15 @@ export function space(){
                 parent.append(`<div id="${region}" class="space"><div><h3 class="name has-text-warning">${name}</h3></div></div>`);
             }
             
-            $(`#${region} span.name`).on('mouseover',function(){
+            $(`#${region} h3.name`).on('mouseover',function(){
                 var popper = $(`<div id="pop${region}" class="popper has-background-light has-text-dark"></div>`);
                 $('#main').append(popper);
                 
                 popper.append($(`<div>${desc}</div>`));
                 popper.show();
-                poppers[region] = new Popper($(`#${region} span.name`),popper);
+                poppers[region] = new Popper($(`#${region} h3.name`),popper);
             });
-            $(`#${region} span.name`).on('mouseout',function(){
+            $(`#${region} h3.name`).on('mouseout',function(){
                 $(`#pop${region}`).hide();
                 poppers[region].destroy();
                 $(`#pop${region}`).remove();

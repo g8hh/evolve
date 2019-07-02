@@ -188,7 +188,7 @@ var cnItems = {
     'Iron Pickaxe': '铁镐',
     'Iron Sledgehammer': '铁锤',
     'Jackhammer': '手提钻',
-    'Kroll Process': '克洛尔法',
+    'Kroll Process': '克罗尔工艺',
     'Large Volume Trading': '大宗交易',
     'Library': '图书馆',
     'Machine Gun': '机枪',

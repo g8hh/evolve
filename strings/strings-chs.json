@@ -1,5 +1,5 @@
 {
-  "requires_power": "Requires Power",
+  "requires_power": "需要动力",
   "locale": "本地",
   "settings1": "启用控制（10x）/ Shift（25x）/ Alt（100x）乘数键",
   "settings2": "启用制表符转换动画",
@@ -930,7 +930,7 @@
   "space_red_space_barracks_title": "Marine Garrison",
   "space_red_space_barracks_desc": "Space Marine Garrison",
   "space_red_space_barracks_desc_req": "Requires Oil",
-  "space_red_space_barracks_effect1": "+2 Max Soldiers",
+  "space_red_space_barracks_effect1": "+2 士兵上限",
   "space_red_space_barracks_effect2": "-%0 Oil/s",
   "space_red_space_barracks_effect3": "-10 Food/s",
   "space_hell_info_desc": "The planet %0 is located about 0.4AU from the sun and is very hot.",

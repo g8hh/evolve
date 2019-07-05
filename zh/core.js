@@ -403,7 +403,7 @@ var cnItems = {
     'Increase trade volume with trains': '通过火车增加贸易量',
     'Learn how to extract trace amounts of uranium from coal deposits.': '了解如何从煤矿中提取痕量铀。',
     'Learn how to turn stone into cement': '学习如何将石头变成水泥',
-    '': '',
+    'Professors will require their students to write thesis papers': '',
     '': '',
     '': '',
     '': '',

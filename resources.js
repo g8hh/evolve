@@ -959,6 +959,6 @@ export function plasmidBonus(){
         }
         plasmid_bonus *= 1 + (global.city.temple.count * temple_bonus);
     }
-    console.log(plasmid_bonus);
+//    console.log(plasmid_bonus);
     return plasmid_bonus;
 }

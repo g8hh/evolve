@@ -170,7 +170,7 @@ if (convertVersion(global['version']) < 2060){
     });
 }
 
-global['version'] = '0.4.21';
+global['version'] = '0.4.22';
 
 if (global.civic['cement_worker'] && global.civic.cement_worker.impact === 0.25){
     global.civic.cement_worker.impact = 0.4;
@@ -588,6 +588,7 @@ window.soft_reset = function reset(){
     let replace = {
         species : 'protoplasm', 
         Plasmid: { count: global.race.Plasmid.count },
+        Phage: { count: global.race.Phage.count },
         seeded: global.race.seeded,
         probes: global.race.probes,
         seed: global.race.seed,

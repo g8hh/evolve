@@ -423,7 +423,7 @@ var cnItems = {
     'Onyx': '缟玛瑙',
     'Onyx Control Tower': '缟玛瑙控制塔',
     'Mythril Beams': '秘银横梁',
-    'Mythril Containers': '秘银容器',
+    'Mythril Containers': '秘银集装箱',
     'Mythril Drills': '秘银钻',
     'Mythril Plated Crates': '秘银板箱',
     'Mythril Vault': '秘银保险库',

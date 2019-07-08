@@ -1666,7 +1666,7 @@
   "space_red_garage_desc": "为殖民地提供存储",
   "space_red_mine_title": "矿井",
   "space_red_mine_desc": "采矿设施",
-  "space_red_mine_effect1": "+0.25 铜/殖民者",
+  "space_red_mine_effect": "+%0 %1 每殖民者",
   "space_red_fabrication_title": "制造业",
   "space_red_fabrication_desc": "制造厂",
   "space_red_fabrication_effect1": "+1 工匠",

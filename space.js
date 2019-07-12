@@ -1,4 +1,4 @@
-import { global, vues, poppers, messageQueue, p_on, belt_on, quantium_level } from './vars.js';
+import { global, vues, poppers, messageQueue, p_on, belt_on, quantum_level } from './vars.js';
 import { unlockAchieve } from './achieve.js';
 import { races } from './races.js';
 import { spatialReasoning } from './resources.js';
@@ -355,7 +355,7 @@ const spaceProjects = {
             },
             effect(){
                 let helium = +(fuel_adjust(1.25)).toFixed(2);
-                return `<div>${loc('space_red_spaceport_effect1',[races[global.race.species].solar.red])}</div><div>${loc('space_red_spaceport_effect2',[helium,spaceProjects.spc_red.spaceport.powered])}</div><div>${loc('space_red_spaceport_effect3')}</div>`;
+                return `<div>${loc('space_red_spaceport_effect1',[races[global.race.species].solar.red])}</div><div>${loc('space_red_spaceport_effect2',[helium,spaceProjects.spc_red.spaceport.powered])}</div><div>${loc('space_red_spaceport_effect3',[global.resource.Food.name])}</div>`;
             },
             support: 3,
             powered: 5,
@@ -605,7 +605,7 @@ const spaceProjects = {
             },
             effect(){
                 let food = +(2 * zigguratBonus()).toFixed(2);
-                return `<div>${loc('space_used_support',[races[global.race.species].solar.red])}</div><div>${loc('space_red_biodome_effect',[food])}</div>`;
+                return `<div>${loc('space_used_support',[races[global.race.species].solar.red])}</div><div>${loc('space_red_biodome_effect',[food,global.resource.Food.name])}</div>`;
             },
             support: -1,
             powered: 1,
@@ -699,7 +699,7 @@ const spaceProjects = {
             },
             effect(){
                 let oil = +fuel_adjust(2).toFixed(2);
-                return `<div>${loc('plus_max_soldiers',[2])}</div><div>${loc('space_red_space_barracks_effect2',[oil])}</div><div>${loc('space_red_space_barracks_effect3')}</div>`;
+                return `<div>${loc('plus_max_soldiers',[2])}</div><div>${loc('space_red_space_barracks_effect2',[oil])}</div><div>${loc('space_red_space_barracks_effect3',[global.resource.Food.name])}</div>`;
             },
             powered: 1,
             action(){
@@ -789,7 +789,7 @@ const spaceProjects = {
             effect(){
                 let reduce = global.tech['swarm'] ? 0.92 : 0.95;
                 if (global.tech['swarm'] >= 3){
-                    reduce -= quantium_level / 100;
+                    reduce -= quantum_level / 100;
                 }
                 reduce = +((1 - reduce) * 100).toFixed(2);
                 return loc('space_hell_swarm_plant_effect1',[reduce]);
@@ -1200,7 +1200,7 @@ const spaceProjects = {
                 let food = 10;
                 let elerium_cap = spatialReasoning(5);
                 let elerium = global.tech['asteroid'] >= 5 ? `<div>${loc('plus_max_resource',[elerium_cap, loc('resource_Elerium_name')])}</div>` : '';
-                return `<div>${loc('plus_max_space_miners',[3])}</div>${elerium}<div>${loc('space_belt_station_effect3',[helium])}</div><div>${loc('space_belt_station_effect4',[food,spaceProjects.spc_belt.space_station.powered])}</div>`;
+                return `<div>${loc('plus_max_space_miners',[3])}</div>${elerium}<div>${loc('space_belt_station_effect3',[helium])}</div><div>${loc('space_belt_station_effect4',[food,spaceProjects.spc_belt.space_station.powered,global.resource.Food.name])}</div>`;
             },
             support: 3,
             powered: 3,
@@ -1619,7 +1619,7 @@ export function swarm_adjust(res){
     if (global.space['swarm_plant']){
         let reduce = global.tech['swarm'] ? 0.92 : 0.95;
         if (global.tech['swarm'] >= 3){
-            reduce -= quantium_level / 100;
+            reduce -= quantum_level / 100;
         }
         res *= reduce ** global.space.swarm_plant.count;
     }

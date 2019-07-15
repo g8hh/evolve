@@ -428,7 +428,7 @@ export function checkAchievements(){
     if (global.stats.starved >= 100){
         unlockAchieve('mass_starvation');
     }
-    if (Math.round(Math.log2(global.civic.garrison.protest + global.civic.garrison.fatigue) >= 8)){
+    if (Math.round(Math.log2(global.civic.garrison.protest + global.civic.garrison.fatigue)) >= 8){
         unlockAchieve('warmonger');
     }
     if (global.stats.died >= 250){
@@ -445,6 +445,54 @@ export function drawPerks(){
         unlocked++;
         let bonus = global.stats.achieve.blackhole * 5;
         perks.append(`<div><span class="has-text-warning">${loc("achieve_perks_blackhole",[bonus])}</span></div>`);
+    }
+
+    if (global.genes['creep']){
+        unlocked++;
+        perks.append(`<div><span class="has-text-warning">${loc("arpa_perks_creep",[global.genes.creep])}</span></div>`);
+    }
+
+    if (global.genes['store']){
+        unlocked++;
+        let psb = global.genes.store === 1 ? 0.04 : (global.genes.store === 2 ? 0.06 : 0.08);
+        perks.append(`<div><span class="has-text-warning">${loc(global.genes.store >= 4 ? "arpa_perks_store2" : "arpa_perks_store1",[psb])}</span></div>`);
+    }
+
+    if (global.genes['evolve']){
+        unlocked++;
+        perks.append(`<div><span class="has-text-warning">${loc("arpa_perks_evolve")}</span></div>`);
+        if (global.genes.evolve >= 2){
+            perks.append(`<div><span class="has-text-warning">${loc("arpa_genepool_recombination_desc")}</span></div>`);
+        }
+    }
+
+    if (global.genes['birth']){
+        unlocked++;
+        perks.append(`<div><span class="has-text-warning">${loc("arpa_perks_birth")}</span></div>`);
+    }
+
+    if (global.genes['crafty']){
+        unlocked++;
+        perks.append(`<div><span class="has-text-warning">${loc("arpa_genepool_artificer_desc")}</span></div>`);
+
+        if (global.genes.crafty >= 2){
+            let bonus = global.genes.crafty === 2 ? 50 : 100;
+            perks.append(`<div><span class="has-text-warning">${loc("arpa_genepool_crafting_desc",[bonus])}</span></div>`);
+        }
+    }
+
+    if (global.genes['challenge']){
+        unlocked++;
+        perks.append(`<div><span class="has-text-warning">${loc("arpa_perks_challenge")}</span></div>`);
+        if (global.genes['challenge'] >= 2){
+            unlocked++;
+            perks.append(`<div><span class="has-text-warning">${loc("arpa_genepool_unlocked_desc")}</span></div>`);
+        }
+    }
+
+    if (global.genes['ancients']){
+        unlocked++;
+        perks.append(`<div><span class="has-text-warning">${loc("arpa_perks_ancients")}</span></div>`);
     }
 
     if (unlocked > 0){

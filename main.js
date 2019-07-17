@@ -2845,10 +2845,13 @@ function midLoop(){
                 }
                 else {
                     global.race.mutation++;
-                    randomMinorTrait();
-                    messageQueue(loc('gene_therapy'),'success');
+                    let trait = randomMinorTrait();
+                    let gene = global.genes['synthesis'] ? global.race.mutation * (global.genes['synthesis'] + 1) : global.race.mutation;
+                    messageQueue(loc('gene_therapy',[trait,gene]),'success');
                     global.stats.plasmid++;
                     global.race.Plasmid.count++;
+                    global.resource.Genes.amount += gene;
+                    global.resource.Genes.display = true;
                 }
                 arpa('Genetics');
                 drawTech();
@@ -2975,8 +2978,11 @@ function longLoop(){
         // Soldier Healing
         if (global.civic.garrison.wounded > 0){
             let healed = global.race['regenerative'] ? 4 : 1;
-            if (global.city['hospital']){
-                let hc = global.city['hospital'].count;
+            let hc = global.city['hospital'] ? global.city['hospital'].count : 0;
+            if (global.race['fibroblast']){
+                hc += global.race['fibroblast'] * 2;
+            }
+            if (hc > 0){
                 while (hc >= 20){
                     healed++;
                     hc -= 20;

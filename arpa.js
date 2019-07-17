@@ -284,6 +284,51 @@ const genePool = {
             return false;
         }
     },
+    synthesis: {
+        id: 'genes-synthesis',
+        title: loc('arpa_genepool_synthesis_title'),
+        desc: loc('arpa_genepool_synthesis_desc',[2]),
+        reqs: { evolve: 1 },
+        grant: ['synthesis',1],
+        cost: 25,
+        effect: `<div class="cost"><span class="has-text-special">${loc('arpa_genepool_effect_plasmid')}</span>: <span>25</span></div>`,
+        action(){
+            if (payPlasmids('synthesis')){
+                return true;
+            }
+            return false;
+        }
+    },
+    karyokinesis: {
+        id: 'genes-karyokinesis',
+        title: loc('arpa_genepool_karyokinesis_title'),
+        desc: loc('arpa_genepool_synthesis_desc',[3]),
+        reqs: { synthesis: 1 },
+        grant: ['synthesis',2],
+        cost: 40,
+        effect: `<div class="cost"><span class="has-text-special">${loc('arpa_genepool_effect_plasmid')}</span>: <span>40</span></div>`,
+        action(){
+            if (payPlasmids('karyokinesis')){
+                return true;
+            }
+            return false;
+        }
+    },
+    cytokinesis: {
+        id: 'genes-cytokinesis',
+        title: loc('arpa_genepool_cytokinesis_title'),
+        desc: loc('arpa_genepool_synthesis_desc',[4]),
+        reqs: { synthesis: 2 },
+        grant: ['synthesis',3],
+        cost: 55,
+        effect: `<div class="cost"><span class="has-text-special">${loc('arpa_genepool_effect_plasmid')}</span>: <span>55</span></div>`,
+        action(){
+            if (payPlasmids('cytokinesis')){
+                return true;
+            }
+            return false;
+        }
+    },
     replication: {
         id: 'genes-replication',
         title: loc('arpa_genepool_replication_title'),
@@ -608,20 +653,35 @@ function genetics(){
         vues[`arpaSequence`].$mount(`#arpaSequence`);
     }
     if (global.tech['genetics'] > 2){
-        let breakdown = $('<div id="geneticBreakdown"></div>');
+        let breakdown = $('<div id="geneticBreakdown" class="geneticTraits"></div>');
         $('#arpaGenetics').append(breakdown);
-        breakdown.append(`<div class="trait has-text-success">${loc('arpa_race_genetic_traids',[races[global.race.species].name])}</div>`)
-        
+
+        let minor = false;
         Object.keys(global.race).forEach(function (trait){
-            if (traits[trait]){
-                if (global.race[trait]> 1){
-                    breakdown.append(`<div class="trait has-text-warning">(${global.race[trait]}) ${traits[trait].desc}</div>`);
+            if (traits[trait] && traits[trait].type === 'minor'){
+                minor = true;
+                let m_trait = $(`<div class="trait"></div>`);
+                if (global.race[trait] > 1){
+                    m_trait.append(`<span class="has-text-warning">(${global.race[trait]}) ${traits[trait].desc}</span>`);
                 }
                 else {
-                    breakdown.append(`<div class="trait has-text-warning">${traits[trait].desc}</div>`);
+                    m_trait.append(`<span class="has-text-warning">${traits[trait].desc}</span>`);
                 }
+                breakdown.append(m_trait);
             }
         });
+
+        breakdown.append(`<div class="trait major has-text-success">${loc('arpa_race_genetic_traids',[races[global.race.species].name])}</div>`)
+        
+        Object.keys(global.race).forEach(function (trait){
+            if (traits[trait] && traits[trait].type !== 'minor'){
+                breakdown.append(`<div class="trait has-text-warning">${traits[trait].desc}</div>`);
+            }
+        });
+        
+        if (minor){
+            breakdown.prepend(`<div class="trait minor has-text-success">${loc('arpa_race_genetic_minor_traits',[races[global.race.species].name])}</div>`)
+        }
     }
 }
 

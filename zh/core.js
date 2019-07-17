@@ -314,7 +314,6 @@ var cnItems = {
     'Use stronger steel as rebar, further reducing building cement costs.': '采用较强的钢材作为钢筋，进一步降低建筑水泥成本。',
     'Adding rebar to concrete will make it much stronger and reduce building cement costs.': '在混凝土中添加钢筋将使其更加坚固，并降低建筑水泥的成本。',
     'Science fiction has popularized the idea of a Dyson Sphere, try to figure out how to make one.': '科幻小说普及了戴森球的概念，试图弄清楚如何制作一个戴森球。',
-    'Conceive of the scientific method. This will set your race down a path of science and discovery.': '设想科学的方法。这将使你们的种族走上科学和发现的道路。',
     'To Empty': '',
     'To Full': '已满',
     'Crates': '板条箱',

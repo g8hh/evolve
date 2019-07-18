@@ -303,7 +303,7 @@
   "city_coal_mine": "煤矿",
   "city_coal_mine_desc": "雇用煤矿工人",
   "city_coal_mine_effect1": "+1 煤矿工人上限",
-  "city_coal_mine_effect2": "如果电力消耗%0kW，但增加煤炭产量%0%",
+  "city_coal_mine_effect2": "如果电力消耗%0kW，但增加煤炭产量%1%",
   "city_oil_well": "石油井架",
   "city_oil_well_desc": "从地下深处开采石油",
   "city_oil_well_effect": "+%0油每秒。+ %1石油上限。",

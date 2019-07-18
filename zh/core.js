@@ -20,7 +20,7 @@ var cnItems = {
     'Soft Reset Game': '软复位',
     'Scientist': '科学家',
     'Space': '太空',
-    'A.R.P.A.': '高级研究计划局',
+    'A.R.P.A.': '高级研究',
     'Export Game': '导出存档',
     'Evolve by': '进化 作者:',
     'External Links': '外部链接',

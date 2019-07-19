@@ -1,4 +1,4 @@
-import { global, vues, poppers } from './vars.js';
+import { global, vues, poppers, keyMultiplier } from './vars.js';
 import { actions, drawTech, addAction, removeAction } from './actions.js';
 import { races, traits } from './races.js';
 import { space } from './space.js';
@@ -601,8 +601,12 @@ function genetics(){
                 max: 50000,
                 progress: 0,
                 time: 50000,
-                on: false
+                on: true
             };
+        }
+
+        if (!global.arpa.sequence['boost']){
+            global.arpa.sequence['boost'] = false;
         }
 
         let label = global.tech.genetics > 2 ? loc('arpa_gene_mutation') : loc('arpa_sequence_genome');
@@ -611,10 +615,25 @@ function genetics(){
         let progress = $(`<progress class="progress" :value="progress" max="${global.arpa.sequence.max}">{{ progress }}%</progress>`);
         genome.append(progress);
         let b_label = global.tech.genetics > 2 ? loc('arpa_mutate') : loc('arpa_sequence');
-        let button = $(`<button class="button" @click="toggle">${b_label}</button>`);
+        let button = $(`<button class="button seq" @click="toggle">${b_label}</button>`);
         genome.append(button);
+
+        if (global.tech['genetics'] >= 5){
+            let boost = $(`<b-tooltip :label="boostLabel()" position="is-bottom" animated multilined><button class="button boost" @click="booster" :aria-label="boostLabel()">${loc('arpa_boost')}</button></b-tooltip>`);
+            genome.append(boost);
+        }
+
+        if (global.tech['genetics'] >= 6){
+            let boost = $(`<b-tooltip :label="novoLabel()" position="is-bottom" animated multilined><button class="button novo" @click="novo" :aria-label="novoLabel()">${loc('arpa_novo')}</button></b-tooltip>`);
+            genome.append(boost);
+        }
+        
         if (global.arpa.sequence.on){
-            $('#arpaSequence button').addClass('has-text-success');
+            $('#arpaSequence button.seq').addClass('has-text-success');
+        }
+
+        if (global.arpa.sequence.boost){
+            $('#arpaSequence button.boost').addClass('has-text-success');
         }
 
         vues[`arpaSequence`] = new Vue({
@@ -631,18 +650,51 @@ function genetics(){
                 toggle(){
                     if (global.arpa.sequence.on){
                         global.arpa.sequence.on = false;
-                        $('#arpaSequence button').removeClass('has-text-success');
+                        $('#arpaSequence button.seq').removeClass('has-text-success');
                     }
                     else {
                         global.arpa.sequence.on = true;
-                        $('#arpaSequence button').addClass('has-text-success');
+                        $('#arpaSequence button.seq').addClass('has-text-success');
                     }
                 },
+                booster(){
+                    if (global.arpa.sequence.boost){
+                        global.arpa.sequence.boost = false;
+                        $('#arpaSequence button.boost').removeClass('has-text-success');
+                    }
+                    else {
+                        global.arpa.sequence.boost = true;
+                        $('#arpaSequence button.boost').addClass('has-text-success');
+                    }
+                },
+                boostLabel(){
+                    return loc('arpa_boost_label');
+                },
+                novo(){
+                    let keyMult = keyMultiplier();
+                    for (let i=0; i<keyMult; i++){
+                        if (global.resource.Knowledge.amount >= 125000){
+                            global.resource.Knowledge.amount -= 125000;
+                            global.resource.Genes.amount++;
+                        }
+                        else {
+                            break;
+                        }
+                    }
+                },
+                novoLabel(){
+                    return loc('arpa_novo_label',['125k']);
+                }
             },
             filters: {
                 timer(val){
                     if (global.city.biolab.on > 0){
-                        return (val / global.city.biolab.on).toFixed(0) + 's';
+                        if (global.arpa.sequence.boost){
+                            return (val / (global.city.biolab.on * 2)).toFixed(0) + 's';
+                        }
+                        else {
+                            return (val / global.city.biolab.on).toFixed(0) + 's';
+                        }
                     }
                     else {
                         return loc('time_never');
@@ -660,7 +712,13 @@ function genetics(){
         Object.keys(global.race).forEach(function (trait){
             if (traits[trait] && traits[trait].type === 'minor'){
                 minor = true;
-                let m_trait = $(`<div class="trait"></div>`);
+                let m_trait = $(`<div class="trait t-${trait}"></div>`);
+                let gene = $(`<b-tooltip :label="geneCost('${trait}')" position="is-bottom" multilined animated><span class="basic-button" role="button" :aria-label="geneCost('${trait}')" @click="gene('${trait}')">${global.resource.Genes.name}</span></b-tooltip>`);
+                m_trait.append(gene);
+                if (global.race.Phage.count > 0){
+                    let phage = $(`<b-tooltip :label="phageCost('${trait}')" position="is-bottom" multilined animated><span class="basic-button" role="button" :aria-label="phageCost('${trait}')" @click="phage('${trait}')">Phage</span></b-tooltip>`);
+                    m_trait.append(phage);
+                }
                 if (global.race[trait] > 1){
                     m_trait.append(`<span class="has-text-warning">(${global.race[trait]}) ${traits[trait].desc}</span>`);
                 }
@@ -682,7 +740,53 @@ function genetics(){
         if (minor){
             breakdown.prepend(`<div class="trait minor has-text-success">${loc('arpa_race_genetic_minor_traits',[races[global.race.species].name])}</div>`)
         }
+
+        if (vues[`arpaGenes`]){
+            vues[`arpaGenes`].$destroy();
+        }
+        vues[`arpaGenes`] = new Vue({
+            data: {
+                genes: global.genes,
+                race: global.race
+            },
+            methods: {
+                gene(t){
+                    let cost = fibonacci(global.race.minor[t] ? global.race.minor[t] + 4 : 4);
+                    if (global.resource.Genes.amount >= cost){
+                        global.resource.Genes.amount -= cost;
+                        global.race.minor[t] ? global.race.minor[t]++ : global.race.minor[t] = 1;
+                        global.race[t] ? global.race[t]++ : global.race[t] = 1;
+                        genetics();
+                    }
+                },
+                phage(t){
+                    let cost = fibonacci(global.genes.minor[t] ? global.genes.minor[t] + 4 : 4);
+                    if (global.race.Phage.count >= cost){
+                        global.race.Phage.count -= cost;
+                        global.genes.minor[t] ? global.genes.minor[t]++ : global.genes.minor[t] = 1;
+                        global.race[t] ? global.race[t]++ : global.race[t] = 1;
+                        genetics();
+                    }
+                },
+                geneCost(t){
+                    let cost = fibonacci(global.race.minor[t] ? global.race.minor[t] + 4 : 4);
+                    return loc('arpa_gene_buy',[t,cost]);
+                },
+                phageCost(t){
+                    let cost = fibonacci(global.genes.minor[t] ? global.genes.minor[t] + 4 : 4);
+                    return loc('arpa_phage_buy',[t,cost]);
+                }
+            }
+        });
+        vues[`arpaGenes`].$mount(`#geneticBreakdown`);
     }
+}
+
+function fibonacci(num, memo){
+    memo = memo || {};
+    if (memo[num]) return memo[num];
+    if (num <= 1) return 1;
+    return memo[num] = fibonacci(num - 1, memo) + fibonacci(num - 2, memo);
 }
 
 function crispr(){

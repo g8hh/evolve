@@ -5,7 +5,7 @@ var cnItems = {
     //未分类：
     'Settings': '设置',
     'City': '城市',
-    'Civics': '公民',
+    'Civics': '内政',
     'Evolve': '进化',
     'Farmer': '农民',
     'Government': '政府',
@@ -30,6 +30,8 @@ var cnItems = {
     'Theme': '主题',
     'Tax Rates': '税率',
     'Taxes': '税收',
+    'Steel': '钢',
+    'Iron': '铁',
     'Shed': '窝棚',
     'Village': '村庄',
     'Import Game': '导入存档',

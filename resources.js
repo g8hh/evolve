@@ -84,7 +84,7 @@ export function craftingRatio(res){
         multiplier += 0.03;
     }
     if (global.race['ambidextrous']){
-        multiplier += (global.race['ambidextrous'] / 100);
+        multiplier += (global.race['ambidextrous'] * 0.03);
     }
     if (global.race['rigid']){
         multiplier -= 0.01;
@@ -107,6 +107,12 @@ export function craftingRatio(res){
     return multiplier;
 }
 
+
+if (global.resource[races[global.race.species].name]){
+    global.resource[global.race.species] = global.resource[races[global.race.species].name];
+    delete global.resource[races[global.race.species].name];
+}
+
 // Sets up resource definitions
 export function defineResources(){
     if (global.race.species === 'protoplasm'){
@@ -116,7 +122,7 @@ export function defineResources(){
     else {
         initMarket();
         loadResource('Money',1000,1,false,false,'success');
-        loadResource(races[global.race.species].name,0,0,false,false,'warning');
+        loadResource(global.race.species,0,0,false,false,'warning');
         loadResource('Knowledge',100,1,false,false,'warning');
         loadResource('Crates',0,0,false,false,'warning');
         loadResource('Containers',0,0,false,false,'warning');
@@ -161,7 +167,7 @@ function loadResource(name,max,rate,tradable,stackable,color){
     color = color || 'info';
     if (!global['resource'][name]){
         global['resource'][name] = {
-            name: name === races[global.race.species].name ? name : (name === 'Money' ? '$' : loc(`resource_${name}_name`)),
+            name: name === global.race.species ? races[global.race.species].name : (name === 'Money' ? '$' : loc(`resource_${name}_name`)),
             display: false,
             value: resource_values[name],
             amount: 0,
@@ -173,7 +179,7 @@ function loadResource(name,max,rate,tradable,stackable,color){
         };
     }
     else {
-        global['resource'][name].name = name === races[global.race.species].name? name : (name === 'Money' ? '$' : loc(`resource_${name}_name`));
+        global['resource'][name].name = name === global.race.species ? races[global.race.species].name : (name === 'Money' ? '$' : loc(`resource_${name}_name`));
     }
 
     if (global.race['evil']){

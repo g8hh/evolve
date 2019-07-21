@@ -1,3 +1,23 @@
+#### 0.4.31 - 7/20/2019 ####
+Extreme Dazzle casino upgrade<br>
+Metallurgist minor trait, buffs alloy<br>
+Gambler minor trait, buffs casinos<br>
+A.R.P.A. projects now use resource approximations for large numbers<br>
+Cement Factory renamed to Cement Plant to reduce confusion with the regular Factory<br>
+Key multipliers now work inside the factory modal<br>
+Imps and Balorg now have access to advanced crafting tech<br>
+Imps and Balorg now have access to windmills<br>
+Balorg can now set their taxes below 10% and above 30%<br>
+Experimental demolish mode, hold "D" and click to destroy structures. Use at your own risk.<br>
+
+#### 0.4.30 - 7/19/2019 ####
+Portuguese translation by Rodrigodd<br>
+DNA Sequencer upgrade<br>
+Gene Assembly cost increase to 200k<br>
+Synthesis now applies a bonus to auto crafted genes<br>
+Ambidextrous buffed<br>
+Ambidextrous now has a greater effect on auto crafting<br>
+
 #### 0.4.29 - 7/18/2019 ####
 Genetic modification system, customize your race with minor traits<br>
 Shotgun Sequencing upgrade for genome research<br>

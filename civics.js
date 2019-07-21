@@ -57,7 +57,8 @@ function taxRates(govern){
         methods: {
             add(){
                 let inc = keyMultiplier();
-                if (global.tech['currency'] && global.tech['currency'] >= 5 && global.civic.taxes.tax_rate < 50){
+                let extreme = global.tech['currency'] && global.tech['currency'] >= 5 ? true : false;
+                if ((extreme || global.race['terrifying']) && global.civic.taxes.tax_rate < 50){
                     global.civic.taxes.tax_rate += inc;
                     if (global.civic.taxes.tax_rate > 50){
                         global.civic.taxes.tax_rate = 50;
@@ -72,7 +73,8 @@ function taxRates(govern){
             },
             sub(){
                 let dec = keyMultiplier();
-                if (global.tech['currency'] && global.tech['currency'] >= 5 && global.civic.taxes.tax_rate > 0){
+                let extreme = global.tech['currency'] && global.tech['currency'] >= 5 ? true : false;
+                if ((extreme || global.race['terrifying']) && global.civic.taxes.tax_rate > 0){
                     global.civic.taxes.tax_rate -= dec;
                     if (global.civic.taxes.tax_rate < 0){
                         global.civic.taxes.tax_rate = 0;
@@ -119,7 +121,7 @@ export function buildGarrison(garrison){
     
     
     bunks.append($(`<div class="barracks"><b-tooltip :label="soldierDesc()" position="is-bottom" multilined animated><span>${soldier_title}</span></b-tooltip> <span>{{ workers }} / {{ max }}</span></div>`));
-    bunks.append($('<div class="barracks"><b-tooltip :label="woundedDesc()" position="is-bottom" multilined animated><span>Wounded</span></b-tooltip> <span>{{ wounded }}</span></div>'));
+    bunks.append($(`<div class="barracks"><b-tooltip :label="woundedDesc()" position="is-bottom" multilined animated><span>${loc('civics_garrison_wounded')}</span></b-tooltip> <span>{{ wounded }}</span></div>`));
 
     barracks.append($(`<div class="column hire"><b-tooltip :label="hireLabel()" size="is-small" position="is-bottom" animated><button v-show="mercs" class="button first" @click="hire">${loc('civics_garrison_hire_mercenary')}</button></b-tooltip><div>`));
     
@@ -534,11 +536,11 @@ export function buildGarrison(garrison){
                                 infected = Math.floor(Math.seededRandom(0,25));
                                 break;
                         }
-                        let zombies = global.resource[races[global.race.species].name].amount + infected;
-                        if (zombies > global.resource[races[global.race.species].name].max){
-                            zombies = global.resource[races[global.race.species].name].max;
+                        let zombies = global.resource[global.race.species].amount + infected;
+                        if (zombies > global.resource[global.race.species].max){
+                            zombies = global.resource[global.race.species].max;
                         }
-                        global.resource[races[global.race.species].name].amount = zombies;
+                        global.resource[global.race.species].amount = zombies;
                         if (infected === 1){
                             messageQueue(loc('civics_garrison_soldier_infected'),'special');
                         }
@@ -900,7 +902,7 @@ function defineMad(){
                     : loc('civics_mad_missiles_desc');
             },
             warning(){
-                let plasma = Math.round((global['resource'][races[global.race.species].name].amount + global.civic.garrison.workers) / 3);
+                let plasma = Math.round((global['resource'][global.race.species].amount + global.civic.garrison.workers) / 3);
                 let k_base = global.stats.know;
                 let k_inc = 100000;
                 while (k_base > k_inc){
@@ -945,7 +947,7 @@ function warhead(){
     let orbit = global.city.calendar.orbit;
     let biome = global.city.biome;
     let plasmid = global.race.Plasmid.count;
-    let pop = global['resource'][races[global.race.species].name].amount + global.civic.garrison.workers;
+    let pop = global['resource'][global.race.species].amount + global.civic.garrison.workers;
     let new_plasmid = Math.round(pop / 3);
     let k_base = global.stats.know;
     let k_inc = 100000;

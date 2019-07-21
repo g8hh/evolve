@@ -1,4 +1,4 @@
-import { global, vues, save, poppers, messageQueue, keyMultiplier, srSpeak, modRes, sizeApproximation, moon_on } from './vars.js';
+import { global, vues, save, poppers, messageQueue, keyMultiplier, demoIsPressed, srSpeak, modRes, sizeApproximation, moon_on } from './vars.js';
 import { loc } from './locale.js';
 import { unlockAchieve } from './achieve.js';
 import { races, genus_traits, randomMinorTrait, biomes } from './races.js';
@@ -1483,12 +1483,12 @@ export const actions = {
         },
         bunker: {
             id: 'evo-bunker',
-            title: 'Bunker Gene',
-            desc(){ return `<div>Bunker Gene</div><div class="has-text-special">${loc('evo_challenge')}</div>`; },
+            title: loc('evo_bunker'),
+            desc(){ return `<div>${loc('evo_bunker')}</div><div class="has-text-special">${loc('evo_challenge')}</div>`; },
             cost: {
                 DNA(){ return 10; }
             },
-            effect: loc('evo_bunker'),
+            effect: loc('evo_bunker_effect'),
             action(){
                 if (payCosts(actions.evolution.bunker.cost)){
                     global.evolution['bunker'] = { count: 1 };
@@ -1508,12 +1508,12 @@ export const actions = {
         },
         plasmid: {
             id: 'evo-plasmid',
-            title: loc('evo_challenge_pladmid'),
-            desc: loc('evo_challenge_pladmid'),
+            title: loc('evo_challenge_plasmid'),
+            desc: loc('evo_challenge_plasmid'),
             cost: {
                 DNA(){ return 10; }
             },
-            effect: loc('evo_challenge_pladmid_effect'),
+            effect: loc('evo_challenge_plasmid_effect'),
             action(){
                 if (payCosts(actions.evolution.plasmid.cost)){
                     global.race['no_plasmid'] = 1;
@@ -1659,8 +1659,8 @@ export const actions = {
             effect: loc('plus_max_resource',[1,loc('citizen')]),
             action(){
                 if (payCosts(actions.city.basic_housing.cost)){
-                    global['resource'][races[global.race.species].name].display = true;
-                    global['resource'][races[global.race.species].name].max += 1;
+                    global['resource'][global.race.species].display = true;
+                    global['resource'][global.race.species].max += 1;
                     global.city['basic_housing'].count++;
                     global.settings.showCivic = true;
                     return true;
@@ -1692,7 +1692,7 @@ export const actions = {
             },
             action(){
                 if (payCosts(actions.city.cottage.cost)){
-                    global['resource'][races[global.race.species].name].max += 2;
+                    global['resource'][global.race.species].max += 2;
                     global.city['cottage'].count++;
                     return true;
                 }
@@ -1727,7 +1727,7 @@ export const actions = {
                 if (payCosts(actions.city.apartment.cost)){
                     global.city['apartment'].count++;
                     if (global.city.power > 0){
-                        global['resource'][races[global.race.species].name].max += 5;
+                        global['resource'][global.race.species].max += 5;
                         global.city['apartment'].on++;
                     }
                     return true;
@@ -1749,7 +1749,7 @@ export const actions = {
             action(){
                 if (payCosts(actions.city.lodge.cost)){
                     global.city['lodge'].count++;
-                    global['resource'][races[global.race.species].name].max += 1;
+                    global['resource'][global.race.species].max += 1;
                     return true;
                 }
                 return false;
@@ -1824,7 +1824,7 @@ export const actions = {
                     global.city['farm'].count++;
                     global.civic.farmer.display = true;
                     if (global.tech['farm']){
-                        global['resource'][races[global.race.species].name].max += 1;
+                        global['resource'][global.race.species].max += 1;
                     }
                     return true;
                 }
@@ -1879,7 +1879,7 @@ export const actions = {
             desc(){
                 return loc('city_windmill_desc');
             },
-            reqs: { hunting: 3 },
+            reqs: { wind_plant: 1 },
             cost: { 
                 Money(){ return costMultiplier('windmill', 1000, 1.31); },
                 Lumber(){ return costMultiplier('windmill', 600, 1.33); },
@@ -2041,43 +2041,43 @@ export const actions = {
                 let multiplier = storageMultipler();
                 if (global.resource.Lumber.display){
                     let val = sizeApproximation(+(spatialReasoning(300) * multiplier).toFixed(0),1);
-                    storage = storage + `+${val} ${loc('max')} ${global.resource.Lumber.name}. `;
+                    storage = storage + `${loc('plus_max_resource',[val,global.resource.Lumber.name])}. `;
                 }
                 if (global.resource.Stone.display){
                     let val = sizeApproximation(+(spatialReasoning(300) * multiplier).toFixed(0),1);
-                    storage = storage + `+${val} ${loc('max')} ${global.resource.Stone.name}. `;
+                    storage = storage + `${loc('plus_max_resource',[val,global.resource.Stone.name])}. `;
                 }
                 if (global.resource.Furs.display){
                     let val = sizeApproximation(+(spatialReasoning(125) * multiplier).toFixed(0),1);
-                    storage = storage + `+${val} ${loc('max')} ${global.resource.Furs.name}. `;
+                    storage = storage + `${loc('plus_max_resource',[val,global.resource.Furs.name])}. `;
                 }
                 if (global.resource.Copper.display){
                     let val = sizeApproximation(+(spatialReasoning(90) * multiplier).toFixed(0),1);
-                    storage = storage + `+${val} ${loc('max')} ${global.resource.Copper.name}. `;
+                    storage = storage + `${loc('plus_max_resource',[val,global.resource.Copper.name])}. `;
                 }
                 if (global.resource.Iron.display){
                     let val = sizeApproximation(+(spatialReasoning(125) * multiplier).toFixed(0),1);
-                    storage = storage + `+${val} ${loc('max')} ${global.resource.Iron.name}. `;
+                    storage = storage + `${loc('plus_max_resource',[val,global.resource.Iron.name])}. `;
                 }
                 if (global.resource.Aluminium.display){
                     let val = sizeApproximation(+(spatialReasoning(90) * multiplier).toFixed(0),1);
-                    storage = storage + `+${val} ${loc('max')} ${global.resource.Aluminium.name}. `;
+                    storage = storage + `${loc('plus_max_resource',[val,global.resource.Aluminium.name])}. `;
                 }
                 if (global.resource.Cement.display){
                     let val = sizeApproximation(+(spatialReasoning(100) * multiplier).toFixed(0),1);
-                    storage = storage + `+${val} ${loc('max')} ${global.resource.Cement.name}. `;
+                    storage = storage + `${loc('plus_max_resource',[val,global.resource.Cement.name])}. `;
                 }
                 if (global.resource.Coal.display){
                     let val = sizeApproximation(+(spatialReasoning(75) * multiplier).toFixed(0),1);
-                    storage = storage + `+${val} ${loc('max')} ${global.resource.Coal.name}. `;
+                    storage = storage + `${loc('plus_max_resource',[val,global.resource.Coal.name])}. `;
                 }
                 if (global.tech['storage'] >= 3 && global.resource.Steel.display){
                     let val = sizeApproximation(+(spatialReasoning(40) * multiplier).toFixed(0),1);
-                    storage = storage + `+${val} ${loc('max')} ${global.resource.Steel.name}. `;
+                    storage = storage + `${loc('plus_max_resource',[val,global.resource.Steel.name])}. `;
                 }
                 if (global.tech['storage'] >= 4 && global.resource.Titanium.display){
                     let val = sizeApproximation(+(spatialReasoning(20) * multiplier).toFixed(0),1);
-                    storage = storage + `+${val} ${loc('max')} ${global.resource.Titanium.name}.`;
+                    storage = storage + `${loc('plus_max_resource',[val,global.resource.Titanium.name])}.`;
                 }
                 return storage;
             },
@@ -2220,7 +2220,7 @@ export const actions = {
                     vault *= 1 + (global.civic.banker.workers * 0.05);
                 }
                 if (global.tech['banking'] >= 8){
-                    vault += 25 * global.resource[races[global.race.species].name].amount;
+                    vault += 25 * global.resource[global.race.species].amount;
                 }
                 if (global.tech['stock_exchange']){
                     vault *= 1 + (global.tech['stock_exchange'] * 0.1);
@@ -2630,16 +2630,16 @@ export const actions = {
             effect() { 
                 let oil = spatialReasoning(1000);
                 oil *= global.tech['world_control'] ? 1.5 : 1;
-                let effect = `<div>+${oil} ${loc('max')} ${loc('resource_Oil_name')}.</div>`;
+                let effect = `<div>${loc('plus_max_resource',[oil,loc('resource_Oil_name')])}.</div>`;
                 if (global.resource['Helium_3'].display){
                     let val = spatialReasoning(400);
                     val *= global.tech['world_control'] ? 1.5 : 1;
-                    effect = effect + `<div>+${val} ${loc('max')} ${loc('resource_Helium_3_name')}.</div>`;
+                    effect = effect + `<div>${loc('plus_max_resource',[val,loc('resource_Helium_3_name')])}.</div>`;
                 }
                 if (global.tech['uranium'] >= 2){
                     let val = spatialReasoning(250);
                     val *= global.tech['world_control'] ? 1.5 : 1;
-                    effect = effect + `<div>+${val} ${loc('max')} ${loc('resource_Uranium_name')}.</div>`;
+                    effect = effect + `<div>${loc('plus_max_resource',[val,loc('resource_Uranium_name')])}.</div>`;
                 }
                 return effect;
             },
@@ -2671,7 +2671,7 @@ export const actions = {
             },
             effect(){
                 let routes = global.race['xenophobic'] ? global.tech.trade : global.tech.trade + 1;
-                return loc('city_trade_routes',[routes]); 
+                return loc('city_trade_effect',[routes]); 
             },
             action(){
                 if (payCosts(actions.city.trade.cost)){
@@ -2702,7 +2702,7 @@ export const actions = {
                 if (global.tech['particles'] && global.tech['particles'] >= 2){
                     containers *= 2;
                 }
-                return `<div>${loc('city_trade_routes',[routes])}</div><div>${loc('city_wharf_effect')}</div><div>${loc('plus_max_crates',[containers])}</div><div>${loc('plus_max_containers',[containers])}</div>`; 
+                return `<div>${loc('city_trade_effect',[routes])}</div><div>${loc('city_wharf_effect')}</div><div>${loc('plus_max_crates',[containers])}</div><div>${loc('plus_max_containers',[containers])}</div>`; 
             },
             action(){
                 if (payCosts(actions.city.wharf.cost)){
@@ -2777,13 +2777,23 @@ export const actions = {
                 Brick(){ return costMultiplier('casino', 6000, 1.35); }
             },
             effect(){
-                let money = spatialReasoning(global.tech['gambling'] >= 2 ? 60000 : 40000);
+                let money = spatialReasoning(global.tech['gambling'] >= 3 ? 60000 : 40000);
+                if (global.race['gambler']){
+                    money *= 1 + (global.race['gambler'] * 0.04);
+                }
                 if (global.tech['world_control']){
                     money = Math.round(money * 1.25);
                 }
                 money = '$'+money;
-                return `<div>${loc('plus_max_resource',[money,loc('resource_Money_name')])}</div><div>${loc('city_max_entertainer')}</div><div>${loc('city_max_morale')}</div>`;
+                let desc = `<div>${loc('plus_max_resource',[money,loc('resource_Money_name')])}</div><div>${loc('city_max_entertainer')}</div><div>${loc('city_max_morale')}</div>`;
+                if (global.tech['gambling'] >= 2){
+                    let cash = (Math.log2(global.resource[global.race.species].amount) * (global.race['gambler'] ? 2.5 + (global.race['gambler'] / 10) : 2.5)).toFixed(2);
+                    desc = desc + `<div>${loc('tech_casino_effect2',[actions.city.casino.powered,cash])}</div>`
+                }
+                return desc;
             },
+            powered: 5,
+            power_reqs: { gambling: 2 },
             action(){
                 if (payCosts(actions.city.casino.cost)){
                     global.city['casino'].count++;
@@ -3533,7 +3543,27 @@ export const actions = {
             title: loc('tech_windmill'),
             desc: loc('tech_windmill'),
             reqs: { hunting: 2, high_tech: 4 },
-            grant: ['hunting',3],
+            grant: ['wind_plant',1],
+            not_trait: ['evil'],
+            cost: { 
+                Knowledge(){ return 66000; }
+            },
+            effect: loc('tech_wind_plant_effect'),
+            action(){
+                if (payCosts(actions.tech.windturbine.cost)){
+                    global.city['windmill'] = { count: 0 };
+                    return true;
+                }
+                return false;
+            }
+        },
+        evil_wind_plant: {
+            id: 'tech-evil_wind_plant',
+            title: loc('tech_windmill'),
+            desc: loc('tech_windmill'),
+            reqs: { high_tech: 4 },
+            grant: ['wind_plant',1],
+            trait: ['evil'],
             cost: { 
                 Knowledge(){ return 66000; }
             },
@@ -3630,6 +3660,7 @@ export const actions = {
             desc: loc('tech_carpentry'),
             reqs: { foundry: 3, saw: 1 },
             grant: ['foundry',4],
+            not_trait: ['evil'],
             cost: {
                 Knowledge(){ return 5200; }
             },
@@ -3641,12 +3672,31 @@ export const actions = {
                 return false;
             }
         },
+        demonic_craftsman: {
+            id: 'tech-master_craftsman',
+            title: loc('tech_master_craftsman'),
+            desc: loc('tech_master_craftsman'),
+            reqs: { foundry: 3 },
+            grant: ['foundry',5],
+            trait: ['evil'],
+            cost: {
+                Knowledge(){ return 12000; }
+            },
+            effect: loc('tech_master_craftsman_effect'),
+            action(){
+                if (payCosts(actions.tech.master_craftsman.cost)){
+                    return true;
+                }
+                return false;
+            }
+        },
         master_craftsman: {
             id: 'tech-master_craftsman',
             title: loc('tech_master_craftsman'),
             desc: loc('tech_master_craftsman'),
             reqs: { foundry: 4 },
             grant: ['foundry',5],
+            not_trait: ['evil'],
             cost: {
                 Knowledge(){ return 12000; }
             },
@@ -3877,7 +3927,24 @@ export const actions = {
             effect: loc('tech_casino_effect'),
             action(){
                 if (payCosts(actions.tech.casino.cost)){
-                    global.city['casino'] = { count: 0 };
+                    global.city['casino'] = { count: 0, on: 0 };
+                    return true;
+                }
+                return false;
+            }
+        },
+        dazzle: {
+            id: 'tech-dazzle',
+            title: loc('tech_dazzle'),
+            desc: loc('tech_dazzle'),
+            reqs: { gambling: 1 },
+            grant: ['gambling',2],
+            cost: {
+                Knowledge(){ return 125000; }
+            },
+            effect: loc('tech_dazzle_effect'),
+            action(){
+                if (payCosts(actions.tech.dazzle.cost)){
                     return true;
                 }
                 return false;
@@ -3887,8 +3954,8 @@ export const actions = {
             id: 'tech-casino_vault',
             title: loc('tech_casino_vault'),
             desc: loc('tech_casino_vault'),
-            reqs: { gambling: 1, space: 3 },
-            grant: ['gambling',2],
+            reqs: { gambling: 2, space: 3 },
+            grant: ['gambling',3],
             cost: {
                 Knowledge(){ return 145000; },
                 Iridium(){ return 2500; }
@@ -5209,6 +5276,27 @@ export const actions = {
                 return false;
             }
         },
+        dna_sequencer: {
+            id: 'tech-dna_sequencer',
+            title: loc('tech_dna_sequencer'),
+            desc: loc('tech_dna_sequencer'),
+            reqs: { genetics: 6 },
+            grant: ['genetics',7],
+            cost: {
+                Knowledge(){ return 300000; }
+            },
+            effect: loc('tech_dna_sequencer_effect'),
+            action(){
+                if (payCosts(actions.tech.dna_sequencer.cost)){
+                    var tech = actions.tech.dna_sequencer.grant[0];
+                    global.tech[tech] = actions.tech.dna_sequencer.grant[1];
+                    global.arpa.sequence.auto = true;
+                    arpa('Genetics');
+                    return true;
+                }
+                return false;
+            }
+        },
         mad_science: {
             id: 'tech-mad_science',
             title: loc('tech_mad_science'),
@@ -5409,14 +5497,14 @@ export const actions = {
         },
         artifical_intelligence: {
             id: 'tech-artifical_intelligence',
-            title: loc('tech_artifical_intelligence'),
-            desc: loc('tech_artifical_intelligence_desc'),
+            title: loc('tech_artificial_intelligence'),
+            desc: loc('tech_artificial_intelligence_desc'),
             reqs: { high_tech: 9 },
             grant: ['high_tech',10],
             cost: {
                 Knowledge(){ return 325000; }
             },
-            effect: loc('tech_artifical_intelligence_effect'),
+            effect: loc('tech_artificial_intelligence_effect'),
             action(){
                 if (payCosts(actions.tech.artifical_intelligence.cost)){
                     return true;
@@ -7741,7 +7829,7 @@ export const actions = {
             reqs: { genesis: 6 },
             cost: {},
             effect(){
-                let pop = global['resource'][races[global.race.species].name].amount + global.civic.garrison.workers;
+                let pop = global['resource'][global.race.species].amount + global.civic.garrison.workers;
                 let plasmid = Math.round(pop / 3);
                 let k_base = global.stats.know;
                 let k_inc = 50000;
@@ -7788,7 +7876,7 @@ export function checkCityRequirements(action){
         return true;
     }
     var isMet = true;
-    Object.keys(actions.city[action].reqs).forEach(function (req) {
+    Object.keys(actions.city[action].reqs).forEach(function (req){
         if (!global.tech[req] || global.tech[req] < actions.city[action].reqs[req]){
             isMet = false;
         }
@@ -7798,7 +7886,7 @@ export function checkCityRequirements(action){
 
 export function checkTechRequirements(tech){
     var isMet = true;
-    Object.keys(actions.tech[tech].reqs).forEach(function (req) {
+    Object.keys(actions.tech[tech].reqs).forEach(function (req){
         if (!global.tech[req] || global.tech[req] < actions.tech[tech].reqs[req]){
             isMet = false;
         }
@@ -7820,7 +7908,7 @@ export function checkOldTech(tech){
 function checkPowerRequirements(c_action){
     var isMet = true;
     if (c_action['power_reqs']){
-        Object.keys(c_action.power_reqs).forEach(function (req) {
+        Object.keys(c_action.power_reqs).forEach(function (req){
             if (!global.tech[req] || global.tech[req] < c_action.power_reqs[req]){
                 isMet = false;
             }
@@ -8008,37 +8096,61 @@ export function setAction(c_action,action,type,old){
                             }
                             break;
                         default:
-                            let keyMult = keyMultiplier();
-                            if (c_action['grant']){
-                                keyMult = 1;
-                            }
-                            let grant = false;
-                            for (var i=0; i<keyMult; i++){
-                                if (!c_action.action()){
-                                    break;
+                            if (demoIsPressed && 1 === 2){
+                                if (global[action][type]['count'] && global[action][type]['count'] > 0){
+                                    global[action][type]['count']--;
+                                    if (global[action][type]['on'] && global[action][type]['on'] > global[action][type]['count']){
+                                        global[action][type]['on']--;
+                                    }
+                                    if (global[action][type]['count'] === 0){
+                                        drawCity();
+                                        space();
+                                        var id = c_action.id;
+                                        $(`#pop${id}`).hide();
+                                        if (poppers[id]){
+                                            poppers[id].destroy();
+                                        }
+                                        $(`#pop${id}`).remove();
+                                    }
+                                    else {
+                                        updateDesc(c_action,action,type);
+                                    }
                                 }
-                                grant = true;
+                                break;
                             }
-                            if (!checkAffordable(c_action)){
-                                let id = c_action.id;
-                                $(`#${id}`).addClass('cna');
+                            else {
+                                let keyMult = keyMultiplier();
+                                if (c_action['grant']){
+                                    keyMult = 1;
+                                }
+                                let grant = false;
+                                for (var i=0; i<keyMult; i++){
+                                    if (!c_action.action()){
+                                        break;
+                                    }
+                                    grant = true;
+                                }
+                                if (!checkAffordable(c_action)){
+                                    let id = c_action.id;
+                                    $(`#${id}`).addClass('cna');
+                                }
+                                if (c_action['grant'] && grant){
+                                    let tech = c_action.grant[0];
+                                    global.tech[tech] = c_action.grant[1];
+                                    removeAction(c_action.id);
+                                    drawCity();
+                                    drawTech();
+                                    space();
+                                }
+                                else if (c_action['refresh']){
+                                    removeAction(c_action.id);
+                                    drawCity();
+                                    drawTech();
+                                    space();
+                                }
+                                updateDesc(c_action,action,type);
+                                break;
                             }
-                            if (c_action['grant'] && grant){
-                                let tech = c_action.grant[0];
-                                global.tech[tech] = c_action.grant[1];
-                                removeAction(c_action.id);
-                                drawCity();
-                                drawTech();
-                                space();
-                            }
-                            else if (c_action['refresh']){
-                                removeAction(c_action.id);
-                                drawCity();
-                                drawTech();
-                                space();
-                            }
-                            updateDesc(c_action,action,type);
-                            break;
                     }
                 }
             },
@@ -8104,7 +8216,9 @@ export function setAction(c_action,action,type,old){
         });
     $('#'+id).on('mouseout',function(){
             $(`#pop${id}`).hide();
-            poppers[id].destroy();
+            if (poppers[id]){
+                poppers[id].destroy();
+            }
             $(`#pop${id}`).remove();
         });
 }
@@ -8188,7 +8302,9 @@ export function setPlanet(hell){
         global.city.geology = geology;
         $('#evolution').empty();
         $(`#pop${id}`).hide();
-        poppers[id].destroy();
+        if (poppers[id]){
+            poppers[id].destroy();
+        }
         $(`#pop${id}`).remove();
         addAction('evolution','rna');
     });
@@ -8227,7 +8343,9 @@ export function setPlanet(hell){
         });
     $('#'+id).on('mouseout',function(){
             $(`#pop${id}`).hide();
-            poppers[id].destroy();
+            if (poppers[id]){
+                poppers[id].destroy();
+            }
             $(`#pop${id}`).remove();
         });
     return biome;
@@ -8831,21 +8949,33 @@ function factoryModal(modal){
         data: global.city['factory'],
         methods: {
             subItem: function(item){
-                if (global.city.factory[item] > 0){
-                    global.city.factory[item]--;
+                let keyMult = keyMultiplier();
+                for (var i=0; i<keyMult; i++){
+                    if (global.city.factory[item] > 0){
+                        global.city.factory[item]--;
+                    }
+                    else {
+                        break;
+                    }
                 }
             },
             addItem: function(item){
                 let max = global.space['red_factory'] ? global.space.red_factory.on + global.city.factory.on : global.city.factory.on;
-                if (global.city.factory.Lux + global.city.factory.Alloy + global.city.factory.Polymer + global.city.factory.Nano < max){
-                    global.city.factory[item]++;
+                let keyMult = keyMultiplier();
+                for (var i=0; i<keyMult; i++){
+                    if (global.city.factory.Lux + global.city.factory.Alloy + global.city.factory.Polymer + global.city.factory.Nano < max){
+                        global.city.factory[item]++;
+                    }
+                    else {
+                        break;
+                    }
                 }
             },
             buildLabel: function(type){
                 let assembly = global.tech['factory'] ? true : false;
                 switch(type){
                     case 'Lux':
-                        let demand = +(global.resource[races[global.race.species].name].amount * (assembly ? f_rate.Lux.demand[global.tech['factory']] : f_rate.Lux.demand[0])).toFixed(2);
+                        let demand = +(global.resource[global.race.species].amount * (assembly ? f_rate.Lux.demand[global.tech['factory']] : f_rate.Lux.demand[0])).toFixed(2);
                         let fur = assembly ? f_rate.Lux.fur[global.tech['factory']] : f_rate.Lux.fur[0];
                         return loc('modal_factory_lux_label',[fur,loc('resource_Furs_name'),demand]);
                     case 'Alloy':
@@ -8891,17 +9021,17 @@ export function evoProgress(){
 export function basicHousingLabel(){
     switch (global.race.species){
         case 'orc':
-            return loc('city_basic_housing_title2');
+            return loc('city_basic_housing_orc_title');
         case 'wolven':
-            return loc('city_basic_housing_title3');
+            return loc('city_basic_housing_wolven_title');
         case 'entish':
-            return loc('city_basic_housing_title4');
+            return loc('city_basic_housing_entish_title');
         case 'arraak':
-            return loc('city_basic_housing_title5');
+            return loc('city_basic_housing_nest_title');
         case 'pterodacti':
-            return loc('city_basic_housing_title5');
+            return loc('city_basic_housing_nest_title');
         case 'sporgar':
-            return loc('city_basic_housing_title6');
+            return loc('city_basic_housing_sporgar_title');
         case 'dracnid':
             return loc('city_basic_housing_title7');
         case 'balorg':
@@ -8909,7 +9039,7 @@ export function basicHousingLabel(){
         case 'imp':
             return loc('city_basic_housing_title8');
         default:
-            return loc('city_basic_housing_title1');
+            return loc('city_basic_housing_title');
     }
 }
 
@@ -9178,7 +9308,7 @@ function bioseed(){
     let biome = global.city.biome;
     let plasmid = global.race.Plasmid.count;
     let phage = global.race.Phage.count;
-    let pop = global['resource'][races[global.race.species].name].amount + global.civic.garrison.workers;
+    let pop = global['resource'][global.race.species].amount + global.civic.garrison.workers;
     let new_plasmid = Math.round(pop / 3);
     let k_base = global.stats.know;
     let k_inc = 50000;

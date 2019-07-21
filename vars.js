@@ -193,7 +193,18 @@ if (convertVersion(global['version']) < 4029 && global.race['mutation'] && globa
     }
 }
 
-global['version'] = '0.4.29';
+if (convertVersion(global['version']) < 4031){
+    if (global.tech && global.tech['gambling'] && global.tech['gambling'] === 2){
+        global.tech['gambling'] = 3;
+        global.city.casino['on'] = 0;
+    }
+    if (global.tech['hunting'] && global.tech['hunting'] >= 3){
+        global.tech['wind_plant'] = 1;
+        global.tech['hunting'] = 2;
+    }
+}
+
+global['version'] = '0.4.31';
 
 if (global.civic['cement_worker'] && global.civic.cement_worker.impact === 0.25){
     global.civic.cement_worker.impact = 0.4;
@@ -492,21 +503,25 @@ export function modRes(res,val){
 export var shiftIsPressed = false;
 export var cntrlIsPressed = false;
 export var altIsPressed = false;
+export var demoIsPressed = false;
 $(document).keydown(function(e){
     cntrlIsPressed = e.ctrlKey ? true : false;
     shiftIsPressed = e.shiftKey ? true : false;
     altIsPressed = e.altKey ? true : false;
+    demoIsPressed = e.keyCode === 68 ? true : false;
 });
 $(document).keyup(function(e){
     cntrlIsPressed = e.ctrlKey ? true : false;
     shiftIsPressed = e.shiftKey ? true : false;
     altIsPressed = e.altKey ? true : false;
+    demoIsPressed = e.keyCode === 68  ? false : true;
 });
 
 window.onmousemove = function(e){
     cntrlIsPressed = e.ctrlKey ? true : false;
     shiftIsPressed = e.shiftKey ? true : false;
     altIsPressed = e.altKey ? true : false;
+    demoIsPressed = e.keyCode === 68  ? true : false;
 }
 
 export var keyMultiplierNumber = 1;

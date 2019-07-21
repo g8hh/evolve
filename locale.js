@@ -42,7 +42,7 @@ function getString(locale) {
     if (locale != "en-US"){
         let localeString;
         try {
-            $.getJSON(`strings/strings.${locale}.json`, (data) => { localeString = data; })
+            $.getJSON(`strings/strings-chs.json`, (data) => { localeString = data; })
         }
         catch (e) {
             if (locale != 'en-US') {
@@ -56,7 +56,7 @@ function getString(locale) {
         }
 
         if(defaultString.length != defSize){
-            console.error(`string.${locale}.json has extra keys.`);
+            console.error(`string-chs.json has extra keys.`);
         }
     }
 

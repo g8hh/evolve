@@ -1,3 +1,12 @@
+#### 0.4.32 - 7/21/2019 ####
+Balorg slaver trait added<br>
+Ziggurat bonus now applies to the oil extractor<br>
+Geology Oil rich/poor no longer applies to oil extractor<br>
+Added resource alternate row coloring<br>
+Added an affordability hint for screen readers<br>
+Fixed some bugs with awarding a random minor trait from fanatiscm<br>
+Dimensional Compression now charges the correct cost<br>
+
 #### 0.4.31 - 7/20/2019 ####
 Extreme Dazzle casino upgrade<br>
 Metallurgist minor trait, buffs alloy<br>
@@ -8,7 +17,6 @@ Key multipliers now work inside the factory modal<br>
 Imps and Balorg now have access to advanced crafting tech<br>
 Imps and Balorg now have access to windmills<br>
 Balorg can now set their taxes below 10% and above 30%<br>
-Experimental demolish mode, hold "D" and click to destroy structures. Use at your own risk.<br>
 
 #### 0.4.30 - 7/19/2019 ####
 Portuguese translation by Rodrigodd<br>

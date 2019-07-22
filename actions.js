@@ -1802,6 +1802,29 @@ export const actions = {
                 return false;
             }
         },
+        slave_pen: {
+            id: 'city-slave_pen',
+            title: loc('city_slave_pen'),
+            desc: loc('city_slave_pen'),
+            reqs: { slaves: 1 },
+            cost: { 
+                Money(){ return costMultiplier('slave_pen', 250, 1.32); },
+                Lumber(){ return costMultiplier('slave_pen', 100, 1.36); },
+                Stone(){ return costMultiplier('slave_pen', 75, 1.36); },
+                Copper(){ return costMultiplier('slave_pen', 10, 1.36); }
+            },
+            effect(){
+                let max = global.city.slave_pen.count * 5;
+                return `<div>${loc('city_slave_pen_effect',[5])}</div><div>${loc('city_slave_pen_effect2',[global.city.slave_pen.slaves,max])}</div>`; 
+            },
+            action(){
+                if (payCosts(actions.city.slave_pen.cost)){
+                    global.city['slave_pen'].count++;
+                    return true;
+                }
+                return false;
+            }
+        },
         farm: {
             id: 'city-farm',
             title: loc('city_farm'),
@@ -2601,6 +2624,9 @@ export const actions = {
                 }
                 else if (global.tech['oil'] >= 5){
                     oil *= global.tech['oil'] >= 6 ? 1.75 : 1.25;
+                }
+                if (global.city.geology['Oil']){
+                    oil *= global.city.geology['Oil'] + 1;
                 }
                 oil = +oil.toFixed(2);
                 let oc = spatialReasoning(500);
@@ -6255,6 +6281,25 @@ export const actions = {
                 return false;
             }
         },
+        slave_pens: {
+            id: 'tech-slave_pens',
+            title: loc('tech_slave_pens'),
+            desc: loc('tech_slave_pens'),
+            reqs: { military: 1, mining: 1 },
+            grant: ['slaves',1],
+            trait: ['slaver'],
+            cost: {
+                Knowledge(){ return 150; }
+            },
+            effect: loc('tech_slave_pens_effect'),
+            action(){
+                if (payCosts(actions.tech.slave_pens.cost)){
+                    global.city['slave_pen'] = { count: 0, slaves: 0 };
+                    return true;
+                }
+                return false;
+            }
+        },
         garrison: {
             id: 'tech-garrison',
             title: loc('tech_garrison'),
@@ -6838,7 +6883,7 @@ export const actions = {
             },
             effect: loc('tech_dimensional_compression_effect'),
             action(){
-                if (payCosts(actions.tech.higgs_boson.cost)){
+                if (payCosts(actions.tech.dimensional_compression.cost)){
                     return true;
                 }
                 return false;
@@ -6878,7 +6923,6 @@ export const actions = {
                     global.tech['fanaticism'] = 1;
                     if (global.race.gods === global.race.species){
                         unlockAchieve(`second_evolution`);
-                        return true;
                     }
                     fanaticism(global.race.gods);
                     return true;
@@ -8354,7 +8398,13 @@ export function setPlanet(hell){
 function srDesc(c_action,old){
     let desc = typeof c_action.desc === 'string' ? c_action.desc : c_action.desc();
     desc = desc + '. ';
-    if (c_action.cost && !old){ 
+    if (c_action.cost && !old){
+        if (checkAffordable(c_action)){
+            desc = desc + loc('affordable') + '. ';
+        }
+        else {
+            desc = desc + loc('not_affordable') + '. ';
+        }
         desc = desc + 'Costs: ';
         var costs = adjustCosts(c_action.cost);
         Object.keys(costs).forEach(function (res) {
@@ -9291,6 +9341,7 @@ function fanaticism(god){
 function fanaticTrait(trait){
     if (global.race[trait]){
         randomMinorTrait();
+        arpa('Genetics')
     }
     else {
         global.race[trait] = 1;

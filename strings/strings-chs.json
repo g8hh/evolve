@@ -1735,7 +1735,7 @@
   "space_moon_helium_mine_effect": "+%0 氦-3产量",
   "space_moon_observatory_title": "观测站",
   "space_moon_observatory_desc": "坐落于月球的观测站",
-  "space_moon_observatory_effect2": "+5% 宇宙知识上限",
+  "space_moon_observatory_effect2": "+5% 大学知识上限",
   "space_red_info_desc": "红色行星%0围绕太阳运行，距离约1.4AU。",
   "space_red_mission_effect": "启动一个调查红色行星%0的任务",
   "space_red_mission_action": "%0并不能提供多少稀有资源，但你是科学家，你认为它是世界外殖民地的最佳前景。",

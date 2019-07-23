@@ -68,6 +68,7 @@
   "power_available": "可用",
   "affordable": "买得起",
   "not_affordable": "买不起",
+  "insufficient": "Insufficient",
   "job_farmer": "农民",
   "job_farmer_desc": "农民创造食物来养活你们的人口。每个农民每秒生产%0的粮食。",
   "job_lumberjack": "伐木工人",

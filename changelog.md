@@ -1,3 +1,9 @@
+#### 0.4.33 - 7/23/2019 ####
+Fixes for Ent Fanaticism not releasing some resources<br>
+Aria improvements for the smelter modal<br>
+Improved screen reader resource affordability description of buildings/research<br>
+Resource highlighting on structures<br>
+
 #### 0.4.32 - 7/21/2019 ####
 Balorg slaver trait added<br>
 Ziggurat bonus now applies to the oil extractor<br>

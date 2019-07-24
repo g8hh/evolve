@@ -2,7 +2,7 @@
 var cnItems = {
     _OTHER_: [],
     // MQ
-    'Electricity is a major advancement for your people, the future possibilities are endless.': '电力是你们人民取得的的主要进步，未来的有无限可能',
+    'Electricity is a major advancement for your people, the future possibilities are endless.': '电力是你们人民取得的的主要进步，未来有无限可能',
     'Polymer is now available for manufacture': '聚合物现在可用于制造',
     'Nano Tubes are now available for manufacture': '纳米管现在可用于制造',
     'Your scientists have unlocked the secrets of the atom, the atomic age has begun.': '你的科学家揭开了原子的秘密，原子时代已经开始。',

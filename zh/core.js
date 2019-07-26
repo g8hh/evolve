@@ -6,6 +6,7 @@ var cnItems = {
     'Polymer is now available for manufacture': '聚合物现在可用于制造',
     'Nano Tubes are now available for manufacture': '纳米管现在可用于制造',
     'Your scientists have unlocked the secrets of the atom, the atomic age has begun.': '你的科学家揭开了原子的秘密，原子时代已经开始。',
+    'Outer space treaty be damned.': '去TMD《外太空协定》',
     // 种族
     'Human': '人类',
     'Elf': '精灵',
@@ -292,8 +293,8 @@ var cnItems = {
     'Roxxon': '信号开关',
     'Soldiers': '士兵',
     'Employs miners': '雇佣矿工',
-    'To Empty': '',
-    'To Full': '已满',
+    'To Empty': '耗尽',
+    'To Full': '充满',
     'Crates': '板条箱',
     'Flintlock Rifles': '燧发步枪',
     'Breeder Reactor': '增殖反应堆',

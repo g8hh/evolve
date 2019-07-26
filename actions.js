@@ -6913,7 +6913,6 @@ export const actions = {
             title: loc('tech_fanaticism'),
             desc: loc('tech_fanaticism'),
             reqs: { theology: 2 },
-            not_trait: ['herbivore'],
             grant: ['theology',3],
             cost: {
                 Knowledge(){ return 2500; }
@@ -7884,7 +7883,7 @@ export const actions = {
                     k_inc *= 1.015;
                 }
                 plasmid = challenge_multiplier(plasmid);
-                let phage = Math.floor(Math.log2(plasmid) * Math.E);
+                let phage = challenge_multiplier(Math.floor(Math.log2(plasmid) * Math.E));
                 return `<div>${loc('star_dock_genesis_effect1')}</div><div class="has-text-special">${loc('star_dock_genesis_effect2',[plasmid])}</div><div class="has-text-special">${loc('star_dock_genesis_effect3',[phage])}</div>`;
             },
             action(){
@@ -9235,31 +9234,37 @@ function fanaticism(god){
             fanaticTrait('brute');
             break;
         case 'cath':
-            fanaticTrait('carnivore');
-            if (global.tech['farm'] >= 1){
-                global.tech['hunting'] = 2;
+            if (global.race['herbivore']){
+                randomMinorTrait();
+                arpa('Genetics');
             }
-            else if (global.tech['agriculture'] >= 3){
-                global.tech['hunting'] = 1;
-            }
-            if (global.city['farm']){
-                global.city['lodge'] = { count: global.city.farm.count };
-                delete global.city['farm'];
-            }
-            if (global.city['silo']){
-                global.city['smokehouse'] = { count: global.city.silo.count };
-                delete global.city['silo'];
-            }
-            if (global.city['mill']){
-                delete global.city['mill'];
-            }
-            delete global.tech['agriculture'];
-            delete global.tech['farm'];
-            global.civic.farmer.workers = 0;
-            global.civic.farmer.max = 0;
-            global.civic.farmer.display = false;
-            if (global.race.species === 'entish'){
-                unlockAchieve(`madagascar_tree`);
+            else {
+                fanaticTrait('carnivore');
+                if (global.tech['farm'] >= 1){
+                    global.tech['hunting'] = 2;
+                }
+                else if (global.tech['agriculture'] >= 3){
+                    global.tech['hunting'] = 1;
+                }
+                if (global.city['farm']){
+                    global.city['lodge'] = { count: global.city.farm.count };
+                    delete global.city['farm'];
+                }
+                if (global.city['silo']){
+                    global.city['smokehouse'] = { count: global.city.silo.count };
+                    delete global.city['silo'];
+                }
+                if (global.city['mill']){
+                    delete global.city['mill'];
+                }
+                delete global.tech['agriculture'];
+                delete global.tech['farm'];
+                global.civic.farmer.workers = 0;
+                global.civic.farmer.max = 0;
+                global.civic.farmer.display = false;
+                if (global.race.species === 'entish'){
+                    unlockAchieve(`madagascar_tree`);
+                }
             }
             break;
         case 'wolven':
@@ -9368,7 +9373,7 @@ function fanaticism(god){
 function fanaticTrait(trait){
     if (global.race[trait]){
         randomMinorTrait();
-        arpa('Genetics')
+        arpa('Genetics');
     }
     else {
         global.race[trait] = 1;
@@ -9400,7 +9405,7 @@ function bioseed(){
     }
     new_plasmid = challenge_multiplier(new_plasmid);
     plasmid += new_plasmid;
-    let new_phage = Math.floor(Math.log2(new_plasmid) * Math.E);
+    let new_phage = challenge_multiplier(Math.floor(Math.log2(new_plasmid) * Math.E));
     phage += new_phage;
     global.stats.reset++;
     global.stats.tdays += global.stats.days;

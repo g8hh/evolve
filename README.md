@@ -341,7 +341,7 @@ What will you evolve into?
   <td>50</td><td>乐观</td><td>（Optimistic）</td><td>你的种族总是试图寻找最好的结果。</td><td>轻微减轻压力</td>
 </tr>
 </table>   
-
+<img src='https://gitee.com/likexia/Evolve'/>
 <table id='table2'>
 <th colspan=11>物种分支</th>
 <tr>

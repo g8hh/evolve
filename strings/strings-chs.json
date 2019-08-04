@@ -1840,7 +1840,7 @@
   "space_gas_moon_drone_desc": "中微子采矿无人机",
   "space_gas_moon_drone_effect1": "矿山前哨产量提高6%",
   "space_gas_moon_oil_extractor_title": "石油分离器",
-  "space_gas_moon_oil_extractor_effect1": "+%0 石油/s, -$1kW.",
+  "space_gas_moon_oil_extractor_effect1": "+%0 石油/s, -%1kW.",
   "space_belt_info_name": "小行星带",
   "space_belt_info_desc": "小行星带位于%0和%1之间，是一个潜在的丰富的资源来源。",
   "space_belt_mission_title": "小行星带任务",

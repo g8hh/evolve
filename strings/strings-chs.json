@@ -1835,7 +1835,7 @@
   "space_gas_moon_outpost_title": "采矿前哨",
   "space_gas_moon_outpost_desc": "中子采矿前哨",
   "space_gas_moon_outpost_effect1": "+%0 中子/秒",
-  "space_gas_moon_outpost_effect3": "-%0 石油/s, -%0kW",
+  "space_gas_moon_outpost_effect3": "-%0 石油/s, -%1kW",
   "space_gas_moon_drone_title": "采矿无人机",
   "space_gas_moon_drone_desc": "中微子采矿无人机",
   "space_gas_moon_drone_effect1": "矿山前哨产量提高6%",

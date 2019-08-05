@@ -57,9 +57,10 @@ var cnItems = {
     'Iridium Ship': '铱采矿船',
     'Gas Collector': '收集器',
     'Geothermal': '地热',
-    'Spaceport': '宇航中心',
+    'Spaceport': '太空港',
     'Space Miners': '太空矿工',
     'Biodome': '生物穹顶',
+    'Extractor': '提取器',
     // 未分类：
     'Settings': '设置',
     'Evolving': '进化中',

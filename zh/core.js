@@ -360,16 +360,9 @@ var cnItems = {
     'Matter Compression': '物质压缩',
     'Higgs Boson': '希格斯玻色子',
     'Indoctrination': '教化',
-    'Missionary': '传教士',
-    'Zealotry': '狂热',
-    'Astrophysics': '天体物理学',
-    'Dyson Swarm': '戴森群',
-    'Dyson Sphere': '戴森球',
     'Space Manufacturing': '太空制造业',
     'Colonization': '殖民',
     'Star Charts': '星图',
-    'Onyx Mining': '玛瑙开采',
-    'Orbit Depot': '轨道补给站',
     'Bio Lab': '生物实验室',
     'Farmers': '农民',
     'Farms': '农场',
@@ -377,8 +370,6 @@ var cnItems = {
     'DNA': 'DNA',
     'kW': 'kW',
     //    'RNA': '核糖核酸',
-    'Demagorddon': 'Demagorddon',
-
 }
 
 //需处理的前缀

@@ -1,3 +1,9 @@
+#### 0.4.39 - 8/6/2019 ####
+Genetic Disaster Challenge<br>
+
+#### 0.4.38 - 8/5/2019 ####
+Special action icon is now peroperly flagged as a button<br>
+
 #### 0.4.37 - 7/31/2019 ####
 ARIA Improvements for Factory and A.R.P.A.<br>
 

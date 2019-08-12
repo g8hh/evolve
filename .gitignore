@@ -2,3 +2,4 @@
 *#
 *.py
 evolveidle.js
+.vscode/settings.json

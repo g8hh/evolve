@@ -7,6 +7,12 @@ var cnItems = {
     'Nano Tubes are now available for manufacture': '现在可以制造纳米管了。',
     'Your scientists have unlocked the secrets of the atom, the atomic age has begun.': '你的科学家揭开了原子的秘密，原子时代已经开始。',
     'Outer space treaty be damned.': '去TMD《外太空协定》',
+    // 资源
+    'Steel': '钢',
+    'Iron': '铁',
+    'Bones': '骨头',
+    'Souls': '灵魂',
+    'Flesh': '肉',
     // 种族
     'Human': '人类',
     'Elf': '精灵',
@@ -34,6 +40,9 @@ var cnItems = {
     'Scorpid': '蝎子',
     'Antid': '蚂蚁',
     // 左侧弹出框
+    'Slaves': '奴隶',
+    'Craftsman': '工匠',
+    'Soul Well': '灵魂井',
     'Mastery': '精通',
     'Satellite': '卫星',
     'Iridium Mine': '铱矿',
@@ -90,8 +99,6 @@ var cnItems = {
     'Theme': '主题',
     'Tax Rates': '税率',
     'Taxes': '税收',
-    'Steel': '钢',
-    'Iron': '铁',
     'Shed': '窝棚',
     'Sawmill': '锯木厂',
     'Village': '村庄',

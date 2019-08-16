@@ -13,6 +13,7 @@ var cnItems = {
     'Bones': '骨头',
     'Souls': '灵魂',
     'Flesh': '肉',
+    'Boneweave': '骸骨织物',
     // 种族
     'Human': '人类',
     'Elf': '精灵',
@@ -40,6 +41,7 @@ var cnItems = {
     'Scorpid': '蝎子',
     'Antid': '蚂蚁',
     // 左侧弹出框
+    'Hunters': '猎人',
     'Slaves': '奴隶',
     'Craftsman': '工匠',
     'Soul Well': '灵魂井',

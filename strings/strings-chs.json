@@ -374,7 +374,7 @@
   "city_library_effect": "+%0% 知识产量",
   "city_wardenclyffe": "沃登克里弗塔",
   "city_babel": "通天塔",
-  "city_babel_title": "通天巴别塔",
+  "city_babel_title": "通天塔",
   "city_wardenclyffe_desc": "先进的科学设备",
   "city_wardenclyffe_effect1": "+1 科学家上限",
   "city_wardenclyffe_effect2": "通电时会消耗 %0kW，但它的知识上限会提升到 %1",

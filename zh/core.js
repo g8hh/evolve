@@ -41,6 +41,7 @@ var cnItems = {
     'Scorpid': '蝎子',
     'Antid': '蚂蚁',
     // 左侧弹出框
+    'Orbit Depot': '轨道补给站',
     'Hunters': '猎人',
     'Slaves': '奴隶',
     'Craftsman': '工匠',

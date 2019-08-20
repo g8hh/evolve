@@ -1658,7 +1658,7 @@
   "civics_garrison_disadvantage": "%0% 劣势",
   "civics_garrison_army_label": "投入军事行动的士兵人数。",
   "civics_garrison_soldier_desc_herb": "空闲的士兵们把时间花在狩猎上，他们现在每次旅行都带着%0的毛皮。",
-  "civics_garrison_soldier_desc": "空闲的士兵花时间打猎，他们目前每次旅行带来%0的%0的肉食和%1毛皮。",
+  "civics_garrison_soldier_desc": "空闲的士兵花时间打猎，他们目前每次旅行带来%0的肉食和%1毛皮。",
   "civics_garrison_evil_soldier_desc": "空闲的士兵们把时间花在捕获凡人上，他们现在每秒带来%0个灵魂、%1个肉体和%2个骨头。",
   "civics_garrison_wounded_desc": "受伤的士兵在战斗中效果较差，更容易死亡。 受伤的士兵会随着时间的推移而愈合。",
   "civics_garrison_defensive_rate": "防守评级",

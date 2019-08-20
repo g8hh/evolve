@@ -64,10 +64,13 @@ a {
 .progress:not(:last-child), 
 .subtitle:not(:last-child), 
 .table-container:not(:last-child), 
-.table:not(:last-child), 
-.tabs:not(:last-child), 
+.table:not(:last-child),
 .title:not(:last-child) {
     margin-bottom: 1rem;
+}
+
+.tabs:not(:last-child){
+    margin-bottom: .5rem;
 }
 
 .modal .animation-content {
@@ -77,20 +80,29 @@ a {
 .add {
     display: inline-block;
     margin-right: .25rem;
-    padding: 0 .375rem .25rem;
+    padding: 0 .375rem;
     border-radius: 0 .375rem .375rem 0;
-    line-height: .75rem;
+    line-height: 1rem;
     cursor: pointer;
+    span:first-child {
+        position: relative;
+        bottom: .0625rem;
+    }
 }
 .sub {
     outline: none;
     display: inline-block;
     margin-left: .25rem;
-    padding: 0 .375rem .25rem;
+    padding: 0 .375rem;
     border-radius: .375rem 0 0 .375rem;
-    line-height: .75rem;
+    line-height: 1rem;
     cursor: pointer;
+    span:first-child {
+        position: relative;
+        bottom: .0625rem;
+    }
 }
+
 .current {
     width: 5rem;
     text-align: center;
@@ -322,6 +334,19 @@ a {
                 left: 0;
                 border-radius: 0 .4375rem 0 .25rem;
             }
+
+            div.repair {
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                width: 100%;
+                height: .25rem;
+
+                .progress {
+                    height: .25rem;
+                    background: transparent;
+                }
+            }
         }
     }
     
@@ -377,6 +402,48 @@ a {
                 display: inline-block;
                 line-height: 1.25rem;
             }
+        }
+    }
+
+    .fort {
+        width: 100%;
+        min-height: 1rem;
+        margin: .25rem 0;
+        padding: .25rem 0;
+        border-top: 1px solid;
+        border-bottom: 1px solid;
+
+        .current {
+            position: relative;
+            bottom: .0625rem;
+        }
+
+        > div {
+            margin-top: .25rem;
+        }
+        > div:first-child {
+            margin-top: 0;
+        }
+
+        .defense {
+            margin-right: .5rem;
+        }
+
+        .training {
+            span {
+                display: inline-block;
+                width: 10%;
+            }
+            progress {
+                display: inline-block;
+                width: 80%;
+            };
+        }
+
+        .patrol {
+            position: relative;
+            top: 4px;
+            left: 4px;
         }
     }
 
@@ -544,6 +611,19 @@ a {
     }
 }
 
+.storage-header {
+    button {
+        font-size: .875rem;
+    }
+    .crate {
+        margin-left: 13rem;
+    }
+    .container {
+        margin-left: 3rem;
+    }
+    margin-bottom: .25rem;
+}
+
 .market-item {
     margin: .125rem 0 0 1rem;
     display: flex;
@@ -566,7 +646,7 @@ a {
     }
     .route {
         position: relative;
-        top: 1px;
+        bottom: 1px;
     }
     
     .order {
@@ -582,7 +662,29 @@ a {
         .add,
         .sub {
             position: relative;
-            bottom: 0.0625rem;
+            top: .0625rem;
+            padding: 0 .375rem;
+            line-height: 1rem;
+        }
+
+        .mass {
+            margin-left: 1rem;
+        }
+    }
+
+    .crtTotal {
+        margin-left: 11.5rem;
+    }
+    .cntTotal {
+        margin-left: 2.0625rem;
+    }
+
+    .crtTotal,
+    .cntTotal {
+        span:nth-child(2) {
+            display: inline-block;
+            width: 6rem;
+            text-align: center;
         }
     }
 
@@ -616,35 +718,43 @@ body .modal > div.popper {
     border-radius: .25rem;
     line-height: 1.3125rem;
 
-    .resBD {
+    div.aTable {
+        columns: 2;
         span {
-            display: inline-block;
-        }
-        :first-child {
-            width: 6rem;
-            text-align: left;
-        }
-        :nth-child(2) {
-            width: 4rem;
-            text-align: center;
+            display: flex;
         }
     }
-    .rate {
-        border-top: 1px solid;
-        span {
-            display: inline-block;
-        }
+
+    &.breakdown {
+        max-width: initial;
+    }
+
+    .modal_bd {
+        display: table;
+        width: 100%;
         :first-child {
-            width: 4rem;
+            display: table-cell;
             text-align: left;
-            margin-left: .5rem;
+            padding-right: .5rem;
         }
         :nth-child(2) {
-            width: 6rem;
+            display: table-cell;
             text-align: right;
-            margin-right: .5rem;
+        }
+        &.sum {
+            border-top: .0625rem solid;
         }
     }
+
+    .resBreakdown .parent {
+        display: flex;
+        div.col {
+            padding-left: .5rem;
+            margin-left: .5rem;
+            border-left: 1px solid;
+        }
+    }
+
     > .flair {
         margin-top: .5rem;
         font-size: .75rem;
@@ -654,6 +764,11 @@ body .modal > div.popper {
     &.flair {
         padding-bottom: .25rem;
     }
+}
+
+.main > div.popper.wide,
+body .modal > div.popper.wide {
+    max-width: initial;
 }
 
 .arpa,
@@ -699,7 +814,7 @@ body .modal > div.popper {
     }
     .current {
         position: relative;
-        top: .0625rem;
+        bottom: .0625rem;
     }
     .smelting {
         margin: .5rem 0 .75rem;
@@ -869,6 +984,17 @@ body .modal > div.popper {
     .trait.major {
         margin-top: .5rem;
     }
+
+    .traitRow {
+        display: table;
+        > span {
+            display: table-cell;
+            vertical-align: middle;
+        }
+        .basic-button {
+            height: 100%;
+        }
+    }
 }
 
 body.nuke {
@@ -914,6 +1040,89 @@ div.nuke {
     }
 }
 
+div.nuke {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    z-index: 10;
+    top: 0;
+    left: 0;
+    transition: all 2s;
+    opacity: 0; 
+
+    &.burn {
+        opacity: 1;
+        background: #000;
+    }
+    &.burn::before {
+        content: "";
+        display: block;
+        width: 10px;
+        height: 10px;
+        position: absolute;
+        top: 60%;
+        left: 30%;
+        background: #000;
+        border-radius: 50%;
+    }
+    &.burn.b::before {
+        transition: width 3s, height 3s, top 3s, left 3s;
+        background: #000;
+        width: 180%;
+        height: 180%;
+        top: -30%;
+        left: -30%;
+        box-shadow: 0px -2px 4px #fff, 0px -2px 10px #FF3, 0px -10px 20px #F90, 0px -20px 40px #C33,
+                    inset 0px -20px 40px #fff, inset 0px -20px 100px #FF3, inset 0px -40px 200px #F90, inset 0px -80px 400px #C33;
+    }
+}
+
+div.bigbang {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    z-index: 10;
+    top: 0;
+    left: 0;
+    transition: all 1s;
+    opacity: 0; 
+
+    &.burn {
+        opacity: 1;
+    }
+    &.burn::before {
+        content: "";
+        display: block;
+        width: 10px;
+        height: 10px;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        background: #fff;
+        border-radius: 50%;
+    }
+    &.burn.b::before {
+        transition: width 2s, height 2s, top 2s, left 2s;
+        background: #fff;
+        width: 180%;
+        height: 180%;
+        top: -30%;
+        left: -30%;
+        box-shadow: 0px -2px 4px #fff, 0px -2px 10px #FF3, 0px -10px 20px #F90, 0px -20px 40px #C33,
+                    inset 0px -20px 40px #fff, inset 0px -20px 100px #FF3, inset 0px -40px 200px #F90, inset 0px -80px 400px #C33;
+    }
+    &.burn.c::before {
+        transition: width 2s, height 2s, top 2s, left 2s, background-color 2s;
+        background: #000;
+        width: 180%;
+        height: 180%;
+        top: -30%;
+        left: -30%;
+        box-shadow: 0px -2px 4px #000, 0px -2px 10px #000, 0px -10px 20px #000, 0px -20px 40px #000,
+                    inset 0px -20px 40px #000, inset 0px -20px 100px #000, inset 0px -40px 200px #000, inset 0px -80px 400px #000;
+    }
+}
+
 .darkTheme,
 html.dark {
     background-color: #1f2424;
@@ -923,10 +1132,13 @@ html.dark {
         color: #fff;
     }
     .has-text-special {
-        color: #91006c;
+        color: #91006c !important;
     }
     .has-text-advanced {
-        color: #00ac95;
+        color: #00ac95 !important;
+    }
+    .has-text-alert {
+        color: #af5d00 !important;
     }
     .popper {
         .has-text-success {
@@ -1109,6 +1321,14 @@ html.dark {
         }
     }
 
+    .fort {
+        .patrol {
+            .check {
+                background-color: #000 !important;
+            }
+        }
+    }
+
     .main > div.popper,
     body .modal > div.popper {
         > div:nth-child(2),
@@ -1188,14 +1408,17 @@ html.light {
     .has-text-warning {
         color: #7a6304  !important;
     }
+    .has-text-alert {
+        color: #743e00 !important;
+    }
     .has-text-danger {
         color: #470303  !important;
     }
     .has-text-special {
-        color: #91006c;
+        color: #91006c !important;
     }
     .has-text-advanced {
-        color: #0098a3;
+        color: #0098a3 !important;
     }
     .popper {
         .has-text-success {

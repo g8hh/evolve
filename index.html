@@ -21,12 +21,13 @@
     <script src="civics.js" type="module"></script>
     <script src="actions.js" type="module"></script>
     <script src="space.js" type="module"></script>
+    <script src="portal.js" type="module"></script>
     <script src="arpa.js" type="module"></script>
     <script src="events.js" type="module"></script>
     <script src="main.js" type="module"></script>
 </head>
 <body>
-   <script src="zh/core.js"></script>
+      <script src="zh/core.js"></script>
     <div id="topBar" class="topBar">
         <h2 class="is-sr-only">Top Bar</h2>
         <span class="planet">{{ race.species | planet }}</span>
@@ -37,7 +38,6 @@
             <b-tooltip :label="weather()" :aria-label="weather()" position="is-bottom" size="is-small" multilined animated><i id="weather" class="weather wi"></i></b-tooltip>
             <b-tooltip :label="temp()" :aria-label="temp()" position="is-bottom" size="is-small" multilined animated><i id="temp" class="temp wi"></i></b-tooltip>
         </span>
-        
         <span class="version"><a href="https://github.com/pmotschmann/Evolve/blob/master/changelog.md" target="_blank"></a></span>
     </div>
     <div id="main" class="main">
@@ -47,7 +47,7 @@
                     <h2 class="is-sr-only">Race Info</h2>
                     <div class="column is-one-quarter"><b-tooltip :label="desc()" position="is-right" size="is-large" multilined animated>{{ name() }}</b-tooltip></div>
                     <div class="column is-half morale-contain"><span id="morale" v-show="city.morale.current" class="morale">Morale <span class="has-text-warning">{{ city.morale.current }}%</span></div>
-                    <div class="column is-one-quarter power"><span id="powerStatus" class="has-text-warning" v-show="city.powered"><span>kW</span> <span id="powerMeter" class="meter">{{ city.power }}</span></span></div>
+                    <div class="column is-one-quarter power"><span id="powerStatus" class="has-text-warning" v-show="city.powered"><span>kW</span> <span id="powerMeter" class="meter">{{ city.power | approx }}</span></span></div>
                 </div>
                 <div id="sideQueue">
                     <h2 class="is-sr-only">Message Queue</h2>
@@ -56,22 +56,92 @@
                 <div id="resources" class="resources"><h2 class="is-sr-only">Resources</h2></div>
             </div>
             <div id="mainColumn" class="column is-three-quarters">
-                <div id="tabs" class="content">
+                <div class="content">
                     <h2 class="is-sr-only">Tab Navigation</h2>
                     <b-tabs v-model="civTabs" :animated="animated">
-                        <b-tab-item id="evolution" :visible="showEvolve" label="Evolve"></b-tab-item>
-                        <b-tab-item id="city" :visible="showCity" label="Village"><h2 class="is-sr-only">City</h2></b-tab-item>
-                        <b-tab-item id="space" :visible="showSpace" label="Space"></b-tab-item>
-                        <b-tab-item id="civic" :visible="showCivic" label="Civics" class="columns"></b-tab-item>
-                        <b-tab-item id="industry" :visible="showIndustry" label="Industry" class="columns"></b-tab-item>
-                        <b-tab-item id="research" :visible="showResearch" label="Research">
-                            <b-tabs class="resTabs" v-model="resTabs" :animated="animated">
-                                <b-tab-item id="tech" label="New"><h2 class="is-sr-only">New Research</h2></b-tab-item>
-                                <b-tab-item id="oldTech" label="Completed"><h2 class="is-sr-only">Completed Research</h2></b-tab-item>
+                        <b-tab-item id="evolution" :visible="showEvolve">
+                            <template slot="header">
+                                {{ 'tab_evolve' | label }}
+                            </template>
+                        </b-tab-item>
+                        <b-tab-item :visible="showCity">
+                            <template slot="header">
+                                {{ 'tab_civil' | label }}
+                            </template>
+                            <b-tabs class="resTabs" v-model="spaceTabs" :animated="animated">
+                                <b-tab-item id="city" :visible="showCity">
+                                    <template slot="header">
+                                        <h2 class="is-sr-only">{{ 'city' | label }}</h2>
+                                        <span aria-hidden="true">{{ 'city' | label }}</span>
+                                    </template>
+                                </b-tab-item>
+                                <b-tab-item id="space" :visible="showSpace">
+                                    <template slot="header">
+                                        <h2 class="is-sr-only">{{ 'local_space' | label }}</h2>
+                                        <span aria-hidden="true">{{ 'local_space' | label }}</span>
+                                    </template>
+                                </b-tab-item>
+                                <b-tab-item id="interstellar" :visible="showDeep">
+                                    <template slot="header">
+                                        <h2 class="is-sr-only">{{ 'tab_interstellar' | label }}</h2>
+                                        <span aria-hidden="true">{{ 'tab_interstellar' | label }}</span>
+                                    </template>
+                                </b-tab-item>
+                                <b-tab-item id="portal" :visible="showPortal">
+                                    <template slot="header">
+                                        <h2 class="is-sr-only">{{ 'tab_portal' | label }}</h2>
+                                        <span aria-hidden="true">{{ 'tab_portal' | label }}</span>
+                                    </template>
+                                </b-tab-item>
                             </b-tabs>
                         </b-tab-item>
-                        <b-tab-item id="market" :visible="showMarket" label="Market"></b-tab-item>
-                        <b-tab-item id="genetics" :visible="showGenetics" label="A.R.P.A.">
+                        <b-tab-item id="civic" :visible="showCivic" class="columns">
+                            <template slot="header">
+                                {{ 'tab_civics' | label }}
+                            </template>
+                        </b-tab-item>
+                        <b-tab-item :visible="showResearch">
+                            <template slot="header">
+                                {{ 'tab_research' | label }}
+                            </template>
+                            <b-tabs class="resTabs" v-model="resTabs" :animated="animated">
+                                <b-tab-item id="tech">
+                                    <template slot="header">
+                                        <h2 class="is-sr-only">{{ 'new_sr' | label }}</h2>
+                                        <span aria-hidden="true">{{ 'new' | label }}</span>
+                                    </template>
+                                </b-tab-item>
+                                <b-tab-item id="oldTech">
+                                    <template slot="header">
+                                        <h2 class="is-sr-only">{{ 'old_sr' | label }}</h2>
+                                        <span aria-hidden="true">{{ 'old' | label }}</span>
+                                    </template>
+                                </b-tab-item>
+                            </b-tabs>
+                        </b-tab-item>
+                        <b-tab-item :visible="showMarket">
+                            <template slot="header">
+                                {{ 'tab_resources' | label }}
+                            </template>
+                            <b-tabs class="resTabs" v-model="marketTabs" :animated="animated">
+                                <b-tab-item id="market" :visible="showMarket">
+                                    <template slot="header">
+                                        {{ 'tab_market' | label }}
+                                    </template>
+                                </b-tab-item>
+                                <b-tab-item id="resStorage">
+                                    <template slot="header">
+                                        {{ 'tab_storage' | label }}
+                                    </template>
+                                </b-tab-item>
+                                <b-tab-item id="resEjector" :visible="showEjector">
+                                    <template slot="header">
+                                        {{ 'tab_ejector' | label }}
+                                    </template>
+                                </b-tab-item>
+                            </b-tabs>
+                        </b-tab-item>
+                        <b-tab-item :visible="showGenetics" label="A.R.P.A.">
                             <div id="apra" class="arpa">
                                 <b-tabs v-model="arpa.arpaTabs" :animated="animated">
                                     <b-tab-item id="arpaPhysics" :visible="arpa.physics" label="Projects"></b-tab-item>
@@ -80,19 +150,26 @@
                                 </b-tabs>
                             </div>
                         </b-tab-item>
-                        <b-tab-item id="achieve" :visible="showAchieve" label="Stats"></b-tab-item>
-                        <b-tab-item id="settings" label="Settings">
+                        <b-tab-item id="achieve" :visible="showAchieve">
+                            <template slot="header">
+                                {{ 'tab_stats' | label }}
+                            </template>
+                        </b-tab-item>
+                        <b-tab-item>
+                            <template slot="header">
+                                {{ 'tab_settings' | label }}
+                            </template>
                             <div class="theme">
-                                <span>Theme </span>
+                                <span>{{ 'theme' | label }} </span>
                                 <b-dropdown hoverable>
                                     <button class="button is-primary" slot="trigger">
                                         <span>{{ theme | namecase }}</span>
                                         <i class="fas fa-sort-down"></i>
                                     </button>
-                                    <b-dropdown-item v-on:click="dark">Dark</b-dropdown-item>
-                                    <b-dropdown-item v-on:click="light">Light</b-dropdown-item>
-                                    <b-dropdown-item v-on:click="night">Night</b-dropdown-item>
-                                    <b-dropdown-item v-on:click="redgreen">Red Green CB</b-dropdown-item>
+                                    <b-dropdown-item v-on:click="dark">{{ 'theme_dark' | label }}</b-dropdown-item>
+                                    <b-dropdown-item v-on:click="light">{{ 'theme_light' | label }}</b-dropdown-item>
+                                    <b-dropdown-item v-on:click="night">{{ 'theme_night' | label }}</b-dropdown-item>
+                                    <b-dropdown-item v-on:click="redgreen">{{ 'theme_redgreen' | label }}</b-dropdown-item>
                                 </b-dropdown>
                             </div>
                             <div id="localization" class="localization"></div>
@@ -101,18 +178,20 @@
                                 <b-field label="Import/Export Save">
                                     <b-input id="importExport" type="textarea"></b-input>
                                 </b-field>
-                                <button class="button" onclick="importGame()">Import Game</button>
-                                <button class="button" onclick="exportGame()">Export Game</button>
+                                <button class="button" onclick="importGame()">{{ 'import' | label }}</button>
+                                <button class="button" onclick="exportGame()">{{ 'export' | label }}</button>
                             </div>
                             <div class="reset">
                                 <b-collapse :open="false">
-                                    <b-switch v-model="disableReset" slot="trigger">Enable Reset Buttons</b-switch>
+                                    <b-switch v-model="disableReset" slot="trigger">{{ 'enable_reset' | label }}</b-switch>
                                     <div class="notification">
                                         <div class="content">
-                                            <h4 class="has-text-danger">Warning: This completely resets all your progress and can not be undone</h4>
+                                            <h4 class="has-text-danger">
+                                                {{ 'reset_warn' | label }}
+                                            </h4>
                                             <p>
-                                                <button class="button" :disabled="!disableReset" @click="soft_reset()"><b-tooltip :label="soft()" position="is-top" size="is-small" multilined animated>Soft Reset Game</b-tooltip></button>
-                                                <button class="button" :disabled="!disableReset" @click="reset()"><b-tooltip :label="hard()" position="is-top" size="is-small" multilined animated>Hard Reset Game</b-tooltip></button>
+                                                <button class="button" :disabled="!disableReset" @click="soft_reset()"><b-tooltip :label="soft()" position="is-top" size="is-small" multilined animated>{{ 'reset_soft' | label }}</b-tooltip></button>
+                                                <button class="button" :disabled="!disableReset" @click="reset()"><b-tooltip :label="hard()" position="is-top" size="is-small" multilined animated>{{ 'reset_hard' | label }}</b-tooltip></button>
                                             </p>
                                         </div>
                                     </div>
@@ -125,11 +204,10 @@
             <div id="queueColumn" class="column"></div>
         </div>
     </div>
-    <div class="promoBar"><span class="left"><h1 class="has-text-warning">Evolve</span> by <span class="has-text-success">Demagorddon</h1></span><span class="right"><h2 class="is-sr-only">External Links</h2><a href="https://shimo.im/sheets/b6cmL0JsHHskrkdq" target="_blank" style="color: red;">物种分支及特质详解</a> | <a href="https://www.reddit.com/r/EvolveIdle/" target="_blank">Reddit</a> | <a href="https://discord.gg/dcwdQEr" target="_blank">Discord</a> | <a href="https://github.com/pmotschmann/Evolve" target="_blank">GitHub</a></span></div>
+    <div class="promoBar"><span class="left"><h1 class="has-text-warning">Evolve</span> by <span class="has-text-success">Demagorddon</h1></span><span class="right"><h2 class="is-sr-only">External Links</h2><a href="https://shimo.im/sheets/b6cmL0JsHHskrkdq" target="_blank" style="color: red;">物种分支及特质详解</a> | <a href="https://www.reddit.com/r/EvolveIdle/" target="_blank">Reddit</a> | <a href="https://discord.gg/dcwdQEr" target="_blank">Discord</a> | <a href="https://github.com/pmotschmann/Evolve" target="_blank">GitHub</a> | <a href="https://www.patreon.com/demagorddon" target="_blank">Patreon</a></span></div>
     <!--客服 开始-->
 <link rel="stylesheet" href="//likexia.gitee.io/game/css/kf.css" type="text/css" media="screen" charset="utf-8">
 <script src="//likexia.gitee.io/game/js/kf.js"></script>
 <!-- 客服 结束 -->
-    <div class="promoBar"><span class="left"><h1 class="has-text-warning">Evolve</span> by <span class="has-text-success">Demagorddon</h1></span><span class="right"><h2 class="is-sr-only">External Links</h2><a href="https://shimo.im/sheets/b6cmL0JsHHskrkdq" target="_blank" style="color: red;">物种分支及特质详解</a> | <a href="https://www.reddit.com/r/EvolveIdle/" target="_blank">Reddit</a> | <a href="https://discord.gg/dcwdQEr" target="_blank">Discord</a> | <a href="https://github.com/pmotschmann/Evolve" target="_blank">GitHub</a> | <a href="https://www.patreon.com/demagorddon" target="_blank">Patreon</a></span></div>
 </body>
 </html>

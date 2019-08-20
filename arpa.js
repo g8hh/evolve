@@ -1,7 +1,8 @@
 import { global, vues, poppers, keyMultiplier, sizeApproximation, srSpeak } from './vars.js';
 import { actions, drawTech, addAction, removeAction } from './actions.js';
-import { races, traits } from './races.js';
+import { races, traits, cleanAddTrait, cleanRemoveTrait } from './races.js';
 import { space } from './space.js';
+import { unlockFeat } from './achieve.js';
 import { loc } from './locale.js'
 
 export function arpa(type) {
@@ -329,6 +330,57 @@ const genePool = {
             return false;
         }
     },
+    mutation: {
+        id: 'genes-mutation',
+        title: loc('arpa_genepool_mutation_title'),
+        desc: loc('arpa_genepool_mutation_desc'),
+        reqs: { synthesis: 3, creep: 5 },
+        grant: ['mutation',1],
+        cost: 1250,
+        effect: `<div class="cost"><span class="has-text-special">${loc('arpa_genepool_effect_plasmid')}</span>: <span>1250</span></div>`,
+        action(){
+            if (payPlasmids('mutation')){
+                global.genes['mutation'] = 1;
+                genetics();
+                return true;
+            }
+            return false;
+        }
+    },
+    transformation: {
+        id: 'genes-transformation',
+        title: loc('arpa_genepool_transformation_title'),
+        desc: loc('arpa_genepool_transformation_desc'),
+        reqs: { mutation: 1 },
+        grant: ['mutation',2],
+        cost: 1500,
+        effect: `<div class="cost"><span class="has-text-special">${loc('arpa_genepool_effect_plasmid')}</span>: <span>1500</span></div>`,
+        action(){
+            if (payPlasmids('transformation')){
+                global.genes['mutation'] = 2;
+                genetics();
+                return true;
+            }
+            return false;
+        }
+    },
+    metamorphosis: {
+        id: 'genes-metamorphosis',
+        title: loc('arpa_genepool_metamorphosis_title'),
+        desc: loc('arpa_genepool_metamorphosis_desc'),
+        reqs: { mutation: 2 },
+        grant: ['mutation',3],
+        cost: 1750,
+        effect: `<div class="cost"><span class="has-text-special">${loc('arpa_genepool_effect_plasmid')}</span>: <span>1750</span></div>`,
+        action(){
+            if (payPlasmids('metamorphosis')){
+                global.genes['mutation'] = 3;
+                genetics();
+                return true;
+            }
+            return false;
+        }
+    },
     replication: {
         id: 'genes-replication',
         title: loc('arpa_genepool_replication_title'),
@@ -440,12 +492,14 @@ const genePool = {
         id: 'genes-transcendence',
         title: loc('arpa_genepool_transcendence_title'),
         desc: loc('arpa_genepool_transcendence_desc'),
-        reqs: { ancients: 1, creep: 5, locked: 1 },
-        grant: ['ancients',2],
-        cost: 1500,
-        effect: `<div class="cost"><span class="has-text-special">${loc('arpa_genepool_effect_plasmid')}</span>: <span>1500</span></div>`,
+        reqs: { ancients: 1, mutation: 3 },
+        grant: ['transcendence',1],
+        cost: 3000,
+        effect: `<div class="cost"><span class="has-text-special">${loc('arpa_genepool_effect_plasmid')}</span>: <span>3000</span></div>`,
         action(){
             if (payPlasmids('transcendence')){
+                global.genes['transcendence'] = 1;
+                drawTech();
                 return true;
             }
             return false;
@@ -739,7 +793,7 @@ function genetics(){
         Object.keys(global.race).forEach(function (trait){
             if (traits[trait] && traits[trait].type === 'minor'){
                 minor = true;
-                let m_trait = $(`<div class="trait t-${trait}"></div>`);
+                let m_trait = $(`<div class="trait t-${trait} traitRow"></div>`);
                 let gene = $(`<b-tooltip :label="geneCost('${trait}')" position="is-bottom" multilined animated><span class="basic-button" role="button" :aria-label="geneCost('${trait}')" @click="gene('${trait}')">${global.resource.Genes.name}</span></b-tooltip>`);
                 m_trait.append(gene);
                 if (global.race.Phage.count > 0){
@@ -760,10 +814,47 @@ function genetics(){
         
         Object.keys(global.race).forEach(function (trait){
             if (traits[trait] && traits[trait].type !== 'minor'){
-                breakdown.append(`<div class="trait has-text-warning">${traits[trait].desc}</div>`);
+                if ((traits[trait].type === 'major' && global.genes['mutation']) || (traits[trait].type === 'genus' && global.genes['mutation'] && global.genes['mutation'] >= 2)){
+                    let major = $(`<div class="traitRow"></div>`);
+                    let purge = $(`<b-tooltip :label="removeCost('${trait}')" position="is-bottom" multilined animated><span class="basic-button has-text-danger" role="button" :aria-label="removeCost('${trait}')" @click="purge('${trait}')">Remove</span></b-tooltip>`);
+                    
+                    major.append(purge);
+                    major.append($(`<span class="trait has-text-warning">${traits[trait].desc}</span>`));
+
+                    breakdown.append(major);
+                }
+                else {
+                    breakdown.append(`<div class="trait has-text-warning">${traits[trait].desc}</div>`);
+                }
             }
         });
         
+        if (global.genes['mutation'] && global.genes['mutation'] >= 3){
+            breakdown.append(`<div class="trait major has-text-success">${loc('arpa_race_genetic_gain')}</div>`)
+
+            let trait_list = [];
+            Object.keys(races).forEach(function (race){
+                if (races[race].type === races[global.race.species].type){
+                    Object.keys(races[race].traits).forEach(function (trait){
+                        if (!global.race[trait]){
+                            trait_list.push(trait);
+                        }
+                    });
+                }
+            });
+
+            for (let i=0; i<trait_list.length; i++){
+                let trait = trait_list[i];
+                let major = $(`<div class="traitRow"></div>`);
+                let add = $(`<b-tooltip :label="addCost('${trait}')" position="is-bottom" multilined animated><span class="basic-button has-text-success" role="button" :aria-label="addCost('${trait}')" @click="gain('${trait}')">Gain</span></b-tooltip>`);
+                
+                major.append(add);
+                major.append($(`<span class="trait has-text-warning">${traits[trait].desc}</span>`));
+
+                breakdown.append(major);
+            }
+        }
+
         if (minor){
             breakdown.prepend(`<div class="trait minor has-text-success">${loc('arpa_race_genetic_minor_traits',[races[global.race.species].name])}</div>`)
         }
@@ -795,6 +886,46 @@ function genetics(){
                         genetics();
                     }
                 },
+                purge(t){
+                    let cost = global.race['modified'] ? global.race['modified'] * 25 : 10;
+                    if (global.race.Plasmid.count >= cost){
+                        global.race.Plasmid.count -= cost;
+                        delete global.race[t];
+                        if (!global.race['modified']){
+                            global.race['modified'] = 1;
+                        }
+                        else {
+                            global.race['modified']++;
+                        }
+                        cleanRemoveTrait(t);
+                        genetics();
+
+                        let count = 0;
+                        Object.keys(global.race).forEach(function (trait){
+                            if (traits[trait] && (traits[trait].type == 'major' || traits[trait].type == 'genus')){
+                                count++;
+                            }
+                        });
+                        if (count === 0){
+                            unlockFeat('blank_slate');
+                        }
+                    }
+                },
+                gain(t){
+                    let cost = global.race['modified'] ? global.race['modified'] * 25 : 10;
+                    if (global.race.Plasmid.count >= cost){
+                        global.race.Plasmid.count -= cost;
+                        global.race[t] = 1;
+                        if (!global.race['modified']){
+                            global.race['modified'] = 1;
+                        }
+                        else {
+                            global.race['modified']++;
+                        }
+                        cleanAddTrait(t);
+                        genetics();
+                    }
+                },
                 geneCost(t){
                     let cost = fibonacci(global.race.minor[t] ? global.race.minor[t] + 4 : 4);
                     return loc('arpa_gene_buy',[t,cost]);
@@ -802,6 +933,14 @@ function genetics(){
                 phageCost(t){
                     let cost = fibonacci(global.genes.minor[t] ? global.genes.minor[t] + 4 : 4);
                     return loc('arpa_phage_buy',[t,cost]);
+                },
+                removeCost(t){
+                    let cost = global.race['modified'] ? global.race['modified'] * 25 : 10;
+                    return loc('arpa_remove',[t,cost]);
+                },
+                addCost(t){
+                    let cost = global.race['modified'] ? global.race['modified'] * 25 : 10;
+                    return loc('arpa_gain',[t,cost]);
                 }
             }
         });

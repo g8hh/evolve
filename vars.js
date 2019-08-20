@@ -6,6 +6,8 @@ export var global = {
     tech: {},
     city: {},
     space: {},
+    interstellar: {},
+    portal: {},
     civic: { free: 0 },
     race: {},
     genes: {},
@@ -26,6 +28,7 @@ export var p_on = {};
 export var red_on = {};
 export var moon_on = {};
 export var belt_on = {};
+export var int_on = {};
 export var quantum_level = 0;
 export var achieve_level = 0;
 export function set_qlevel(q_level){
@@ -204,7 +207,14 @@ if (convertVersion(global['version']) < 4031){
     }
 }
 
-global['version'] = '0.4.42';
+if (convertVersion(global['version']) < 5000){
+    global['portal'] = {};
+    if (global['city'] && global.city['factory'] && !global.city.factory['Stanene']){
+        global.city.factory['Stanene'] = 0;
+    }
+}
+
+global['version'] = '0.5.0';
 
 if (global.civic['cement_worker'] && global.civic.cement_worker.impact === 0.25){
     global.civic.cement_worker.impact = 0.4;
@@ -227,7 +237,7 @@ if (!global['settings']){
         animated: true,
         disableReset: false,
         theme: 'dark',
-        locale: 'en-us',
+        locale: 'en-US',
     }
 }
 
@@ -246,6 +256,30 @@ if (!global.settings['space']){
     }
 }
 
+if (!global.settings.space['alpha']){
+    global.settings.space['alpha'] = false;
+    global.settings.space['proxima'] = false;
+    global.settings.space['nebula'] = false;
+    global.settings.space['neutron'] = false;
+    global.settings.space['blackhole'] = false;
+}
+
+if (!global.settings['showDeep']){
+    global.settings['showDeep'] = false;
+}
+
+if (!global.settings['showPortal']){
+    global.settings['showPortal'] = false;
+}
+
+if (!global.settings['portal']){
+    global.settings['portal'] = {
+        fortress : false,
+        badlands : false,
+        pit : false,
+    };
+}
+
 if (!global['space']){
     global['space'] = {};
 }
@@ -254,11 +288,32 @@ if (!global['starDock']){
     global['starDock'] = {};
 }
 
+if (!global['interstellar']){
+    global['interstellar'] = {};
+}
+
+if (!global.settings.space['alpha']){
+    global.settings.space['alpha'] = false;
+    global.settings.space['proxima'] = false;
+    global.settings.space['nebula'] = false;
+    global.settings.space['neutron'] = false;
+    global.settings.space['blackhole'] = false;
+}
+
 if (!global.settings['showAchieve']){
     global.settings['showAchieve'] = false;
 }
+if (!global.settings['showEjector']){
+    global.settings['showEjector'] = false;
+}
 if (!global.settings['resTabs']){
     global.settings['resTabs'] = 0;
+}
+if (!global.settings['marketTabs']){
+    global.settings['marketTabs'] = 0;
+}
+if (!global.settings['spaceTabs']){
+    global.settings['spaceTabs'] = 0;
 }
 if (!global.settings['locale']){
     global.settings['locale'] = 'en-us';
@@ -272,6 +327,9 @@ if (!global.stats['reset']){
 }
 if (!global.stats['plasmid']){
     global.stats['plasmid'] = 0;
+}
+if (!global.stats['universes']){
+    global.stats['universes'] = 0;
 }
 if (!global.stats['phage']){
     global.stats['phage'] = 0;
@@ -310,6 +368,9 @@ if (!global.race['Plasmid']){
 }
 if (!global.race['Phage']){
     global.race['Phage'] = { count: 0 };
+}
+if (!global.race['Dark']){
+    global.race['Dark'] = { count: 0 };
 }
 if (!global.race['deterioration']){
     global.race['deterioration'] = 0;
@@ -414,6 +475,10 @@ if (!global.city['market']){
 
 if (global.city['foundry'] && !global.city.foundry['Mythril']){
     global.city.foundry['Mythril'] = 0;
+}
+
+if (global.city['foundry'] && !global.city.foundry['Aerogel']){
+    global.city.foundry['Aerogel'] = 0;
 }
 
 if (!global.settings['arpa']){
@@ -662,11 +727,11 @@ window.soft_reset = function reset(){
         vues[v].$destroy();
     });
 
-    global.space = {};
     let replace = {
         species : 'protoplasm', 
         Plasmid: { count: global.race.Plasmid.count },
         Phage: { count: global.race.Phage.count },
+        Dark: { count: global.race.Dark.count },
         seeded: global.race.seeded,
         probes: global.race.probes,
         seed: global.race.seed,
@@ -705,11 +770,6 @@ window.soft_reset = function reset(){
     global.stats.starved = 0;
     global.stats.died = 0;
 
-    global.space = {};
-    global.civic = { free: 0 };
-    global.resource = {};
-    global.evolution = {};
-
     if (global.tech['theology'] && global.tech['theology'] >= 1){
         global.tech = { theology: 1 };
     }
@@ -717,6 +777,23 @@ window.soft_reset = function reset(){
         global.tech = {};
     }
 
+    clearStates();
+    global.lastMsg = false;
+    global.new = true;
+    Math.seed = Math.rand(0,10000);
+
+    save.setItem('evolved',LZString.compressToUTF16(JSON.stringify(global)));
+    window.location.reload();
+}
+
+export function clearStates(){
+    global.space = {};
+    global.interstellar = {};
+    global.portal = {};
+    global.starDock = {};
+    global.civic = { free: 0 };
+    global.resource = {};
+    global.evolution = {};
     global.event = 100;
     global.settings.civTabs = 0;
     global.settings.showEvolve = true;
@@ -727,6 +804,9 @@ window.soft_reset = function reset(){
     global.settings.showMarket = false;
     global.settings.showGenetics = false;
     global.settings.showSpace = false;
+    global.settings.showDeep = false;
+    global.settings.showPortal = false;
+    global.settings.showEjector = false;
     global.settings.space.home = true;
     global.settings.space.moon = false;
     global.settings.space.red = false;
@@ -736,15 +816,17 @@ window.soft_reset = function reset(){
     global.settings.space.gas_moon = false;
     global.settings.space.belt = false;
     global.settings.space.dwarf = false;
+    global.settings.space.alpha = false;
+    global.settings.space.proxima = false;
+    global.settings.space.nebula = false;
+    global.settings.space.neutron = false;
     global.settings.space.blackhole = false;
+    global.settings.portal.fortress = false;
+    global.settings.portal.badlands = false;
+    global.settings.portal.pit = false;
     global.settings.arpa = false;
     global.settings.resTabs = 0;
+    global.settings.spaceTabs = 0;
     global.settings.disableReset = false;
     global.arpa = {};
-    global.lastMsg = false;
-    global.new = true;
-    Math.seed = Math.rand(0,10000);
-
-    save.setItem('evolved',LZString.compressToUTF16(JSON.stringify(global)));
-    window.location.reload();
 }

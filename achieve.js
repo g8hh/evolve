@@ -90,6 +90,21 @@ var achievements = {
         desc: loc("achieve_doomed_desc"),
         flair: loc("achieve_doomed_flair")
     },
+    pandemonium: {
+        name: loc("achieve_pandemonium_name"),
+        desc: loc("achieve_pandemonium_desc"),
+        flair: loc("achieve_pandemonium_flair")
+    },
+    blood_war: {
+        name: loc("achieve_blood_war_name"),
+        desc: loc("achieve_blood_war_desc"),
+        flair: loc("achieve_blood_war_flair")
+    },
+    landfill: {
+        name: loc("achieve_landfill_name"),
+        desc: loc("achieve_landfill_desc"),
+        flair: loc("achieve_landfill_flair")
+    },
     seeder: {
         name: loc("achieve_seeder_name"),
         desc: loc("achieve_seeder_desc"),
@@ -144,6 +159,11 @@ var achievements = {
         name: loc("achieve_creator_name"),
         desc: loc("achieve_creator_desc"),
         flair: loc("achieve_creator_flair")
+    },
+    whitehole: {
+        name: loc("achieve_whitehole_name"),
+        desc: loc("achieve_whitehole_desc"),
+        flair: loc("achieve_whitehole_flair")
     },
     genus_humanoid: {
         name: loc("achieve_genus_humanoid_name"),
@@ -372,6 +392,11 @@ const feats = {
         name: loc("feat_organ_harvester_name"),
         desc: loc("feat_organ_harvester_desc"),
         flair: loc("feat_organ_harvester_flair")
+    },
+    blank_slate: {
+        name: loc("feat_blank_slate_name"),
+        desc: loc("feat_blank_slate_desc"),
+        flair: loc("feat_blank_slate_flair")
     }
 }
 
@@ -539,6 +564,9 @@ export function checkAchievements(){
     }
     if (global.stats.died >= 250){
         unlockAchieve('red_tactics');
+    }
+    if (global.interstellar['stellar_engine'] && global.interstellar['stellar_engine'].mass >= 12){
+        unlockAchieve('landfill');
     }
 }
 

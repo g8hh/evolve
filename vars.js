@@ -214,7 +214,17 @@ if (convertVersion(global['version']) < 5000){
     }
 }
 
-global['version'] = '0.5.0';
+if (convertVersion(global['version']) === 5000){
+    if (global.civic['craftsman']){
+        global.civic.craftsman['assigned'] = 0;
+        if (global.city['foundry']){
+            let workers = global.city.foundry.Plywood + global.city.foundry.Brick + global.city.foundry.Wrought_Iron + global.city.foundry.Sheet_Metal + global.city.foundry.Mythril + global.city.foundry.Aerogel; 
+            global.civic.craftsman.workers = workers;
+        }
+    }
+}
+
+global['version'] = '0.5.3';
 
 if (global.civic['cement_worker'] && global.civic.cement_worker.impact === 0.25){
     global.civic.cement_worker.impact = 0.4;
@@ -230,7 +240,9 @@ if (!global['settings']){
         showIndustry: false,
         showResearch: false,
         showCivic: false,
+        showResources: false,
         showMarket: false,
+        showStorage: false,
         showGenetics: false,
         showSpace: false,
         showAchieve: false,
@@ -238,6 +250,19 @@ if (!global['settings']){
         disableReset: false,
         theme: 'dark',
         locale: 'en-US',
+    }
+}
+
+if (!global.settings['showResources']){
+    global.settings['showResources'] = global.settings['showMarket'];
+}
+
+if (!global.settings['showStorage']){
+    if (global.city['warehouse'] || global.city['storage_yard']){
+        global.settings['showStorage'] = true;
+    }
+    else {
+        global.settings['showStorage'] = false;
     }
 }
 
@@ -314,6 +339,9 @@ if (!global.settings['marketTabs']){
 }
 if (!global.settings['spaceTabs']){
     global.settings['spaceTabs'] = 0;
+}
+if (!global.settings['statsTabs']){
+    global.settings['statsTabs'] = 0;
 }
 if (!global.settings['locale']){
     global.settings['locale'] = 'en-us';
@@ -801,7 +829,9 @@ export function clearStates(){
     global.settings.showIndustry = false;
     global.settings.showResearch = false;
     global.settings.showCivic = false;
+    global.settings.showResources = false;
     global.settings.showMarket = false;
+    global.settings.showStorage = false;
     global.settings.showGenetics = false;
     global.settings.showSpace = false;
     global.settings.showDeep = false;

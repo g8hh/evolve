@@ -1,5 +1,5 @@
 import { global, vues, poppers, keyMultiplier, sizeApproximation, srSpeak } from './vars.js';
-import { actions, drawTech, addAction, removeAction } from './actions.js';
+import { actions, drawTech, drawCity, addAction, removeAction } from './actions.js';
 import { races, traits, cleanAddTrait, cleanRemoveTrait } from './races.js';
 import { space } from './space.js';
 import { unlockFeat } from './achieve.js';
@@ -813,7 +813,7 @@ function genetics(){
         breakdown.append(`<div class="trait major has-text-success">${loc('arpa_race_genetic_traids',[races[global.race.species].name])}</div>`)
         
         Object.keys(global.race).forEach(function (trait){
-            if (traits[trait] && traits[trait].type !== 'minor'){
+            if (traits[trait] && traits[trait].type !== 'minor' && trait !== 'evil'){
                 if ((traits[trait].type === 'major' && global.genes['mutation']) || (traits[trait].type === 'genus' && global.genes['mutation'] && global.genes['mutation'] >= 2)){
                     let major = $(`<div class="traitRow"></div>`);
                     let purge = $(`<b-tooltip :label="removeCost('${trait}')" position="is-bottom" multilined animated><span class="basic-button has-text-danger" role="button" :aria-label="removeCost('${trait}')" @click="purge('${trait}')">Remove</span></b-tooltip>`);
@@ -899,6 +899,8 @@ function genetics(){
                         }
                         cleanRemoveTrait(t);
                         genetics();
+                        drawTech();
+                        drawCity();
 
                         let count = 0;
                         Object.keys(global.race).forEach(function (trait){
@@ -924,6 +926,8 @@ function genetics(){
                         }
                         cleanAddTrait(t);
                         genetics();
+                        drawTech();
+                        drawCity();
                     }
                 },
                 geneCost(t){

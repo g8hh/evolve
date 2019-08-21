@@ -119,7 +119,7 @@
                                 </b-tab-item>
                             </b-tabs>
                         </b-tab-item>
-                        <b-tab-item :visible="showMarket">
+                        <b-tab-item :visible="showResources">
                             <template slot="header">
                                 {{ 'tab_resources' | label }}
                             </template>
@@ -129,7 +129,7 @@
                                         {{ 'tab_market' | label }}
                                     </template>
                                 </b-tab-item>
-                                <b-tab-item id="resStorage">
+                                <b-tab-item id="resStorage" :visible="showStorage">
                                     <template slot="header">
                                         {{ 'tab_storage' | label }}
                                     </template>
@@ -150,10 +150,22 @@
                                 </b-tabs>
                             </div>
                         </b-tab-item>
-                        <b-tab-item id="achieve" :visible="showAchieve">
+                        <b-tab-item :visible="showAchieve">
                             <template slot="header">
                                 {{ 'tab_stats' | label }}
                             </template>
+                            <b-tabs class="resTabs" v-model="statsTabs" :animated="animated">
+                                <b-tab-item id="stats">
+                                    <template slot="header">
+                                        {{ 'tab_stats' | label }}
+                                    </template>
+                                </b-tab-item>
+                                <b-tab-item id="achieve">
+                                    <template slot="header">
+                                        {{ 'tab_achieve' | label }}
+                                    </template>
+                                </b-tab-item>
+                            </b-tabs>
                         </b-tab-item>
                         <b-tab-item>
                             <template slot="header">

@@ -884,7 +884,7 @@ export const traits = {
         desc: loc('trait_nyctophilia'),
         type: 'major',
     },
-    frail: { // More soldiers die in combat
+    fraile: { // More soldiers die in combat
         desc: loc('trait_frail'),
         type: 'major',
     },
@@ -1128,6 +1128,12 @@ export function cleanAddTrait(trait){
             global.civic.farmer.max = 0;
             global.civic.farmer.display = false;
             break;
+        case 'terrifying':
+            Object.keys(global.resource).forEach(function (res){
+                global.resource[res].trade = 0;
+            });
+            global.settings.showMarket = false;
+            break;
         default:
             break;
     }
@@ -1135,6 +1141,33 @@ export function cleanAddTrait(trait){
 
 export function cleanRemoveTrait(trait){
     switch (trait){
+        case 'kindling_kindred':
+            global.resource.Lumber.display = true;
+            break;
+        case 'carnivore':
+            global.civic.farmer.display = true;
+            global.tech['agriculture'] = 1;
+            if (global.tech['hunting'] >= 2){
+                global.tech['farm'] = 1;
+            }
+            delete global.tech['hunting'];
+            delete global.tech['wind_plant'];
+            if (global.city['lodge']){
+                global.city['farm'] = { count: global.city.lodge.count };
+                delete global.city['lodge'];
+            }
+            if (global.city['smokehouse']){
+                global.city['silo'] = { count: global.city.smokehouse.count };
+                delete global.city['smokehouse'];
+            }
+            if (global.city['windmill']){
+                global.city['mill'] = { count: global.city.windmill.count };
+                delete global.city['windmill'];
+            }
+            break;
+        case 'terrifying':
+            global.settings.showMarket = true;
+            break;
         default:
             break;
     }

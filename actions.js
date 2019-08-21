@@ -2203,6 +2203,8 @@ export const actions = {
                     }
                     global.city['storage_yard'].count++;
                     global.resource.Crates.display = true;
+                    global.settings.showResources = true;
+                    global.settings.showStorage = true;
                     let cap = global.tech.container >= 3 ? 20 : 10;
                     if (global.tech['world_control']){
                         cap += 10;
@@ -2245,6 +2247,8 @@ export const actions = {
                     }
                     global.city['warehouse'].count++;
                     global.resource.Containers.display = true;
+                    global.settings.showResources = true;
+                    global.settings.showStorage = true;
                     let cap = global.tech['steel_container'] >= 2 ? 20 : 10;
                     if (global.tech['world_control']){
                         cap += 10;
@@ -4778,6 +4782,7 @@ export const actions = {
             effect: loc('tech_market_effect'),
             action(){
                 if (payCosts($(this)[0].cost)){
+                    global.settings.showResources = true;
                     global.settings.showMarket = true;
                     return true;
                 }
@@ -7127,6 +7132,29 @@ export const actions = {
                 if (payCosts($(this)[0].cost)){
                     var tech = actions.tech.plasma_rifles.grant[0];
                     global.tech[tech] = actions.tech.plasma_rifles.grant[1];
+                    if (vues['civ_garrison']){
+                        vues['civ_garrison'].$forceUpdate();
+                    }
+                    return true;
+                }
+                return false;
+            }
+        },
+        disruptor_rifles: {
+            id: 'tech-disruptor_rifles',
+            title: loc('tech_disruptor_rifles'),
+            desc: loc('tech_disruptor_rifles'),
+            reqs: { military: 8, high_tech: 14, neutron: 1, infernite: 1 },
+            grant: ['military',9],
+            cost: {
+                Knowledge(){ return 1000000; },
+                Infernite(){ return 1000; }
+            },
+            effect: loc('tech_disruptor_rifles_effect'),
+            action(){
+                if (payCosts($(this)[0].cost)){
+                    var tech = actions.tech.disruptor_rifles.grant[0];
+                    global.tech[tech] = actions.tech.disruptor_rifles.grant[1];
                     if (vues['civ_garrison']){
                         vues['civ_garrison'].$forceUpdate();
                     }
@@ -11174,6 +11202,8 @@ function big_bang(){
     Object.keys(vues).forEach(function (v){
         vues[v].$destroy();
     });
+    let god = global.race.species;
+    let old_god = global.race.gods;
     let orbit = global.city.calendar.orbit;
     let biome = global.city.biome;
     let plasmid = global.race.Plasmid.count;
@@ -11212,8 +11242,8 @@ function big_bang(){
     global.stats.universes++;
     global['race'] = { 
         species : 'protoplasm', 
-        gods: 'none',
-        old_gods: 'none',
+        gods: god,
+        old_gods: old_god,
         Plasmid: { count: plasmid },
         Phage: { count: phage },
         Dark: { count: dark + new_dark },

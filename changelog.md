@@ -1,3 +1,16 @@
+#### 0.5.3 - 8/20/2019 ####
+Stats and Achievements separated into separate sub tabs<br>
+Disrupter rifle upgrade for soldiers<br>
+Mass Ejector can np longer be unlocked before completing the Stellar Engine<br>
+Changed "Special" text color in night theme to be easier to read<br> 
+
+#### 0.5.2 - 8/20/2019 ####
+Fixed misnamed mantis trait key<br>
+Fixed Iron smelter paying out 10x intended amount<br>
+
+#### 0.5.1 - 8/20/2019 ####
+Disappearing craftsman fix<br>
+
 #### 0.5.0 - 8/19/2019 ####
 Interstellar space is now unlockable<br>
 Interdimensional travel is now unlockable<br>

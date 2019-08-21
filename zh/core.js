@@ -478,10 +478,11 @@ var cnRegReplace = new Map([
 //2.采集新词
 //20190320@JAR
 
+
 var cnItem = function () {
 
     //传参是否非空字串
-    if (!arguments[0]) return;
+    if (!arguments[0]) return "";
 
     //检验传参是否对象
     let text = arguments[0],
@@ -607,8 +608,8 @@ function TransSubTextNode(node) {
                 let cnText = cnItem(text);
                 cnText !== text && transTaskMgr.addTask(subnode, 'textContent', cnText);
                 //console.log(subnode);
-            } else if (subnode.nodeName !== "SCRIPT" && subnode.nodeName !== "TEXTAREA" && subnode.innerHTML && subnode.innerText) {
-                if (subnode.innerHTML === subnode.innerText) {
+            } else if (subnode.nodeName !== "SCRIPT" && subnode.nodeName !== "TEXTAREA") {
+                if (!subnode.childNodes || subnode.childNodes.length == 0) {
                     let text = subnode.innerText;
                     let cnText = cnItem(text);
                     cnText !== text && transTaskMgr.addTask(subnode, 'innerText', cnText);
@@ -642,7 +643,7 @@ function TransSubTextNode(node) {
         observer.disconnect();
         for (let mutation of e) {
             if (mutation.target.nodeName === "SCRIPT" || mutation.target.nodeName === "TEXTAREA") continue;
-            if (mutation.target.innerHTML && mutation.target.innerText && mutation.target.innerHTML === mutation.target.innerText) {
+            if (!mutation.target.childNodes || mutation.target.childNodes.length == 0) {
                 mutation.target.innerText = cnItem(mutation.target.innerText);
             } else if (mutation.target.nodeName === "#text") {
                 mutation.target.textContent = cnItem(mutation.target.textContent);
@@ -651,8 +652,8 @@ function TransSubTextNode(node) {
                     if (node.nodeName === "#text") {
                         node.textContent = cnItem(node.textContent);
                         //console.log(node);
-                    } else if (node.nodeName !== "SCRIPT" && node.nodeName !== "TEXTAREA" && node.innerHTML && node.innerText) {
-                        if (node.innerHTML === node.innerText) {
+                    } else if (node.nodeName !== "SCRIPT" && node.nodeName !== "TEXTAREA") {
+                        if (!node.childNodes || node.childNodes.length == 0) {
                             node.innerText = cnItem(node.innerText);
                         } else {
                             TransSubTextNode(node);

@@ -1631,6 +1631,7 @@ export const actions = {
             desc: loc('city_food_desc'),
             reqs: { primitive: 1 },
             not_trait: ['evil'],
+            no_queue: true,
             action(){
                 if(global['resource']['Food'].amount < global['resource']['Food'].max){
                     modRes('Food',global.race['strong'] ? 2 : 1);
@@ -1644,6 +1645,7 @@ export const actions = {
             desc: loc('city_lumber_desc'),
             reqs: {},
             not_trait: ['evil'],
+            no_queue: true,
             action(){
                 if(global['resource']['Lumber'].amount < global['resource']['Lumber'].max){
                     modRes('Lumber',global.race['strong'] ? 2 : 1);
@@ -1656,6 +1658,7 @@ export const actions = {
             title: loc('city_stone'),
             desc: loc('city_stone_desc'),
             reqs: { primitive: 2 },
+            no_queue: true,
             action(){
                 if(global['resource']['Stone'].amount < global['resource']['Stone'].max){
                     modRes('Stone',global.race['strong'] ? 2 : 1);
@@ -1669,6 +1672,7 @@ export const actions = {
             desc(){ return global.tech['primitive'] ? (global.resource.Furs.display ? loc('city_evil_desc3') : loc('city_evil_desc2')) : loc('city_evil_desc1'); },
             reqs: {},
             trait: ['evil'],
+            no_queue: true,
             action(){
                 if(global['resource']['Lumber'].amount < global['resource']['Lumber'].max){
                     modRes('Lumber',1);
@@ -4743,6 +4747,58 @@ export const actions = {
                 Aerogel(){ return 500; }
             },
             effect: loc('tech_aerogel_containers_effect'),
+            action(){
+                if (payCosts($(this)[0].cost)){
+                    return true;
+                }
+                return false;
+            }
+        },
+        urban_planning: {
+            id: 'tech-urban_planning',
+            title: loc('tech_urban_planning'),
+            desc: loc('tech_urban_planning'),
+            reqs: { banking: 2, currency: 2 },
+            grant: ['queue',1],
+            cost: {
+                Knowledge(){ return 2500; }
+            },
+            effect: loc('tech_urban_planning_effect'),
+            action(){
+                if (payCosts($(this)[0].cost)){
+                    global.queue.display = true;
+                    return true;
+                }
+                return false;
+            }
+        },
+        zoning_permits: {
+            id: 'tech-zoning_permits',
+            title: loc('tech_zoning_permits'),
+            desc: loc('tech_zoning_permits'),
+            reqs: { queue: 1, high_tech: 3 },
+            grant: ['queue',2],
+            cost: {
+                Knowledge(){ return 28000; }
+            },
+            effect: loc('tech_zoning_permits_effect'),
+            action(){
+                if (payCosts($(this)[0].cost)){
+                    return true;
+                }
+                return false;
+            }
+        },
+        urbanization: {
+            id: 'tech-urbanization',
+            title: loc('tech_urbanization'),
+            desc: loc('tech_urbanization'),
+            reqs: { queue: 2, high_tech: 6 },
+            grant: ['queue',3],
+            cost: {
+                Knowledge(){ return 95000; }
+            },
+            effect: loc('tech_urbanization_effect'),
             action(){
                 if (payCosts($(this)[0].cost)){
                     return true;
@@ -9563,6 +9619,15 @@ export function setAction(c_action,action,type,old){
                                 let grant = false;
                                 for (var i=0; i<keyMult; i++){
                                     if (!c_action.action()){
+                                        if (!c_action['no_queue'] && global.tech['queue']){
+                                            let max_queue = global.tech['queue'] >= 2 ? (global.tech['queue'] >= 3 ? 8 : 5) : 3;
+                                            if (global.genes['queue'] && global.genes['queue'] >= 2){
+                                                max_queue += 2;
+                                            }
+                                            if (global.queue.queue.length < max_queue){
+                                                global.queue.queue.push({ id: c_action.id, action: action, type: type, label: typeof c_action.title === 'string' ? c_action.title : c_action.title(), cna: false });
+                                            }
+                                        }
                                         break;
                                     }
                                     grant = true;
@@ -10972,6 +11037,10 @@ function sentience(){
 
     if (global.race.gods !== 'none'){
         global.tech['religion'] = 1;
+    }
+    if (global.genes['queue']){
+        global.tech['queue'] = 1;
+        global.queue.display = true;
     }
 
     Object.keys(global.genes.minor).forEach(function (trait){

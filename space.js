@@ -1,9 +1,9 @@
 import { global, vues, poppers, messageQueue, sizeApproximation, p_on, belt_on, int_on, quantum_level } from './vars.js';
 import { unlockAchieve } from './achieve.js';
 import { races } from './races.js';
-import { spatialReasoning } from './resources.js';
+import { spatialReasoning, defineResources } from './resources.js';
 import { loadFoundry } from './jobs.js';
-import { payCosts, setAction, storageMultipler } from './actions.js';
+import { payCosts, setAction, storageMultipler, drawTech } from './actions.js';
 import { loc } from './locale.js';
 
 const spaceProjects = {
@@ -1472,6 +1472,7 @@ const spaceProjects = {
                 }
             },
             reqs: { science: 10 },
+            no_queue(){ return global.space.world_collider.count < 1859 ? false : true },
             cost: {
                 Money(){ return global.space.world_collider.count < 1859 ? 25000 : 0; },
                 Copper(){ return global.space.world_collider.count < 1859 ? 750 : 0; },
@@ -2057,6 +2058,7 @@ const interstellarProjects = {
                 }
             },
             reqs: { proxima: 3 },
+            no_queue(){ return global.interstellar.dyson.count ? false : true },
             cost: {
                 Money(){ return global.interstellar.dyson.count < 100 ? 250000 : 0; },
                 Adamantite(){ return global.interstellar.dyson.count < 100 ? 10000 : 0; },
@@ -2329,7 +2331,8 @@ const interstellarProjects = {
                     return true;
                 }
                 return false;
-            }
+            },
+            flair: loc('interstellar_far_reach_flair')
         },
         stellar_engine: {
             id: 'interstellar-stellar_engine',
@@ -2343,6 +2346,7 @@ const interstellarProjects = {
                 }
             },
             reqs: { blackhole: 3 },
+            no_queue(){ return global.interstellar.stellar_engine.count < 100 ? false : true },
             cost: {
                 Money(){ return global.interstellar.stellar_engine.count < 100 ? 500000 : 0; },
                 Neutronium(){ return global.interstellar.stellar_engine.count < 100 ? 450 : 0; },
@@ -2369,6 +2373,7 @@ const interstellarProjects = {
                         incrementStruct('stellar_engine','interstellar');
                         if (global.interstellar.stellar_engine.count >= 100 && global.tech['blackhole'] === 3){
                             global.tech['blackhole'] = 4;
+                            drawTech();
                         }
                     }
                     return true;
@@ -2402,6 +2407,7 @@ const interstellarProjects = {
                     if (global.city.power >= $(this)[0].powered){
                         global.interstellar['mass_ejector'].on++;
                     }
+                    defineResources();
                     return true;
                 }
                 return false;

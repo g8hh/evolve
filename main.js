@@ -1,4 +1,4 @@
-import { global, vues, save, poppers, messageQueue, modRes, breakdown, keyMultiplier, p_on, moon_on, red_on, belt_on, int_on, set_qlevel, achieve_level, quantum_level } from './vars.js';
+import { global, vues, save, poppers, resizeGame, messageQueue, modRes, breakdown, keyMultiplier, p_on, moon_on, red_on, belt_on, int_on, set_qlevel, achieve_level, quantum_level } from './vars.js';
 import { loc, locales } from './locale.js';
 import { setupStats, checkAchievements } from './achieve.js';
 import { races, racialTrait, randomMinorTrait } from './races.js';
@@ -6,7 +6,7 @@ import { defineResources, resource_values, spatialReasoning, craftCost, plasmidB
 import { defineJobs, job_desc } from './jobs.js';
 import { defineGovernment, defineGarrison, garrisonSize, armyRating, buildQueue } from './civics.js';
 import { renderFortress, bloodwar } from './portal.js';
-import { actions, checkCityRequirements, checkTechRequirements, checkOldTech, addAction, storageMultipler, checkAffordable, drawTech, evoProgress, housingLabel, oldTech, f_rate, setPlanet } from './actions.js';
+import { actions, checkCityRequirements, checkTechRequirements, checkOldTech, addAction, storageMultipler, checkAffordable, drawCity, drawTech, gainTech, evoProgress, housingLabel, oldTech, f_rate, setPlanet } from './actions.js';
 import { space, deepSpace, fuel_adjust, zigguratBonus } from './space.js';
 import { events } from './events.js';
 import { arpa } from './arpa.js';
@@ -14,16 +14,29 @@ import { arpa } from './arpa.js';
 var intervals = {};
 
 if (Object.keys(locales).length > 1){
-    $('#localization').append($(`<span>${loc('locale')}: <select @change="lChange()" :v-model="locale"></select></span>`));
+    $('#localization').append($(`<span>${loc('locale')}: <select @change="lChange()" :v-model="s.locale"></select></span>`));
     Object.keys(locales).forEach(function (locale){
         let selected = global.settings.locale === locale ? ' selected=selected' : '';
         $('#localization select').append($(`<option value="${locale}"${selected}>${locales[locale]}</option>`));
     });
 }
 
+function resQueue(){
+    $('#resQueue').empty();
+
+    let queue = $(`<div class="buildList"></div>`);
+    $('#resQueue').append(queue);
+
+    queue.append($(`<a class="queued" v-bind:class="{ 'has-text-danger': item.cna }" v-for="(item, index) in rq.queue" @click="remove(index)">{{ item.label }}</a>`));
+}
+resQueue();
+
 let settings = {
     el: '#mainColumn div:first-child',
-    data: global.settings,
+    data: { 
+        s: global.settings,
+        rq: global.r_queue
+    },
     methods: {
         lChange(){
             global.settings.locale = $('#localization select').children("option:selected").val();
@@ -61,6 +74,9 @@ let settings = {
         },
         soft(){
             return loc('settings4');
+        },
+        remove(index){
+            global.r_queue.queue.splice(index,1);
         }
     },
     filters: {
@@ -150,6 +166,8 @@ buildQueue();
 arpa('Physics');
 arpa('Genetics');
 arpa('Crispr');
+
+resizeGame();
 
 vues['race'] = new Vue({
     data: {
@@ -2193,7 +2211,7 @@ function fastLoop(){
                 if (global.city.rock_quarry['on']){
                     power_mult += (p_on['rock_quarry'] * 0.04);
                 }
-                rock_quarry += global.city['rock_quarry'].count * 0.04;
+                rock_quarry += global.city['rock_quarry'].count * 0.02;
             }
 
             let delta = stone_base * power_mult * rock_quarry;
@@ -4169,36 +4187,91 @@ function longLoop(){
         }
 
         if (global.tech['queue'] && global.queue.display){
-            let buy = true;
             let idx = -1;
+            let c_action = false;
             let deepScan = ['space','interstellar','portal'];
             for (let i=0; i<global.queue.queue.length; i++){
                 let struct = global.queue.queue[i];
-                let element = $('#'+struct.id);
-                if (!element.hasClass('cnam') && !element.hasClass('cna') && buy){
-                    idx = i;
-                    if (deepScan.includes(struct.action)){
-                        Object.keys(actions[struct.action]).forEach(function (region){
-                            if (actions[struct.action][region][struct.type] && buy){
-                                actions[struct.action][region][struct.type].action();
-                                buy = false;
-                            }
-                        });
-                    }
-                    else {
-                        actions[struct.action][struct.type].action();
-                        buy = false;
-                    }
-                }
-                if (element.hasClass('cnam')){
-                    global.queue.queue[i].cna = true;
+
+                let t_action = false;
+                if (deepScan.includes(struct.action)){
+                    let scan = true;
+                    Object.keys(actions[struct.action]).forEach(function (region){
+                        if (actions[struct.action][region][struct.type] && scan){
+                            t_action = actions[struct.action][region][struct.type];
+                            scan = false;
+                        }
+                    });
                 }
                 else {
+                    t_action = actions[struct.action][struct.type];
+                }
+
+                if (checkAffordable(t_action,true)){
                     global.queue.queue[i].cna = false;
+                    if (checkAffordable(t_action)){
+                        c_action = t_action;
+                        idx = i;
+                    }
+                }
+                else {
+                    global.queue.queue[i].cna = true;
                 }
             }
-            if (idx >= 0){
-                global.queue.queue.splice(idx,1);
+            if (idx >= 0 && c_action){
+                if (c_action.action()){
+                    global.queue.queue.splice(idx,1);
+                    if (c_action['grant']){
+                        let tech = c_action.grant[0];
+                        global.tech[tech] = c_action.grant[1];
+                        removeAction(c_action.id);
+                        drawCity();
+                        drawTech();
+                        space();
+                        deepSpace();
+                        renderFortress();
+                    }
+                    else if (c_action['refresh']){
+                        removeAction(c_action.id);
+                        drawCity();
+                        drawTech();
+                        space();
+                        deepSpace();
+                        renderFortress();
+                    }
+                    else {
+                        drawCity();
+                        space();
+                        deepSpace();
+                        renderFortress();
+                    }
+                }
+            }
+        }
+
+        if (global.tech['r_queue'] && global.r_queue.display){
+            let idx = -1;
+            let c_action = false;
+            for (let i=0; i<global.r_queue.queue.length; i++){
+                let struct = global.r_queue.queue[i];
+                let t_action = actions[struct.action][struct.type];
+
+                if (checkAffordable(t_action,true)){
+                    global.r_queue.queue[i].cna = false;
+                    if (checkAffordable(t_action)){
+                        c_action = t_action;
+                        idx = i;
+                    }
+                }
+                else {
+                    global.r_queue.queue[i].cna = true;
+                }
+            }
+            if (idx >= 0 && c_action){
+                if (c_action.action()){
+                    gainTech(global.r_queue.queue[idx].type);
+                    global.r_queue.queue.splice(idx,1);
+                }
             }
         }
     }

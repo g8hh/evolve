@@ -655,6 +655,8 @@
   "tech_zoning_permits_effect": "将建筑队列的最大队列大小增加2。",
   "tech_urbanization": "城市化",
   "tech_urbanization_effect": "将建筑队列的最大队列大小增加3。",
+  "tech_assistant": "Personal Assistant",
+  "tech_assistant_effect": "A personal assistant will help you keep your empire organized. Enables research queue.",
   "tech_currency": "货币",
   "tech_currency_desc": "发明货币的概念",
   "tech_currency_effect": "开放货币，是社会发展的重要一步。还创造了税收，但不那么受公众欢迎。",

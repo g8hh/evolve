@@ -224,7 +224,7 @@ if (convertVersion(global['version']) === 5000){
     }
 }
 
-global['version'] = '0.5.4';
+global['version'] = '0.5.5';
 
 if (global.civic['cement_worker'] && global.civic.cement_worker.impact === 0.25){
     global.civic.cement_worker.impact = 0.4;
@@ -307,6 +307,13 @@ if (!global.settings['portal']){
 
 if (!global['queue']){
     global['queue'] = {
+        display: false,
+        queue: [],
+    };
+}
+
+if (!global['r_queue']){
+    global['r_queue'] = {
         display: false,
         queue: [],
     };
@@ -658,11 +665,12 @@ function convertVersion(version){
     return Number(vNum[0]) + Number(vNum[1]) + Number(vNum[2]);
 }
 
-function resizeGame(){
+export function resizeGame(){
     if ($(window).width() >= 1400 && $('#msgQueue:not(.right)')){
         let build = $('#buildQueue').detach();
         build.addClass('right');
         build.removeClass('has-text-info');
+        build.find('h2').removeClass('is-sr-only');
 
         let queue = $('#msgQueue').detach();
         queue.addClass('right');
@@ -678,6 +686,7 @@ function resizeGame(){
         let build = $('#buildQueue').detach();
         build.removeClass('right');
         build.addClass('has-text-info');
+        build.find('h2').addClass('is-sr-only');
 
         let queue = $('#msgQueue').detach();
         queue.removeClass('right');
@@ -723,8 +732,6 @@ export function sizeApproximation(value,precision,fixed){
 $(window).resize(function(){
     resizeGame();
 });
-
-resizeGame();
 
 window.exportGame = function exportGame(){
     $('#importExport').val(LZString.compressToBase64(JSON.stringify(global)));
@@ -833,10 +840,8 @@ window.soft_reset = function reset(){
 }
 
 export function clearStates(){
-    global['queue'] = {
-        display: false,
-        queue: [],
-    };
+    global['queue'] = { display: false, queue: [] };
+    global['r_queue'] = { display: false, queue: [] };
     global.space = {};
     global.interstellar = {};
     global.portal = {};

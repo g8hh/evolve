@@ -1631,7 +1631,7 @@ export const actions = {
             desc: loc('city_food_desc'),
             reqs: { primitive: 1 },
             not_trait: ['evil'],
-            no_queue: true,
+            no_queue(){ return true },
             action(){
                 if(global['resource']['Food'].amount < global['resource']['Food'].max){
                     modRes('Food',global.race['strong'] ? 2 : 1);
@@ -1645,7 +1645,7 @@ export const actions = {
             desc: loc('city_lumber_desc'),
             reqs: {},
             not_trait: ['evil'],
-            no_queue: true,
+            no_queue(){ return true },
             action(){
                 if(global['resource']['Lumber'].amount < global['resource']['Lumber'].max){
                     modRes('Lumber',global.race['strong'] ? 2 : 1);
@@ -1658,7 +1658,7 @@ export const actions = {
             title: loc('city_stone'),
             desc: loc('city_stone_desc'),
             reqs: { primitive: 2 },
-            no_queue: true,
+            no_queue(){ return true },
             action(){
                 if(global['resource']['Stone'].amount < global['resource']['Stone'].max){
                     modRes('Stone',global.race['strong'] ? 2 : 1);
@@ -1672,7 +1672,7 @@ export const actions = {
             desc(){ return global.tech['primitive'] ? (global.resource.Furs.display ? loc('city_evil_desc3') : loc('city_evil_desc2')) : loc('city_evil_desc1'); },
             reqs: {},
             trait: ['evil'],
-            no_queue: true,
+            no_queue(){ return true },
             action(){
                 if(global['resource']['Lumber'].amount < global['resource']['Lumber'].max){
                     modRes('Lumber',1);
@@ -4806,6 +4806,24 @@ export const actions = {
                 return false;
             }
         },
+        assistant: {
+            id: 'tech-assistant',
+            title: loc('tech_assistant'),
+            desc: loc('tech_assistant'),
+            reqs: { queue: 1, science: 4 },
+            grant: ['r_queue',1],
+            cost: {
+                Knowledge(){ return 5000; }
+            },
+            effect: loc('tech_assistant_effect'),
+            action(){
+                if (payCosts($(this)[0].cost)){
+                    global.r_queue.display = true;
+                    return true;
+                }
+                return false;
+            }
+        },
         currency: {
             id: 'tech-currency',
             title: loc('tech_currency'),
@@ -4849,7 +4867,7 @@ export const actions = {
             id: 'tech-tax_rates',
             title: loc('tech_tax_rates'),
             desc: loc('tech_tax_rates_desc'),
-            reqs: { banking: 2, currency: 2 },
+            reqs: { banking: 2, currency: 2, queue: 1 },
             grant: ['currency',3],
             cost: {
                 Knowledge(){ return 3375; }
@@ -7339,7 +7357,7 @@ export const actions = {
             id: 'tech-plasma_turret',
             title: loc('tech_plasma_turret'),
             desc: loc('tech_plasma_turret'),
-            reqs: { high_tech: 13, portal: 2 },
+            reqs: { high_tech: 13, turret: 1 },
             grant: ['turret',2],
             cost: {
                 Knowledge(){ return 760000; },
@@ -9220,6 +9238,7 @@ export const actions = {
                 }
             },
             reqs: { genesis: 5 },
+            no_queue(){ return global.starDock.seeder.count < 100 ? false : true },
             cost: {
                 Money(){ return global.starDock.seeder.count < 100 ? 100000 : 0; },
                 Steel(){ return global.starDock.seeder.count < 100 ? 25000 : 0; },
@@ -9254,6 +9273,7 @@ export const actions = {
             },
             reqs: { genesis: 6 },
             cost: {},
+            no_queue(){ return true },
             effect(){
                 let pop = global['resource'][global.race.species].amount + global.civic.garrison.workers;
                 let plasmid = Math.round(pop / 3);
@@ -9285,6 +9305,7 @@ export const actions = {
             },
             reqs: { genesis: 7 },
             cost: {},
+            no_queue(){ return true },
             effect(){
                 let pop = global['resource'][global.race.species].amount + global.civic.garrison.workers;
                 let plasmid = Math.round(pop / 3);
@@ -9386,7 +9407,7 @@ function registerTech(action){
     addAction('tech',action);
 }
 
-function gainTech(action){
+export function gainTech(action){
     var tech = actions.tech[action].grant[0];
     global.tech[tech] = actions.tech[action].grant[1];
     drawCity();
@@ -9582,6 +9603,26 @@ export function setAction(c_action,action,type,old){
                             if (c_action.action()){
                                 gainTech(type);
                             }
+                            else {
+                                if (!(c_action['no_queue'] && c_action['no_queue']()) && global.tech['r_queue']){
+                                    let max_queue = 3;
+                                    if (global.genes['queue'] && global.genes['queue'] >= 2){
+                                        max_queue += 2;
+                                    }
+                                    if (global.r_queue.queue.length < max_queue){
+                                        let queued = false;
+                                        for (let tech in global.r_queue.queue){
+                                            if (global.r_queue.queue[tech].id === c_action.id){
+                                                queued = true;
+                                                break;
+                                            }
+                                        }
+                                        if (!queued){
+                                            global.r_queue.queue.push({ id: c_action.id, action: action, type: type, label: typeof c_action.title === 'string' ? c_action.title : c_action.title(), cna: false });
+                                        }
+                                    }
+                                }
+                            }
                             break;
                         case 'genes':
                             if (c_action.action()){
@@ -9619,7 +9660,7 @@ export function setAction(c_action,action,type,old){
                                 let grant = false;
                                 for (var i=0; i<keyMult; i++){
                                     if (!c_action.action()){
-                                        if (!c_action['no_queue'] && global.tech['queue']){
+                                        if (!(c_action['no_queue'] && c_action['no_queue']()) && global.tech['queue']){
                                             let max_queue = global.tech['queue'] >= 2 ? (global.tech['queue'] >= 3 ? 8 : 5) : 3;
                                             if (global.genes['queue'] && global.genes['queue'] >= 2){
                                                 max_queue += 2;
@@ -11040,7 +11081,9 @@ function sentience(){
     }
     if (global.genes['queue']){
         global.tech['queue'] = 1;
+        global.tech['r_queue'] = 1;
         global.queue.display = true;
+        global.r_queue.display = true;
     }
 
     Object.keys(global.genes.minor).forEach(function (trait){

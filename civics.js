@@ -37,10 +37,10 @@ export function buildQueue(){
     $('#buildQueue').empty();
     $('#buildQueue').append($('<h2 class="has-text-success is-sr-only">Building Queue</h2>'));
 
-    let queue = $(`<div class="buildList"></div>`);
+    let queue = $(`<ul class="buildList"></ul>`);
     $('#buildQueue').append(queue);
 
-    queue.append($(`<a class="queued" v-bind:class="{ 'has-text-danger': item.cna }" v-for="(item, index) in queue" @click="remove(index)">{{ item.label }}</a>`));
+    queue.append($(`<li v-for="(item, index) in queue"><a class="queued" v-bind:class="{ 'has-text-danger': item.cna }" @click="remove(index)">{{ item.label }}</a></li>`));
 
     vues['builld_queue'] = new Vue({
         el: '#buildQueue',
@@ -51,6 +51,7 @@ export function buildQueue(){
             }
         }
     });
+    dragQueue();
 }
 
 function taxRates(govern){
@@ -985,6 +986,16 @@ export function challenge_multiplier(value){
         default:
             return value;
     }
+}
+
+export function dragQueue(){
+    sortable('#buildQueue .buildList')[0].addEventListener('sortupdate', function(e){
+        let order = global.queue.queue;
+        var tmp = order[e.detail.origin.elementIndex];
+        order[e.detail.origin.elementIndex] = order[e.detail.destination.elementIndex];
+        order[e.detail.destination.elementIndex] = tmp;
+        global.queue.queue = order;
+    });
 }
 
 function warhead(){

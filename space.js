@@ -1512,6 +1512,7 @@ const spaceProjects = {
             },
             reqs: { science: 11 },
             cost: {},
+            no_queue(){ return true },
             effect(){
                 let boost = 25;
                 if (global.interstellar['far_reach'] && p_on['far_reach'] > 0){
@@ -2006,7 +2007,7 @@ const interstellarProjects = {
                 let desc = `<div>${loc('plus_max_resource',[containers,loc('resource_Crates_name')])}</div><div>${loc('plus_max_resource',[containers,loc('resource_Containers_name')])}</div>`;
                 desc = desc + `<div>${loc('plus_max_resource',[neutronium,loc('resource_Neutronium_name')])}</div><div>${loc('plus_max_resource',[infernite,loc('resource_Infernite_name')])}</div>`;
                 if (global.tech['storage'] >= 7){
-                    let boost = quantum_level;
+                    let boost = +(quantum_level).toFixed(3);
                     desc = desc + `<div>${loc('interstellar_cargo_yard_effect',[boost])}</div>`;
                 }
                 return desc;
@@ -2407,6 +2408,7 @@ const interstellarProjects = {
                     if (global.city.power >= $(this)[0].powered){
                         global.interstellar['mass_ejector'].on++;
                     }
+                    $('#resources').empty();
                     defineResources();
                     return true;
                 }

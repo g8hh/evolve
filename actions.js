@@ -4,7 +4,7 @@ import { unlockAchieve, unlockFeat } from './achieve.js';
 import { races, genus_traits, randomMinorTrait, cleanAddTrait, biomes } from './races.js';
 import { defineResources, loadMarket, spatialReasoning, resource_values, atomic_mass } from './resources.js';
 import { loadFoundry } from './jobs.js';
-import { defineGarrison, buildGarrison, armyRating, challenge_multiplier } from './civics.js';
+import { defineGarrison, buildGarrison, armyRating, challenge_multiplier, dragQueue } from './civics.js';
 import { spaceTech, interstellarTech, space, deepSpace } from './space.js';
 import { renderFortress, fortressTech } from './portal.js';
 import { arpa, gainGene } from './arpa.js';
@@ -3132,6 +3132,7 @@ export const actions = {
                 let gain = 3000;
                 if (global.portal['sensor_drone']){
                     gain *= 1 + (p_on['sensor_drone'] * 0.02);
+                    gain = +(gain).toFixed(0);
                 }
                 return `${loc('city_max_knowledge',[gain])}, -${actions.city.biolab.powered}kW`;
             },
@@ -9514,6 +9515,7 @@ export function setAction(c_action,action,type,old){
         global[action][type]['on'] = 0;
     }
     var id = c_action.id;
+    removeAction(id);
     var parent = $(`<div id="${id}" class="action"></div>`);
     if (!checkAffordable(c_action)){
         parent.addClass('cna');
@@ -9619,6 +9621,7 @@ export function setAction(c_action,action,type,old){
                                         }
                                         if (!queued){
                                             global.r_queue.queue.push({ id: c_action.id, action: action, type: type, label: typeof c_action.title === 'string' ? c_action.title : c_action.title(), cna: false });
+                                            resDragQueue();
                                         }
                                     }
                                 }
@@ -9658,15 +9661,17 @@ export function setAction(c_action,action,type,old){
                                     keyMult = 1;
                                 }
                                 let grant = false;
+                                let no_queue = action === 'evolution' || (c_action['no_queue'] && c_action['no_queue']()) ? true : false;
                                 for (var i=0; i<keyMult; i++){
                                     if (!c_action.action()){
-                                        if (!(c_action['no_queue'] && c_action['no_queue']()) && global.tech['queue']){
+                                        if (!no_queue && global.tech['queue']){
                                             let max_queue = global.tech['queue'] >= 2 ? (global.tech['queue'] >= 3 ? 8 : 5) : 3;
                                             if (global.genes['queue'] && global.genes['queue'] >= 2){
                                                 max_queue += 2;
                                             }
                                             if (global.queue.queue.length < max_queue){
                                                 global.queue.queue.push({ id: c_action.id, action: action, type: type, label: typeof c_action.title === 'string' ? c_action.title : c_action.title(), cna: false });
+                                                dragQueue();
                                             }
                                         }
                                         break;
@@ -11223,6 +11228,16 @@ function fanaticTrait(trait){
     }
 }
 
+export function resDragQueue(){
+    sortable('#resQueue .buildList')[0].addEventListener('sortupdate', function(e){
+        let order = global.r_queue.queue;
+        var tmp = order[e.detail.origin.elementIndex];
+        order[e.detail.origin.elementIndex] = order[e.detail.destination.elementIndex];
+        order[e.detail.destination.elementIndex] = tmp;
+        global.r_queue.queue = order;
+    });
+}
+
 function bioseed(){
     Object.keys(vues).forEach(function (v){
         vues[v].$destroy();
@@ -11338,7 +11353,8 @@ function big_bang(){
     new_plasmid = challenge_multiplier(new_plasmid);
     plasmid += new_plasmid;
     let new_phage = challenge_multiplier(Math.floor(Math.log2(new_plasmid) * Math.E * 2.5));
-    let new_dark = +(global.interstellar.stellar_engine.exotic * 40).toFixed(3);
+    let new_dark = +(Math.log(1 + (global.interstellar.stellar_engine.exotic * 40))).toFixed(3);
+    new_dark += +(Math.log2(global.interstellar.stellar_engine.mass - 7)/2.5).toFixed(3);
 
     phage += new_phage;
     global.stats.reset++;

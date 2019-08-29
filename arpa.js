@@ -1,4 +1,5 @@
 import { global, vues, poppers, keyMultiplier, sizeApproximation, srSpeak } from './vars.js';
+import { timeFormat } from './functions.js';
 import { actions, drawTech, drawCity, addAction, removeAction } from './actions.js';
 import { races, traits, cleanAddTrait, cleanRemoveTrait } from './races.js';
 import { space } from './space.js';
@@ -801,10 +802,10 @@ function genetics(){
                 timer(val){
                     if (global.city.biolab.on > 0){
                         if (global.arpa.sequence.boost){
-                            return (val / (global.city.biolab.on * 2)).toFixed(0) + 's';
+                            return timeFormat(val / (global.city.biolab.on * 2));
                         }
                         else {
-                            return (val / global.city.biolab.on).toFixed(0) + 's';
+                            return timeFormat(val / global.city.biolab.on);
                         }
                     }
                     else {

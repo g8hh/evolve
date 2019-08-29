@@ -1,5 +1,4 @@
 import { global, vues, poppers, messageQueue, keyMultiplier, p_on, modRes } from './vars.js';
-import { spatialReasoning } from './resources.js';
 import { armyRating } from './civics.js';
 import { payCosts, setAction } from './actions.js';
 import { costMultiplier, checkRequirements, incrementStruct } from './space.js';
@@ -327,7 +326,15 @@ function buildFortress(parent){
                 return loc('fortress_defense');
             },
             hostiles(){
-                return loc('fortress_threat',[global.portal.fortress.threat]);
+                if (global.portal.fortress.threat >= 2000){
+                    return `${loc('fortress_threat',[global.portal.fortress.threat])} ${loc('fortress_threat_high')}`;
+                }
+                else if (global.portal.fortress.threat < 1000){
+                    return `${loc('fortress_threat',[global.portal.fortress.threat])} ${loc('fortress_threat_low')}`;
+                }
+                else {
+                    return `${loc('fortress_threat',[global.portal.fortress.threat])} ${loc('fortress_threat_medium')}`;
+                }
             },
             armyLabel(){
                 return loc('fortress_stationed');
@@ -491,10 +498,10 @@ export function bloodwar(){
         }
     }
 
-    let gem_chance = 9999;
+    let gem_chance = 10000;
     if (global.tech['portal'] >= 4 && p_on['attractor']){
         for (let i=0; i<p_on['attractor']; i++){
-            gem_chance = Math.round(gem_chance * 0.95);
+            gem_chance = Math.round(gem_chance * 0.92);
         }
     }
 

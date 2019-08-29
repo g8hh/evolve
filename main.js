@@ -1,13 +1,13 @@
 import { global, vues, save, poppers, resizeGame, messageQueue, modRes, breakdown, keyMultiplier, p_on, moon_on, red_on, belt_on, int_on, set_qlevel, achieve_level, quantum_level } from './vars.js';
 import { loc, locales } from './locale.js';
-import { mainVue } from './functions.js';
+import { mainVue, timeCheck, timeFormat } from './functions.js';
 import { setupStats, checkAchievements } from './achieve.js';
 import { races, racialTrait, randomMinorTrait } from './races.js';
 import { defineResources, resource_values, spatialReasoning, craftCost, plasmidBonus, tradeRatio, craftingRatio, crateValue, containerValue, tradeSellPrice, tradeBuyPrice, atomic_mass } from './resources.js';
 import { defineJobs, job_desc } from './jobs.js';
 import { defineGovernment, defineGarrison, garrisonSize, armyRating, buildQueue, dragQueue } from './civics.js';
 import { renderFortress, bloodwar } from './portal.js';
-import { actions, checkCityRequirements, checkTechRequirements, checkOldTech, addAction, storageMultipler, checkAffordable, drawCity, drawTech, gainTech, evoProgress, housingLabel, oldTech, f_rate, setPlanet, resQueue } from './actions.js';
+import { actions, checkCityRequirements, checkTechRequirements, checkOldTech, addAction, storageMultipler, checkAffordable, drawCity, drawTech, gainTech, removeAction, evoProgress, housingLabel, oldTech, f_rate, setPlanet, resQueue } from './actions.js';
 import { space, deepSpace, fuel_adjust, zigguratBonus } from './space.js';
 import { events } from './events.js';
 import { arpa } from './arpa.js';
@@ -231,7 +231,7 @@ vues['topBar'] = new Vue({
 });
 vues['topBar'].$mount('#topBar');
 
-$('#topBar .planet').on('mouseover',function(){
+$('#topBar .planetWrap .planet').on('mouseover',function(){
     var popper = $(`<div id="topbarPlanet" class="popper has-background-light has-text-dark"></div>`);
     $('#main').append(popper);
     if (global.race.species === 'protoplasm'){
@@ -248,7 +248,7 @@ $('#topBar .planet').on('mouseover',function(){
     poppers['topbarPlanet'] = new Popper($('#topBar .planet'),popper);
 
 });
-$('#topBar .planet').on('mouseout',function(){
+$('#topBar .planetWrap .planet').on('mouseout',function(){
     $(`#topbarPlanet`).hide();
     poppers['topbarPlanet'].destroy();
     $(`#topbarPlanet`).remove();
@@ -473,7 +473,7 @@ function fastLoop(){
                 if (increment <= 0){ break; }
             }
             let rna = increment;
-            if (global.evolution['bryophyte'] || global.evolution['protostomes'] || global.evolution['deuterostome']){
+            if (global.evolution['bilateral_symmetry'] || global.evolution['poikilohydric'] || global.evolution['spores']){
                 increment *= 2;
             }
             modRes('DNA', increment * global_multiplier * time_multiplier);
@@ -3515,6 +3515,9 @@ function midLoop(){
                 else if (!element.hasClass('cnam')){
                     element.addClass('cnam');
                 }
+                if (global.city[action]){
+                    global.city[action]['time'] = timeFormat(timeCheck(c_action));
+                }
             }
         });
 
@@ -3566,6 +3569,9 @@ function midLoop(){
                         }
                         else if (!element.hasClass('cnam')){
                             element.addClass('cnam');
+                        }
+                        if (global[location][action]){
+                            global[location][action]['time'] = timeFormat(timeCheck(c_action));
                         }
                     }
                 });
@@ -3696,21 +3702,27 @@ function midLoop(){
                     t_action = actions[struct.action][struct.type];
                 }
 
-                if (checkAffordable(t_action,true)){
-                    global.queue.queue[i].cna = false;
-                    if (checkAffordable(t_action) && !stop){
-                        c_action = t_action;
-                        idx = i;
-                    }
-                    else {
-                        time += timeCheck(t_action,spent);
-                    }
-                    global.queue.queue[i]['time'] = time;
-                    stop = true;
+                if (t_action['grant'] && global.tech[t_action.grant[0]] && global.tech[t_action.grant[0]] >= t_action.grant[1]){
+                    global.queue.queue.splice(i,1);
+                    break;
                 }
                 else {
-                    global.queue.queue[i].cna = true;
-                    global.queue.queue[i]['time'] = -1;
+                    if (checkAffordable(t_action,true)){
+                        global.queue.queue[i].cna = false;
+                        if (checkAffordable(t_action) && !stop){
+                            c_action = t_action;
+                            idx = i;
+                        }
+                        else {
+                            time += timeCheck(t_action,spent);
+                        }
+                        global.queue.queue[i]['time'] = time;
+                        stop = true;
+                    }
+                    else {
+                        global.queue.queue[i].cna = true;
+                        global.queue.queue[i]['time'] = -1;
+                    }
                 }
             }
             if (idx >= 0 && c_action){
@@ -3753,16 +3765,22 @@ function midLoop(){
                 let struct = global.r_queue.queue[i];
                 let t_action = actions[struct.action][struct.type];
 
-                if (checkAffordable(t_action,true)){
-                    global.r_queue.queue[i].cna = false;
-                    if (checkAffordable(t_action) && !stop){
-                        c_action = t_action;
-                        idx = i;
-                    }
-                    stop = true;
+                if (t_action['grant'] && global.tech[t_action.grant[0]] && global.tech[t_action.grant[0]] >= t_action.grant[1]){
+                    global.r_queue.queue.splice(i,1);
+                    break;
                 }
                 else {
-                    global.r_queue.queue[i].cna = true;
+                    if (checkAffordable(t_action,true)){
+                        global.r_queue.queue[i].cna = false;
+                        if (checkAffordable(t_action) && !stop){
+                            c_action = t_action;
+                            idx = i;
+                        }
+                        stop = true;
+                    }
+                    else {
+                        global.r_queue.queue[i].cna = true;
+                    }
                 }
             }
             if (idx >= 0 && c_action){
@@ -4187,42 +4205,6 @@ function longLoop(){
 
     // Save game state
     save.setItem('evolved',LZString.compressToUTF16(JSON.stringify(global)));
-}
-
-function timeCheck(c_action,track){
-    if (c_action.cost){
-        let time = 0;
-        Object.keys(c_action.cost).forEach(function (res){
-            var testCost = Number(c_action.cost[res]()) || 0;
-            let res_have = Number(global.resource[res].amount);
-            if (track){
-                res_have += global.resource[res].diff * track.t;
-                if (track.r[res]){
-                    res_have -= Number(track.r[res]);
-                    track.r[res] += testCost;
-                }
-                else {
-                    track.r[res] = testCost;
-                }
-                if (global.resource[res].max >= 0 && res_have > global.resource[res].max){
-                    res_have = global.resource[res].max;
-                }
-            }
-            if (testCost > res_have && global.resource[res].diff > 0){
-                let r_time = (testCost - res_have) / global.resource[res].diff;
-                if (r_time > time){
-                    time = r_time;
-                }
-            }
-        });
-        if (track){
-            track.t += time;
-        }
-        return time;
-    }
-    else {
-        return 0;
-    }
 }
 
 function q_check(){

@@ -1,3 +1,19 @@
+#### 0.5.11 - 8/28/2019 ####
+Fixed issue with nucleus DNA bonus not applying from correct cell stage evolutions<br>
+Building timers now count down without refreashing the popover<br>
+Long action titles will now wrap instead of overflowing the button<br>
+Fixed a bug that could cause the research queue to clear items from the building queue<br>
+
+#### 0.5.10 - 8/28/2019 ####
+Fixed bug with some construction projects not refreshing the page after being built with the queue<br>
+Space exploration missions can no longer be queued more then once at a time<br>
+One off projects are now removed from the queue if completed manually<br>
+Queue timers now track crafted resources<br>
+Demonic attractor soul gem drop rate increase buffed from 5% to 8%<br>
+Updated some fortress related tooltips<br>
+Mousing over the star rating in the top left corner now lists which challenges are active<br>
+Time until ready added to unaffordable actions<br>
+
 #### 0.5.9 - 8/27/2019 ####
 Active build queues wiped due do internal game breaking format change<br>
 

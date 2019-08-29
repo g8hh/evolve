@@ -1,6 +1,6 @@
 import { global, vues, save, poppers, messageQueue, keyMultiplier, clearStates, demoIsPressed, srSpeak, modRes, sizeApproximation, p_on, moon_on, quantum_level } from './vars.js';
 import { loc } from './locale.js';
-import { mainVue } from './functions.js';
+import { timeCheck, timeFormat } from './functions.js';
 import { unlockAchieve, unlockFeat } from './achieve.js';
 import { races, genus_traits, randomMinorTrait, cleanAddTrait, biomes } from './races.js';
 import { defineResources, loadMarket, spatialReasoning, resource_values, atomic_mass } from './resources.js';
@@ -90,7 +90,7 @@ export const actions = {
                 DNA(){ return (global.evolution['nucleus'].count * (global.evolution['multicellular'] && global.evolution['multicellular'].count > 0 ? 12 : 16)) + 18; }
             },
             effect(){
-                let dna = global.evolution['bryophyte'] || global.evolution['protostomes'] || global.evolution['deuterostome'] ? 2 : 1;
+                let dna = global.evolution['bilateral_symmetry'] || global.evolution['poikilohydric'] || global.evolution['spores'] ? 2 : 1;
                 return loc('evo_nucleus_effect',[dna]);
             },
             action(){
@@ -9773,12 +9773,15 @@ export function setAction(c_action,action,type,old){
             let wide = c_action['wide'] ? ' wide' : '';
             var popper = $(`<div id="pop${id}" class="popper${wide} has-background-light has-text-dark"></div>`);
             $(pop_target).append(popper);
-            actionDesc(popper,c_action,old);
+            actionDesc(popper,c_action,global[action][type],old);
             popper.show();
             poppers[id] = new Popper($('#'+id),popper);
         });
     $('#'+id).on('mouseout',function(){
             $(`#pop${id}`).hide();
+            if (vues['popTimer']){
+                vues['popTimer'].$destroy();
+            }
             if (poppers[id]){
                 poppers[id].destroy();
             }
@@ -9967,7 +9970,7 @@ function srDesc(c_action,old){
     return desc.replace("..",".");
 }
 
-function actionDesc(parent,c_action,old){
+function actionDesc(parent,c_action,obj,old){
     parent.empty();
     var desc = typeof c_action.desc === 'string' ? c_action.desc : c_action.desc();
     parent.append($('<div>'+desc+'</div>'));
@@ -9997,6 +10000,27 @@ function actionDesc(parent,c_action,old){
         parent.append($(`<div class="flair has-text-special">${flair}</div>`));
         parent.addClass('flair');
     }
+    if (!old && !checkAffordable(c_action) && checkAffordable(c_action,true)){
+        if (obj && obj['time']){
+            if (vues['popTimer']){
+                vues['popTimer'].$destroy();
+            }
+            parent.append($(`<div id="popTimer" class="flair has-text-advanced">{{ time | timer }}</div>`));
+            vues['popTimer'] = new Vue({
+                data: obj,
+                filters: {
+                    timer(t){
+                        return loc('action_ready',[t]);
+                    }
+                }
+            });
+            vues['popTimer'].$mount('#popTimer');
+        }
+        else {
+            let time = timeFormat(timeCheck(c_action));
+            parent.append($(`<div class="flair has-text-advanced">${loc('action_ready',[time])}</div>`));
+        }
+    }
 }
 
 export function removeAction(id){
@@ -10015,7 +10039,7 @@ function updateDesc(c_action,category,action){
             $(`#${id} .off`).css('display','block');
         }
     }
-    actionDesc($('#pop'+id),c_action);
+    actionDesc($('#pop'+id),c_action,global[category][action]);
 }
 
 function adjustCosts(costs){

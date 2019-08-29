@@ -2225,7 +2225,7 @@
   "fortress_threat": "在附近发现了 %0 恶魔生物。",
   "fortress_threat_high": "勘探者在这么活跃的地狱中活不了多久。",
   "fortress_threat_medium": "虽然危险，勘探者应该能够在不出现太多死亡的情况下工作。",
-  "fortress_threat_low": "在目前的地狱活动水平下，测量员应该很难被杀害。",
+  "fortress_threat_low": "在目前的地狱活动水平下，勘探者应该很难被杀害。",
   "fortress_defense": "堡垒防御评级:",
   "fortress_army": "驻扎",
   "fortress_stationed": "驻扎在要塞的士兵人数。",

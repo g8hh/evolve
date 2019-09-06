@@ -375,6 +375,7 @@ function buildFortress(parent){
                     if (global.portal.fortress.garrison > global.civic.garrison.workers){
                         global.portal.fortress.garrison = global.civic.garrison.workers;
                     }
+                    global.portal.fortress['assigned'] = global.portal.fortress.garrison;
                     if (vues['civ_garrison']){
                         vues['civ_garrison'].$forceUpdate();
                     }
@@ -390,6 +391,7 @@ function buildFortress(parent){
                     if (global.portal.fortress.garrison < global.portal.fortress.patrols * global.portal.fortress.patrol_size){
                         global.portal.fortress.patrols = Math.floor(global.portal.fortress.garrison / global.portal.fortress.patrol_size);
                     }
+                    global.portal.fortress['assigned'] = global.portal.fortress.garrison;
                     if (vues['civ_garrison']){
                         vues['civ_garrison'].$forceUpdate();
                     }
@@ -553,7 +555,11 @@ export function bloodwar(){
         }
     }
 
-    let gem_chance = 10000;
+    if (!global.portal.fortress['pity']){
+        global.portal.fortress['pity'] = 0;
+    }
+    let gem_chance = 10000 - global.portal.fortress.pity;
+    
     if (global.tech['portal'] >= 4 && p_on['attractor']){
         for (let i=0; i<p_on['attractor']; i++){
             gem_chance = Math.round(gem_chance * 0.92);
@@ -563,6 +569,7 @@ export function bloodwar(){
     // Patrols
     let dead = 0;
     let terminators = global.interstellar['war_droid'] ? p_on['war_droid'] : 0;
+    let failed_drop = false;
     for (let i=0; i<global.portal.fortress.patrols; i++){
         if (Math.rand(0,global.portal.fortress.threat) >= Math.rand(0,999)){
             let pat_size = global.portal.fortress.patrol_size;
@@ -602,13 +609,23 @@ export function bloodwar(){
                 }
                 if (Math.rand(0,gem_chance) === 0){
                     global.resource.Soul_Gem.amount++;
-                    global.resource.Soul_Gem.display = true;
+                    global.portal.fortress.pity = 0;
+                    if (!global.resource.Soul_Gem.display){
+                        global.resource.Soul_Gem.display = true;
+                        messageQueue(loc('portal_first_gem'),'success');
+                    }
+                }
+                else {
+                    failed_drop = true;
                 }
             }
         }
     }
     if (dead > 0 && global.portal.fortress.notify === 'Yes'){
         messageQueue(loc('fortress_patrol_casualties',[dead]));
+    }
+    if (failed_drop && global.portal.fortress.pity < 10000){
+        global.portal.fortress.pity++;
     }
 
     // Siege Chance
@@ -650,6 +667,7 @@ export function bloodwar(){
             global.stats.died += global.portal.fortress.garrison;
             global.civic.garrison.workers -= global.portal.fortress.garrison;
             global.portal.fortress.garrison = 0;
+            global.portal.fortress['assigned'] = 0;
         }
         else {
             messageQueue(loc('fortress_sieged',[killed,damage]));

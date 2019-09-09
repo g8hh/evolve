@@ -1630,6 +1630,7 @@
   "arpa_remove": "从你的种族移除 %0,花费 %1 质粒. 这个过程不太容易逆转。",
   "arpa_gain": "给你的种族增加 %0,花费 %1 质粒. 这个过程不太容易逆转。",
   "time_never": "永不",
+  "race_prehistoric": "Prehistoric",
   "race_protoplasm": "原生质",
   "race_protoplasm_desc": "你的种族还没有进化成一个复杂的生命形式，目前你只是原始人类渗出的原生质。",
   "race_human": "人类",

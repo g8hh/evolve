@@ -109,7 +109,13 @@ function taxRates(govern){
             add(){
                 let inc = keyMultiplier();
                 let extreme = global.tech['currency'] && global.tech['currency'] >= 5 ? true : false;
-                if ((extreme || global.race['terrifying']) && global.civic.taxes.tax_rate < 50){
+                if (global.race['noble']){
+                    global.civic.taxes.tax_rate += inc;
+                    if (global.civic.taxes.tax_rate > 20){
+                        global.civic.taxes.tax_rate = 20;
+                    }
+                }
+                else if ((extreme || global.race['terrifying']) && global.civic.taxes.tax_rate < 50){
                     global.civic.taxes.tax_rate += inc;
                     if (global.civic.taxes.tax_rate > 50){
                         global.civic.taxes.tax_rate = 50;
@@ -125,7 +131,13 @@ function taxRates(govern){
             sub(){
                 let dec = keyMultiplier();
                 let extreme = global.tech['currency'] && global.tech['currency'] >= 5 ? true : false;
-                if ((extreme || global.race['terrifying']) && global.civic.taxes.tax_rate > 0){
+                if (global.race['noble']){
+                    global.civic.taxes.tax_rate -= dec;
+                    if (global.civic.taxes.tax_rate < 10){
+                        global.civic.taxes.tax_rate = 10;
+                    }
+                }
+                else if ((extreme || global.race['terrifying']) && global.civic.taxes.tax_rate > 0){
                     global.civic.taxes.tax_rate -= dec;
                     if (global.civic.taxes.tax_rate < 0){
                         global.civic.taxes.tax_rate = 0;
@@ -205,32 +217,32 @@ export function buildGarrison(garrison){
         battalion.append(anext);
 
         campaign.append($(`<div class="column launch"><b-tooltip :label="battleAssessment()" position="is-bottom" multilined animated><button class="button campaign" @click="campaign">${loc('civics_garrison_launch_campaign')}</button></b-tooltip></div>`));
+    }
 
-        if (!global.civic['garrison']){
-            global.civic['garrison'] = {
-                display: false,
-                disabled: false,
-                progress: 0,
-                tactic: 0,
-                workers: 0,
-                wounded: 0,
-                raid: 0,
-                max: 0
-            };
-        }
+    if (!global.civic['garrison']){
+        global.civic['garrison'] = {
+            display: false,
+            disabled: false,
+            progress: 0,
+            tactic: 0,
+            workers: 0,
+            wounded: 0,
+            raid: 0,
+            max: 0
+        };
+    }
 
-        if (!global.civic.garrison['mercs']){
-            global.civic.garrison['mercs'] = false;
-        }
-        if (!global.civic.garrison['fatigue']){
-            global.civic.garrison['fatigue'] = 0;
-        }
-        if (!global.civic.garrison['protest']){
-            global.civic.garrison['protest'] = 0;
-        }
-        if (!global.civic.garrison['m_use']){
-            global.civic.garrison['m_use'] = 0;
-        }
+    if (!global.civic.garrison['mercs']){
+        global.civic.garrison['mercs'] = false;
+    }
+    if (!global.civic.garrison['fatigue']){
+        global.civic.garrison['fatigue'] = 0;
+    }
+    if (!global.civic.garrison['protest']){
+        global.civic.garrison['protest'] = 0;
+    }
+    if (!global.civic.garrison['m_use']){
+        global.civic.garrison['m_use'] = 0;
     }
 
     vues['civ_garrison'] = new Vue({
@@ -736,8 +748,16 @@ export function buildGarrison(garrison){
                 let food = +(rating / 3).toFixed(2);
                 let fur = +(rating / 10).toFixed(2);
                 if (global.race['evil']){
-                    let bones = +(armyRating(garrisonSize(),'hunting') / 3).toFixed(2);
-                    return loc('civics_garrison_evil_soldier_desc',[food,fur,bones]);
+                    if (global.race['soul_eater']){
+                        let bones = +(armyRating(garrisonSize(),'hunting') / 3).toFixed(2);
+                        return loc('civics_garrison_evil_soldier_desc',[food,fur,bones]);
+                    }
+                    else {
+                        let bones = +(armyRating(garrisonSize(),'hunting') / 5).toFixed(2);
+                        return global.race['herbivore']
+                            ? loc('civics_garrison_evil_alt_soldier_desc_herb',[fur,bones])
+                            : loc('civics_garrison_evil_alt_soldier_desc',[food,fur,bones]);
+                    }
                 }
                 else {
                     return global.race['herbivore']
@@ -849,6 +869,9 @@ function lootModify(val){
     }
     if (global.race['invertebrate']){
         loot = loot * 0.9;
+    }
+    if (global.race.universe === 'evil'){
+        loot = loot * (1 + ((Math.log2(10 + global.race.Dark.count) - 3.321928094887362) / 5));
     }
     return Math.floor(loot);
 }
@@ -978,7 +1001,6 @@ function defineMad(){
                 }
             },
             defcon(){
-                
                 return global.tech['world_control']
                     ? loc('civics_mad_missiles_world_control_desc')
                     : loc('civics_mad_missiles_desc');
@@ -992,7 +1014,7 @@ function defineMad(){
                     k_base -= k_inc;
                     k_inc *= 1.1;
                 }
-                plasma = challenge_multiplier(plasma);
+                plasma = challenge_multiplier(plasma,'mad');
                 return loc('civics_mad_missiles_warning',[plasma]);
             }
         }
@@ -1000,8 +1022,10 @@ function defineMad(){
     vues['mad'].$mount('#mad');
 }
 
-export function challenge_multiplier(value){
+export function challenge_multiplier(value,type){
     let challenge_level = 0;
+    if (global.race.universe === 'micro'){ value = Math.round(value * 0.25); }
+    if (global.race.universe === 'heavy' && type !== 'mad'){ value = Math.round(value * 1.25); }
     if (global.race['no_plasmid']){ challenge_level++; }
     if (global.race['no_trade']){ challenge_level++; }
     if (global.race['no_craft']){ challenge_level++; }
@@ -1044,6 +1068,7 @@ function warhead(){
     let orbit = global.city.calendar.orbit;
     let biome = global.city.biome;
     let plasmid = global.race.Plasmid.count;
+    let antiplasmid = global.race.Plasmid.anti;
     let pop = global['resource'][global.race.species].amount + global.civic.garrison.workers;
     let new_plasmid = Math.round(pop / 3);
     let k_base = global.stats.know;
@@ -1053,8 +1078,7 @@ function warhead(){
         k_base -= k_inc;
         k_inc *= 1.1;
     }
-    new_plasmid = challenge_multiplier(new_plasmid);
-    plasmid += new_plasmid;
+    new_plasmid = challenge_multiplier(new_plasmid,'mad');
     global.stats.reset++;
     global.stats.tdays += global.stats.days;
     global.stats.days = 0;
@@ -1064,20 +1088,28 @@ function warhead(){
     global.stats.starved = 0;
     global.stats.tdied += global.stats.died;
     global.stats.died = 0;
-    global.stats.plasmid += new_plasmid;
-    unlockAchieve(`apocalypse`);
-    let new_achieve = unlockAchieve(`extinct_${god}`);
-    checkAchievements();
+    if (global.race.universe === 'antimatter'){
+        antiplasmid += new_plasmid;
+        global.stats.antiplasmid += new_plasmid;
+    }
+    else {
+        plasmid += new_plasmid;
+        global.stats.plasmid += new_plasmid;
+    }
+    let new_achieve = unlockAchieve(`apocalypse`);
+    if (unlockAchieve(`squished`,true)){ new_achieve = true; }
+    if (unlockAchieve(`extinct_${god}`)){ new_achieve = true; }
     if (global.city.biome === 'hellscape' && races[global.race.species].type !== 'demonic'){
         unlockFeat('take_no_advice');
     }
+    checkAchievements();
     global['race'] = { 
         species : 'protoplasm', 
         gods: god,
         old_gods: old_god,
         rapid_mutation: 1,
         ancient_ruins: 1,
-        Plasmid: { count: plasmid },
+        Plasmid: { count: plasmid, anti: antiplasmid },
         Phage: { count: global.race.Phage.count },
         Dark: { count: global.race.Dark.count },
         universe: global.race.universe,

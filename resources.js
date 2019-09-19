@@ -160,8 +160,8 @@ if (global.resource[races[global.race.species].name]){
 export function defineResources(){
     if (global.race.species === 'protoplasm'){
         let base = 100;
-        if (global.stats.achieve['creator'] && global.stats.achieve['creator'] > 1){
-            base += 50 * (global.stats.achieve['creator'] - 1);
+        if (global.stats.achieve['creator'] && global.stats.achieve['creator'].l > 1){
+            base += 50 * (global.stats.achieve['creator'].l - 1);
         }
         loadResource('RNA',base,1,false);
         loadResource('DNA',base,1,false);
@@ -238,6 +238,14 @@ function loadResource(name,max,rate,tradable,stackable,color){
         global['resource'][name].name = name === global.race.species ? races[global.race.species].name : (name === 'Money' ? '$' : loc(`resource_${name}_name`));
     }
 
+    if (global.race['soul_eater']){
+        switch(name){
+            case 'Food':
+                global['resource'][name].name = 'Souls';
+                break;
+        }
+    }
+
     if (global.race['evil']){
         switch(name){
             case 'Lumber':
@@ -245,9 +253,6 @@ function loadResource(name,max,rate,tradable,stackable,color){
                 break;
             case 'Furs':
                 global['resource'][name].name = 'Flesh';
-                break;
-            case 'Food':
-                global['resource'][name].name = 'Souls';
                 break;
             case 'Plywood':
                 global['resource'][name].name = 'Boneweave';
@@ -916,7 +921,7 @@ function tradeRouteColor(res){
 }
 
 function buildCrateLabel(){
-    let material = global.race['kindling_kindred'] ? global.resource.Stone.name : global.resource.Plywood.name;
+    let material = global.race['kindling_kindred'] ? global.resource.Stone.name : (global.resource['Plywood'] ? global.resource.Plywood.name : loc('resource_Plywood_name'));
     let cost = global.race['kindling_kindred'] ? 200 : 10
     return loc('resource_modal_crate_construct_desc',[cost,material]);
 }
@@ -1078,7 +1083,7 @@ export function crateValue(){
     if (global.tech['container'] && global.tech['container'] >= 6){
         create_value += global.tech['container'] >= 7 ? 1200 : 500;
     }
-    create_value *= global.stats.achieve['blackhole'] ? 1 + (global.stats.achieve.blackhole * 0.05) : 1;
+    create_value *= global.stats.achieve['blackhole'] ? 1 + (global.stats.achieve.blackhole.l * 0.05) : 1;
     return spatialReasoning(Math.round(create_value));
 }
 
@@ -1093,7 +1098,7 @@ export function containerValue(){
     if (global.tech['steel_container'] && global.tech['steel_container'] >= 6){
         container_value += 1000;
     }
-    container_value *= global.stats.achieve['blackhole'] ? 1 + (global.stats.achieve.blackhole * 0.05) : 1;
+    container_value *= global.stats.achieve['blackhole'] ? 1 + (global.stats.achieve.blackhole.l * 0.05) : 1;
     return spatialReasoning(Math.round(container_value));
 }
 
@@ -1105,38 +1110,40 @@ export function initMarket(){
 }
 
 export function initStorage(){
-    let store = $(`<div id="createHead" class="storage-header"><h2 class="is-sr-only">${loc('tab_storage')}</h2</div>`);
+    let store = $(`<div id="createHead" class="storage-header"><h2 class="is-sr-only">${loc('tab_storage')}</h2></div>`);
     $('#resStorage').empty();
     $('#resStorage').append(store);
     
-    store.append($(`<b-tooltip :label="buildCrateLabel()" position="is-bottom" class="crate" animated><button :aria-label="buildCrateLabel()" v-show="cr.display" class="button" @click="crate">${loc('resource_modal_crate_construct')}</button></b-tooltip>`));
-    store.append($(`<b-tooltip :label="buildContainerLabel()" position="is-bottom" class="container" animated><button :aria-label="buildContainerLabel()" v-show="cn.display" class="button" @click="container">${loc('resource_modal_container_construct')}</button></b-tooltip>`));
+    if (global.resource['Crates'] && global.resource['Containers']){
+        store.append($(`<b-tooltip :label="buildCrateLabel()" position="is-bottom" class="crate" animated><button :aria-label="buildCrateLabel()" v-show="cr.display" class="button" @click="crate">${loc('resource_modal_crate_construct')}</button></b-tooltip>`));
+        store.append($(`<b-tooltip :label="buildContainerLabel()" position="is-bottom" class="container" animated><button :aria-label="buildContainerLabel()" v-show="cn.display" class="button" @click="container">${loc('resource_modal_container_construct')}</button></b-tooltip>`));
 
-    if (vues['store_head']){
-        vues['store_head'].$destroy();
-    }
-
-    vues['store_head'] = new Vue({
-        data: {
-            cr: global.resource.Crates,
-            cn: global.resource.Containers
-        },
-        methods: {
-            crate(){
-                buildCrate();
-            },
-            container(){
-                buildContainer();
-            },
-            buildCrateLabel(){
-                return buildCrateLabel();
-            },
-            buildContainerLabel(){
-                return buildContainerLabel();
-            },
+        if (vues['store_head']){
+            vues['store_head'].$destroy();
         }
-    });
-    vues['store_head'].$mount('#createHead');
+
+        vues['store_head'] = new Vue({
+            data: {
+                cr: global.resource.Crates,
+                cn: global.resource.Containers
+            },
+            methods: {
+                crate(){
+                    buildCrate();
+                },
+                container(){
+                    buildContainer();
+                },
+                buildCrateLabel(){
+                    return buildCrateLabel();
+                },
+                buildContainerLabel(){
+                    return buildContainerLabel();
+                },
+            }
+        });
+        vues['store_head'].$mount('#createHead');
+    }
 }
 
 export function loadMarket(){
@@ -1172,13 +1179,13 @@ export function loadMarket(){
 export function initEjector(){
     $('#resEjector').empty();
     if (global.interstellar['mass_ejector']){
-        let ejector = $(`<div id="eject${name}" class="market-item"><h3 class="res has-text-warning">Voluming Ejecting</h3></div>`);
+        let ejector = $(`<div id="eject${name}" class="market-item"><h3 class="res has-text-warning">${loc('interstellar_mass_ejector_vol')}</h3></div>`);
         $('#resEjector').append(ejector);
 
         let eject = $(`<span class="trade"></span>`);
         ejector.append(eject);
 
-        eject.append($(`<span>{{ total }} / {{ on | max }}</span><span class="mass">Total Mass: {{ mass | approx }} kt/s</span>`));
+        eject.append($(`<span>{{ total }} / {{ on | max }}</span><span class="mass">${loc('interstellar_mass_ejector_mass')}: {{ mass | approx }} kt/s</span>`));
 
         vues['ejected'] = new Vue({
             data: global.interstellar.mass_ejector,
@@ -1253,7 +1260,14 @@ export function spatialReasoning(value){
     }
     if (global.genes['store']){
         let divisor = global.genes.store >= 2 ? (global.genes.store >= 3 ? 1250 : 1666) : 2500;
+        if (global.race.universe === 'antimatter'){
+            divisor *= 2;
+        }
         value *= 1 + (plasmids / divisor);
+        value = Math.round(value);
+    }
+    if (global.race.universe === 'standard'){
+        value *= 1 + (global.race.Dark.count / 200);
         value = Math.round(value);
     }
     return value;
@@ -1270,15 +1284,18 @@ export function plasmidBonus(){
     }
     let p_cap = 250 + global.race.Phage.count;
     if (plasmids > p_cap){
-        plasmid_bonus = (Math.log10(p_cap) / 3.85) + ((Math.log(plasmids + 1 - p_cap) / Math.LN2 / 250));
+        plasmid_bonus = (+((Math.log(p_cap + 50) - 3.91202)).toFixed(5) / 2.888) + ((Math.log(plasmids + 1 - p_cap) / Math.LN2 / 250));
     }
     else {
-        plasmid_bonus = Math.log10(plasmids + 1) / 3.85;
+        plasmid_bonus = +((Math.log(plasmids + 50) - 3.91202)).toFixed(5) / 2.888;
     }
     if (global.city['temple'] && global.city['temple'].count && !global.race['no_plasmid']){
         let temple_bonus = global.tech['anthropology'] && global.tech['anthropology'] >= 1 ? 0.08 : 0.05;
         if (global.tech['fanaticism'] && global.tech['fanaticism'] >= 2){
             temple_bonus += global.civic.professor.workers * 0.002;
+        }
+        if (global.race['spiritual']){
+            temple_bonus *= 1.13;
         }
         plasmid_bonus *= 1 + (global.city.temple.count * temple_bonus);
     }

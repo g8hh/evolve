@@ -669,7 +669,10 @@ a {
             display: block;
             position: absolute;
             right: .25rem;
-            top: .125rem;
+            top: .1875rem;
+            &.alt {
+                right: 1.3125rem;
+            }
         }
         .star2, .star3, .star4, .star5 {
             width: 1rem;
@@ -962,7 +965,12 @@ body .modal > div.popper.wide {
         }
     }
     .planetWrap {
-        margin: 0 auto 0 1rem;
+        margin-left: 1rem;
+        .universe {
+            border-left: 1px solid;
+            margin-left: 1rem;
+            padding-left: 1rem;
+        }
     }
     .flair {
         display: inline-block;
@@ -974,7 +982,7 @@ body .modal > div.popper.wide {
         }
     }
     .version {
-        margin: 0 1rem 0 auto;
+        margin-right: 1rem;
     }
 }
 

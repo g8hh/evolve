@@ -532,6 +532,44 @@ export const races = {
             dwarf: 'Stygia',
         }
     },
+    seraph: {
+        name: loc('race_seraph'),
+        desc: loc('race_seraph_desc'),
+        type: 'angelic',
+        home: 'Araboth',
+        entity: loc('race_seraph_entity'),
+        traits: {
+            unified: 1,
+            spiritual: 1,
+            truthful: 1
+        },
+        solar: {
+            red: 'Michael',
+            hell: 'Lucifer',
+            gas: 'Gabriel',
+            gas_moon: 'Raphael',
+            dwarf: 'Uriel',
+        }
+    },
+    unicorn: {
+        name: loc('race_unicorn'),
+        desc: loc('race_unicorn_desc'),
+        type: 'angelic',
+        home: 'Celestia',
+        entity: loc('race_unicorn_entity'),
+        traits: {
+            rainbow: 1,
+            magnificent: 1,
+            noble: 1,
+        },
+        solar: {
+            red: 'Lunia',
+            hell: 'Mercuria',
+            gas: 'Jovar',
+            gas_moon: 'Venya',
+            dwarf: 'Chronias',
+        }
+    },
     junker: {
         name: loc('race_junker'),
         desc: loc('race_junker_desc'),
@@ -615,7 +653,12 @@ export const genus_traits = {
     },
     demonic: {
         immoral: 1,
-        evil: 1
+        evil: 1,
+        soul_eater: 1
+    },
+    angelic: {
+        blissful: 1,
+        pompous: 1,
     }
 };
 
@@ -706,6 +749,14 @@ export const traits = {
     },
     evil: { // You are pure evil
         desc: loc('trait_evil'),
+        type: 'genus',
+    },
+    blissful: { // Low morale penalty is halved and citizens never riot.
+        desc: loc('trait_blissful'),
+        type: 'genus',
+    },
+    pompous: { // Professors are less effective
+        desc: loc('trait_pompous'),
         type: 'genus',
     },
     creative: { // A.R.P.A. Projects are cheaper
@@ -952,6 +1003,30 @@ export const traits = {
         desc: loc('trait_pathetic'),
         type: 'major',
     },
+    spiritual: { // Temples are 13% more effective
+        desc: loc('trait_spiritual'),
+        type: 'major',
+    },
+    truthful: { // Bankers are less effective
+        desc: loc('trait_truthful'),
+        type: 'major',
+    },
+    unified: { // Start with unification
+        desc: loc('trait_unified'),
+        type: 'major',
+    },
+    rainbow: { // Gain a bonus if sunny after raining
+        desc: loc('trait_rainbow'),
+        type: 'major',
+    },
+    magnificent: { // construct shrines to receive boons
+        desc: loc('trait_magnificent'),
+        type: 'major',
+    },
+    noble: { // Unable to raise taxes above base value or set very low taxes
+        desc: loc('trait_noble'),
+        type: 'major',
+    },
     tactical: { // War Bonus
         desc: loc('trait_tactical'),
         type: 'minor',
@@ -1007,6 +1082,9 @@ types: farmer, miner, lumberjack, science, factory, army, hunting
 */
 export function racialTrait(workers,type){
     let modifier = 1; 
+    if (type === 'lumberjack' && global.race['evil'] && !global.race['soul_eater']){
+        modifier *= 1 + ((global.tech['reclaimer'] - 1) * 0.4);
+    }
     if (global.race['hivemind'] && type !== 'farmer'){
         if (workers <= 10){
             modifier *= (workers * 0.05) + 0.5;
@@ -1162,6 +1240,15 @@ export function cleanAddTrait(trait){
                 harvest: 0,
             };
             break;
+        case 'magnificent':
+            global.city['shrine'] = {
+                count: 0,
+                morale: 0,
+                metal: 0,
+                know: 0,
+                tax: 0
+            };
+            break;
         default:
             break;
     }
@@ -1199,6 +1286,9 @@ export function cleanRemoveTrait(trait){
         case 'cannibalize':
             delete global.city['s_alter'];
             break;
+        case 'magnificent':
+            delete global.city['shrine'];
+            break;
         default:
             break;
     }
@@ -1211,5 +1301,6 @@ export const biomes = {
     desert: loc('biome_desert'),
     volcanic: loc('biome_volcanic'),
     tundra: loc('biome_tundra'),
-    hellscape: loc('biome_hellscape')
+    hellscape: loc('biome_hellscape'),
+    eden: loc('biome_eden')
 };

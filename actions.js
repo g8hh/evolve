@@ -1802,6 +1802,7 @@ export const actions = {
             },
             reqs: {},
             trait: ['evil'],
+            not_trait: ['kindling_kindred'],
             no_queue(){ return true },
             action(){
                 if(global['resource']['Lumber'].amount < global['resource']['Lumber'].max){
@@ -2081,6 +2082,7 @@ export const actions = {
                 let farming = global.tech['agriculture'] >= 2 ? 1.25 : 0.75;
                 farming *= global.city.biome === 'grassland' ? 1.1 : 1;
                 farming *= global.tech['agriculture'] >= 7 ? 1.1 : 1;
+                farming *= global.city.biome === 'hellscape' ? 0.25 : 1;
                 farming = +farming.toFixed(2);
                 return global.tech['farm'] ? `<div>${loc('city_farm_effect',[farming])}</div><div>${loc('plus_max_resource',[1,loc('citizen')])}</div>` : loc('city_farm_effect',[farming]); 
             },
@@ -11704,7 +11706,7 @@ function sentience(){
     global.city.calendar.day = 0;
 
     var city_actions = global.race['kindling_kindred'] ? ['food','stone'] : ['food','lumber','stone'];
-    if (global.race['evil']){
+    if (global.race['evil'] && !global.race['kindling_kindred']){
         global.city['slaughter'] = 1;
         city_actions = ['slaughter'];
     }

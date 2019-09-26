@@ -863,7 +863,7 @@ function fastLoop(){
             power_generated[loc('city_mill_title2')] = -(power);
         }
 
-        if (global.city['windmill'] && global.tech['wind_plant'] && global.race['soul_eater']){
+        if (global.city['windmill'] && global.tech['wind_plant'] && (global.race['soul_eater'] || global.race['carnivore'])){
             max_power -= global.city.windmill.count;
             power_grid += global.city.windmill.count;
             power_generated[loc('city_mill_title2')] = global.city.windmill.count;
@@ -3990,6 +3990,8 @@ function midLoop(){
             let idx = -1;
             let c_action = false;
             let stop = false;
+            let time = 0;
+            let spent = { t: 0, r: {}};
             for (let i=0; i<global.r_queue.queue.length; i++){
                 let struct = global.r_queue.queue[i];
                 let t_action = actions[struct.action][struct.type];
@@ -4005,10 +4007,15 @@ function midLoop(){
                             c_action = t_action;
                             idx = i;
                         }
+                        else {
+                            time += timeCheck(t_action,spent);
+                        }
+                        global.r_queue.queue[i]['time'] = time;
                         stop = true;
                     }
                     else {
                         global.r_queue.queue[i].cna = true;
+                        global.r_queue.queue[i]['time'] = -1;
                     }
                 }
             }

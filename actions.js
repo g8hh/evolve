@@ -1,11 +1,11 @@
 import { global, vues, save, poppers, messageQueue, keyMultiplier, clearStates, demoIsPressed, srSpeak, modRes, sizeApproximation, p_on, moon_on, quantum_level } from './vars.js';
 import { loc } from './locale.js';
-import { timeCheck, timeFormat, powerModifier } from './functions.js';
+import { timeCheck, timeFormat, powerModifier, challenge_multiplier, adjustCosts } from './functions.js';
 import { unlockAchieve, unlockFeat, drawAchieve, checkAchievements } from './achieve.js';
 import { races, genus_traits, randomMinorTrait, cleanAddTrait, biomes } from './races.js';
 import { defineResources, loadMarket, spatialReasoning, resource_values, atomic_mass } from './resources.js';
 import { loadFoundry } from './jobs.js';
-import { defineGarrison, buildGarrison, armyRating, challenge_multiplier, dragQueue } from './civics.js';
+import { defineGarrison, buildGarrison, armyRating, dragQueue } from './civics.js';
 import { spaceTech, interstellarTech, space, deepSpace } from './space.js';
 import { renderFortress, fortressTech } from './portal.js';
 import { arpa, gainGene } from './arpa.js';
@@ -1753,7 +1753,7 @@ export const actions = {
             title: loc('city_food'),
             desc: loc('city_food_desc'),
             reqs: { primitive: 1 },
-            not_trait: ['evil'],
+            not_trait: ['soul_eater'],
             no_queue(){ return true },
             action(){
                 if(global['resource']['Food'].amount < global['resource']['Food'].max){
@@ -1856,21 +1856,39 @@ export const actions = {
                         if (global['resource'][global.race.species].amount > 0){
                             global['resource'][global.race.species].amount--;
                             global['resource'].Food.amount += Math.rand(250,1000);
+                            let low = 300;
+                            let high = 600;
+                            if (global.tech['sacrifice']){
+                                switch (global.tech['sacrifice']){
+                                    case 1:
+                                        low = 900;
+                                        high = 1800;
+                                        break;
+                                    case 2:
+                                        low = 1800;
+                                        high = 3600;
+                                        break;
+                                    case 3:
+                                        low = 3600;
+                                        high = 7200;
+                                        break;
+                                }
+                            }
                             switch (Math.rand(0,5)){
                                 case 0:
-                                    global.city.s_alter.rage += Math.rand(300,600);
+                                    global.city.s_alter.rage += Math.rand(low,high);
                                     break;
                                 case 1:
-                                    global.city.s_alter.mind += Math.rand(300,600);
+                                    global.city.s_alter.mind += Math.rand(low,high);
                                     break;
                                 case 2:
-                                    global.city.s_alter.regen += Math.rand(300,600);
+                                    global.city.s_alter.regen += Math.rand(low,high);
                                     break;
                                 case 3:
-                                    global.city.s_alter.mine += Math.rand(300,600);
+                                    global.city.s_alter.mine += Math.rand(low,high);
                                     break;
                                 case 4:
-                                    global.city.s_alter.harvest += Math.rand(300,600);
+                                    global.city.s_alter.harvest += Math.rand(low,high);
                                     break;
                             }
                         }
@@ -2114,6 +2132,7 @@ export const actions = {
                 }
             },
             reqs: { agriculture: 4 },
+            not_tech: ['wind_plant'],
             cost: { 
                 Money(){ return costMultiplier('mill', 1000, 1.31); },
                 Lumber(){ return costMultiplier('mill', 600, 1.33); },
@@ -2147,7 +2166,6 @@ export const actions = {
                 return loc('city_windmill_desc');
             },
             reqs: { wind_plant: 1 },
-            trait: ['soul_eater'],
             cost: { 
                 Money(){ return costMultiplier('windmill', 1000, 1.31); },
                 Lumber(){ return costMultiplier('windmill', 600, 1.33); },
@@ -3951,7 +3969,7 @@ export const actions = {
             desc: loc('tech_windmill'),
             reqs: { hunting: 2, high_tech: 4 },
             grant: ['wind_plant',1],
-            not_trait: ['evil'],
+            not_trait: ['soul_eater'],
             cost: { 
                 Knowledge(){ return 66000; }
             },
@@ -7401,6 +7419,60 @@ export const actions = {
                 return false;
             }
         },
+        ceremonial_dagger: {
+            id: 'tech-ceremonial_dagger',
+            title: loc('tech_ceremonial_dagger'),
+            desc: loc('tech_ceremonial_dagger'),
+            reqs: { mining: 1 },
+            grant: ['sacrifice',1],
+            trait: ['cannibalize'],
+            cost: { 
+                Knowledge(){ return 60; }
+            },
+            effect: loc('tech_ceremonial_dagger_effect'),
+            action(){
+                if (payCosts($(this)[0].cost)){
+                    return true;
+                }
+                return false;
+            }
+        },
+        last_rites: {
+            id: 'tech-last_rites',
+            title: loc('tech_last_rites'),
+            desc: loc('tech_last_rites'),
+            reqs: { sacrifice: 1, theology: 2 },
+            grant: ['sacrifice',2],
+            trait: ['cannibalize'],
+            cost: { 
+                Knowledge(){ return 1000; }
+            },
+            effect: loc('tech_last_rites_effect'),
+            action(){
+                if (payCosts($(this)[0].cost)){
+                    return true;
+                }
+                return false;
+            }
+        },
+        ancient_infusion: {
+            id: 'tech-last_rites',
+            title: loc('tech_ancient_infusion'),
+            desc: loc('tech_ancient_infusion'),
+            reqs: { sacrifice: 2, theology: 4 },
+            grant: ['sacrifice',3],
+            trait: ['cannibalize'],
+            cost: { 
+                Knowledge(){ return 182000; }
+            },
+            effect: loc('tech_ancient_infusion_effect'),
+            action(){
+                if (payCosts($(this)[0].cost)){
+                    return true;
+                }
+                return false;
+            }
+        },
         garrison: {
             id: 'tech-garrison',
             title: loc('tech_garrison'),
@@ -9455,7 +9527,7 @@ export const actions = {
         stabilize_blackhole: {
             id: 'tech-stabilize_blackhole',
             title: loc('tech_stabilize_blackhole'),
-            desc: loc('tech_stabilize_blackhole'),
+            desc(){ return `<div>${loc('tech_stabilize_blackhole')}</div><div class="has-text-danger">${loc('tech_stabilize_blackhole2')}</div>`; },
             reqs: { whitehole: 1 },
             grant: ['stablized',1],
             cost: {
@@ -10124,7 +10196,7 @@ export function setAction(c_action,action,type,old){
                                             }
                                         }
                                         if (!queued){
-                                            global.r_queue.queue.push({ id: c_action.id, action: action, type: type, label: typeof c_action.title === 'string' ? c_action.title : c_action.title(), cna: false });
+                                            global.r_queue.queue.push({ id: c_action.id, action: action, type: type, label: typeof c_action.title === 'string' ? c_action.title : c_action.title(), cna: false, time: 0 });
                                             resDragQueue();
                                         }
                                     }
@@ -10554,84 +10626,6 @@ export function updateDesc(c_action,category,action){
         }
     }
     actionDesc($('#pop'+id),c_action,global[category][action]);
-}
-
-function adjustCosts(costs){
-    if ((costs['RNA'] || costs['DNA']) && global.genes['evolve']){
-        var newCosts = {};
-        Object.keys(costs).forEach(function (res){
-            if (res === 'RNA' || res === 'DNA'){
-                newCosts[res] = function(){ return Math.round(costs[res]() * 0.8); }
-            }
-        });
-        return newCosts;
-    }
-    costs = kindlingAdjust(costs);
-    costs = scienceAdjust(costs);
-    costs = rebarAdjust(costs);
-    return craftAdjust(costs);
-}
-
-function scienceAdjust(costs){
-    if ((global.race['smart'] || global.race['dumb']) && costs['Knowledge']){
-        var newCosts = {};
-        Object.keys(costs).forEach(function (res){
-            if (res === 'Knowledge'){
-                newCosts[res] = function(){ return Math.round(costs[res]() * (global.race['smart'] ? 0.9 : 1.05)); }
-            }
-            else {
-                newCosts[res] = function(){ return costs[res](); }
-            }
-        });
-        return rebarAdjust(newCosts);
-    }
-    return costs;
-}
-
-function kindlingAdjust(costs){
-    if (global.race['kindling_kindred'] && (costs['Lumber'] || costs['Plywood'])){
-        var newCosts = {};
-        Object.keys(costs).forEach(function (res){
-            if (res !== 'Lumber' && res !== 'Plywood'){
-                newCosts[res] = function(){ return Math.round(costs[res]() * 1.05) || 0; }
-            }
-        });
-        return newCosts;
-    }
-    return costs;
-}
-
-function craftAdjust(costs){
-    if (global.race['hollow_bones'] && (costs['Plywood'] || costs['Brick'] || costs['Wrought_Iron'] || costs['Sheet_Metal'] || costs['Mythril'])){
-        var newCosts = {};
-        Object.keys(costs).forEach(function (res){
-            if (res === 'Plywood' || res === 'Brick' || res === 'Wrought_Iron' || res === 'Sheet_Metal' || res === 'Mythril'){
-                newCosts[res] = function(){ return Math.round(costs[res]() * 0.95); }
-            }
-            else {
-                newCosts[res] = function(){ return Math.round(costs[res]()); }
-            }
-        });
-        return newCosts;
-    }
-    return costs;
-}
-
-function rebarAdjust(costs){
-    if (costs['Cement'] && global.tech['cement'] && global.tech['cement'] >= 2){
-        let discount = global.tech['cement'] >= 3 ? 0.8 : 0.9;
-        var newCosts = {};
-        Object.keys(costs).forEach(function (res){
-            if (res === 'Cement'){
-                newCosts[res] = function(){ return Math.round(costs[res]() * discount) || 0; }
-            }
-            else {
-                newCosts[res] = function(){ return Math.round(costs[res]()); }
-            }
-        });
-        return newCosts;
-    }
-    return costs;
 }
 
 export function payCosts(costs){
@@ -11879,7 +11873,7 @@ export function resQueue(){
     let queue = $(`<ul class="buildList"></ul>`);
     $('#resQueue').append(queue);
 
-    queue.append($(`<li v-for="(item, index) in queue"><a class="queued" v-bind:class="{ 'has-text-danger': item.cna }" @click="remove(index)">{{ item.label }}</a></li>`));
+    queue.append($(`<li v-for="(item, index) in queue"><a class="queued" v-bind:class="{ 'has-text-danger': item.cna }" @click="remove(index)">{{ item.label }} [{{ item.time | time }}]</a></li>`));
     
     try {
         let bind = {
@@ -11888,6 +11882,11 @@ export function resQueue(){
             methods: {
                 remove(index){
                     global.r_queue.queue.splice(index,1);
+                }
+            },
+            filters: {
+                time(time){
+                    return timeFormat(time);
                 }
             }
         }
@@ -11904,9 +11903,7 @@ export function resDragQueue(){
     Sortable.create(el,{
         onEnd(e){
             let order = global.r_queue.queue;
-            var tmp = order[e.oldDraggableIndex];
-            order[e.oldDraggableIndex] = order[e.newDraggableIndex];
-            order[e.newDraggableIndex] = tmp;
+            order.splice(e.newDraggableIndex, 0, order.splice(e.oldDraggableIndex, 1)[0]);
             global.r_queue.queue = order;
             resQueue();
         }
@@ -12075,7 +12072,7 @@ function big_bang(){
     let new_phage = challenge_multiplier(Math.floor(Math.log2(new_plasmid) * Math.E * 2.5),'bigbang');
     let new_dark = +(Math.log(1 + (global.interstellar.stellar_engine.exotic * 40))).toFixed(3);
     new_dark += +(Math.log2(global.interstellar.stellar_engine.mass - 7)/2.5).toFixed(3);
-    new_dark = challenge_multiplier(new_dark,'bigbang');
+    new_dark = challenge_multiplier(new_dark,'bigbang',3);
 
     checkAchievements();
 

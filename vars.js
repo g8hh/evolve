@@ -225,7 +225,7 @@ if (convertVersion(global['version']) === 5000){
 }
 
 if (convertVersion(global['version']) <= 5008 && global['queue'] && global['queue']['queue']){
-    global.queue.queue = []
+    global.queue.queue = [];
 }
 
 if (convertVersion(global['version']) <= 5011 && global.stats['died']){
@@ -261,11 +261,25 @@ if (convertVersion(global['version']) < 6001){
     }
 }
 
-if (convertVersion(global['version']) < 6004 && global.city['windmill'] && !global.race['soul_eater']){
+if (convertVersion(global['version']) < 6004 && global.city['windmill'] && !global.race['soul_eater'] && !global.race['carnivore']){
     delete global.city['windmill'];
 }
 
-global['version'] = '0.6.5';
+if (convertVersion(global['version']) < 6006 && !global.city['windmill'] && global.tech['wind_plant'] && (global.race['soul_eater'] || global.race['carnivore'])){
+    global.city['windmill'] = { count: 0 };
+}
+
+if (convertVersion(global['version']) < 6006 && global.tech['wind_plant'] && !global.race['soul_eater'] && !global.race['carnivore']){
+    delete global.tech['wind_plant'];
+}
+
+if (convertVersion(global['version']) <= 6008 && global['r_queue'] && global['r_queue']['queue']){
+    for (let i=0; i<global.r_queue.queue.length; i++){
+        global.r_queue.queue[i]['time'] = 0;
+    }
+}
+
+global['version'] = '0.6.8';
 
 if (global.civic['cement_worker'] && global.civic.cement_worker.impact === 0.25){
     global.civic.cement_worker.impact = 0.4;

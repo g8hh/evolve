@@ -1,4 +1,5 @@
 import { global, vues, poppers, messageQueue, clearStates, modRes, save, keyMultiplier, resizeGame } from './vars.js';
+import { challenge_multiplier, timeFormat } from './functions.js';
 import { unlockAchieve, unlockFeat, checkAchievements } from './achieve.js';
 import { races, racialTrait } from './races.js';
 import { loc } from './locale.js';
@@ -53,27 +54,7 @@ export function buildQueue(){
             },
             filters: {
                 time(time){
-                    if (time < 0){
-                        return 'Never';
-                    }
-                    else {
-                        time = +(time.toFixed(0));
-                        if (time > 60){
-                            let secs = time % 60;
-                            let mins = (time - secs) / 60;
-                            if (mins >= 60){
-                                let r = mins % 60;
-                                let hours = (mins - r) / 60;
-                                return `${hours}h ${r}m`;
-                            }
-                            else {
-                                return `${mins}m ${secs}s`;
-                            }
-                        }
-                        else {
-                            return `${time}s`;
-                        }
-                    }
+                    return timeFormat(time);
                 }
             }
         });
@@ -1022,36 +1003,12 @@ function defineMad(){
     vues['mad'].$mount('#mad');
 }
 
-export function challenge_multiplier(value,type){
-    let challenge_level = 0;
-    if (global.race.universe === 'micro'){ value = Math.round(value * 0.25); }
-    if (global.race.universe === 'heavy' && type !== 'mad'){ value = Math.round(value * 1.25); }
-    if (global.race['no_plasmid']){ challenge_level++; }
-    if (global.race['no_trade']){ challenge_level++; }
-    if (global.race['no_craft']){ challenge_level++; }
-    if (global.race['no_crispr']){ challenge_level++; }
-    switch (challenge_level){
-        case 1:
-            return Math.round(value * 1.05);
-        case 2:
-            return Math.round(value * 1.10);
-        case 3:
-            return Math.round(value * 1.20);
-        case 4:
-            return Math.round(value * 1.35);
-        default:
-            return value;
-    }
-}
-
 export function dragQueue(){
     let el = $('#buildQueue .buildList')[0];
     Sortable.create(el,{
         onEnd(e){
             let order = global.queue.queue;
-            var tmp = order[e.oldDraggableIndex];
-            order[e.oldDraggableIndex] = order[e.newDraggableIndex];
-            order[e.newDraggableIndex] = tmp;
+            order.splice(e.newDraggableIndex, 0, order.splice(e.oldDraggableIndex, 1)[0]);
             global.queue.queue = order;
             buildQueue();
             resizeGame();

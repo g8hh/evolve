@@ -1,4 +1,20 @@
 
+#### 0.6.8 - 9/24/2019
+Queue reordering no longer swaps the dragged item with the one in the target spot<br>
+Added timers to research queue<br>
+Cost adjustments are now applied to queue timers increasing their accuracy<br>
+
+#### 0.6.7 - 9/24/2019
+Cath windmills now generate power instead of just looking pretty<br>
+Fixed Spanish strings file, language now loads again<br>
+
+#### 0.6.6 - 9/23/2019
+Added special tech tree to sacrifical altar to boost its effectiveness per sacrifice<br>
+Restored windmills to cath<br>
+Challenge Multiplier Dark Energy rounding calculation fixed<br>
+Added extra information to blackhole description when it reaches destabilization point<br>
+Added a warning to stabilize option that it will reset your exotic matter<br>
+
 #### 0.6.5 - 9/21/2019
 Fixed display issue with frenzy appearing to never drop below 1%<br>
 Updated the tooltip values on farms and farmers to include the hellscape penalty<br>

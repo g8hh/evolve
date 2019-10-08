@@ -2,7 +2,7 @@ import { global, vues, save, poppers, messageQueue, keyMultiplier, clearStates, 
 import { loc } from './locale.js';
 import { timeCheck, timeFormat, powerModifier, challenge_multiplier, adjustCosts } from './functions.js';
 import { unlockAchieve, unlockFeat, drawAchieve, checkAchievements } from './achieve.js';
-import { races, genus_traits, randomMinorTrait, cleanAddTrait, biomes } from './races.js';
+import { races, genus_traits, randomMinorTrait, cleanAddTrait, biomes, planetTraits } from './races.js';
 import { defineResources, loadMarket, spatialReasoning, resource_values, atomic_mass } from './resources.js';
 import { loadFoundry } from './jobs.js';
 import { defineGarrison, buildGarrison, armyRating, dragQueue } from './civics.js';
@@ -1592,7 +1592,12 @@ export const actions = {
                     global.evolution['bunker'] = { count: 1 };
                     removeAction(actions.evolution.bunker.id);
                     evoProgress();
-                    global.evolution['plasmid'] = { count: 0 };
+                    if (global.race.universe === 'antimatter'){
+                        global.evolution['mastery'] = { count: 0 };
+                    }
+                    else {
+                        global.evolution['plasmid'] = { count: 0 };
+                    }
                     global.evolution['trade'] = { count: 0 };
                     global.evolution['craft'] = { count: 0 };
                     global.evolution['crispr'] = { count: 0 };
@@ -1602,7 +1607,12 @@ export const actions = {
                         global.evolution['decay'] = { count: 0 };
                     }
                     challengeGeneHeader();
-                    addAction('evolution','plasmid');
+                    if (global.race.universe === 'antimatter'){
+                        addAction('evolution','mastery');
+                    }
+                    else {
+                        addAction('evolution','plasmid');
+                    }
                     addAction('evolution','trade');
                     addAction('evolution','craft');
                     addAction('evolution','crispr');
@@ -1629,6 +1639,24 @@ export const actions = {
                     global.race['no_plasmid'] = 1;
                     global.evolution['plasmid'] = { count: 1 };
                     removeAction(actions.evolution.plasmid.id);
+                    drawAchieve();
+                }
+                return false;
+            }
+        },
+        mastery: {
+            id: 'evo-mastery',
+            title: loc('evo_challenge_mastery'),
+            desc: loc('evo_challenge_mastery'),
+            cost: {
+                DNA(){ return 10; }
+            },
+            effect: loc('evo_challenge_mastery_effect'),
+            action(){
+                if (payCosts($(this)[0].cost)){
+                    global.race['weak_mastery'] = 1;
+                    global.evolution['mastery'] = { count: 1 };
+                    removeAction(actions.evolution.mastery.id);
                     drawAchieve();
                 }
                 return false;
@@ -1752,6 +1780,7 @@ export const actions = {
             id: 'city-food',
             title: loc('city_food'),
             desc: loc('city_food_desc'),
+            category: 'outskirts',
             reqs: { primitive: 1 },
             not_trait: ['soul_eater'],
             no_queue(){ return true },
@@ -1766,6 +1795,7 @@ export const actions = {
             id: 'city-lumber',
             title: loc('city_lumber'),
             desc: loc('city_lumber_desc'),
+            category: 'outskirts',
             reqs: {},
             not_trait: ['evil'],
             no_queue(){ return true },
@@ -1780,6 +1810,7 @@ export const actions = {
             id: 'city-stone',
             title: loc('city_stone'),
             desc: loc('city_stone_desc'),
+            category: 'outskirts',
             reqs: { primitive: 2 },
             no_queue(){ return true },
             action(){
@@ -1800,6 +1831,7 @@ export const actions = {
                     return global.resource.Furs.display ? loc('city_evil_desc4') : loc('city_evil_desc1');
                 }
             },
+            category: 'outskirts',
             reqs: {},
             trait: ['evil'],
             not_trait: ['kindling_kindred'],
@@ -1823,6 +1855,7 @@ export const actions = {
             desc(){
                 return global.city['s_alter'].count >= 1 ? `<div>${loc('city_s_alter')}</div><div class="has-text-special">${loc('city_s_alter_desc')}</div>` : loc('city_s_alter');
             },
+            category: 'outskirts',
             reqs: { mining: 1 },
             trait: ['cannibalize'],
             cost: {
@@ -1904,6 +1937,7 @@ export const actions = {
                 return basicHousingLabel();
             },
             desc: loc('city_basic_housing_desc'),
+            category: 'residential',
             reqs: { housing: 1 },
             cost: { 
                 Money(){ 
@@ -1935,6 +1969,7 @@ export const actions = {
                 return housingLabel('medium');
             },
             desc: loc('city_cottage_desc'),
+            category: 'residential',
             reqs: { housing: 2 },
             cost: { 
                 Money(){ return costMultiplier('cottage', 900, 1.15); },
@@ -1966,6 +2001,7 @@ export const actions = {
                 return housingLabel('large');
             },
             desc: `<div>${loc('city_apartment_desc')}</div><div class="has-text-special">${loc('requires_power')}</div>`,
+            category: 'residential',
             reqs: { housing: 3 },
             cost: { 
                 Money(){ return costMultiplier('apartment', 1750, 1.26) - 500; },
@@ -2000,6 +2036,7 @@ export const actions = {
             id: 'city-lodge',
             title: loc('city_lodge'),
             desc: loc('city_lodge_desc'),
+            category: 'residential',
             reqs: { hunting: 2 },
             cost: { 
                 Money(){ return costMultiplier('lodge', 50, 1.32); },
@@ -2020,6 +2057,7 @@ export const actions = {
             id: 'city-smokehouse',
             title: loc('city_smokehouse'),
             desc: loc('city_food_storage'),
+            category: 'trade',
             reqs: { hunting: 1 },
             cost: { 
                 Money(){ return costMultiplier('smokehouse', 85, 1.32); },
@@ -2044,6 +2082,7 @@ export const actions = {
             id: 'city-soul_well',
             title: loc('city_soul_well'),
             desc: loc('city_soul_well_desc'),
+            category: 'trade',
             reqs: { soul_eater: 1 },
             cost: { 
                 Money(){ if (global.city['soul_well'] && global.city['soul_well'].count >= 3){ return costMultiplier('soul_well', 50, 1.32);} else { return 0; } },
@@ -2067,6 +2106,7 @@ export const actions = {
             id: 'city-slave_pen',
             title: loc('city_slave_pen'),
             desc: loc('city_slave_pen'),
+            category: 'commercial',
             reqs: { slaves: 1 },
             cost: { 
                 Money(){ return costMultiplier('slave_pen', 250, 1.32); },
@@ -2090,6 +2130,7 @@ export const actions = {
             id: 'city-farm',
             title: loc('city_farm'),
             desc: loc('city_farm_desc'),
+            category: 'residential',
             reqs: { agriculture: 1 },
             cost: { 
                 Money(){ if (global.city['farm'] && global.city['farm'].count >= 3){ return costMultiplier('farm', 50, 1.32);} else { return 0; } },
@@ -2101,6 +2142,7 @@ export const actions = {
                 farming *= global.city.biome === 'grassland' ? 1.1 : 1;
                 farming *= global.tech['agriculture'] >= 7 ? 1.1 : 1;
                 farming *= global.city.biome === 'hellscape' ? 0.25 : 1;
+                farming *= global.city.ptrait === 'trashed' ? 0.75 : 1;
                 farming = +farming.toFixed(2);
                 return global.tech['farm'] ? `<div>${loc('city_farm_effect',[farming])}</div><div>${loc('plus_max_resource',[1,loc('citizen')])}</div>` : loc('city_farm_effect',[farming]); 
             },
@@ -2131,6 +2173,7 @@ export const actions = {
                     return loc('city_mill_desc1',[bonus]);
                 }
             },
+            category: 'utility',
             reqs: { agriculture: 4 },
             not_tech: ['wind_plant'],
             cost: { 
@@ -2165,6 +2208,7 @@ export const actions = {
             desc(){
                 return loc('city_windmill_desc');
             },
+            category: 'utility',
             reqs: { wind_plant: 1 },
             cost: { 
                 Money(){ return costMultiplier('windmill', 1000, 1.31); },
@@ -2184,6 +2228,7 @@ export const actions = {
             id: 'city-silo',
             title: loc('city_silo'),
             desc: loc('city_food_storage'),
+            category: 'trade',
             reqs: { agriculture: 3 },
             cost: { 
                 Money(){ return costMultiplier('silo', 85, 1.32); },
@@ -2208,6 +2253,7 @@ export const actions = {
             id: 'city-garrison',
             title: loc('city_garrison'),
             desc: loc('city_garrison_desc'),
+            category: 'military',
             reqs: { military: 1, housing: 1 },
             cost: { 
                 Money(){ return costMultiplier('garrison', 240, 1.5); },
@@ -2238,6 +2284,7 @@ export const actions = {
             id: 'city-hospital',
             title: loc('city_hospital'),
             desc: loc('city_hospital_desc'),
+            category: 'military',
             reqs: { medic: 1 },
             cost: { 
                 Money(){ return costMultiplier('hospital', 22000, 1.32); },
@@ -2260,6 +2307,7 @@ export const actions = {
             id: 'city-boot_camp',
             title: loc('city_boot_camp'),
             desc: loc('city_boot_camp_desc'),
+            category: 'military',
             reqs: { boot_camp: 1 },
             cost: { 
                 Money(){ return costMultiplier('boot_camp', 50000, 1.32); },
@@ -2288,6 +2336,7 @@ export const actions = {
                 let storage = global.tech['storage'] >= 3 ? (global.tech['storage'] >= 4 ? loc('city_shed_desc_size3') : loc('city_shed_desc_size2')) : loc('city_shed_desc_size1');
                 return loc('city_shed_desc',[storage]);
             },
+            category: 'trade',
             reqs: { storage: 1 },
             cost: {
                 Money(){ return costMultiplier('shed', 75, 1.22); },
@@ -2398,6 +2447,7 @@ export const actions = {
             id: 'city-storage_yard',
             title: loc('city_storage_yard'),
             desc: loc('city_storage_yard_desc'),
+            category: 'trade',
             reqs: { container: 1 },
             cost: {
                 Money(){ return costMultiplier('storage_yard', 10, 1.36); },
@@ -2444,6 +2494,7 @@ export const actions = {
             id: 'city-warehouse',
             title: loc('city_warehouse'),
             desc: loc('city_warehouse_desc'),
+            category: 'trade',
             reqs: { steel_container: 1 },
             cost: {
                 Money(){ return costMultiplier('warehouse', 400, 1.26); },
@@ -2493,6 +2544,7 @@ export const actions = {
                 let planet = races[global.race.species].home;
                 return loc('city_bank_desc',[planet]);
             },
+            category: 'commercial',
             reqs: { banking: 1 },
             cost: { 
                 Money(){ return costMultiplier('bank', 250, 1.35); },
@@ -2553,6 +2605,7 @@ export const actions = {
             id: 'city-graveyard',
             title: loc('city_graveyard'),
             desc: loc('city_graveyard_desc'),
+            category: 'industrial',
             reqs: { reclaimer: 1 },
             cost: { 
                 Money(){ if (global.city['graveyard'] && global.city['graveyard'].count >= 5){ return costMultiplier('graveyard', 5, 1.85);} else { return 0; } },
@@ -2577,6 +2630,7 @@ export const actions = {
             id: 'city-lumber_yard',
             title: loc('city_lumber_yard'),
             desc: loc('city_lumber_yard_desc'),
+            category: 'industrial',
             reqs: { axe: 1 },
             cost: { 
                 Money(){ if (global.city['lumber_yard'] && global.city['lumber_yard'].count >= 5){ return costMultiplier('lumber_yard', 5, 1.85);} else { return 0; } },
@@ -2602,6 +2656,7 @@ export const actions = {
             id: 'city-sawmill',
             title: loc('city_sawmill'),
             desc: loc('city_sawmill_desc'),
+            category: 'industrial',
             reqs: { saw: 1 },
             cost: { 
                 Money(){ return costMultiplier('sawmill', 3000, 1.26); },
@@ -2640,6 +2695,7 @@ export const actions = {
             id: 'city-rock_quarry',
             title: loc('city_rock_quarry'),
             desc: loc('city_rock_quarry_desc'),
+            category: 'industrial',
             reqs: { mining: 1 },
             cost: { 
                 Money(){ if (global.city['rock_quarry'] && global.city['rock_quarry'].count >= 2){ return costMultiplier('rock_quarry', 20, 1.45);} else { return 0; } },
@@ -2675,6 +2731,7 @@ export const actions = {
             id: 'city-cement_plant',
             title: loc('city_cement_plant'),
             desc: loc('city_cement_plant_desc'),
+            category: 'industrial',
             reqs: { cement: 1 },
             cost: { 
                 Money(){ return costMultiplier('cement_plant', 3000, 1.5); },
@@ -2710,6 +2767,7 @@ export const actions = {
             id: 'city-foundry',
             title: loc('city_foundry'),
             desc: loc('city_foundry_desc'),
+            category: 'industrial',
             reqs: { foundry: 1 },
             cost: {
                 Money(){ return costMultiplier('foundry', 750, 1.36); },
@@ -2752,6 +2810,7 @@ export const actions = {
             id: 'city-factory',
             title: loc('city_factory'),
             desc: `<div>${loc('city_factory_desc')}</div><div class="has-text-special">${loc('requires_power')}</div>`, 
+            category: 'industrial',
             reqs: { high_tech: 3 },
             cost: { 
                 Money(){ return costMultiplier('factory', 25000, 1.32); },
@@ -2784,6 +2843,7 @@ export const actions = {
             id: 'city-smelter',
             title: loc('city_smelter'),
             desc: loc('city_smelter_desc'),
+            category: 'industrial',
             reqs: { smelting: 1 },
             cost: { 
                 Money(){ return costMultiplier('smelter', 1000, 1.32); },
@@ -2822,6 +2882,7 @@ export const actions = {
             id: 'city-metal_refinery',
             title: loc('city_metal_refinery'),
             desc: loc('city_metal_refinery_desc'),
+            category: 'industrial',
             reqs: { alumina: 1 },
             cost: { 
                 Money(){ return costMultiplier('metal_refinery', 2500, 1.35); },
@@ -2831,7 +2892,7 @@ export const actions = {
             power_reqs: { alumina: 2 },
             effect() {
                 if (global.tech['alumina'] >= 2){
-                    return `<div>${loc('city_metal_refinery_effect2',[6,12])}</div>`;
+                    return `<div>${loc('city_metal_refinery_effect2',[6,12,$(this)[0].powered()])}</div>`;
                 }
                 else {
                     return `<div>${loc('city_metal_refinery_effect',[6])}</div>`;
@@ -2856,6 +2917,7 @@ export const actions = {
             id: 'city-mine',
             title: loc('city_mine'),
             desc: loc('city_mine_desc'),
+            category: 'industrial',
             reqs: { mining: 2 },
             cost: { 
                 Money(){ return costMultiplier('mine', 60, 1.6); },
@@ -2889,6 +2951,7 @@ export const actions = {
             id: 'city-coal_mine',
             title: loc('city_coal_mine'),
             desc: loc('city_coal_mine_desc'),
+            category: 'industrial',
             reqs: { mining: 4 },
             cost: { 
                 Money(){ return costMultiplier('coal_mine', 480, 1.4); },
@@ -2923,6 +2986,7 @@ export const actions = {
             id: 'city-oil_well',
             title: loc('city_oil_well'),
             desc: loc('city_oil_well_desc'),
+            category: 'industrial',
             reqs: { oil: 1 },
             cost: { 
                 Money(){ return costMultiplier('oil_well', 5000, 1.5); },
@@ -2959,6 +3023,7 @@ export const actions = {
             id: 'city-oil_depot',
             title: loc('city_oil_depot'),
             desc: loc('city_oil_depot_desc'),
+            category: 'trade',
             reqs: { oil: 2 },
             cost: { 
                 Money(){ return costMultiplier('oil_depot', 2500, 1.46); },
@@ -3000,6 +3065,7 @@ export const actions = {
             id: 'city-trade',
             title: loc('city_trade'),
             desc: loc('city_trade_desc'),
+            category: 'trade',
             reqs: { trade: 1 },
             cost: { 
                 Money(){ return costMultiplier('trade', 500, 1.36); },
@@ -3027,6 +3093,7 @@ export const actions = {
             id: 'city-wharf',
             title: loc('city_wharf'),
             desc: loc('city_wharf_desc'),
+            category: 'trade',
             reqs: { wharf: 1 },
             cost: { 
                 Money(){ return costMultiplier('wharf', 62000, 1.32); },
@@ -3061,6 +3128,7 @@ export const actions = {
             id: 'city-tourist_center',
             title: loc('city_tourist_center'),
             desc: loc('city_tourist_center_desc'),
+            category: 'commercial',
             reqs: { monument: 2 },
             cost: { 
                 Money(){ return costMultiplier('tourist_center', 100000, 1.36); },
@@ -3085,6 +3153,7 @@ export const actions = {
             id: 'city-amphitheatre',
             title: loc('city_amphitheatre'),
             desc: loc('city_amphitheatre_desc'),
+            category: 'commercial',
             reqs: { theatre: 1 },
             not_trait: ['joyless'],
             cost: {
@@ -3108,6 +3177,7 @@ export const actions = {
             id: 'city-casino',
             title: loc('city_casino'),
             desc: loc('city_casino_desc'),
+            category: 'commercial',
             reqs: { gambling: 1 },
             cost: {
                 Money(){ return costMultiplier('casino', 350000, 1.35); },
@@ -3155,6 +3225,7 @@ export const actions = {
                 let entity = races[global.race.gods.toLowerCase()].entity;
                 return loc('city_temple_desc',[entity]);
             },
+            category: 'commercial',
             reqs: { theology: 2 },
             cost: {
                 Money(){ return costMultiplier('temple', 50, 1.36); },
@@ -3164,15 +3235,26 @@ export const actions = {
             },
             effect(){
                 let desc;
-                if (global.race['no_plasmid']){
-                    let faith = global.tech['anthropology'] && global.tech['anthropology'] >= 1 ? 1.6 : 1;
+                if (global.race.universe === 'antimatter'){
+                    let faith = global.tech['anthropology'] && global.tech['anthropology'] >= 1 ? 0.8 : 0.5;
                     if (global.tech['fanaticism'] && global.tech['fanaticism'] >= 2){
-                        faith += +(global.civic.professor.workers * 0.04).toFixed(1);
+                        faith += global.civic.professor.workers * 0.02;
                     }
                     if (global.race['spiritual']){
                         faith *= 1.13;
-                        faith = +(faith).toFixed(2);
                     }
+                    faith = +(faith).toFixed(2);
+                    desc = `<div>${loc('city_temple_effect1',[faith])}</div><div>${loc('city_temple_effect5',[6])}</div>`;
+                }
+                else if (global.race['no_plasmid']){
+                    let faith = global.tech['anthropology'] && global.tech['anthropology'] >= 1 ? 1.6 : 1;
+                    if (global.tech['fanaticism'] && global.tech['fanaticism'] >= 2){
+                        faith += +(global.civic.professor.workers * 0.04).toFixed(2);
+                    }
+                    if (global.race['spiritual']){
+                        faith *= 1.13;
+                    }
+                    faith = +(faith).toFixed(2);
                     desc = `<div>${loc('city_temple_effect1',[faith])}</div>`;
                 }
                 else {
@@ -3182,8 +3264,8 @@ export const actions = {
                     }
                     if (global.race['spiritual']){
                         plasmid *= 1.13;
-                        plasmid = +(plasmid).toFixed(2);
                     }
+                    plasmid = +(plasmid).toFixed(2);
                     desc = `<div>${loc('city_temple_effect2',[plasmid])}</div>`;
                 }
                 if (global.tech['fanaticism'] && global.tech['fanaticism'] >= 3){
@@ -3208,6 +3290,7 @@ export const actions = {
             desc(){
                 return loc('city_shrine_desc');
             },
+            category: 'commercial',
             reqs: { theology: 2 },
             trait: ['magnificent'],
             cost: {
@@ -3265,6 +3348,7 @@ export const actions = {
                 let planet = races[global.race.species].home;
                 return loc('city_university_desc',[planet]);
             },
+            category: 'science',
             reqs: { science: 1 },
             cost: {
                 Money(){ return costMultiplier('university', 900, 1.5) - 500; },
@@ -3320,6 +3404,7 @@ export const actions = {
                 let planet = races[global.race.species].home;
                 return loc('city_library_desc',[planet]);
             },
+            category: 'science',
             reqs: { science: 2 },
             cost: {
                 Money(){ return costMultiplier('library', 45, 1.2); },
@@ -3358,6 +3443,7 @@ export const actions = {
             id: 'city-wardenclyffe',
             title(){ return global.race['evil'] ? loc('city_babel_title') : loc('city_wardenclyffe'); },
             desc: loc('city_wardenclyffe_desc'),
+            category: 'science',
             reqs: { high_tech: 1 },
             cost: { 
                 Money(){ return costMultiplier('wardenclyffe', 5000, 1.22); },
@@ -3367,7 +3453,7 @@ export const actions = {
                 Sheet_Metal(){ return costMultiplier('wardenclyffe', 125, 1.2); }
             },
             effect(){
-                let gain = 1000;
+                let gain = global.city['wardenclyffe'].count * (global.city.ptrait === 'magnetic' ? 1100 : 1000);
                 if (global.tech['supercollider']){
                     let ratio = global.tech['particles'] && global.tech['particles'] >= 3 ? 12.5: 25;
                     gain *= (global.tech['supercollider'] / ratio) + 1;
@@ -3378,6 +3464,9 @@ export const actions = {
                 gain = +(gain).toFixed(1);
                 if (global.city.powered){
                     let pgain = global.tech['science'] >= 7 ? 2500 : 2000;
+                    if (global.city.ptrait === 'magnetic'){
+                        pgain += 100;
+                    }
                     if (global.space['satellite']){
                         pgain *= 1 + (global.space.satellite.count * 0.02);
                     }
@@ -3423,12 +3512,13 @@ export const actions = {
                 }
                 return false;
             },
-            flair: `<div>${loc('city_wardenclyffe_flair1')}</div><div>${loc('city_wardenclyffe_flair2')}</div>`
+            flair(){ return global.race['evil'] ? `<div>${loc('city_babel_flair')}</div>` : `<div>${loc('city_wardenclyffe_flair1')}</div><div>${loc('city_wardenclyffe_flair2')}</div>`; }
         },
         biolab: {
             id: 'city-biolab',
             title: loc('city_biolab'),
             desc: `<div>${loc('city_biolab_desc')}</div><div class="has-text-special">${loc('requires_power')}</div>`,
+            category: 'science',
             reqs: { genetics: 1 },
             cost: { 
                 Money(){ return costMultiplier('biolab', 25000, 1.3); },
@@ -3461,6 +3551,7 @@ export const actions = {
             id: 'city-coal_power',
             title: loc('city_coal_power'),
             desc: `<div>${loc('city_coal_power_desc')}</div><div class="has-text-special">${loc('requires_res',[loc('resource_Coal_name')])}</div>`,
+            category: 'utility',
             reqs: { high_tech: 2 },
             cost: { 
                 Money(){ return costMultiplier('coal_power', 10000, 1.22); },
@@ -3488,6 +3579,7 @@ export const actions = {
             id: 'city-oil_power',
             title: loc('city_oil_power'),
             desc: `<div>${loc('city_oil_power_desc')}</div><div class="has-text-special">${loc('requires_res',[loc('resource_Oil_name')])}</div>`,
+            category: 'utility',
             reqs: { oil: 3 },
             cost: { 
                 Money(){ return costMultiplier('oil_power', 50000, 1.22); },
@@ -3522,6 +3614,7 @@ export const actions = {
             id: 'city-fission_power',
             title: loc('city_fission_power'),
             desc: `<div>${loc('city_fission_power_desc')}</div><div class="has-text-special">${loc('requires_res',[loc('resource_Uranium_name')])}</div>`,
+            category: 'utility',
             reqs: { high_tech: 5 },
             cost: { 
                 Money(){ return costMultiplier('fission_power', 250000, 1.36); },
@@ -3548,6 +3641,7 @@ export const actions = {
             id: 'city-mass_driver',
             title: loc('city_mass_driver'),
             desc: `<div>${loc('city_mass_driver_desc')}</div><div class="has-text-special">${loc('requires_power')}</div>`,
+            category: 'utility',
             reqs: { mass: 1 },
             cost: { 
                 Money(){ return costMultiplier('mass_driver', 375000, 1.32); },
@@ -5081,12 +5175,32 @@ export const actions = {
                 return false;
             }
         },
+        evil_planning: {
+            id: 'tech-evil_planning',
+            title: loc('tech_urban_planning'),
+            desc: loc('tech_urban_planning'),
+            reqs: { banking: 2 },
+            grant: ['queue',1],
+            trait: ['terrifying'],
+            cost: {
+                Knowledge(){ return 2500; }
+            },
+            effect: loc('tech_urban_planning_effect'),
+            action(){
+                if (payCosts($(this)[0].cost)){
+                    global.queue.display = true;
+                    return true;
+                }
+                return false;
+            }
+        },
         urban_planning: {
             id: 'tech-urban_planning',
             title: loc('tech_urban_planning'),
             desc: loc('tech_urban_planning'),
             reqs: { banking: 2, currency: 2 },
             grant: ['queue',1],
+            not_trait: ['terrifying'],
             cost: {
                 Knowledge(){ return 2500; }
             },
@@ -9637,9 +9751,10 @@ export const actions = {
                         walls: 100,
                         repair: 0,
                         patrols: 0,
-                        patrol_size: 4,
+                        patrol_size: 10,
                         siege: 999,
                         notify: 'Yes',
+                        s_ntfy: 'Yes',
                     };
                     global.portal['turret'] = { count: 0, on: 0 };
                     global.portal['carport'] = { count: 0, damaged: 0, repair: 0 };
@@ -9988,11 +10103,47 @@ export function gainTech(action){
 }
 
 export function drawCity(){
-    Object.keys(actions.city).forEach(function (city) {
-        removeAction(actions.city[city].id);
-        if (checkCityRequirements(city)){
-            addAction('city',city);
+    let city_buildings = { };
+    Object.keys(actions.city).forEach(function (city_name) {
+        removeAction(actions.city[city_name].id);
+        
+        if(!checkCityRequirements(city_name))
+            return;
+        
+        let action = actions.city[city_name];
+        let category = 'category' in action ? action.category : 'utility';
+
+        if(!(category in city_buildings)) {
+            city_buildings[category] = [];
         }
+
+        city_buildings[category].push(city_name);
+    });
+
+    let city_categories =  [
+        'outskirts', 
+        'residential', 
+        'commercial', 
+        'science', 
+        'military', 
+        'trade', 
+        'industrial', 
+        'utility'
+    ];
+
+    city_categories.forEach(function(category) {
+        $(`#city-dist-${category}`).remove();
+
+        if(!(category in city_buildings))
+            return;
+
+        $(`<div id="city-dist-${category}" class="city"></div>`)
+            .appendTo('#city')
+            .append(`<div><h3 class="name has-text-warning">${loc(`city_dist_${category}`)}</h3></div>`);
+
+        city_buildings[category].forEach(function(city_name) {
+            addAction('city', city_name);
+        });
     });
 }
 
@@ -10049,6 +10200,9 @@ export function addAction(action,type,old){
 }
 
 export function setAction(c_action,action,type,old){
+    if (c_action['condition'] && !c_action.condition()){
+        return;
+    }
     if (c_action['not_trait']){
         for (let i=0; i<c_action.not_trait.length; i++){
             if (global.race[c_action.not_trait[i]]){
@@ -10393,6 +10547,34 @@ export function setPlanet(hell){
             biome = 'grassland';
             break;
     }
+
+    let trait = 'none';
+    switch (Math.floor(Math.seededRandom(0,12))){
+        case 0:
+            trait = 'toxic';
+            break;
+        case 1:
+            trait = 'mellow';
+            break;
+        case 2:
+            trait = 'rage';
+            break;
+        case 3:
+            trait = 'stormy';
+            break;
+        case 4:
+            trait = 'ozone';
+            break;
+        case 5:
+            trait = 'magnetic';
+            break;
+        case 6:
+            trait = 'trashed';
+            break;
+        default:
+            trait = 'none';
+            break;
+    }
     
     let geology = {};
     let max = Math.floor(Math.seededRandom(0,3));
@@ -10435,7 +10617,8 @@ export function setPlanet(hell){
         }
     }
 
-    var id = biome+Math.floor(Math.seededRandom(0,10000));
+    let num = Math.floor(Math.seededRandom(0,10000));
+    var id = biome+num;
     id = id.charAt(0).toUpperCase() + id.slice(1);
 
     var orbit = 365;
@@ -10451,8 +10634,9 @@ export function setPlanet(hell){
             break;
     }
 
+    let title = trait === 'none' ? `${biomes[biome].label} ${num}` : `${planetTraits[trait].label} ${biomes[biome].label} ${num}`;
     var parent = $(`<div id="${id}" class="action"></div>`);
-    var element = $(`<a class="button is-dark" v-on:click="action"><span class="aTitle">${id}</span></a>`);
+    var element = $(`<a class="button is-dark" v-on:click="action"><span class="aTitle">${title}</span></a>`);
     parent.append(element);
 
     $('#evolution').append(parent);
@@ -10462,6 +10646,7 @@ export function setPlanet(hell){
         global.city.biome = biome;
         global.city.calendar.orbit = orbit;
         global.city.geology = geology;
+        global.city.ptrait = trait;
         $('#evolution').empty();
         $(`#pop${id}`).hide();
         if (poppers[id]){
@@ -10476,7 +10661,10 @@ export function setPlanet(hell){
             $('#main').append(popper);
             
             popper.append($(`<div>${loc('set_planet',[id,biome,orbit])}</div>`));
-            popper.append($(`<div>${biomes[biome]}</div>`));
+            popper.append($(`<div>${biomes[biome].desc}</div>`));
+            if (trait !== 'none'){
+                popper.append($(`<div>${planetTraits[trait].desc}</div>`));
+            }
 
             let array = [];
             for (let key in geology){
@@ -11535,7 +11723,7 @@ function grapheneModal(modal){
             buildLabel(type){
                 switch(type){
                     case 'wood':
-                        return loc('modal_graphene_produce',[350,loc('resource_Lumber_name'),loc('resource_Graphene_name')]);
+                        return loc('modal_graphene_produce',[350,global.race['evil'] ? loc('resource_Bones_name') : loc('resource_Lumber_name'),loc('resource_Graphene_name')]);
                     case 'coal':
                         return loc('modal_graphene_produce',[25,loc('resource_Coal_name'),loc('resource_Graphene_name')]);
                     case 'oil':
@@ -11590,7 +11778,7 @@ function basicHousingLabel(){
         case 'unicorn':
             return loc('city_basic_housing_unicorn_title');
         default:
-            return loc('city_basic_housing_title');
+            return global.city.ptrait === 'trashed' ? loc('city_basic_housing_trash_title') : loc('city_basic_housing_title');
     }
 }
 
@@ -11919,6 +12107,7 @@ function bioseed(){
     let genus = races[god].type;
     let orbit = global.city.calendar.orbit;
     let biome = global.city.biome;
+    let atmo = global.city.ptrait;
     let plasmid = global.race.Plasmid.count;
     let antiplasmid = global.race.Plasmid.anti;
     let phage = global.race.Phage.count;
@@ -11954,6 +12143,9 @@ function bioseed(){
     global.stats.phage += new_phage;
     unlockAchieve(`seeder`);
     let new_biome = unlockAchieve(`biome_${biome}`);
+    if (atmo !== 'none'){
+        unlockAchieve(`atmo_${atmo}`);
+    }
     let new_genus = unlockAchieve(`genus_${genus}`);
     let new_achieve = false;
 
@@ -12007,7 +12199,8 @@ function bioseed(){
             wind: 0,
             orbit: orbit
         },
-        biome: biome
+        biome: biome,
+        ptrait: atmo
     };
     global.tech = { theology: 1 };
     clearStates();
@@ -12055,6 +12248,7 @@ function big_bang(){
     let old_god = global.race.gods;
     let orbit = global.city.calendar.orbit;
     let biome = global.city.biome;
+    let atmo = global.city.ptrait;
     let plasmid = global.race.Plasmid.count;
     let antiplasmid = global.race.Plasmid.anti;
     let phage = global.race.Phage.count;
@@ -12119,7 +12313,8 @@ function big_bang(){
             wind: 0,
             orbit: orbit
         },
-        biome: biome
+        biome: biome,
+        ptrait: atmo
     };
     global.tech = { theology: 1 };
     clearStates();

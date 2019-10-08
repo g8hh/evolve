@@ -279,7 +279,28 @@ if (convertVersion(global['version']) <= 6008 && global['r_queue'] && global['r_
     }
 }
 
-global['version'] = '0.6.8';
+if (convertVersion(global['version']) < 6010 && global.race['Plasmid']){
+    if (global.race.Plasmid.anti < 0){
+        global.race.Plasmid.anti = 0;
+    }
+    if (global.race.Plasmid.count < 0){
+        global.race.Plasmid.count = 0;
+    }
+
+    if (global.tech['foundry'] && !global.race['kindling_kindred']){
+        global.resource.Plywood.display = true;
+    }
+}
+
+if (convertVersion(global['version']) < 6011 && !global.city['ptrait']){
+    global.city['ptrait'] = 'none';
+}
+
+if (convertVersion(global['version']) < 6012 && global.portal['fortress']){
+    global.portal.fortress['s_ntfy'] = 'Yes';
+}
+
+global['version'] = '0.6.13';
 
 if (global.civic['cement_worker'] && global.civic.cement_worker.impact === 0.25){
     global.civic.cement_worker.impact = 0.4;
@@ -518,6 +539,10 @@ if (!global.city['morale']){
         weather: 0,
         warmonger: 0,
     };
+}
+
+if (!global.city['sun']){
+    global.city['sun'] = 0;
 }
 
 if (!global.city.morale['unemployed']){
@@ -893,6 +918,7 @@ window.soft_reset = function reset(){
 
     let orbit = global.city.calendar.orbit;
     let biome = global.city.biome;
+    let atmo = global.city.ptrait;
     global.city = {
         calendar: {
             day: 0,
@@ -903,7 +929,8 @@ window.soft_reset = function reset(){
             wind: 0,
             orbit: orbit
         },
-        biome: biome
+        biome: biome,
+        ptrait: atmo
     };
 
     global.stats.days = 0;

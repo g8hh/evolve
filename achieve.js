@@ -275,6 +275,41 @@ var achievements = {
         desc: loc("achieve_genus_angelic_desc"),
         flair: loc("achieve_genus_angelic_flair")
     },
+    atmo_toxic: {
+        name: loc("achieve_atmo_toxic_name"),
+        desc: loc("achieve_atmo_toxic_desc"),
+        flair: loc("achieve_atmo_toxic_flair")
+    },
+    atmo_mellow: {
+        name: loc("achieve_atmo_mellow_name"),
+        desc: loc("achieve_atmo_mellow_desc"),
+        flair: loc("achieve_atmo_mellow_flair")
+    },
+    atmo_rage: {
+        name: loc("achieve_atmo_rage_name"),
+        desc: loc("achieve_atmo_rage_desc"),
+        flair: loc("achieve_atmo_rage_flair")
+    },
+    atmo_stormy: {
+        name: loc("achieve_atmo_stormy_name"),
+        desc: loc("achieve_atmo_stormy_desc"),
+        flair: loc("achieve_atmo_stormy_flair")
+    },
+    atmo_ozone: {
+        name: loc("achieve_atmo_ozone_name"),
+        desc: loc("achieve_atmo_ozone_desc"),
+        flair: loc("achieve_atmo_ozone_flair")
+    },
+    atmo_magnetic: {
+        name: loc("achieve_atmo_magnetic_name"),
+        desc: loc("achieve_atmo_magnetic_desc"),
+        flair: loc("achieve_atmo_magnetic_flair")
+    },
+    atmo_trashed: {
+        name: loc("achieve_atmo_trashed_name"),
+        desc: loc("achieve_atmo_trashed_desc"),
+        flair: loc("achieve_atmo_trashed_flair")
+    },
     mass_extinction: {
         name: loc("achieve_mass_extinction_name"),
         desc: loc("achieve_mass_extinction_desc"),
@@ -545,6 +580,7 @@ export function unlockAchieve(achievement,small){
     if (global.race['no_trade']){ a_level++; }
     if (global.race['no_craft']){ a_level++; }
     if (global.race['no_crispr']){ a_level++; }
+    if (global.race['weak_mastery']){ a_level++; }
     if (!global.stats.achieve[achievement] || (global.stats.achieve[achievement] && global.stats.achieve[achievement].l < a_level)){
         global.settings.showAchieve = true;
         if (global.stats.achieve[achievement]){
@@ -594,6 +630,7 @@ export function unlockFeat(feat,small){
     if (global.race['no_trade']){ a_level++; }
     if (global.race['no_craft']){ a_level++; }
     if (global.race['no_crispr']){ a_level++; }
+    if (global.race['weak_mastery']){ a_level++; }
     if (!global.stats.feat[feat] || (global.stats.feat[feat] && global.stats.feat[feat] < a_level)){
         global.settings.showAchieve = true;
         global.stats.feat[feat] = a_level;
@@ -715,6 +752,7 @@ export function drawAchieve(){
     if (global.race['no_trade']){ a_level++; }
     if (global.race['no_craft']){ a_level++; }
     if (global.race['no_crispr']){ a_level++; }
+    if (global.race['weak_mastery']){ a_level++; }
 
     if (a_level > 1 && $('#topBar .planet .flair').length === 0){
         if ($('#topBar span.flair')){
@@ -726,7 +764,8 @@ export function drawAchieve(){
             var popper = $(`<div id="topbarPlanet" class="popper has-background-light has-text-dark"></div>`);
             $('#main').append(popper);
 
-            if (global.race['no_plasmid']){ popper.append($(`<div>${loc('evo_challenge_plasmid')}</div>`)); } 
+            if (global.race['no_plasmid']){ popper.append($(`<div>${loc('evo_challenge_plasmid')}</div>`)); }
+            if (global.race['weak_mastery']){ popper.append($(`<div>${loc('evo_challenge_mastery')}</div>`)); }
             if (global.race['no_trade']){ popper.append($(`<div>${loc('evo_challenge_trade')}</div>`)); }
             if (global.race['no_craft']){ popper.append($(`<div>${loc('evo_challenge_craft')}</div>`)); }
             if (global.race['no_crispr']){ popper.append($(`<div>${loc('evo_challenge_crispr')}</div>`)); }
@@ -750,6 +789,7 @@ export function checkAchievements(){
     if (global.race['no_trade']){ a_level++; }
     if (global.race['no_craft']){ a_level++; }
     if (global.race['no_crispr']){ a_level++; }
+    if (global.race['weak_mastery']){ a_level++; }
     if (!global.stats.achieve['mass_extinction'] || global.stats.achieve['mass_extinction'].l < a_level){
         let total = 0;
         const keys = Object.keys(achievements)

@@ -2,7 +2,7 @@ import { global, vues, save, poppers, resizeGame, messageQueue, modRes, breakdow
 import { loc, locales } from './locale.js';
 import { mainVue, timeCheck, timeFormat, powerModifier } from './functions.js';
 import { setupStats, checkAchievements } from './achieve.js';
-import { races, racialTrait, randomMinorTrait } from './races.js';
+import { races, racialTrait, randomMinorTrait, biomes, planetTraits } from './races.js';
 import { defineResources, resource_values, spatialReasoning, craftCost, plasmidBonus, tradeRatio, craftingRatio, crateValue, containerValue, tradeSellPrice, tradeBuyPrice, atomic_mass } from './resources.js';
 import { defineJobs, job_desc, loadFoundry } from './jobs.js';
 import { defineGovernment, defineGarrison, garrisonSize, armyRating, buildQueue } from './civics.js';
@@ -73,7 +73,7 @@ vues['race'] = new Vue({
     },
     filters: {
         approx(kw){
-            return +(kw).toFixed(1);
+            return +(kw).toFixed(2);
         }
     }
 });
@@ -149,11 +149,11 @@ $('#powerStatus').on('mouseover',function(){
     $('#main').append(powerPopper);
     let drain = global.city.power_total - global.city.power;
     Object.keys(power_generated).forEach(function (k){
-        let gen = +(power_generated[k]).toFixed(1);
+        let gen = +(power_generated[k]).toFixed(2);
         powerPopper.append(`<p class="modal_bd"><span>${k}</span> <span class="has-text-success">+${gen}</span></p>`);
     });
     powerPopper.append(`<p class="modal_bd"><span>${loc('power_consumed')}</span> <span class="has-text-danger"> -${drain}</span></p>`);
-    let avail = +(global.city.power).toFixed(1);
+    let avail = +(global.city.power).toFixed(2);
     if (global.city.power > 0){
         powerPopper.append(`<p class="modal_bd sum"><span>${loc('power_available')}</span> <span class="has-text-success">${avail}</span></p>`);
     }
@@ -250,7 +250,16 @@ $('#topBar .planetWrap .planet').on('mouseover',function(){
     else {
         let planet = races[global.race.species].home;
         let race = races[global.race.species].name;
-        let biome = global.city.biome;
+        let planet_label = biomes[global.city.biome].label;
+        let trait = global.city.ptrait;
+        if (trait !== 'none'){
+            if (trait === 'mellow' && global.race.species === 'entish'){
+                planet_label = `${loc('planet_mellow_eg')} ${planet_label}`;
+            }
+            else {
+                planet_label = `${planetTraits[trait].label} ${planet_label}`;
+            }
+        }
         let orbit = global.city.calendar.orbit;
         let challenges = '';
         if (global.race['junker']){
@@ -262,7 +271,7 @@ $('#topBar .planetWrap .planet').on('mouseover',function(){
         if (global.race['decay']){
             challenges = challenges + `<div>${loc('evo_challenge_decay_desc')}</div>`;
         }
-        popper.append($(`<div>${loc('home',[planet,race,biome,orbit])}</div>${challenges}`));
+        popper.append($(`<div>${loc('home',[planet,race,planet_label,orbit])}</div>${challenges}`));
     }
     popper.show();
     poppers['topbarPop'] = new Popper($('#topBar .planet'),popper);
@@ -345,7 +354,7 @@ if (global.race.species === 'protoplasm'){
     
     if (global.evolution['bunker'] && global.evolution['bunker'].count >= 1){
         challengeGeneHeader();
-        var challenge_genes = ['plasmid','trade','craft','crispr'];
+        var challenge_genes = ['plasmid','mastery','trade','craft','crispr'];
         for (var i = 0; i < challenge_genes.length; i++){
             if (global.evolution[challenge_genes[i]] && global.evolution[challenge_genes[i]].count == 0){
                 addAction('evolution',challenge_genes[i]);
@@ -362,11 +371,8 @@ if (global.race.species === 'protoplasm'){
     }
 }
 else {
-    Object.keys(actions.city).forEach(function (city){
-        if (checkCityRequirements(city)){
-            addAction('city',city);
-        }
-    });
+    drawCity();
+
     Object.keys(actions.tech).forEach(function (tech){
         if (checkTechRequirements(tech)){
             addAction('tech',tech);
@@ -439,15 +445,22 @@ function fastLoop(){
     
     breakdown.p['Global'] = {};
     var global_multiplier = 1;
-    if (global.race.Plasmid.count > 0){
-        breakdown.p['Global'][loc('resource_Plasmid_name')] = (plasmidBonus() * 100) + '%';
+    if (global.race.Plasmid.count > 0  && ((global.race.universe !== 'antimatter') || (global.genes['bleed'] && global.race.universe === 'antimatter'))){
+        breakdown.p['Global'][loc('resource_Plasmid_name')] = (plasmidBonus('plasmid') * 100) + '%';
         global_multiplier += plasmidBonus();
     }
-    if (global.race['no_plasmid']){
+    if (global.race.Plasmid.anti > 0  && ((global.race.universe === 'antimatter') || (global.genes['bleed'] && global.genes['bleed'] >= 2 && global.race.universe !== 'antimatter'))){
+        breakdown.p['Global'][loc('resource_AntiPlasmid_name')] = (plasmidBonus('antiplasmid') * 100) + '%';
+        global_multiplier += plasmidBonus();
+    }
+    if (global.race['no_plasmid'] || global.race.universe === 'antimatter'){
         if (global.city['temple'] && global.city['temple'].count){
             let temple_bonus = global.tech['anthropology'] && global.tech['anthropology'] >= 1 ? 0.016 : 0.01;
+            if (global.race.universe === 'antimatter'){
+                temple_bonus /= 2;
+            }
             if (global.tech['fanaticism'] && global.tech['fanaticism'] >= 2){
-                temple_bonus += global.civic.professor.workers * 0.0004;
+                temple_bonus += global.civic.professor.workers * (global.race.universe === 'antimatter' ? 0.0002 : 0.0004);
             }
             if (global.race['spiritual']){
                 temple_bonus *= 1.13;
@@ -466,8 +479,14 @@ function fastLoop(){
         global_multiplier *= 1.25;
     }
     if (global.genes['challenge'] && global.genes['challenge'] >= 2){
-        breakdown.p['Global'][loc('mastery')] = (achieve_level * 0.25) + '%';
-        global_multiplier *= 1 + (achieve_level * 0.0025);
+        if (global.race['weak_mastery']){
+            breakdown.p['Global'][loc('mastery')] = (achieve_level * 0.025) + '%';
+            global_multiplier *= 1 + (achieve_level * 0.00025);
+        }
+        else {
+            breakdown.p['Global'][loc('mastery')] = (achieve_level * 0.25) + '%';
+            global_multiplier *= 1 + (achieve_level * 0.0025);
+        }
     }
     if (global.race['suction_grip']){
         breakdown.p['Global'][loc('trait_suction_grip_bd')] = '8%';
@@ -482,6 +501,20 @@ function fastLoop(){
         let bonus = (global.city.slave_pen.slaves * 0.28);
         breakdown.p['Global'][loc('trait_slaver_bd')] = bonus+'%';
         global_multiplier *= 1 + (bonus / 100);
+    }
+    if (global.city.ptrait === 'trashed' && global.civic['scavenger'] && global.civic.scavenger.workers > 0){
+        let bonus = (global.civic.scavenger.workers * global.civic.scavenger.impact);
+        breakdown.p['Global'][loc('job_scavenger')] = bonus+'%';
+        global_multiplier *= 1 + (bonus / 100);
+    }
+    if (global.city.ptrait === 'mellow'){
+        breakdown.p['Global'][loc('planet_mellow_bd')] = '-2%';
+        global_multiplier *= 0.98;
+    }
+    if (global.city.ptrait === 'ozone' && global.city['sun']){
+        let uv = global.city['sun'] * 0.25;
+        breakdown.p['Global'][loc('planet_ozone_bd')] = `-${uv}%`;
+        global_multiplier *= 1 - (uv / 100);
     }
 
     breakdown.p['consume'] = {
@@ -667,7 +700,7 @@ function fastLoop(){
             global.city.morale.unemployed = -(global.civic.free);
         }
         else {
-            stress -= Math.round(global.civic.free / 5);
+            stress -= Math.round(global.civic.free / (global.city.ptrait === 'mellow' ? 5.5 : 5));
             global.city.morale.unemployed = 0;
         }
 
@@ -1201,23 +1234,28 @@ function fastLoop(){
         // Detect labor anomalies
         let total = 0;
         Object.keys(job_desc).forEach(function (job) {
-            total += global.civic[job].workers;
-            if (total > global.resource[global.race.species].amount){
-                global.civic[job].workers -= total - global.resource[global.race.species].amount;
-            }
+            if (global.civic[job]){
+                total += global.civic[job].workers;
+                if (total > global.resource[global.race.species].amount){
+                    global.civic[job].workers -= total - global.resource[global.race.species].amount;
+                }
 
-            let stress_level = global.civic[job].stress;
-            if (global.race['content']){
-                let effectiveness = job === 'hell_surveyor' ? 0.2 : 0.4;
-                stress_level += global.race['content'] * effectiveness;
-            }
+                let stress_level = global.civic[job].stress;
+                if (global.city.ptrait === 'mellow'){
+                    stress_level += 1;
+                }
+                if (global.race['content']){
+                    let effectiveness = job === 'hell_surveyor' ? 0.2 : 0.4;
+                    stress_level += global.race['content'] * effectiveness;
+                }
 
-            stress -= +(global.civic[job].workers / stress_level).toFixed(0);
+                stress -= +(global.civic[job].workers / stress_level).toFixed(0);
+            }
         });
         global.civic.free = global.resource[global.race.species].amount - total;
 
         Object.keys(job_desc).forEach(function (job){
-            if (job !== 'craftsman' && global.civic[job].workers < global.civic[job].assigned && global.civic.free > 0 && global.civic[job].workers < global.civic[job].max){
+            if (job !== 'craftsman' && global.civic[job] && global.civic[job].workers < global.civic[job].assigned && global.civic.free > 0 && global.civic[job].workers < global.civic[job].max){
                 global.civic[job].workers++;
                 global.civic.free--;
             }
@@ -1357,6 +1395,7 @@ function fastLoop(){
                 farmers_base *= (global.tech['hoe'] && global.tech['hoe'] > 0 ? global.tech['hoe'] * (1/3) : 0) + 1;
                 farmers_base *= global.city.biome === 'grassland' ? 1.1 : 1;
                 farmers_base *= global.city.biome === 'hellscape' ? 0.25 : 1;
+                farmers_base *= global.city.ptrait === 'trashed' ? 0.75 : 1;
                 farmers_base *= racialTrait(global.civic.farmer.workers,'farmer');
                 farmers_base *= global.tech['agriculture'] >= 7 ? 1.1 : 1;
                 farmers_base *= global.race['low_light'] ? 0.9 : 1;
@@ -1388,6 +1427,7 @@ function fastLoop(){
                     farm = global.city['farm'].count * (global.tech['agriculture'] >= 2 ? 1.25 : 0.75);
                     farm *= global.city.biome === 'grassland' ? 1.1 : 1;
                     farm *= global.city.biome === 'hellscape' ? 0.25 : 1;
+                    farm *= global.city.ptrait === 'trashed' ? 0.75 : 1;
                     farm *= global.tech['agriculture'] >= 7 ? 1.1 : 1;
                     farm *= global.race['low_light'] ? 0.9 : 1;
                 }
@@ -1537,7 +1577,8 @@ function fastLoop(){
                 if (global.race['promiscuous']){
                     lowerBound += global.race['promiscuous'];
                 }
-                if(Math.rand(0, global['resource'][global.race.species].amount * (3 - (2 ** time_multiplier))) <= lowerBound){
+                let base = global.city.ptrait === 'toxic' ? global['resource'][global.race.species].amount * 1.25 : global['resource'][global.race.species].amount;
+                if(Math.rand(0, base * (3 - (2 ** time_multiplier))) <= lowerBound){
                     global['resource'][global.race.species].amount++;
                 }
             }
@@ -1589,6 +1630,9 @@ function fastLoop(){
                 sundial_base++;
             }
             if (global.stats.achieve['extinct_junker']){
+                sundial_base++;
+            }
+            if (global.city.ptrait === 'magnetic'){
                 sundial_base++;
             }
 
@@ -2923,6 +2967,7 @@ function midLoop(){
             farmer: -1,
             lumberjack: -1,
             quarry_worker: -1,
+            scavenger: -1,
             miner: 0,
             coal_miner: 0,
             craftsman: 0,
@@ -3442,7 +3487,7 @@ function midLoop(){
             }
         }
         if (global.city['wardenclyffe']){
-            let gain = global.city['wardenclyffe'].count * 1000;
+            let gain = global.city['wardenclyffe'].count * (global.city.ptrait === 'magnetic' ? 1100 : 1000);
             lCaps['scientist'] += global.city['wardenclyffe'].count;
             let powered_gain = global.tech['science'] >= 7 ? 1500 : 1000;
             gain += (p_on['wardenclyffe'] * powered_gain);
@@ -3454,7 +3499,7 @@ function midLoop(){
                 gain *= 1 + (global.space.satellite.count * 0.04);
             }
             caps['Knowledge'] += gain;
-            bd_Knowledge[loc('city_wardenclyffe')] = gain+'v';
+            bd_Knowledge[global.race['evil'] ? loc('city_babel_title') : loc('city_wardenclyffe')] = gain+'v';
         }
         if (global.portal['sensor_drone']){
             let gain = p_on['sensor_drone'] * 1000;
@@ -3797,7 +3842,8 @@ function midLoop(){
         }
 
         if (global.arpa['sequence'] && global.arpa.sequence.on && gene_sequence){
-            global.arpa.sequence.time -= global.arpa.sequence.boost ? global.city.biolab.on * 2 : global.city.biolab.on;
+            let labs = global.city.ptrait === 'toxic' ? global.city.biolab.on + 1 : global.city.biolab.on;
+            global.arpa.sequence.time -= global.arpa.sequence.boost ? labs * 2 : labs;
             global.arpa.sequence.progress = global.arpa.sequence.max - global.arpa.sequence.time;
             if (global.arpa.sequence.time <= 0){
                 global.arpa.sequence.max = 50000 * (1 + (global.race.mutation ** 2));
@@ -4068,6 +4114,14 @@ function longLoop(){
             bloodwar();
         }
 
+        if (global.city.ptrait === 'trashed'){
+            global.civic.scavenger.display = true;
+        }
+        else {
+            global.civic.scavenger.display = false;
+            global.civic.scavenger.workers = 0;
+        }
+
         // Market price fluctuation
         if (global.tech['currency'] && global.tech['currency'] >= 2){
             Object.keys(resource_values).forEach(function (res) {
@@ -4227,6 +4281,10 @@ function longLoop(){
                         break;
                 }
 
+                if (global.city.ptrait === 'stormy' && wind > 0 && Math.rand(0,3) === 0){
+                    wind--;
+                }
+
                 if (sky === 0){
                     if (global.race['rainbow']){
                         global.race['rainbow'] = 1;
@@ -4276,6 +4334,13 @@ function longLoop(){
                 }
 
                 global.city.calendar.wind = wind === 0 ? 1 : 0;
+            }
+
+            if (global.city.calendar.weather === 2){
+                global.city.sun++;
+            }
+            else {
+                global.city.sun = 0;
             }
 
             // Moon Phase

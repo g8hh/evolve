@@ -212,6 +212,7 @@ export function defineResources(){
         loadContainerCounter();
     }
     loadSpecialResource('Plasmid');
+    loadSpecialResource('AntiPlasmid');
     loadSpecialResource('Phage');
     loadSpecialResource('Dark');
 }
@@ -465,15 +466,21 @@ function loadSpecialResource(name,color) {
         $('#resources').append(bind);
         return;
     }
-
     color = color || 'special';
+    let bind = name;
     
-    var res_container = $(`<div id="res${name}" class="resource" v-show="count"><span class="res has-text-${color}">${loc(`resource_${name}_name`)}</span><span class="count">{{ count }}</span></div>`);
-   
-    $('#resources').append(res_container);
+    if (name === 'AntiPlasmid'){
+        var res_container = $(`<div id="res${name}" class="resource" v-show="anti"><span class="res has-text-${color}">${loc(`resource_${name}_name`)}</span><span class="count">{{ anti }}</span></div>`);
+        $('#resources').append(res_container);
+        bind = 'Plasmid';
+    }
+    else {
+        var res_container = $(`<div id="res${name}" class="resource" v-show="count"><span class="res has-text-${color}">${loc(`resource_${name}_name`)}</span><span class="count">{{ count }}</span></div>`);
+        $('#resources').append(res_container);
+    }
     
     vues[`res_${name}`] = new Vue({
-        data: global.race[name]
+        data: global.race[bind]
     });
     vues[`res_${name}`].$mount(`#res${name}`);
 }
@@ -1210,9 +1217,9 @@ function loadEjector(name,color){
         let res = $(`<span class="trade"></span>`);
         ejector.append(res);
 
-        res.append($(`<span role="button" aria-label="eject more ${name} ${loc('resource_'+name+'_name')}" class="sub has-text-danger" @click="ejectLess('${name}')"><span>&laquo;</span></span>`));
+        res.append($(`<span role="button" aria-label="eject less ${loc('resource_'+name+'_name')}" class="sub has-text-danger" @click="ejectLess('${name}')"><span>&laquo;</span></span>`));
         res.append($(`<span class="current">{{ e.${name} }}</span>`));
-        res.append($(`<span role="button" aria-label="eject less ${name} ${loc('resource_'+name+'_name')}" class="add has-text-success" @click="ejectMore('${name}')"><span>&raquo;</span></span>`));
+        res.append($(`<span role="button" aria-label="eject more ${loc('resource_'+name+'_name')}" class="add has-text-success" @click="ejectMore('${name}')"><span>&raquo;</span></span>`));
 
         res.append($(`<span class="mass">${loc('interstellar_mass_ejector_per')}: <span class="has-text-warning">${unitMass(name)}</span> kt</span>`));
 
@@ -1251,9 +1258,9 @@ function unitMass(name){
 }
 
 export function spatialReasoning(value){
-    let plasmids = global.race.Plasmid.count;
+    let plasmids = global.race.universe === 'antimatter' ? global.race.Plasmid.anti : global.race.Plasmid.count;
     if (global.race['no_plasmid']){
-        plasmids = global.race.mutation > global.race.Plasmid.count ? global.race.Plasmid.count : global.race.mutation;
+        plasmids = global.race.mutation > plasmids ? plasmids : global.race.mutation;
     }
     if (global.genes['store'] && global.genes['store'] >= 4){
         plasmids += global.race.Phage.count;
@@ -1263,6 +1270,9 @@ export function spatialReasoning(value){
         if (global.race.universe === 'antimatter'){
             divisor *= 2;
         }
+        if (global.genes['bleed'] && global.genes['bleed'] >= 3){
+            plasmids += global.race.universe === 'antimatter' ? global.race.Plasmid.count / 5 : global.race.Plasmid.anti / 10;
+        }
         value *= 1 + (plasmids / divisor);
         value = Math.round(value);
     }
@@ -1270,34 +1280,73 @@ export function spatialReasoning(value){
         value *= 1 + (global.race.Dark.count / 200);
         value = Math.round(value);
     }
+    if (global.race.universe === 'antimatter' && global.city['temple'] && global.city['temple'].count){
+        value *= 1 + (global.city.temple.count * 0.06);
+    }
     return value;
 }
 
-export function plasmidBonus(){
-    let plasmid_bonus = 0;
-    let plasmids = global.race['no_plasmid'] ? global.race.mutation : global.race.Plasmid.count;
-    if (plasmids > global.race.Plasmid.count){
-        plasmids = global.race.Plasmid.count;
-    }
-    if (global.race['decayed']){
-        plasmids -= Math.round((global.stats.days - global.race.decayed) / (300 + global.race.gene_fortify * 25)); 
-    }
-    let p_cap = 250 + global.race.Phage.count;
-    if (plasmids > p_cap){
-        plasmid_bonus = (+((Math.log(p_cap + 50) - 3.91202)).toFixed(5) / 2.888) + ((Math.log(plasmids + 1 - p_cap) / Math.LN2 / 250));
-    }
-    else {
-        plasmid_bonus = +((Math.log(plasmids + 50) - 3.91202)).toFixed(5) / 2.888;
-    }
-    if (global.city['temple'] && global.city['temple'].count && !global.race['no_plasmid']){
-        let temple_bonus = global.tech['anthropology'] && global.tech['anthropology'] >= 1 ? 0.08 : 0.05;
-        if (global.tech['fanaticism'] && global.tech['fanaticism'] >= 2){
-            temple_bonus += global.civic.professor.workers * 0.002;
+export function plasmidBonus(type){
+    let standard = 0;
+    let anti = 0;    
+    if (global.race.universe !== 'antimatter' || global.genes['bleed']){
+        let plasmids = global.race['no_plasmid'] ? global.race.mutation : global.race.Plasmid.count;
+        if (plasmids > global.race.Plasmid.count){
+            plasmids = global.race.Plasmid.count;
         }
-        if (global.race['spiritual']){
-            temple_bonus *= 1.13;
+        if (global.race['decayed']){
+            plasmids -= Math.round((global.stats.days - global.race.decayed) / (300 + global.race.gene_fortify * 25)); 
         }
-        plasmid_bonus *= 1 + (global.city.temple.count * temple_bonus);
+        if (global.race.universe === 'antimatter' && global.genes['bleed']){
+            plasmids *= 0.025
+        }
+        let p_cap = 250 + global.race.Phage.count;
+        if (plasmids > p_cap){
+            standard = (+((Math.log(p_cap + 50) - 3.91202)).toFixed(5) / 2.888) + ((Math.log(plasmids + 1 - p_cap) / Math.LN2 / 250));
+        }
+        else {
+            standard = +((Math.log(plasmids + 50) - 3.91202)).toFixed(5) / 2.888;
+        }
+        if (global.city['temple'] && global.city['temple'].count && !global.race['no_plasmid'] && global.race.universe !== 'antimatter'){
+            let temple_bonus = global.tech['anthropology'] && global.tech['anthropology'] >= 1 ? 0.08 : 0.05;
+            if (global.tech['fanaticism'] && global.tech['fanaticism'] >= 2){
+                temple_bonus += global.civic.professor.workers * 0.002;
+            }
+            if (global.race['spiritual']){
+                temple_bonus *= 1.13;
+            }
+            standard *= 1 + (global.city.temple.count * temple_bonus);
+        }
     }
-    return plasmid_bonus;
+
+    if (global.race.universe === 'antimatter' || (global.genes['bleed'] && global.genes['bleed'] >= 2)){
+        let plasmids = global.race.Plasmid.anti;
+        if (plasmids > global.race.Plasmid.anti){
+            plasmids = global.race.Plasmid.anti;
+        }
+        if (global.race.universe !== 'antimatter' && global.genes['bleed'] && global.genes['bleed'] >= 2){
+            plasmids *= 0.25
+        }
+        if (global.race['decayed']){
+            plasmids -= Math.round((global.stats.days - global.race.decayed) / (300 + global.race.gene_fortify * 25)); 
+        }
+        let p_cap = 250 + global.race.Phage.count;
+        if (plasmids > p_cap){
+            anti = (+((Math.log(p_cap + 50) - 3.91202)).toFixed(5) / 2.888) + ((Math.log(plasmids + 1 - p_cap) / Math.LN2 / 250));
+        }
+        else {
+            anti = +((Math.log(plasmids + 50) - 3.91202)).toFixed(5) / 2.888;
+        }
+        anti /= 3;
+    }
+
+    if (type && type === 'plasmid'){
+        return standard;
+    }
+    else if (type && type === 'antiplasmid'){
+        return anti;
+    }
+
+    let final = (1 + standard) * (1 + anti);
+    return final - 1;
 }

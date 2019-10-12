@@ -1,4 +1,4 @@
-import { global, vues, save, poppers, messageQueue, keyMultiplier, clearStates, demoIsPressed, srSpeak, modRes, sizeApproximation, p_on, moon_on, quantum_level } from './vars.js';
+import { global, vues, save, poppers, messageQueue, keyMultiplier, clearStates, demoIsPressed, queueIsPressed, srSpeak, modRes, sizeApproximation, p_on, moon_on, quantum_level } from './vars.js';
 import { loc } from './locale.js';
 import { timeCheck, timeFormat, powerModifier, challenge_multiplier, adjustCosts } from './functions.js';
 import { unlockAchieve, unlockFeat, drawAchieve, checkAchievements } from './achieve.js';
@@ -976,6 +976,14 @@ export const actions = {
                         }
                         else {
                             global.race.species = 'imp';
+                        }
+                    }
+                    else if (global.evolution['celestial']){
+                        if (path < 50){
+                            global.race.species = 'seraph';
+                        }
+                        else {
+                            global.race.species = 'unicorn';
                         }
                     }
                     else if (global.evolution['eggshell']){
@@ -3453,7 +3461,7 @@ export const actions = {
                 Sheet_Metal(){ return costMultiplier('wardenclyffe', 125, 1.2); }
             },
             effect(){
-                let gain = global.city['wardenclyffe'].count * (global.city.ptrait === 'magnetic' ? 1100 : 1000);
+                let gain = global.city.ptrait === 'magnetic' ? 1100 : 1000;
                 if (global.tech['supercollider']){
                     let ratio = global.tech['particles'] && global.tech['particles'] >= 3 ? 12.5: 25;
                     gain *= (global.tech['supercollider'] / ratio) + 1;
@@ -3462,20 +3470,20 @@ export const actions = {
                     gain *= 1 + (global.space.satellite.count * 0.04);
                 }
                 gain = +(gain).toFixed(1);
+                let desc = `<div>${loc('city_wardenclyffe_effect1')}</div><div>${loc('city_max_knowledge',[gain])}</div>`;
                 if (global.city.powered){
                     let pgain = global.tech['science'] >= 7 ? 2500 : 2000;
                     if (global.city.ptrait === 'magnetic'){
                         pgain += 100;
                     }
                     if (global.space['satellite']){
-                        pgain *= 1 + (global.space.satellite.count * 0.02);
+                        pgain *= 1 + (global.space.satellite.count * 0.04);
                     }
                     if (global.tech['supercollider']){
                         let ratio = global.tech['particles'] && global.tech['particles'] >= 3 ? 12.5: 25;
                         pgain *= (global.tech['supercollider'] / ratio) + 1;
                     }
                     pgain = +(pgain).toFixed(1);
-                    let desc = `<div>${loc('city_wardenclyffe_effect1')}</div><div>${loc('city_max_knowledge',[gain])}</div>`;
                     if (global.tech.science >= 15){
                         desc = desc + `<div>${loc('city_wardenclyffe_effect4',[2])}</div>`;
                     }
@@ -3486,11 +3494,8 @@ export const actions = {
                     else {
                         desc = desc + `<div>${loc('city_wardenclyffe_effect2',[$(this)[0].powered(),pgain])}</div>`;
                     }
-                    return desc;
                 }
-                else {
-                    return `<div>${loc('city_wardenclyffe_effect1')}</div><div>${loc('city_max_knowledge',[gain])}</div>`;
-                }
+                return desc;
             },
             powered(){ return 2; },
             action(){
@@ -5336,13 +5341,16 @@ export const actions = {
                 if (payCosts($(this)[0].cost)){
                     var tech = actions.tech.large_trades.grant[0];
                     global.tech[tech] = actions.tech.large_trades.grant[1];
-                    if (global.race['noble']){
-                        global.tech[tech] = 5;
-                    }
                     loadMarket();
                     return true;
                 }
                 return false;
+            },
+            post(){
+                if (global.race['noble']){
+                    global.tech['currency'] = 5;
+                    drawTech();
+                }
             }
         },
         corruption: {
@@ -10103,7 +10111,7 @@ export function gainTech(action){
 }
 
 export function drawCity(){
-    let city_buildings = { };
+    let city_buildings = {};
     Object.keys(actions.city).forEach(function (city_name) {
         removeAction(actions.city[city_name].id);
         
@@ -10117,7 +10125,12 @@ export function drawCity(){
             city_buildings[category] = [];
         }
 
-        city_buildings[category].push(city_name);
+        if (global.settings['cLabels']){
+            city_buildings[category].push(city_name);
+        }
+        else {
+            addAction('city', city_name);
+        }
     });
 
     let city_categories =  [
@@ -10133,17 +10146,18 @@ export function drawCity(){
 
     city_categories.forEach(function(category) {
         $(`#city-dist-${category}`).remove();
+        if (global.settings['cLabels']){
+            if(!(category in city_buildings))
+                return;
 
-        if(!(category in city_buildings))
-            return;
+            $(`<div id="city-dist-${category}" class="city"></div>`)
+                .appendTo('#city')
+                .append(`<div><h3 class="name has-text-warning">${loc(`city_dist_${category}`)}</h3></div>`);
 
-        $(`<div id="city-dist-${category}" class="city"></div>`)
-            .appendTo('#city')
-            .append(`<div><h3 class="name has-text-warning">${loc(`city_dist_${category}`)}</h3></div>`);
-
-        city_buildings[category].forEach(function(city_name) {
-            addAction('city', city_name);
-        });
+            city_buildings[category].forEach(function(city_name) {
+                addAction('city', city_name);
+            });
+        }
     });
 }
 
@@ -10334,6 +10348,9 @@ export function setAction(c_action,action,type,old){
                         case 'tech':
                             if (c_action.action()){
                                 gainTech(type);
+                                if (c_action['post']){
+                                    c_action.post();
+                                }
                             }
                             else {
                                 if (!(c_action['no_queue'] && c_action['no_queue']()) && global.tech['r_queue']){
@@ -10360,6 +10377,9 @@ export function setAction(c_action,action,type,old){
                         case 'genes':
                             if (c_action.action()){
                                 gainGene(type);
+                                if (c_action['post']){
+                                    c_action.post();
+                                }
                             }
                             break;
                         default:
@@ -10393,7 +10413,7 @@ export function setAction(c_action,action,type,old){
                                 let grant = false;
                                 let no_queue = action === 'evolution' || (c_action['no_queue'] && c_action['no_queue']()) ? true : false;
                                 for (var i=0; i<keyMult; i++){
-                                    if (!c_action.action()){
+                                    if ((global.settings.qKey && queueIsPressed) || !c_action.action()){
                                         if (!no_queue && global.tech['queue'] && keyMult === 1){
                                             let max_queue = global.tech['queue'] >= 2 ? (global.tech['queue'] >= 3 ? 8 : 5) : 3;
                                             if (global.genes['queue'] && global.genes['queue'] >= 2){
@@ -10520,7 +10540,7 @@ export function setAction(c_action,action,type,old){
 
 export function setPlanet(hell){
     var biome = 'grassland';
-    let max_bound = !hell && global.stats.portals >= 10 ? 7 : 6;
+    let max_bound = !hell && global.stats.portals >= 1 ? 7 : 6;
     switch (Math.floor(Math.seededRandom(0,max_bound))){
         case 0:
             biome = 'grassland';

@@ -1,3 +1,13 @@
+#### 0.6.15 - 10/11/2019 ####
+Added a settings option to disable the queue hot key<br>
+The queue hot key is now disabled by default because it breaks the game for some users<br>
+
+#### 0.6.14 - 10/9/2019 ####
+Fixed several bugs with celestial races<br>
+Only one demonic invasion event is now required to reach a hellscape planet<br>
+New city categorization can now be switched off in the settings tab<br>
+Holding Q while clicking a building will now queue it instead of constructing it<br>
+
 #### 0.6.13 - 10/7/2019 ####
 Fixed bioseed reset bug when seeding from a planet without a special property<br>
 

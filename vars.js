@@ -300,7 +300,16 @@ if (convertVersion(global['version']) < 6012 && global.portal['fortress']){
     global.portal.fortress['s_ntfy'] = 'Yes';
 }
 
-global['version'] = '0.6.13';
+if (convertVersion(global['version']) < 6014){
+    if (global.race['noble'] && global.tech['currency'] && global.tech['currency'] === 4){
+        global.tech['currency'] = 5;
+    }
+    if (global['settings']){
+        global.settings['cLabels'] = true;
+    }
+}
+
+global['version'] = '0.6.15';
 
 if (global.civic['cement_worker'] && global.civic.cement_worker.impact === 0.25){
     global.civic.cement_worker.impact = 0.4;
@@ -324,9 +333,10 @@ if (!global['settings']){
         showAchieve: false,
         animated: true,
         disableReset: false,
+        cLabels: true,
         theme: 'dark',
         locale: 'en-US',
-    }
+    };
 }
 
 if (!global.settings['showResources']){
@@ -439,7 +449,9 @@ if (!global.settings['locale']){
 if (typeof global.settings.mKeys === 'undefined'){
     global.settings['mKeys'] = true;
 }
-
+if (typeof global.settings.qKey === 'undefined'){
+    global.settings['qKey'] = false;
+}
 if (!global.stats['reset']){
     global.stats['reset'] = 0;
 }
@@ -720,17 +732,20 @@ export var shiftIsPressed = false;
 export var cntrlIsPressed = false;
 export var altIsPressed = false;
 export var demoIsPressed = false;
+export var queueIsPressed = false;
 $(document).keydown(function(e){
     cntrlIsPressed = e.ctrlKey ? true : false;
     shiftIsPressed = e.shiftKey ? true : false;
     altIsPressed = e.altKey ? true : false;
     demoIsPressed = e.keyCode === 68 ? true : false;
+    queueIsPressed = e.keyCode === 81 ? true : false;
 });
 $(document).keyup(function(e){
     cntrlIsPressed = e.ctrlKey ? true : false;
     shiftIsPressed = e.shiftKey ? true : false;
     altIsPressed = e.altKey ? true : false;
     demoIsPressed = e.keyCode === 68  ? false : true;
+    queueIsPressed = e.keyCode === 81 ? false : true;
 });
 
 window.onmousemove = function(e){
@@ -738,6 +753,7 @@ window.onmousemove = function(e){
     shiftIsPressed = e.shiftKey ? true : false;
     altIsPressed = e.altKey ? true : false;
     demoIsPressed = e.keyCode === 68  ? true : false;
+    queueIsPressed = e.keyCode === 81 ? true : false;
 }
 
 export var keyMultiplierNumber = 1;

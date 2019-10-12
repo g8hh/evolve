@@ -434,7 +434,6 @@
   "city_metal_refinery": "金属精炼厂",
   "city_metal_refinery_desc": "精炼铝",
   "city_metal_refinery_effect": "使采石场工人能够开采铝，并将铝产量提高%0%",
-  //"city_metal_refinery_effect2": "允许采石工人开采铝，并将铝产量提高%0%。通电时铝产量将提高%1%，而不是%0%。",
   "city_metal_refinery_effect2": "Enables aluminium mining by quarry workers and boosts aluminium production by %0%. If powered consumes %2kW but boosts aluminium production by %1% instead of %0%.",
   "city_mine": "矿井",
   "city_mine_desc": "雇佣矿工",

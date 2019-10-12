@@ -39,7 +39,7 @@ function getString(locale) {
     let defaultString;
     $.getJSON("strings/strings.json", (data) => { defaultString = data; });
 
-    if (locale != "en-US"){
+    if (/*locale != "en-US"*/ true){
         let localeString;
         try {
             $.getJSON(`strings/strings-chs.json`, (data) => { localeString = data; })

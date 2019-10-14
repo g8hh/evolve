@@ -205,15 +205,15 @@ var achievements = {
         desc: loc("achieve_eviltwin_desc"),
         flair: loc("achieve_eviltwin_flair")
     },
-    dissipated: {
-        name: loc("achieve_dissipated_name"),
-        desc: loc("achieve_dissipated_desc"),
-        flair: loc("achieve_dissipated_flair")
-    },
     microbang: {
         name: loc("achieve_microbang_name"),
         desc: loc("achieve_microbang_desc"),
         flair: loc("achieve_microbang_flair")
+    },
+    dissipated: {
+        name: loc("achieve_dissipated_name"),
+        desc: loc("achieve_dissipated_desc"),
+        flair: loc("achieve_dissipated_flair")
     },
     genus_humanoid: {
         name: loc("achieve_genus_humanoid_name"),
@@ -656,7 +656,7 @@ export function setupStats(){
     drawAchieve();
 }
 
-function svgIcons(icon){
+export function svgIcons(icon){
     switch (icon){
         case 'star':
             return `<path class="star" d="M320.012 15.662l88.076 215.246L640 248.153 462.525 398.438l55.265 225.9-197.778-122.363-197.778 122.363 55.264-225.9L0 248.153l231.936-17.245z"/>`;
@@ -671,7 +671,7 @@ function svgIcons(icon){
     }
 }
 
-function svgViewBox(icon){
+export function svgViewBox(icon){
     switch (icon){
         case 'star':
             return `0 0 640 640`;
@@ -820,8 +820,8 @@ export function checkAchievements(){
     }
     if (!global.stats.achieve['creator'] || global.stats.achieve['creator'].l < a_level){
         let total = 0;
-        const keys = Object.keys(achievements)
-        for (const key of keys) {
+        const keys = Object.keys(achievements);
+        for (const key of keys){
             if (key.includes('genus_')){
                 if (global.stats.achieve[key] && global.stats.achieve[key].l >= a_level){
                     total++
@@ -834,8 +834,8 @@ export function checkAchievements(){
     }
     if (!global.stats.achieve['explorer'] || global.stats.achieve['explorer'].l < a_level){
         let total = 0;
-        const keys = Object.keys(achievements)
-        for (const key of keys) {
+        const keys = Object.keys(achievements);
+        for (const key of keys){
             if (key.includes('biome_')){
                 if (global.stats.achieve[key] && global.stats.achieve[key].l >= a_level){
                     total++
@@ -901,7 +901,8 @@ export function drawPerks(){
         unlocked++;
         perks.append(`<div><span class="has-text-warning">${loc("achieve_perks_creator")}</span></div>`);
         if (global.stats.achieve['creator'].l > 1){
-            perks.append(`<div><span class="has-text-warning">${loc("achieve_perks_creator2")}</span></div>`);
+            let bonus = (global.stats.achieve['creator'].l - 1) * 50;
+            perks.append(`<div><span class="has-text-warning">${loc("achieve_perks_creator2",[bonus])}</span></div>`);
         }
     }
 
@@ -1048,6 +1049,15 @@ export function drawStats(){
     stats.append(`<div><span class="has-text-warning">${loc("achieve_stats_died_in_combat")}</span> {{ died | t_died }}</div>`);
     stats.append(`<div><span class="has-text-warning">${loc("achieve_stats_game_days_played")}</span> {{ days | played }}</div>`);
     stats.append(`<div><span class="has-text-warning">${loc("achieve_stats_total_resets")}</span> {{ reset }}</div>`);
+    if (global.stats.mad > 0){
+        stats.append(`<div><span class="has-text-warning">${loc("achieve_stats_mad_resets")}</span> {{ mad }}</div>`);
+    }
+    if (global.stats.bioseed > 0){
+        stats.append(`<div><span class="has-text-warning">${loc("achieve_stats_bioseed_resets")}</span> {{ bioseed }}</div>`);
+    }
+    if (global.stats.blackhole > 0){
+        stats.append(`<div><span class="has-text-warning">${loc("achieve_stats_blackhole_resets")}</span> {{ blackhole }}</div>`);
+    }
     if (global.stats.portals > 0){
         stats.append(`<div><span class="has-text-warning">${loc("achieve_stats_portals")}</span> {{ portals }}</div>`);
     }

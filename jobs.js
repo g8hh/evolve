@@ -148,13 +148,17 @@ function loadUnemployed(){
     
     let id = 'civ-free';
     let civ_container = $(`<div id="${id}" class="job"></div>`);
-    let job = global.race['carnivore'] || global.race['soul_eater'] ? loc('job_hunter') : loc('job_unemployed');
-    let job_label = $(`<div class="job_label"><h3 class="has-text-${color}">${job}</h3><span class="count">{{ free }}</span></div>`);
+    let job_label = $(`<div class="job_label"><h3 class="has-text-${color}">{{ 'job' | title }}</h3><span class="count">{{ free }}</span></div>`);
     civ_container.append(job_label);
     $('#jobs').append(civ_container);
     
     vues['civ_free'] = new Vue({
         data: global.civic,
+        filters: {
+            title(){
+                return global.race['carnivore'] || global.race['soul_eater'] ? loc('job_hunter') : loc('job_unemployed');
+            }
+        }
     });
     vues['civ_free'].$mount(`#${id}`);
     
@@ -207,7 +211,7 @@ function loadJob(job, impact, stress, color){
         civ_container.append(job_label);
     }
     else {
-        let job_label = $(`<div class="job_label"><h3 class="has-text-${color}">{{ name }}</h3><span class="count">{{ workers }} / {{ max }}</span></div>`);
+        let job_label = $(`<div class="job_label"><h3 class="has-text-${color}">{{ name }}</h3><span :class="level('${job}')">{{ workers }} / {{ max }}</span></div>`);
         civ_container.append(job_label);
     }
     civ_container.append(controls);
@@ -246,6 +250,23 @@ function loadJob(job, impact, stress, color){
                     else {
                         break;
                     }
+                }
+            },
+            level(job){
+                if (global.civic[job].workers === 0){
+                    return 'count has-text-danger';
+                }
+                else if (global.civic[job].workers === global.civic[job].max){
+                    return 'count has-text-success';
+                }
+                else if (global.civic[job].workers <= global.civic[job].max / 2){
+                    return 'count has-text-warning';
+                }
+                else if (global.civic[job].workers < global.civic[job].max){
+                    return 'count has-text-info';
+                }
+                else {
+                    return 'count';
                 }
             }
         }

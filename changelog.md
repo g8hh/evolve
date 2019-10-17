@@ -1,3 +1,22 @@
+#### 0.6.18 - 10/16/2019 ####
+Swarm Satellite redesign<br>
+Swarm Satellites cost and output decreased<br>
+Control Stations can now control 10/18 swarm satellites<br>
+Iron mining ship swarm plant discount now applies to all swarm plant costs<br>
+New upgrades to increase output of swarm satellites<br>
+
+#### 0.6.17 - 10/14/2019 ####
+"Q" key now works with research queue<br>
+Added settings option to not enforce queue order<br>
+Decay challenge no longer shows the star level for Joyless<br>
+All universe types can now be seen on achievements<br>
+Genus completion is now marked on sentience<br>
+Challenges can now be toggled during evolution<br>
+Inspiration event now gives a temporary buff to all science production<br>
+Added Slave Market for slaver races to buy slaves as an alternative to catching them<br>
+Added Crate/Container storage amount to the build crate/container tooltip<br>
+Added a button to cancel all trade routes for each resource<br>
+
 #### 0.6.16 - 10/13/2019 ####
 Employment is now color coded depending on staffing levels<br>
 GPS satellites now add additional trade routes<br>

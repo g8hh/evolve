@@ -504,6 +504,7 @@ function marketItem(vue,mount,market_item,name,color,full){
         trade.append($(`<b-tooltip :label="aBuy('${name}')" position="is-bottom" size="is-small" multilined animated><span role="button" aria-label="import ${name}" class="sub has-text-success" @click="autoBuy('${name}')"><span>+</span></span></b-tooltip>`));
         trade.append($(`<span class="current">{{ r.trade | trade }}</span>`));
         trade.append($(`<b-tooltip :label="aSell('${name}')" position="is-bottom" size="is-small" multilined animated><span role="button" aria-label="export ${name}" class="add has-text-danger" @click="autoSell('${name}')"><span>-</span></span></b-tooltip>`));
+        trade.append($(`<span role="button" class="zero has-text-advanced" @click="zero('${name}')">${loc('cancel_routes')}</span>`));
         tradeRouteColor(name);
     }
     
@@ -594,6 +595,11 @@ function marketItem(vue,mount,market_item,name,color,full){
                         global.resource[res].trade--;
                     }
                 }
+                tradeRouteColor(res);
+            },
+            zero(res){
+                global.city.market.trade += global.resource[res].trade;
+                global.resource[res].trade = 0;
                 tradeRouteColor(res);
             }
         },
@@ -930,11 +936,11 @@ function tradeRouteColor(res){
 function buildCrateLabel(){
     let material = global.race['kindling_kindred'] ? global.resource.Stone.name : (global.resource['Plywood'] ? global.resource.Plywood.name : loc('resource_Plywood_name'));
     let cost = global.race['kindling_kindred'] ? 200 : 10
-    return loc('resource_modal_crate_construct_desc',[cost,material]);
+    return loc('resource_modal_crate_construct_desc',[cost,material,crateValue()]);
 }
 
 function buildContainerLabel(){
-    return loc('resource_modal_container_construct_desc');
+    return loc('resource_modal_container_construct_desc',[125,containerValue()]);
 }
 
 function buildCrate(){
@@ -1007,7 +1013,7 @@ function drawModal(name,color){
     
     crates.append($(`<div class="crateHead"><span>${loc('resource_modal_crate_owned')} {{ crates.amount }}/{{ crates.max }}</span><span>${loc('resource_modal_crate_assigned')} {{ res.crates }}</span></div>`));
     
-    let buildCr = $(`<b-tooltip :label="buildCrateLabel()" position="is-bottom" animated><button class="button" @click="buildCrate()">${loc('resource_modal_crate_construct')}</button></b-tooltip>`);
+    let buildCr = $(`<b-tooltip :label="buildCrateLabel()" position="is-bottom" animated multilined><button class="button" @click="buildCrate()">${loc('resource_modal_crate_construct')}</button></b-tooltip>`);
     let removeCr = $(`<b-tooltip :label="removeCrateLabel()" position="is-bottom" animated><button class="button" @click="subCrate('${name}')">${loc('resource_modal_crate_unassign')}</button></b-tooltip>`);
     let addCr = $(`<b-tooltip :label="addCrateLabel()" position="is-bottom" animated><button class="button" @click="addCrate('${name}')">${loc('resource_modal_crate_assign')}</button></b-tooltip>`);
     
@@ -1054,7 +1060,7 @@ function drawModal(name,color){
         
         let position = global.race['terrifying'] ? 'is-top' : 'is-bottom';
 
-        let buildCon = $(`<b-tooltip :label="buildContainerLabel()" position="${position}" animated><button class="button" @click="buildContainer()">${loc('resource_modal_container_construct')}</button></b-tooltip>`);
+        let buildCon = $(`<b-tooltip :label="buildContainerLabel()" position="${position}" animated multilined><button class="button" @click="buildContainer()">${loc('resource_modal_container_construct')}</button></b-tooltip>`);
         let removeCon = $(`<b-tooltip :label="removeContainerLabel()" position="${position}" animated><button class="button" @click="removeContainer('${name}')">${loc('resource_modal_container_unassign')}</button></b-tooltip>`);
         let addCon = $(`<b-tooltip :label="addContainerLabel()" position="${position}" animated><button class="button" @click="addContainer('${name}')">${loc('resource_modal_container_assign')}</button></b-tooltip>`);
         
@@ -1122,8 +1128,8 @@ export function initStorage(){
     $('#resStorage').append(store);
     
     if (global.resource['Crates'] && global.resource['Containers']){
-        store.append($(`<b-tooltip :label="buildCrateLabel()" position="is-bottom" class="crate" animated><button :aria-label="buildCrateLabel()" v-show="cr.display" class="button" @click="crate">${loc('resource_modal_crate_construct')}</button></b-tooltip>`));
-        store.append($(`<b-tooltip :label="buildContainerLabel()" position="is-bottom" class="container" animated><button :aria-label="buildContainerLabel()" v-show="cn.display" class="button" @click="container">${loc('resource_modal_container_construct')}</button></b-tooltip>`));
+        store.append($(`<b-tooltip :label="buildCrateLabel()" position="is-bottom" class="crate" animated multilined><button :aria-label="buildCrateLabel()" v-show="cr.display" class="button" @click="crate">${loc('resource_modal_crate_construct')}</button></b-tooltip>`));
+        store.append($(`<b-tooltip :label="buildContainerLabel()" position="is-bottom" class="container" animated multilined><button :aria-label="buildContainerLabel()" v-show="cn.display" class="button" @click="container">${loc('resource_modal_container_construct')}</button></b-tooltip>`));
 
         if (vues['store_head']){
             vues['store_head'].$destroy();

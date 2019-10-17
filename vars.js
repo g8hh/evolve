@@ -329,7 +329,13 @@ if (convertVersion(global['version']) < 6016 && global.stats && global.stats['re
     }
 }
 
-global['version'] = '0.6.16';
+if (convertVersion(global['version']) < 6018){
+    if (global.space['swarm_satellite']){
+        global.space['swarm_satellite'].count *= 2;
+    }
+}
+
+global['version'] = '0.6.18';
 
 if (global.civic['cement_worker'] && global.civic.cement_worker.impact === 0.25){
     global.civic.cement_worker.impact = 0.4;
@@ -471,6 +477,9 @@ if (typeof global.settings.mKeys === 'undefined'){
 }
 if (typeof global.settings.qKey === 'undefined'){
     global.settings['qKey'] = false;
+}
+if (typeof global.settings.qAny === 'undefined'){
+    global.settings['qAny'] = false;
 }
 if (!global.stats['reset']){
     global.stats['reset'] = 0;

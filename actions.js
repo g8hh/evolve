@@ -1,7 +1,7 @@
 import { global, vues, save, poppers, messageQueue, keyMultiplier, clearStates, demoIsPressed, queueIsPressed, srSpeak, modRes, sizeApproximation, p_on, moon_on, quantum_level } from './vars.js';
 import { loc } from './locale.js';
-import { timeCheck, timeFormat, powerModifier, challenge_multiplier, adjustCosts } from './functions.js';
-import { unlockAchieve, unlockFeat, drawAchieve, checkAchievements, svgIcons, svgViewBox } from './achieve.js';
+import { timeCheck, timeFormat, powerModifier, challenge_multiplier, adjustCosts, format_emblem, svgIcons, svgViewBox } from './functions.js';
+import { unlockAchieve, unlockFeat, drawAchieve, checkAchievements } from './achieve.js';
 import { races, genus_traits, randomMinorTrait, cleanAddTrait, biomes, planetTraits } from './races.js';
 import { defineResources, loadMarket, spatialReasoning, resource_values, atomic_mass } from './resources.js';
 import { loadFoundry } from './jobs.js';
@@ -997,6 +997,47 @@ export const actions = {
                 }
                 return false;
             },
+            emblem(){
+                if (global.evolution['humanoid']){
+                    return format_emblem('genus_humanoid');
+                }
+                else if (global.evolution['gigantism']){
+                    return format_emblem('genus_giant');
+                }
+                else if (global.evolution['dwarfism']){
+                    return format_emblem('genus_small');
+                }
+                else if (global.evolution['animalism']){
+                    return format_emblem('genus_animal');
+                }
+                else if (global.evolution['ectothermic']){
+                    return format_emblem('genus_reptilian');
+                }
+                else if (global.evolution['endothermic']){
+                    return format_emblem('genus_avian');
+                }
+                else if (global.evolution['chitin']){
+                    return format_emblem('genus_fungi');
+                }
+                else if (global.evolution['athropods']){
+                    return format_emblem('genus_insectoid');
+                }
+                else if (global.evolution['chloroplasts']){
+                    return format_emblem('genus_plant');
+                }
+                else if (global.evolution['aquatic']){
+                    return format_emblem('genus_aquatic');
+                }
+                else if (global.evolution['demonic']){
+                    return format_emblem('genus_demonic');
+                }
+                else if (global.evolution['celestial']){
+                    return format_emblem('genus_angelic');
+                }
+                else {
+                    return '';
+                }
+            }
         },
         human: {
             id: 'evo-human',
@@ -1016,10 +1057,7 @@ export const actions = {
                 }
                 return false;
             },
-            emblem(){
-                let achieve = 'extinct_human';
-                return global.stats.achieve[achieve] && global.stats.achieve[achieve].l > 1 ? `<span class="flair"><svg class="star${global.stats.achieve[achieve].l}" version="1.1" x="0px" y="0px" width="10px" height="10px" viewBox="${svgViewBox('star')}" xml:space="preserve">${svgIcons('star')}</svg></span>` : '';
-            }
+            emblem(){ return format_emblem('extinct_human'); }
         },
         orc: {
             id: 'evo-orc',
@@ -1039,10 +1077,7 @@ export const actions = {
                 }
                 return false;
             },
-            emblem(){
-                let achieve = 'extinct_orc';
-                return global.stats.achieve[achieve] && global.stats.achieve[achieve].l > 1 ? `<span class="flair"><svg class="star${global.stats.achieve[achieve].l}" version="1.1" x="0px" y="0px" width="10px" height="10px" viewBox="${svgViewBox('star')}" xml:space="preserve">${svgIcons('star')}</svg></span>` : '';
-            }
+            emblem(){ return format_emblem('extinct_orc'); }
         },
         elven: {
             id: 'evo-elven',
@@ -1062,10 +1097,7 @@ export const actions = {
                 }
                 return false;
             },
-            emblem(){
-                let achieve = 'extinct_elven';
-                return global.stats.achieve[achieve] && global.stats.achieve[achieve].l > 1 ? `<span class="flair"><svg class="star${global.stats.achieve[achieve].l}" version="1.1" x="0px" y="0px" width="10px" height="10px" viewBox="${svgViewBox('star')}" xml:space="preserve">${svgIcons('star')}</svg></span>` : '';
-            }
+            emblem(){ return format_emblem('extinct_elven'); }
         },
         troll: {
             id: 'evo-troll',
@@ -1085,10 +1117,7 @@ export const actions = {
                 }
                 return false;
             },
-            emblem(){
-                let achieve = 'extinct_troll';
-                return global.stats.achieve[achieve] && global.stats.achieve[achieve].l > 1 ? `<span class="flair"><svg class="star${global.stats.achieve[achieve].l}" version="1.1" x="0px" y="0px" width="10px" height="10px" viewBox="${svgViewBox('star')}" xml:space="preserve">${svgIcons('star')}</svg></span>` : '';
-            }
+            emblem(){ return format_emblem('extinct_troll'); }
         },
         orge: {
             id: 'evo-orge',
@@ -1108,10 +1137,7 @@ export const actions = {
                 }
                 return false;
             },
-            emblem(){
-                let achieve = 'extinct_orge';
-                return global.stats.achieve[achieve] && global.stats.achieve[achieve].l > 1 ? `<span class="flair"><svg class="star${global.stats.achieve[achieve].l}" version="1.1" x="0px" y="0px" width="10px" height="10px" viewBox="${svgViewBox('star')}" xml:space="preserve">${svgIcons('star')}</svg></span>` : '';
-            }
+            emblem(){ return format_emblem('extinct_orge'); }
         },
         cyclops: {
             id: 'evo-cyclops',
@@ -1131,10 +1157,7 @@ export const actions = {
                 }
                 return false;
             },
-            emblem(){
-                let achieve = 'extinct_cyclops';
-                return global.stats.achieve[achieve] && global.stats.achieve[achieve].l > 1 ? `<span class="flair"><svg class="star${global.stats.achieve[achieve].l}" version="1.1" x="0px" y="0px" width="10px" height="10px" viewBox="${svgViewBox('star')}" xml:space="preserve">${svgIcons('star')}</svg></span>` : '';
-            }
+            emblem(){ return format_emblem('extinct_cyclops'); }
         },
         kobold: {
             id: 'evo-kobold',
@@ -1154,10 +1177,7 @@ export const actions = {
                 }
                 return false;
             },
-            emblem(){
-                let achieve = 'extinct_kobold';
-                return global.stats.achieve[achieve] && global.stats.achieve[achieve].l > 1 ? `<span class="flair"><svg class="star${global.stats.achieve[achieve].l}" version="1.1" x="0px" y="0px" width="10px" height="10px" viewBox="${svgViewBox('star')}" xml:space="preserve">${svgIcons('star')}</svg></span>` : '';
-            }
+            emblem(){ return format_emblem('extinct_kobold'); }
         },
         goblin: {
             id: 'evo-goblin',
@@ -1177,10 +1197,7 @@ export const actions = {
                 }
                 return false;
             },
-            emblem(){
-                let achieve = 'extinct_goblin';
-                return global.stats.achieve[achieve] && global.stats.achieve[achieve].l > 1 ? `<span class="flair"><svg class="star${global.stats.achieve[achieve].l}" version="1.1" x="0px" y="0px" width="10px" height="10px" viewBox="${svgViewBox('star')}" xml:space="preserve">${svgIcons('star')}</svg></span>` : '';
-            }
+            emblem(){ return format_emblem('extinct_goblin'); }
         },
         gnome: {
             id: 'evo-gnome',
@@ -1200,10 +1217,7 @@ export const actions = {
                 }
                 return false;
             },
-            emblem(){
-                let achieve = 'extinct_gnome';
-                return global.stats.achieve[achieve] && global.stats.achieve[achieve].l > 1 ? `<span class="flair"><svg class="star${global.stats.achieve[achieve].l}" version="1.1" x="0px" y="0px" width="10px" height="10px" viewBox="${svgViewBox('star')}" xml:space="preserve">${svgIcons('star')}</svg></span>` : '';
-            }
+            emblem(){ return format_emblem('extinct_gnome'); }
         },
         cath: {
             id: 'evo-cath',
@@ -1223,10 +1237,7 @@ export const actions = {
                 }
                 return false;
             },
-            emblem(){
-                let achieve = 'extinct_cath';
-                return global.stats.achieve[achieve] && global.stats.achieve[achieve].l > 1 ? `<span class="flair"><svg class="star${global.stats.achieve[achieve].l}" version="1.1" x="0px" y="0px" width="10px" height="10px" viewBox="${svgViewBox('star')}" xml:space="preserve">${svgIcons('star')}</svg></span>` : '';
-            }
+            emblem(){ return format_emblem('extinct_cath'); }
         },
         wolven: {
             id: 'evo-wolven',
@@ -1246,10 +1257,7 @@ export const actions = {
                 }
                 return false;
             },
-            emblem(){
-                let achieve = 'extinct_wolven';
-                return global.stats.achieve[achieve] && global.stats.achieve[achieve].l > 1 ? `<span class="flair"><svg class="star${global.stats.achieve[achieve].l}" version="1.1" x="0px" y="0px" width="10px" height="10px" viewBox="${svgViewBox('star')}" xml:space="preserve">${svgIcons('star')}</svg></span>` : '';
-            }
+            emblem(){ return format_emblem('extinct_wolven'); }
         },
         centaur: {
             id: 'evo-centaur',
@@ -1269,10 +1277,7 @@ export const actions = {
                 }
                 return false;
             },
-            emblem(){
-                let achieve = 'extinct_centaur';
-                return global.stats.achieve[achieve] && global.stats.achieve[achieve].l > 1 ? `<span class="flair"><svg class="star${global.stats.achieve[achieve].l}" version="1.1" x="0px" y="0px" width="10px" height="10px" viewBox="${svgViewBox('star')}" xml:space="preserve">${svgIcons('star')}</svg></span>` : '';
-            }
+            emblem(){ return format_emblem('extinct_centaur'); }
         },
         tortoisan: {
             id: 'evo-tortoisan',
@@ -1292,10 +1297,7 @@ export const actions = {
                 }
                 return false;
             },
-            emblem(){
-                let achieve = 'extinct_tortoisan';
-                return global.stats.achieve[achieve] && global.stats.achieve[achieve].l > 1 ? `<span class="flair"><svg class="star${global.stats.achieve[achieve].l}" version="1.1" x="0px" y="0px" width="10px" height="10px" viewBox="${svgViewBox('star')}" xml:space="preserve">${svgIcons('star')}</svg></span>` : '';
-            }
+            emblem(){ return format_emblem('extinct_tortoisan'); }
         },
         gecko: {
             id: 'evo-gecko',
@@ -1315,10 +1317,7 @@ export const actions = {
                 }
                 return false;
             },
-            emblem(){
-                let achieve = 'extinct_gecko';
-                return global.stats.achieve[achieve] && global.stats.achieve[achieve].l > 1 ? `<span class="flair"><svg class="star${global.stats.achieve[achieve].l}" version="1.1" x="0px" y="0px" width="10px" height="10px" viewBox="${svgViewBox('star')}" xml:space="preserve">${svgIcons('star')}</svg></span>` : '';
-            }
+            emblem(){ return format_emblem('extinct_gecko'); }
         },
         slitheryn: {
             id: 'evo-slitheryn',
@@ -1338,10 +1337,7 @@ export const actions = {
                 }
                 return false;
             },
-            emblem(){
-                let achieve = 'extinct_slitheryn';
-                return global.stats.achieve[achieve] && global.stats.achieve[achieve].l > 1 ? `<span class="flair"><svg class="star${global.stats.achieve[achieve].l}" version="1.1" x="0px" y="0px" width="10px" height="10px" viewBox="${svgViewBox('star')}" xml:space="preserve">${svgIcons('star')}</svg></span>` : '';
-            }
+            emblem(){ return format_emblem('extinct_slitheryn'); }
         },
         arraak: {
             id: 'evo-arraak',
@@ -1361,10 +1357,7 @@ export const actions = {
                 }
                 return false;
             },
-            emblem(){
-                let achieve = 'extinct_arraak';
-                return global.stats.achieve[achieve] && global.stats.achieve[achieve].l > 1 ? `<span class="flair"><svg class="star${global.stats.achieve[achieve].l}" version="1.1" x="0px" y="0px" width="10px" height="10px" viewBox="${svgViewBox('star')}" xml:space="preserve">${svgIcons('star')}</svg></span>` : '';
-            }
+            emblem(){ return format_emblem('extinct_arraak'); }
         },
         pterodacti: {
             id: 'evo-pterodacti',
@@ -1384,10 +1377,7 @@ export const actions = {
                 }
                 return false;
             },
-            emblem(){
-                let achieve = 'extinct_pterodacti';
-                return global.stats.achieve[achieve] && global.stats.achieve[achieve].l > 1 ? `<span class="flair"><svg class="star${global.stats.achieve[achieve].l}" version="1.1" x="0px" y="0px" width="10px" height="10px" viewBox="${svgViewBox('star')}" xml:space="preserve">${svgIcons('star')}</svg></span>` : '';
-            }
+            emblem(){ return format_emblem('extinct_pterodacti'); }
         },
         dracnid: {
             id: 'evo-dracnid',
@@ -1407,10 +1397,7 @@ export const actions = {
                 }
                 return false;
             },
-            emblem(){
-                let achieve = 'extinct_dracnid';
-                return global.stats.achieve[achieve] && global.stats.achieve[achieve].l > 1 ? `<span class="flair"><svg class="star${global.stats.achieve[achieve].l}" version="1.1" x="0px" y="0px" width="10px" height="10px" viewBox="${svgViewBox('star')}" xml:space="preserve">${svgIcons('star')}</svg></span>` : '';
-            }
+            emblem(){ return format_emblem('extinct_dracnid'); }
         },
         sporgar: {
             id: 'evo-sporgar',
@@ -1430,10 +1417,7 @@ export const actions = {
                 }
                 return false;
             },
-            emblem(){
-                let achieve = 'extinct_sporgar';
-                return global.stats.achieve[achieve] && global.stats.achieve[achieve].l > 1 ? `<span class="flair"><svg class="star${global.stats.achieve[achieve].l}" version="1.1" x="0px" y="0px" width="10px" height="10px" viewBox="${svgViewBox('star')}" xml:space="preserve">${svgIcons('star')}</svg></span>` : '';
-            }
+            emblem(){ return format_emblem('extinct_sporgar'); }
         },
         shroomi: {
             id: 'evo-shroomi',
@@ -1453,10 +1437,7 @@ export const actions = {
                 }
                 return false;
             },
-            emblem(){
-                let achieve = 'extinct_shroomi';
-                return global.stats.achieve[achieve] && global.stats.achieve[achieve].l > 1 ? `<span class="flair"><svg class="star${global.stats.achieve[achieve].l}" version="1.1" x="0px" y="0px" width="10px" height="10px" viewBox="${svgViewBox('star')}" xml:space="preserve">${svgIcons('star')}</svg></span>` : '';
-            }
+            emblem(){ return format_emblem('extinct_shroomi'); }
         },
         mantis: {
             id: 'evo-mantis',
@@ -1476,10 +1457,7 @@ export const actions = {
                 }
                 return false;
             },
-            emblem(){
-                let achieve = 'extinct_mantis';
-                return global.stats.achieve[achieve] && global.stats.achieve[achieve].l > 1 ? `<span class="flair"><svg class="star${global.stats.achieve[achieve].l}" version="1.1" x="0px" y="0px" width="10px" height="10px" viewBox="${svgViewBox('star')}" xml:space="preserve">${svgIcons('star')}</svg></span>` : '';
-            }
+            emblem(){ return format_emblem('extinct_mantis'); }
         },
         scorpid: {
             id: 'evo-scorpid',
@@ -1499,10 +1477,7 @@ export const actions = {
                 }
                 return false;
             },
-            emblem(){
-                let achieve = 'extinct_scorpid';
-                return global.stats.achieve[achieve] && global.stats.achieve[achieve].l > 1 ? `<span class="flair"><svg class="star${global.stats.achieve[achieve].l}" version="1.1" x="0px" y="0px" width="10px" height="10px" viewBox="${svgViewBox('star')}" xml:space="preserve">${svgIcons('star')}</svg></span>` : '';
-            }
+            emblem(){ return format_emblem('extinct_scorpid'); }
         },
         antid: {
             id: 'evo-antid',
@@ -1522,10 +1497,7 @@ export const actions = {
                 }
                 return false;
             },
-            emblem(){
-                let achieve = 'extinct_antid';
-                return global.stats.achieve[achieve] && global.stats.achieve[achieve].l > 1 ? `<span class="flair"><svg class="star${global.stats.achieve[achieve].l}" version="1.1" x="0px" y="0px" width="10px" height="10px" viewBox="${svgViewBox('star')}" xml:space="preserve">${svgIcons('star')}</svg></span>` : '';
-            }
+            emblem(){ return format_emblem('extinct_antid'); }
         },
         entish: {
             id: 'evo-entish',
@@ -1545,10 +1517,7 @@ export const actions = {
                 }
                 return false;
             },
-            emblem(){
-                let achieve = 'extinct_entish';
-                return global.stats.achieve[achieve] && global.stats.achieve[achieve].l > 1 ? `<span class="flair"><svg class="star${global.stats.achieve[achieve].l}" version="1.1" x="0px" y="0px" width="10px" height="10px" viewBox="${svgViewBox('star')}" xml:space="preserve">${svgIcons('star')}</svg></span>` : '';
-            }
+            emblem(){ return format_emblem('extinct_entish'); }
         },
         cacti: {
             id: 'evo-cacti',
@@ -1568,10 +1537,7 @@ export const actions = {
                 }
                 return false;
             },
-            emblem(){
-                let achieve = 'extinct_cacti';
-                return global.stats.achieve[achieve] && global.stats.achieve[achieve].l > 1 ? `<span class="flair"><svg class="star${global.stats.achieve[achieve].l}" version="1.1" x="0px" y="0px" width="10px" height="10px" viewBox="${svgViewBox('star')}" xml:space="preserve">${svgIcons('star')}</svg></span>` : '';
-            }
+            emblem(){ return format_emblem('extinct_cacti'); }
         },
         sharkin: {
             id: 'evo-sharkin',
@@ -1591,10 +1557,7 @@ export const actions = {
                 }
                 return false;
             },
-            emblem(){
-                let achieve = 'extinct_sharkin';
-                return global.stats.achieve[achieve] && global.stats.achieve[achieve].l > 1 ? `<span class="flair"><svg class="star${global.stats.achieve[achieve].l}" version="1.1" x="0px" y="0px" width="10px" height="10px" viewBox="${svgViewBox('star')}" xml:space="preserve">${svgIcons('star')}</svg></span>` : '';
-            }
+            emblem(){ return format_emblem('extinct_sharkin'); }
         },
         octigoran: {
             id: 'evo-octigoran',
@@ -1614,10 +1577,7 @@ export const actions = {
                 }
                 return false;
             },
-            emblem(){
-                let achieve = 'extinct_octigoran';
-                return global.stats.achieve[achieve] && global.stats.achieve[achieve].l > 1 ? `<span class="flair"><svg class="star${global.stats.achieve[achieve].l}" version="1.1" x="0px" y="0px" width="10px" height="10px" viewBox="${svgViewBox('star')}" xml:space="preserve">${svgIcons('star')}</svg></span>` : '';
-            }
+            emblem(){ return format_emblem('extinct_octigoran'); }
         },
         balorg: {
             id: 'evo-balorg',
@@ -1637,10 +1597,7 @@ export const actions = {
                 }
                 return false;
             },
-            emblem(){
-                let achieve = 'extinct_balorg';
-                return global.stats.achieve[achieve] && global.stats.achieve[achieve].l > 1 ? `<span class="flair"><svg class="star${global.stats.achieve[achieve].l}" version="1.1" x="0px" y="0px" width="10px" height="10px" viewBox="${svgViewBox('star')}" xml:space="preserve">${svgIcons('star')}</svg></span>` : '';
-            }
+            emblem(){ return format_emblem('extinct_balorg'); }
         },
         imp: {
             id: 'evo-imp',
@@ -1660,10 +1617,7 @@ export const actions = {
                 }
                 return false;
             },
-            emblem(){
-                let achieve = 'extinct_imp';
-                return global.stats.achieve[achieve] && global.stats.achieve[achieve].l > 1 ? `<span class="flair"><svg class="star${global.stats.achieve[achieve].l}" version="1.1" x="0px" y="0px" width="10px" height="10px" viewBox="${svgViewBox('star')}" xml:space="preserve">${svgIcons('star')}</svg></span>` : '';
-            }
+            emblem(){ return format_emblem('extinct_imp'); }
         },
         seraph: {
             id: 'evo-seraph',
@@ -1683,10 +1637,7 @@ export const actions = {
                 }
                 return false;
             },
-            emblem(){
-                let achieve = 'extinct_seraph';
-                return global.stats.achieve[achieve] && global.stats.achieve[achieve].l > 1 ? `<span class="flair"><svg class="star${global.stats.achieve[achieve].l}" version="1.1" x="0px" y="0px" width="10px" height="10px" viewBox="${svgViewBox('star')}" xml:space="preserve">${svgIcons('star')}</svg></span>` : '';
-            }
+            emblem(){ return format_emblem('extinct_seraph'); }
         },
         unicorn: {
             id: 'evo-unicorn',
@@ -1706,10 +1657,7 @@ export const actions = {
                 }
                 return false;
             },
-            emblem(){
-                let achieve = 'extinct_unicorn';
-                return global.stats.achieve[achieve] && global.stats.achieve[achieve].l > 1 ? `<span class="flair"><svg class="star${global.stats.achieve[achieve].l}" version="1.1" x="0px" y="0px" width="10px" height="10px" viewBox="${svgViewBox('star')}" xml:space="preserve">${svgIcons('star')}</svg></span>` : '';
-            }
+            emblem(){ return format_emblem('extinct_unicorn'); }
         },
         bunker: {
             id: 'evo-bunker',
@@ -1768,13 +1716,19 @@ export const actions = {
             effect: loc('evo_challenge_plasmid_effect'),
             action(){
                 if (payCosts($(this)[0].cost)){
-                    global.race['no_plasmid'] = 1;
-                    global.evolution['plasmid'] = { count: 1 };
-                    removeAction(actions.evolution.plasmid.id);
+                    if (global.race['no_plasmid']){
+                        delete global.race['no_plasmid'];
+                        $(`#${$(this)[0].id}`).removeClass('hl');
+                    }
+                    else {
+                        global.race['no_plasmid'] = 1;
+                        $(`#${$(this)[0].id}`).addClass('hl');
+                    }
                     drawAchieve();
                 }
                 return false;
-            }
+            },
+            highlight(){ return global.race['no_plasmid'] ? true : false; }
         },
         mastery: {
             id: 'evo-mastery',
@@ -1786,13 +1740,19 @@ export const actions = {
             effect: loc('evo_challenge_mastery_effect'),
             action(){
                 if (payCosts($(this)[0].cost)){
-                    global.race['weak_mastery'] = 1;
-                    global.evolution['mastery'] = { count: 1 };
-                    removeAction(actions.evolution.mastery.id);
+                    if (global.race['weak_mastery']){
+                        delete global.race['weak_mastery'];
+                        $(`#${$(this)[0].id}`).removeClass('hl');
+                    }
+                    else {
+                        global.race['weak_mastery'] = 1;
+                        $(`#${$(this)[0].id}`).addClass('hl');
+                    }
                     drawAchieve();
                 }
                 return false;
-            }
+            },
+            highlight(){ return global.race['weak_mastery'] ? true : false; }
         },
         trade: {
             id: 'evo-trade',
@@ -1804,13 +1764,19 @@ export const actions = {
             effect: loc('evo_challenge_trade_effect'),
             action(){
                 if (payCosts($(this)[0].cost)){
-                    global.race['no_trade'] = 1;
-                    global.evolution['trade'] = { count: 1 };
-                    removeAction(actions.evolution.trade.id);
+                    if (global.race['no_trade']){
+                        delete global.race['no_trade'];
+                        $(`#${$(this)[0].id}`).removeClass('hl');
+                    }
+                    else {
+                        global.race['no_trade'] = 1;
+                        $(`#${$(this)[0].id}`).addClass('hl');
+                    }
                     drawAchieve();
                 }
                 return false;
-            }
+            },
+            highlight(){ return global.race['no_trade'] ? true : false; }
         },
         craft: {
             id: 'evo-craft',
@@ -1822,13 +1788,19 @@ export const actions = {
             effect: loc('evo_challenge_craft_effect'),
             action(){
                 if (payCosts($(this)[0].cost)){
-                    global.race['no_craft'] = 1;
-                    global.evolution['craft'] = { count: 1 };
-                    removeAction(actions.evolution.craft.id);
+                    if (global.race['no_craft']){
+                        delete global.race['no_craft'];
+                        $(`#${$(this)[0].id}`).removeClass('hl');
+                    }
+                    else {
+                        global.race['no_craft'] = 1;
+                        $(`#${$(this)[0].id}`).addClass('hl');
+                    }
                     drawAchieve();
                 }
                 return false;
-            }
+            },
+            highlight(){ return global.race['no_craft'] ? true : false; }
         },
         crispr: {
             id: 'evo-crispr',
@@ -1840,18 +1812,27 @@ export const actions = {
             effect: loc('evo_challenge_crispr_effect'),
             action(){
                 if (payCosts($(this)[0].cost)){
-                    global.race['no_crispr'] = 1;
-                    global.evolution['crispr'] = { count: 1 };
-                    removeAction(actions.evolution.crispr.id);
+                    if (payCosts($(this)[0].cost)){
+                        if (global.race['no_crispr']){
+                            delete global.race['no_crispr'];
+                            $(`#${$(this)[0].id}`).removeClass('hl');
+                        }
+                        else {
+                            global.race['no_crispr'] = 1;
+                            $(`#${$(this)[0].id}`).addClass('hl');
+                        }
+                        drawAchieve();
+                    }
                     drawAchieve();
                 }
                 return false;
-            }
+            },
+            highlight(){ return global.race['no_crispr'] ? true : false; }
         },
         junker: {
             id: 'evo-junker',
             title: loc('evo_challenge_junker'),
-            desc(){ return global.race.universe === 'micro' ? `<div class="has-text-danger">${loc('evo_challenge_micro_warn')}</div><div>${loc('evo_challenge_junker_desc')}</div>` : loc('evo_challenge_junker_desc'); },
+            desc(){ return global.race.universe === 'micro' ? `<div class="has-text-danger">${loc('evo_challenge_micro_warn')}</div><div class="has-text-danger">${loc('evo_no_toggle')}</div>` : `<div>${loc('evo_challenge_junker_desc')}</div><div class="has-text-danger">${loc('evo_no_toggle')}</div>`; },
             cost: {
                 DNA(){ return 25; }
             },
@@ -1868,10 +1849,7 @@ export const actions = {
                 }
                 return false;
             },
-            emblem(){
-                let achieve = 'extinct_junker';
-                return global.stats.achieve[achieve] && global.stats.achieve[achieve].l > 1 ? `<span class="flair"><svg class="star${global.stats.achieve[achieve].l}" version="1.1" x="0px" y="0px" width="10px" height="10px" viewBox="${svgViewBox('star')}" xml:space="preserve">${svgIcons('star')}</svg></span>` : '';
-            },
+            emblem(){ return format_emblem('extinct_junker'); },
             flair: loc('evo_challenge_junker_flair')
         },
         joyless: {
@@ -1884,17 +1862,23 @@ export const actions = {
             effect: loc('evo_challenge_joyless_effect'),
             action(){
                 if (payCosts(actions.evolution.joyless.cost)){
-                    global.race['joyless'] = 1;
-                    global.evolution['joyless'] = { count: 1 };
-                    removeAction(actions.evolution.joyless.id);
+                    if (payCosts($(this)[0].cost)){
+                        if (global.race['joyless']){
+                            delete global.race['joyless'];
+                            $(`#${$(this)[0].id}`).removeClass('hl');
+                        }
+                        else {
+                            global.race['joyless'] = 1;
+                            $(`#${$(this)[0].id}`).addClass('hl');
+                        }
+                        drawAchieve();
+                    }
                 }
                 return false;
             },
-            emblem(){
-                let achieve = 'joyless';
-                return global.stats.achieve[achieve] && global.stats.achieve[achieve].l > 1 ? `<span class="flair"><svg class="star${global.stats.achieve[achieve].l}" version="1.1" x="0px" y="0px" width="10px" height="10px" viewBox="${svgViewBox('star')}" xml:space="preserve">${svgIcons('star')}</svg></span>` : '';
-            },
-            flair: loc('evo_challenge_joyless_flair')
+            emblem(){ return format_emblem('joyless'); },
+            flair: loc('evo_challenge_joyless_flair'),
+            highlight(){ return global.race['joyless'] ? true : false; }
         },
         decay: {
             id: 'evo-decay',
@@ -1906,17 +1890,23 @@ export const actions = {
             effect: loc('evo_challenge_decay_effect'),
             action(){
                 if (payCosts(actions.evolution.decay.cost)){
-                    global.race['decay'] = 1;
-                    global.evolution['decay'] = { count: 1 };
-                    removeAction(actions.evolution.decay.id);
+                    if (payCosts($(this)[0].cost)){
+                        if (global.race['decay']){
+                            delete global.race['decay'];
+                            $(`#${$(this)[0].id}`).removeClass('hl');
+                        }
+                        else {
+                            global.race['decay'] = 1;
+                            $(`#${$(this)[0].id}`).addClass('hl');
+                        }
+                        drawAchieve();
+                    }
                 }
                 return false;
             },
-            emblem(){
-                let achieve = 'joyless';
-                return global.stats.achieve[achieve] && global.stats.achieve[achieve].l > 1 ? `<span class="flair"><svg class="star${global.stats.achieve[achieve].l}" version="1.1" x="0px" y="0px" width="10px" height="10px" viewBox="${svgViewBox('star')}" xml:space="preserve">${svgIcons('star')}</svg></span>` : '';
-            },
-            flair: loc('evo_challenge_decay_flair')
+            emblem(){ return format_emblem('dissipated'); },
+            flair: loc('evo_challenge_decay_flair'),
+            highlight(){ return global.race['decay'] ? true : false; }
         },
     },
     city: {
@@ -1989,6 +1979,38 @@ export const actions = {
                 }
                 if (global.resource.Furs.display && global['resource']['Furs'].amount < global['resource']['Furs'].max){
                     modRes('Furs',1);
+                }
+                return false;
+            }
+        },
+        slave_market: {
+            id: 'city-slave_market',
+            title: loc('city_slave_market'),
+            desc: loc('city_slave_market_desc'),
+            category: 'outskirts',
+            reqs: { slaves: 2 },
+            trait: ['slaver'],
+            cost: {
+                Money(){ return 25000 },
+            },
+            no_queue(){ return true },
+            action(){
+                if (global.race['slaver'] && global.city['slave_pen']){
+                    let max = global.city.slave_pen.count * 5;
+                    let keyMult = keyMultiplier();
+                    for (var i=0; i<keyMult; i++){
+                        if (max > global.city.slave_pen.slaves){
+                            if (payCosts($(this)[0].cost)){
+                                global.city.slave_pen.slaves++;
+                            }
+                            else {
+                                break;
+                            }
+                        }
+                        else {
+                            break;
+                        }
+                    }
                 }
                 return false;
             }
@@ -4334,7 +4356,7 @@ export const actions = {
             }
         },
         demonic_craftsman: {
-            id: 'tech-master_craftsman',
+            id: 'tech-demonic_craftsman',
             title: loc('tech_master_craftsman'),
             desc: loc('tech_master_craftsman'),
             reqs: { foundry: 3 },
@@ -6110,7 +6132,6 @@ export const actions = {
             cost: {
                 Knowledge(){ return 51750; }
             },
-            effect: loc('tech_tesla_coil_effect'),
             effect(){ return loc('tech_tesla_coil_effect',[global.race['evil'] ? loc('city_babel') : loc('city_wardenclyffe')]); },
             action(){
                 if (payCosts($(this)[0].cost)){
@@ -7677,6 +7698,24 @@ export const actions = {
                 return false;
             }
         },
+        slave_market: {
+            id: 'tech-slave_market',
+            title: loc('tech_slave_market'),
+            desc: loc('tech_slave_market'),
+            reqs: { slaves: 1, high_tech: 1 },
+            grant: ['slaves',2],
+            trait: ['slaver'],
+            cost: {
+                Knowledge(){ return 8000; }
+            },
+            effect: loc('tech_slave_market_effect'),
+            action(){
+                if (payCosts($(this)[0].cost)){
+                    return true;
+                }
+                return false;
+            }
+        },
         ceremonial_dagger: {
             id: 'tech-ceremonial_dagger',
             title: loc('tech_ceremonial_dagger'),
@@ -9047,6 +9086,42 @@ export const actions = {
                 return false;
             }
         },
+        perovskite_cell: {
+            id: 'tech-perovskite_cell',
+            title: loc('tech_perovskite_cell'),
+            desc: loc('tech_perovskite_cell'),
+            reqs: { swarm: 3 },
+            grant: ['swarm',4],
+            cost: {
+                Knowledge(){ return 525000; },
+                Titanium(){ return 100000; }
+            },
+            effect: loc('tech_perovskite_cell_effect'),
+            action(){
+                if (payCosts($(this)[0].cost)){
+                    return true;
+                }
+                return false;
+            }
+        },
+        swarm_convection: {
+            id: 'tech-swarm_convection',
+            title: loc('tech_swarm_convection'),
+            desc: loc('tech_swarm_convection'),
+            reqs: { swarm: 4, stanene: 1 },
+            grant: ['swarm',5],
+            cost: {
+                Knowledge(){ return 725000; },
+                Stanene(){ return 100000; }
+            },
+            effect: loc('tech_swarm_convection_effect'),
+            action(){
+                if (payCosts($(this)[0].cost)){
+                    return true;
+                }
+                return false;
+            }
+        },
         dyson_net: {
             id: 'tech-dyson_net',
             title: loc('tech_dyson_net'),
@@ -10396,7 +10471,7 @@ export function setAction(c_action,action,type,old){
     }
     var id = c_action.id;
     removeAction(id);
-    var parent = $(`<div id="${id}" class="action"></div>`);
+    var parent = c_action['highlight'] && c_action.highlight() ? $(`<div id="${id}" class="action hl"></div>`) : $(`<div id="${id}" class="action"></div>`);
     if (!checkAffordable(c_action)){
         parent.addClass('cna');
     }
@@ -10487,7 +10562,7 @@ export function setAction(c_action,action,type,old){
                 else {
                     switch (action){
                         case 'tech':
-                            if (c_action.action()){
+                            if (!(global.settings.qKey && queueIsPressed) && c_action.action()){
                                 gainTech(type);
                                 if (c_action['post']){
                                     c_action.post();
@@ -12222,7 +12297,7 @@ export function resQueue(){
     let queue = $(`<ul class="buildList"></ul>`);
     $('#resQueue').append(queue);
 
-    queue.append($(`<li v-for="(item, index) in queue"><a class="queued" v-bind:class="{ 'has-text-danger': item.cna }" @click="remove(index)">{{ item.label }} [{{ item.time | time }}]</a></li>`));
+    queue.append($(`<li v-for="(item, index) in queue"><a class="queued" v-bind:class="{ 'has-text-danger': item.cna, 'qany': item.qa }" @click="remove(index)">{{ item.label }} [{{ item.time | time }}]</a></li>`));
     
     try {
         let bind = {

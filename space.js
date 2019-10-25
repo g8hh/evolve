@@ -82,7 +82,7 @@ const spaceProjects = {
                     return loc('space_home_gps_effect_req');
                 }
                 else {
-                    return loc('space_home_gps_effect');
+                    return `<div>${loc('space_home_gps_effect')}</div><div>${loc('space_home_gps_effect2',[2])}</div>`;
                 }
             },
             action(){
@@ -631,14 +631,19 @@ const spaceProjects = {
         },
         biodome: {
             id: 'space-biodome',
-            title: loc('space_red_biodome_title'),
+            title(){return global.race['soul_eater'] ? loc('space_red_asphodel_title') : loc('space_red_biodome_title'); },
             desc(){
                 let desc;
-                if (global.race['carnivore']){
-                    desc = `<div>${loc('space_red_biodome_desc_carn')}</div>`;
+                if (global.race['soul_eater']) {
+                    desc = `<div>${loc('space_red_asphodel_desc')}</div>`;
                 }
                 else {
-                    desc = `<div>${loc('space_red_biodome_desc',[races[global.race.species].solar.red])}</div>`;
+                    if (global.race['carnivore']){
+                        desc = `<div>${loc('space_red_biodome_desc_carn')}</div>`;
+                    }
+                    else {
+                        desc = `<div>${loc('space_red_biodome_desc',[races[global.race.species].solar.red])}</div>`;
+                    }
                 }
                 return `<div>${desc}</div><div class="has-text-special">${loc('space_support',[races[global.race.species].solar.red])}</div>`;
             },
@@ -671,7 +676,7 @@ const spaceProjects = {
                 return false;
             },
             flair(){
-                return global.race['carnivore'] ? loc('space_red_biodome_flair_carn') : loc('space_red_biodome_flair');
+                return global.race['soul_eater'] ? loc('space_red_asphodel_flair') : (global.race['carnivore'] ? loc('space_red_biodome_flair_carn') : loc('space_red_biodome_flair'));
             }
         },
         exotic_lab: {
@@ -837,12 +842,12 @@ const spaceProjects = {
             cost: {
                 Money(){ return costMultiplier('swarm_plant', iron_adjust(75000), 1.28); },
                 Iron(){ return costMultiplier('swarm_plant', iron_adjust(65000), 1.28); },
-                Neutronium(){ return costMultiplier('swarm_plant', 75, 1.28); },
-                Brick(){ return costMultiplier('swarm_plant', 2500, 1.28); },
-                Mythril(){ return costMultiplier('swarm_plant', 100, 1.28); }
+                Neutronium(){ return costMultiplier('swarm_plant', iron_adjust(75), 1.28); },
+                Brick(){ return costMultiplier('swarm_plant', iron_adjust(2500), 1.28); },
+                Mythril(){ return costMultiplier('swarm_plant', iron_adjust(100), 1.28); }
             },
             effect(){
-                let reduce = global.tech['swarm'] ? 0.92 : 0.95;
+                let reduce = global.tech['swarm'] ? 0.88 : 0.94;
                 if (global.tech['swarm'] >= 3){
                     reduce -= quantum_level / 100;
                 }
@@ -907,7 +912,7 @@ const spaceProjects = {
                 Mythril(){ return costMultiplier('swarm_control', 250, 1.3); }
             },
             effect(){
-                let control = global.tech['swarm'] && global.tech['swarm'] >= 2 ? 6 : 4;
+                let control = global.tech['swarm'] && global.tech['swarm'] >= 2 ? 18 : 10;
                 return loc('space_sun_swarm_control_effect1',[control]);
             },
             support: 6,
@@ -928,13 +933,14 @@ const spaceProjects = {
             },
             reqs: { solar: 3 },
             cost: {
-                Money(){ return costMultiplier('swarm_satellite', swarm_adjust(50000), 1.18); },
-                Copper(){ return costMultiplier('swarm_satellite', swarm_adjust(25000), 1.18); },
-                Iridium(){ return costMultiplier('swarm_satellite', swarm_adjust(1500), 1.18); },
-                Helium_3(){ return costMultiplier('swarm_satellite', swarm_adjust(fuel_adjust(500)), 1.18); }
+                Money(){ return costMultiplier('swarm_satellite', swarm_adjust(5000), 1.1); },
+                Copper(){ return costMultiplier('swarm_satellite', swarm_adjust(2500), 1.1); },
+                Iridium(){ return costMultiplier('swarm_satellite', swarm_adjust(150), 1.1); },
+                Helium_3(){ return costMultiplier('swarm_satellite', swarm_adjust(fuel_adjust(50)), 1.1); }
             },
             effect(){
-                return loc('space_sun_swarm_satellite_effect1',[powerModifier(1)]);
+                let solar = global.tech.swarm >= 4 ? (global.tech.swarm >= 5 ? 0.65 : 0.5) : 0.35;
+                return loc('space_sun_swarm_satellite_effect1',[powerModifier(solar)]);
             },
             support: -1,
             action(){
@@ -1211,7 +1217,9 @@ const spaceProjects = {
                 return loc('space_belt_info_name');
             },
             desc(){
-                return loc('space_belt_info_desc',[races[global.race.species].solar.red,races[global.race.species].solar.gas]);
+                return global.space['space_station'] && global.space.space_station.count > 0
+                    ? `<div>${loc('space_belt_info_desc',[races[global.race.species].solar.red,races[global.race.species].solar.gas])}</div><div class="has-text-special">${loc('space_belt_info_desc2')}</div>`
+                    : loc('space_belt_info_desc',[races[global.race.species].solar.red,races[global.race.species].solar.gas]);
             },
             support: 'space_station'
         },
@@ -2728,7 +2736,7 @@ export function iron_adjust(res){
 
 export function swarm_adjust(res){
     if (global.space['swarm_plant']){
-        let reduce = global.tech['swarm'] ? 0.92 : 0.95;
+        let reduce = global.tech['swarm'] ? 0.88 : 0.94;
         if (global.tech['swarm'] >= 3){
             reduce -= quantum_level / 100;
         }
@@ -2798,7 +2806,7 @@ export const universe_types = {
 };
 
 export function setUniverse(){
-    let universes = ['standard','heavy','evil','micro'];
+    let universes = ['standard','heavy','antimatter','evil','micro'];
 
     for (let i=0; i<universes.length; i++){
         let universe = universes[i];

@@ -136,6 +136,11 @@ a {
     cursor: default;
 }
 
+.zero {
+    cursor: pointer;
+    margin-left: .75rem;
+}
+
 .localization {
     margin-bottom: 1rem;
 }
@@ -238,6 +243,9 @@ a {
         li:not(:last-child) .queued:after {
             content: " -> "
         }
+        li:not(:last-child) .qany:after {
+            content: ", "
+        }
     }
 
     .resQueue {
@@ -252,6 +260,9 @@ a {
             }
             li:not(:last-child) .queued:after {
                 content: " -> "
+            }
+            li:not(:last-child) .qany:after {
+                content: ", "
             }
         }
     }
@@ -400,6 +411,36 @@ a {
                     background: transparent;
                 }
             }
+
+            .flair {
+                position: absolute;
+                right: .625rem;
+                top: .5rem;
+                height: .5rem;
+                line-height: .5rem;
+                margin: 0;
+                padding: 0;
+            }
+            .flair:nth-of-type(2) {
+                right: .625rem;
+                top: 1.1875rem;
+            }
+            .flair:nth-of-type(3) {
+                right: .625rem;
+                top: 1.875rem;
+            }
+            .flair:nth-of-type(4) {
+                right: 1.3125rem;
+                top: .5rem;
+            }
+            .flair:nth-of-type(5) {
+                right: 1.3125rem;
+                top: 1.1875rem;
+            }
+            .flair:nth-of-type(6) {
+                right: 1.3125rem;
+                top: 1.875rem;
+            }
         }
 
         .challenge {
@@ -518,6 +559,16 @@ a {
             position: relative;
             top: 4px;
             left: 4px;
+        }
+
+        .merctip {
+            margin-top: .25rem;
+        }
+
+        .merc {
+            height: 1.25rem;
+            margin-left: .25rem;
+            line-height: 0rem;
         }
     }
 
@@ -659,30 +710,54 @@ a {
             display: inline-block;
         }
         :first-child {
-            margin-left: 1rem;
+            margin-left: .5rem;
             width: 10rem;
         }
         :nth-child(2){
+            margin-left: .5rem;
             width: ~"calc(100% - 11rem)";
         }
         .flair {
             display: block;
             position: absolute;
-            right: .25rem;
-            top: .1875rem;
-            &.alt {
-                right: 1.3125rem;
-            }
+            right: 0;
+            top: 0;
+            height: .5rem;
+            line-height: .5rem;
+            margin: 0;
+            padding: 0;
+        }
+        .flair:nth-of-type(2) {
+            right: 0;
+            top: .625rem;
+        }
+        .flair:nth-of-type(3) {
+            right: .75rem;
+            top: 0;
+        }
+        .flair:nth-of-type(4) {
+            right: .75rem;
+            top: .625rem;
+        }
+        .flair:nth-of-type(5) {
+            right: 1.5rem;
+            top: 0;
+        }
+        .flair:nth-of-type(6) {
+            right: 1.5rem;
+            top: .625rem;
         }
         .star2, .star3, .star4, .star5 {
             width: 1rem;
         }
     }
 
-    .space {
-        margin-top: 1rem;
+    .space,
+    .city {
+        margin-top: .75rem;
     }
-    .space:nth-child(2) {
+    .space:nth-child(2),
+    .city:first-child {
         margin-top: 0;
     }
 }
@@ -1226,6 +1301,9 @@ html.dark {
     .content h3 {
         color: #fff;
     }
+    .has-text-fade {
+        color: #5e5e5e !important;
+    }
     .has-text-special {
         color: #91006c !important;
     }
@@ -1372,6 +1450,9 @@ html.dark {
                         fill: #4a5354;
                     }
                 }
+                &.hl .button {
+                    border: solid 1px #00af0f;
+                }
             }
             .action.cna {
                 a.button {
@@ -1430,7 +1511,8 @@ html.dark {
     .main > div.popper,
     body .modal > div.popper {
         > div:nth-child(2),
-        > div:nth-child(3) {
+        > div:nth-child(3),
+        > div:nth-child(4) {
             border-top: solid .0625rem black;
         }
     }
@@ -1526,6 +1608,9 @@ html.light {
     }
     .has-text-danger {
         color: #470303  !important;
+    }
+    .has-text-fade {
+        color: #5e5e5e !important;
     }
     .has-text-special {
         color: #91006c !important;
@@ -1643,6 +1728,10 @@ html.light {
                     .gear {
                         fill: #4a5354;
                     }
+                }
+
+                &.hl .button {
+                    border: solid 1px #800000;
                 }
             }
             .action.cna {
@@ -1796,7 +1885,8 @@ html.night {
         border: .0625rem solid #999;
 
         > div:nth-child(2),
-        > div:nth-child(3) {
+        > div:nth-child(3),
+        > div:nth-child(4) {
             border-top: solid .0625rem #999;
         }
         .has-text-dark {

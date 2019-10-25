@@ -279,7 +279,63 @@ if (convertVersion(global['version']) <= 6008 && global['r_queue'] && global['r_
     }
 }
 
-global['version'] = '0.6.8';
+if (convertVersion(global['version']) < 6010 && global.race['Plasmid']){
+    if (global.race.Plasmid.anti < 0){
+        global.race.Plasmid.anti = 0;
+    }
+    if (global.race.Plasmid.count < 0){
+        global.race.Plasmid.count = 0;
+    }
+
+    if (global.tech['foundry'] && !global.race['kindling_kindred']){
+        global.resource.Plywood.display = true;
+    }
+}
+
+if (convertVersion(global['version']) < 6011 && !global.city['ptrait']){
+    global.city['ptrait'] = 'none';
+}
+
+if (convertVersion(global['version']) < 6012 && global.portal['fortress']){
+    global.portal.fortress['s_ntfy'] = 'Yes';
+}
+
+if (convertVersion(global['version']) < 6014){
+    if (global.race['noble'] && global.tech['currency'] && global.tech['currency'] === 4){
+        global.tech['currency'] = 5;
+    }
+    if (global['settings']){
+        global.settings['cLabels'] = true;
+    }
+}
+
+if (convertVersion(global['version']) < 6016 && global.stats && global.stats['reset'] && global.stats['achieve']){
+    global.stats['mad'] = global.stats['reset'];
+    global.stats['bioseed'] = 0;
+    global.stats['blackhole'] = 0;
+    let blkhle = ['whitehole','heavy','canceled','eviltwin','microbang'];
+    for (let i=0; i<blkhle.length; i++){
+        if (global.stats.achieve[blkhle[i]]){
+            global.stats['blackhole']++;
+            global.stats['mad']--;
+        }
+    }
+    let genus = ['genus_humanoid','genus_animal','genus_small','genus_giant','genus_reptilian','genus_avian','genus_insectoid','genus_plant','genus_fungi','genus_aquatic','genus_demonic','genus_angelic'];
+    for (let i=0; i<genus.length; i++){
+        if (global.stats.achieve[genus[i]]){
+            global.stats['bioseed']++;
+            global.stats['mad']--;
+        }
+    }
+}
+
+if (convertVersion(global['version']) < 6018){
+    if (global.space['swarm_satellite']){
+        global.space['swarm_satellite'].count *= 2;
+    }
+}
+
+global['version'] = '0.6.19';
 
 if (global.civic['cement_worker'] && global.civic.cement_worker.impact === 0.25){
     global.civic.cement_worker.impact = 0.4;
@@ -303,9 +359,10 @@ if (!global['settings']){
         showAchieve: false,
         animated: true,
         disableReset: false,
+        cLabels: true,
         theme: 'dark',
         locale: 'en-US',
-    }
+    };
 }
 
 if (!global.settings['showResources']){
@@ -418,7 +475,12 @@ if (!global.settings['locale']){
 if (typeof global.settings.mKeys === 'undefined'){
     global.settings['mKeys'] = true;
 }
-
+if (typeof global.settings.qKey === 'undefined'){
+    global.settings['qKey'] = false;
+}
+if (typeof global.settings.qAny === 'undefined'){
+    global.settings['qAny'] = false;
+}
 if (!global.stats['reset']){
     global.stats['reset'] = 0;
 }
@@ -458,11 +520,18 @@ if (!global.stats['portals']){
 if (!global.stats['attacks']){
     global.stats['attacks'] = 0;
 }
-
+if (!global.stats['mad']){
+    global.stats['mad'] = 0;
+}
+if (!global.stats['bioseed']){
+    global.stats['bioseed'] = 0;
+}
+if (!global.stats['blackhole']){
+    global.stats['blackhole'] = 0;
+}
 if (!global['lastMsg']){
     global['lastMsg'] = false;
 }
-
 if (!global.race['seeded']){
     global.race['seeded'] = false;
 }
@@ -518,6 +587,10 @@ if (!global.city['morale']){
         weather: 0,
         warmonger: 0,
     };
+}
+
+if (!global.city['sun']){
+    global.city['sun'] = 0;
 }
 
 if (!global.city.morale['unemployed']){
@@ -695,17 +768,20 @@ export var shiftIsPressed = false;
 export var cntrlIsPressed = false;
 export var altIsPressed = false;
 export var demoIsPressed = false;
+export var queueIsPressed = false;
 $(document).keydown(function(e){
     cntrlIsPressed = e.ctrlKey ? true : false;
     shiftIsPressed = e.shiftKey ? true : false;
     altIsPressed = e.altKey ? true : false;
     demoIsPressed = e.keyCode === 68 ? true : false;
+    queueIsPressed = e.keyCode === 81 ? true : false;
 });
 $(document).keyup(function(e){
     cntrlIsPressed = e.ctrlKey ? true : false;
     shiftIsPressed = e.shiftKey ? true : false;
     altIsPressed = e.altKey ? true : false;
     demoIsPressed = e.keyCode === 68  ? false : true;
+    queueIsPressed = e.keyCode === 81 ? false : true;
 });
 
 window.onmousemove = function(e){
@@ -713,6 +789,7 @@ window.onmousemove = function(e){
     shiftIsPressed = e.shiftKey ? true : false;
     altIsPressed = e.altKey ? true : false;
     demoIsPressed = e.keyCode === 68  ? true : false;
+    queueIsPressed = e.keyCode === 81 ? true : false;
 }
 
 export var keyMultiplierNumber = 1;
@@ -893,6 +970,7 @@ window.soft_reset = function reset(){
 
     let orbit = global.city.calendar.orbit;
     let biome = global.city.biome;
+    let atmo = global.city.ptrait;
     global.city = {
         calendar: {
             day: 0,
@@ -903,7 +981,8 @@ window.soft_reset = function reset(){
             wind: 0,
             orbit: orbit
         },
-        biome: biome
+        biome: biome,
+        ptrait: atmo
     };
 
     global.stats.days = 0;

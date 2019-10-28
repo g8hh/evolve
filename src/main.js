@@ -411,7 +411,7 @@ if (global.race['hyper']){
 }
 
 if (window.Worker){
-    var worker = new Worker("evolve.js");
+    var worker = new Worker("src/evolve.js");
     worker.postMessage({ loop: 'short', period: main_timer });
     worker.postMessage({ loop: 'mid', period: mid_timer });
     worker.postMessage({ loop: 'long', period: long_timer });

@@ -335,7 +335,16 @@ if (convertVersion(global['version']) < 6018){
     }
 }
 
-global['version'] = '0.6.19';
+if (convertVersion(global['version']) < 6020 && global.race['mutation'] && global.race['universe'] && global.race['universe'] === 'antimatter' && global.race['mutation'] > 0){
+    let a_level = 1;
+    if (global.race['no_trade']){ a_level++; }
+    if (global.race['no_craft']){ a_level++; }
+    if (global.race['no_crispr']){ a_level++; }
+    if (global.race['weak_mastery']){ a_level++; }
+    global.stats.achieve['cross'] = { l: a_level, a: a_level };
+}
+
+global['version'] = '0.6.22';
 
 if (global.civic['cement_worker'] && global.civic.cement_worker.impact === 0.25){
     global.civic.cement_worker.impact = 0.4;
@@ -480,6 +489,9 @@ if (typeof global.settings.qKey === 'undefined'){
 }
 if (typeof global.settings.qAny === 'undefined'){
     global.settings['qAny'] = false;
+}
+if (typeof global.settings.expose === 'undefined'){
+    global.settings['expose'] = false;
 }
 if (!global.stats['reset']){
     global.stats['reset'] = 0;

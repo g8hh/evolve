@@ -51,6 +51,11 @@ var achievements = {
         desc: loc("achieve_madagascar_tree_desc"),
         flair: loc("achieve_madagascar_tree_flair")
     },
+    godwin: {
+        name: loc("achieve_godwin_name"),
+        desc: loc("achieve_godwin_desc"),
+        flair: loc("achieve_godwin_flair")
+    },
     laser_shark: {
         name: loc("achieve_laser_shark_name"),
         desc: loc("achieve_laser_shark_desc"),
@@ -105,6 +110,11 @@ var achievements = {
         name: loc("achieve_blood_war_name"),
         desc: loc("achieve_blood_war_desc"),
         flair: loc("achieve_blood_war_flair")
+    },
+    cross: {
+        name: loc("achieve_cross_name"),
+        desc: loc("achieve_cross_desc"),
+        flair: loc("achieve_cross_flair")
     },
     landfill: {
         name: loc("achieve_landfill_name"),
@@ -675,7 +685,7 @@ export function drawAchieve(){
             if (achievement === 'joyless'){
                 level += global.stats.achieve[achievement].l;
             }
-            let emblem = format_emblem(achievement);            
+            let emblem = format_emblem(achievement,16);            
             achieve.append($(`<b-tooltip :label="flair('${achievement}')" position="is-bottom" size="is-small" animated><div class="achievement"><span class="has-text-warning">${achievements[achievement].name}</span><span>${achievements[achievement].desc}</span>${emblem}</div></b-tooltip>`));
         }
     });
@@ -998,6 +1008,9 @@ export function drawStats(){
     
     stats.append(`<div><span class="has-text-success">${loc("achieve_stats_overall")}</span></div>`);
     stats.append(`<div><span class="has-text-warning">${loc("achieve_stats_plasmid_earned")}</span> {{ plasmid }}</div>`);
+    if (global.stats.antiplasmid > 0){
+        stats.append(`<div><span class="has-text-warning">${loc("achieve_stats_antiplasmid_earned")}</span> {{ antiplasmid }}</div>`);
+    }
     if (global.stats.phage > 0){
         stats.append(`<div><span class="has-text-warning">${loc("achieve_stats_phage_earned")}</span> {{ phage }}</div>`);
     }

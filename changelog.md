@@ -1,3 +1,19 @@
+#### 0.6.22 - 10/26/2019 ####
+Game optimizations<br>
+Bug fixes for queues<br>
+Fixed bug with war droids<br>
+
+#### 0.6.21 - 10/24/2019 ####
+Freight Train upgrade now adds a trade route to freight yards instead of trade posts<br>
+Toxic troll achievement<br>
+Spatial reasoning rounding fix<br>
+
+#### 0.6.20 - 10/21/2019 ####
+Fixed application of plasmids with antiplasmids<br>
+Updated description of bleeding effect<br>
+Added achievement for synthesizing an anti-plasmid<br>
+More readable achievement page<br>
+
 #### 0.6.19 - 10/20/2019 ####
 Fixed power errors with hell dimension turrets<br>
 Crate/Container rounding is now applied after spatial reasoning<br>

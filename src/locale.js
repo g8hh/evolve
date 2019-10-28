@@ -34,7 +34,7 @@ export function loc(key, variables) {
 }
 
 function getString(locale) {
-    $.ajaxSetup({ async: false });
+    $.ajaxSetup({ async: false, cache: false });
 
     let defaultString;
     $.getJSON("strings/strings.json", (data) => { defaultString = data; });
@@ -58,7 +58,7 @@ function getString(locale) {
         }
     }
 
-    $.ajaxSetup({ async: true });
+    $.ajaxSetup({ async: true, cache: true });
     strings = defaultString;
 }
 

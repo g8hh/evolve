@@ -1,9 +1,9 @@
-import { global, vues, save } from './vars.js';
+import { global, save } from './vars.js';
 import { loc } from './locale.js';
 import { races } from './races.js';
 
 export function mainVue(){
-    let settings = {
+    vBind({
         el: '#mainColumn div:first-child',
         data: { 
             s: global.settings,
@@ -34,6 +34,15 @@ export function mainVue(){
                 global.settings.theme = 'redgreen';
                 $('html').removeClass();
                 $('html').addClass('redgreen');
+            },
+            si(){
+                global.settings.affix = 'si';
+            },
+            sci(){
+                global.settings.affix = 'sci';
+            },
+            sln(){
+                global.settings.affix = 'sln';
             },
             keys(){
                 return loc('settings1');
@@ -116,8 +125,56 @@ export function mainVue(){
                 }
             }
         }
+    });
+}
+
+export function genCivName(){
+    let genus = races[global.race.species].type;
+    switch (genus){
+        case 'animal':
+            genus = 'animalism';
+            break;
+        case 'small':
+            genus = 'dwarfism';
+            break;
+        case 'giant':
+            genus = 'gigantism';
+            break;
+        case 'avian':
+        case 'reptilian':
+            genus = 'Eggshell';
+            break;
+        case 'fungi':
+            genus = 'chitin';
+            break;
+        case 'insectoid':
+            genus = 'athropods';
+            break;
+        case 'angelic':
+            genus = 'celestial';
+            break;
+        case 'organism':
+            genus = 'sentience';
+            break;
     }
-    vues['vue_tabs'] = new Vue(settings);
+
+    const filler = [
+        races[global.race.species].name,
+        races[global.race.species].home,
+        loc(`biome_${global.city.biome}_name`),
+        loc(`evo_${genus}_title`),
+        loc(`civics_gov_name0`),
+        loc(`civics_gov_name1`),
+        loc(`civics_gov_name2`),
+        loc(`civics_gov_name3`),
+        loc(`civics_gov_name4`),
+        loc(`civics_gov_name5`),
+    ];
+
+    return {
+        s0: Math.rand(0,6),
+        s1: filler[Math.rand(0,10)]
+    };
 }
 
 export function timeCheck(c_action,track){
@@ -161,6 +218,21 @@ export function timeCheck(c_action,track){
     }
     else {
         return 0;
+    }
+}
+
+export function vBind(bind,action){
+    action = action || 'create';
+    if ($(bind.el).length > 0 && typeof $(bind.el)[0].__vue__ !== "undefined"){
+        if (action === 'update'){
+            $(bind.el)[0].__vue__.$forceUpdate();
+        }
+        else {
+            $(bind.el)[0].__vue__.$destroy();
+        }
+    }
+    if (action === 'create'){
+        new Vue(bind);
     }
 }
 
@@ -208,21 +280,35 @@ export function powerModifier(energy){
 export function challenge_multiplier(value,type,decimals){
     decimals = decimals || 0;
     let challenge_level = 0;
-    if (global.race.universe === 'micro'){ value = value * 0.25; }
-    if (global.race.universe === 'heavy' && type !== 'mad'){ value = value * 1.25; }
     if (global.race['no_plasmid']){ challenge_level++; }
     if (global.race['no_trade']){ challenge_level++; }
     if (global.race['no_craft']){ challenge_level++; }
     if (global.race['no_crispr']){ challenge_level++; }
+    if (global.race['weak_mastery']){ challenge_level++; }
+    if (global.race.universe === 'micro'){ value = value * 0.25; }
+    if (global.race.universe === 'heavy' && type !== 'mad'){
+        switch (challenge_level){
+            case 1:
+                value = value * 1.1;
+            case 2:
+                value = value * 1.15;
+            case 3:
+                value = value * 1.2;
+            case 4:
+                value = value * 1.25;
+            default:
+                value = value * 1.05;
+        }
+    }
     switch (challenge_level){
         case 1:
             return +(value * 1.05).toFixed(decimals);
         case 2:
-            return +(value * 1.10).toFixed(decimals);
+            return +(value * 1.12).toFixed(decimals);
         case 3:
-            return +(value * 1.20).toFixed(decimals);
+            return +(value * 1.25).toFixed(decimals);
         case 4:
-            return +(value * 1.35).toFixed(decimals);
+            return +(value * 1.45).toFixed(decimals);
         default:
             return +(value).toFixed(decimals);
     }
@@ -238,10 +324,30 @@ export function adjustCosts(costs){
         });
         return newCosts;
     }
+    costs = technoAdjust(costs);
     costs = kindlingAdjust(costs);
     costs = scienceAdjust(costs);
     costs = rebarAdjust(costs);
     return craftAdjust(costs);
+}
+
+function technoAdjust(costs){
+    if (global.civic.govern.type === 'technocracy'){
+        var newCosts = {};
+        Object.keys(costs).forEach(function (res){
+            if (res === 'Knowledge'){
+                newCosts[res] = function(){ return Math.round(costs[res]() * 0.95); }
+            }
+            else if (res === 'Money'){
+                newCosts[res] = function(){ return costs[res](); }
+            }
+            else {
+                newCosts[res] = function(){ return Math.round(costs[res]() * 1.02); }
+            }
+        });
+        return newCosts;
+    }
+    return costs;
 }
 
 function scienceAdjust(costs){

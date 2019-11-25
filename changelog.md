@@ -1,6 +1,59 @@
+#### 0.7.1 - 11/23/2019 ####
+Garrison controls reintegrated into government section<br>
+Mutation plasmids now track correctly in no plasmid challenge runs<br>
+Fixed many issues with foreign power name generation<br>
+Feat star icon is no longer tiny<br>
+
+#### 0.7.0 - 11/21/2019 ####
+Establish a Government<br>
+Battle rival cities<br>
+Biome races added for Forest, Desert, Tundra, and Volcanic<br>
+New ARPA Project: Railway<br>
+New CRISPR upgrades: Mitosis & Metaphase<br>
+Construct advanced AI stations in deep space<br>
+Rapid Gene Squencing upgrade<br>
+Civics tab split into Government, Industry, and Military sections<br>
+Inspiration no longer adds an upfront knowledge bonus<br>
+Vigilante requirement lowered to 12<br>
+Xenophobic replaced with Wasteful<br>
+Added Rocky Road Feat<br>
+Configurable number notations<br>
+
+#### 0.6.27 - 11/12/2019 ####
+Tundra planets are now always cold in winter<br>
+Volcanic planets are now always hot in summer<br>
+Stormy planets are now more likely to be windy<br>
+Fixed issue with last rites not showing up as affordable<br>
+<br>
+2-4x Challenge Multipliers changed:<br>
+2 Challenges: +12% Prestige<br>
+3 Challenges: +25% Prestige<br>
+4 Challenges: +45% Prestige<br>
+<br>
+Heavy Universe prestige bonus now scales with challenge level:<br>
+0 Challenges: +5% Prestige<br>
+1 Challenge: +10% Prestige<br>
+2 Challenges: +15% Prestige<br>
+3 Challenges: +20% Prestige<br>
+4 Challenges: +25% Prestige<br>
+
+#### 0.6.26 - 11/7/2019 ####
+ARPA costs now update without mousing off and back on the buttons<br>
+Fixed issues with incorrectly powering on newly built structures<br>
+None-demonic evil smelters now correctly state they burn 1 flesh/s<br>
+Added whitehole perk to stats page<br>
+
+#### 0.6.25 - 11/2/2019 ####
+Geology bonus is now preserved on MAD reset<br>
+Key Mappings are now configurable for multiplier and queue keys<br>
+
+#### 0.6.24 - 10/31/2019 ####
+The Halloween feat will now unlock inside a micro universe<br>
+
 #### 0.6.23 - 10/28/2019 ####
 Exotic mass now counts towards Galactic Landfill and Supermassive<br>
 Fixed issues with queue timers and kindling kindred trait<br>
+Dark Energy now applies to windmills in antimatter universe<br>
 
 #### 0.6.22 - 10/26/2019 ####
 Game optimizations<br>

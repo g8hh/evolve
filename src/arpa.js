@@ -1,5 +1,5 @@
-import { global, vues, poppers, keyMultiplier, sizeApproximation, messageQueue, srSpeak } from './vars.js';
-import { timeFormat } from './functions.js';
+import { global, poppers, keyMultiplier, sizeApproximation, messageQueue, srSpeak } from './vars.js';
+import { timeFormat, vBind } from './functions.js';
 import { actions, drawTech, drawCity, addAction, removeAction } from './actions.js';
 import { races, traits, cleanAddTrait, cleanRemoveTrait } from './races.js';
 import { space } from './space.js';
@@ -49,7 +49,7 @@ const arpaProjects = {
             Knowledge: function(){ return costMultiplier('lhc', 500000, 1.05); },
             Copper: function(){ return costMultiplier('lhc', 125000, 1.05); },
             Cement: function(){ return costMultiplier('lhc', 250000, 1.05); },
-            Steel: function(){ return costMultiplier('lhc', 187500, 1.05); },
+            Aluminium: function(){ return costMultiplier('lhc', 350000, 1.05); },
             Titanium: function(){ return costMultiplier('lhc', 50000, 1.05); },
             Polymer: function(){ return costMultiplier('lhc', 12000, 1.05); }
         }
@@ -117,7 +117,23 @@ const arpaProjects = {
             Cement: function(){ return monument_costs('Cement') },
             Steel: function(){ return monument_costs('Steel') }
         }
-    }
+    },
+    railway: {
+        title: loc('arpa_projects_railway_title'),
+        desc: loc('arpa_projects_railway_desc'),
+        reqs: { high_tech: 6, trade: 3 },
+        grant: 'railway',
+        effect(){
+            let routes = global.city['storage_yard'] ? Math.floor(global.city.storage_yard.count / 6) : 0;
+            return loc('arpa_projects_railway_effect1',[routes,2,6,1]);
+        },
+        cost: {
+            Money: function(){ return costMultiplier('railway', 2500000, 1.08); },
+            Lumber: function(){ return costMultiplier('railway', 750000, 1.08); },
+            Iron: function(){ return costMultiplier('railway', 300000, 1.08); },
+            Steel: function(){ return costMultiplier('railway', 450000, 1.08); }
+        }
+    },
 };
 
 const genePool = {
@@ -326,6 +342,36 @@ const genePool = {
         effect(){ return crispr_effect($(this)[0].cost); },
         action(){
             if (payPlasmids('cytokinesis')){
+                return true;
+            }
+            return false;
+        }
+    },
+    mitosis: {
+        id: 'genes-mitosis',
+        title: loc('arpa_genepool_mitosis_title'),
+        desc: loc('arpa_genepool_mitosis_desc',[3]),
+        reqs: { synthesis: 3, evolve: 2 },
+        grant: ['plasma',1],
+        cost: 90,
+        effect(){ return crispr_effect($(this)[0].cost); },
+        action(){
+            if (payPlasmids('mitosis')){
+                return true;
+            }
+            return false;
+        }
+    },
+    metaphase: {
+        id: 'genes-metaphase',
+        title: loc('arpa_genepool_metaphase_title'),
+        desc: loc('arpa_genepool_mitosis_desc',[5]),
+        reqs: { plasma: 1 },
+        grant: ['plasma',2],
+        cost: 165,
+        effect(){ return crispr_effect($(this)[0].cost); },
+        action(){
+            if (payPlasmids('mitosis')){
                 return true;
             }
             return false;
@@ -726,6 +772,7 @@ function physics(){
     addProject(parent,'stock_exchange');
     addProject(parent,'launch_facility');
     addProject(parent,'monument');
+    addProject(parent,'railway');
 }
 
 function genetics(){
@@ -736,9 +783,6 @@ function genetics(){
     }
 
     if (global.tech['genetics'] > 1){
-        if (vues[`arpaSequence`]){
-            vues[`arpaSequence`].$destroy();
-        }
         let genome = $(`<div id="arpaSequence" class="genome"></div>`);
         parent.append(genome);
 
@@ -795,8 +839,8 @@ function genetics(){
             $('#arpaSequence button.auto').addClass('has-text-success');
         }
 
-
-        vues[`arpaSequence`] = new Vue({
+        vBind({
+            el: `#arpaSequence`,
             data: global.arpa.sequence,
             methods: {
                 seq(){
@@ -876,7 +920,6 @@ function genetics(){
                 }
             }
         });
-        vues[`arpaSequence`].$mount(`#arpaSequence`);
     }
     if (global.tech['genetics'] > 2){
         let breakdown = $('<div id="geneticBreakdown" class="geneticTraits"></div>');
@@ -952,10 +995,8 @@ function genetics(){
             breakdown.prepend(`<div class="trait minor has-text-success">${loc('arpa_race_genetic_minor_traits',[races[global.race.species].name])}</div>`)
         }
 
-        if (vues[`arpaGenes`]){
-            vues[`arpaGenes`].$destroy();
-        }
-        vues[`arpaGenes`] = new Vue({
+        vBind({
+            el: `#geneticBreakdown`,
             data: {
                 genes: global.genes,
                 race: global.race
@@ -1059,7 +1100,6 @@ function genetics(){
                 }
             }
         });
-        vues[`arpaGenes`].$mount(`#geneticBreakdown`);
     }
 }
 
@@ -1108,10 +1148,12 @@ function addProject(parent,project){
         buy.append($(`<button :aria-label="arpaProjectSRCosts('25','${project}')" class="button x25" @click="build('${project}',25)">25%</button>`));
         buy.append($(`<button :aria-label="arpaProjectSRCosts('100','${project}')" class="button x100" @click="build('${project}',100)">{{ complete | remain }}%</button>`));
 
-        vues[`arpa${project}`] = new Vue({
+        vBind({
+            el: `#arpa${project}`,
             data: global.arpa[project],
             methods: {
                 build(pro,num){
+                    let oNum = num;
                     if (num === 100){
                         num = 100 - global.arpa[project].complete;
                     }
@@ -1142,6 +1184,10 @@ function addProject(parent,project){
                             }
                         }
                     }
+                    if ($(`#popArpa${pro}`).length > 0){
+                        $(`#popArpa${pro}`).empty();
+                        $(`#popArpa${pro}`).append(arpaProjectCosts(oNum,pro));
+                    }
                 },
                 srDesc(){
                     return srSpeak(arpaProjects[project].desc);
@@ -1170,7 +1216,6 @@ function addProject(parent,project){
                 }
             }
         });
-        vues[`arpa${project}`].$mount(`#arpa${project}`);
 
         $(`#arpa${project} .head .desc`).on('mouseover',function(){
             var popper = $(`<div id="popArpa${project}" class="popper has-background-light has-text-dark">${arpaProjects[project].desc}</div>`);
@@ -1201,7 +1246,7 @@ function addProject(parent,project){
             $(`#popArpa${project}`).remove();
         });
 
-        let classes = ['1','10','25','100'];
+        let classes = [1,10,25,100];
         for (let i=0; i<classes.length; i++){
             let id = classes[i];
             $(`#arpa${project} .buy .x${id}`).on('mouseover',function(){
@@ -1224,7 +1269,7 @@ function addProject(parent,project){
 }
 
 function arpaProjectCosts(id,project){
-    let inc = id === '100' ? 100 - global.arpa[project].complete : id;
+    let inc = id === 100 ? 100 - global.arpa[project].complete : id;
     var cost = $('<div></div>');
     var costs = adjustCosts(arpaProjects[project].cost);
     Object.keys(costs).forEach(function (res){

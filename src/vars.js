@@ -330,7 +330,7 @@ if (convertVersion(global['version']) < 6016 && global.stats && global.stats['re
 }
 
 if (convertVersion(global['version']) < 6018){
-    if (global.space['swarm_satellite']){
+    if (global['space'] && global.space['swarm_satellite']){
         global.space['swarm_satellite'].count *= 2;
     }
 }
@@ -344,13 +344,22 @@ if (convertVersion(global['version']) < 6020 && global.race['mutation'] && globa
     global.stats.achieve['cross'] = { l: a_level, a: a_level };
 }
 
-global['version'] = '0.6.23';
+if (convertVersion(global['version']) < 7000){
+    if (!global.civic['govern']){
+        global.civic['govern'] = {
+            type: 'oligarchy',
+            rev: 0,
+            fr: 0,
+        };
+    }
+}
+
+global['version'] = '0.7.1';
+delete global['beta'];
 
 if (global.civic['cement_worker'] && global.civic.cement_worker.impact === 0.25){
     global.civic.cement_worker.impact = 0.4;
 }
-
-$('#topBar .version > a').html('v'+global.version);
 
 if (!global['settings']){
     global['settings'] = {
@@ -360,6 +369,7 @@ if (!global['settings']){
         showIndustry: false,
         showResearch: false,
         showCivic: false,
+        showMil: false,
         showResources: false,
         showMarket: false,
         showStorage: false,
@@ -469,6 +479,9 @@ if (!global.settings['showEjector']){
 if (!global.settings['resTabs']){
     global.settings['resTabs'] = 0;
 }
+if (!global.settings['govTabs']){
+    global.settings['govTabs'] = 0;
+}
 if (!global.settings['marketTabs']){
     global.settings['marketTabs'] = 0;
 }
@@ -484,8 +497,14 @@ if (!global.settings['locale']){
 if (typeof global.settings.mKeys === 'undefined'){
     global.settings['mKeys'] = true;
 }
-if (typeof global.settings.qKey === 'undefined'){
-    global.settings['qKey'] = false;
+if (typeof global.settings.keyMap === 'undefined'){
+    global.settings['keyMap'] = {
+        x10: 'Control', //17
+        x25: 'Shift', //16
+        x100: 'Alt', //18
+        q: 'q', //81
+        d: 'd' //68
+    };
 }
 if (typeof global.settings.qAny === 'undefined'){
     global.settings['qAny'] = false;
@@ -582,6 +601,85 @@ if (!global.race['minor']){
     global.race['minor'] = {};
 }
 
+if (typeof global.settings['showMil'] === "undefined"){
+    global.settings['showMil'] = true;
+}
+if (!global.settings['affix']){
+    global.settings['affix'] = 'si';
+}
+
+if (!global.civic['govern']){
+    global.civic['govern'] = {
+        type: 'oligarchy',
+        rev: 2000,
+        fr: 0,
+    };
+}
+global.civic.govern.fr = 0;
+
+if (!global.civic['foreign']){
+    global.civic['foreign'] = {
+        gov0: {
+            unrest: 0,
+            hstl: 100,
+            mil: 100,
+            eco: 75,
+            spy: 0,
+            esp: 0,
+            trn: 0,
+            sab: 0,
+            act: 'none',
+            occ: false
+        },
+        gov1: {
+            unrest: 0,
+            hstl: 0,
+            mil: 150,
+            eco: 100,
+            spy: 0,
+            esp: 0,
+            trn: 0,
+            sab: 0,
+            act: 'none',
+            occ: false
+        },
+        gov2: {
+            unrest: 0,
+            hstl: 50,
+            mil: 250,
+            eco: 150,
+            spy: 0,
+            esp: 0,
+            trn: 0,
+            sab: 0,
+            act: 'none',
+            occ: false
+        }
+    };
+}
+
+if (typeof global.civic.foreign.gov0['trn'] === "undefined"){
+    global.civic.foreign.gov0['trn'] = 0;
+    global.civic.foreign.gov1['trn'] = 0;
+    global.civic.foreign.gov2['trn'] = 0;
+    global.civic.foreign.gov0['sab'] = 0;
+    global.civic.foreign.gov1['sab'] = 0;
+    global.civic.foreign.gov2['sab'] = 0;
+    global.civic.foreign.gov0['act'] = 'none';
+    global.civic.foreign.gov1['act'] = 'none';
+    global.civic.foreign.gov2['act'] = 'none';
+}
+
+if (typeof global.civic.foreign.gov0['name'] !== "undefined" && global.civic.foreign.gov0.name.s1 === 'evo_organism_title'){
+    global.civic.foreign.gov0.name.s1 = 'Northern';
+}
+if (typeof global.civic.foreign.gov1['name'] !== "undefined" && global.civic.foreign.gov1.name.s1 === 'evo_organism_title'){
+    global.civic.foreign.gov1.name.s1 = 'Southern';
+}
+if (typeof global.civic.foreign.gov2['name'] !== "undefined" && global.civic.foreign.gov2.name.s1 === 'evo_organism_title'){
+    global.civic.foreign.gov2.name.s1 = 'Divine';
+}
+
 if (!global.race['evil'] && global.race['immoral']){
     delete global.race['immoral'];
 }
@@ -598,11 +696,18 @@ if (!global.city['morale']){
         season: 0,
         weather: 0,
         warmonger: 0,
+        rev: 0
     };
 }
 
 if (!global.city['sun']){
     global.city['sun'] = 0;
+}
+if (!global.city['cold']){
+    global.city['cold'] = 0;
+}
+if (!global.city['hot']){
+    global.city['hot'] = 0;
 }
 
 if (!global.city.morale['unemployed']){
@@ -615,6 +720,10 @@ if (!global.city.morale['leadership']){
 
 if (!global.city.morale['warmonger']){
     global.city.morale['warmonger'] = 0;
+}
+
+if (!global.city.morale['rev']){
+    global.city.morale['rev'] = 0;
 }
 
 if (!global.city.morale['tax']){
@@ -715,6 +824,9 @@ if (global.city['factory']){
 if (!global.race['mutation']){
     global.race['mutation'] = 0;
 }
+if (!global.race['p_mutation']){
+    global.race['p_mutation'] = 0;
+}
 
 if (global.race['old_gods'] && global.race['old_gods'] != 'none'){
     global.genes['old_gods'] = 1;
@@ -736,6 +848,10 @@ if (global.tech['unify']){
         delete global.tech['m_boost'];
         delete global.tech['world_control'];
     }
+}
+
+if (!global.civic['new']){
+    global.civic['new'] = 0;
 }
 
 global.settings.animated = true;
@@ -783,45 +899,81 @@ export function modRes(res,val){
     return success;
 }
 
-export var shiftIsPressed = false;
-export var cntrlIsPressed = false;
-export var altIsPressed = false;
-export var demoIsPressed = false;
-export var queueIsPressed = false;
+export var keyMap = {
+    x10: false,
+    x25: false,
+    x100: false,
+    q: false,
+    d: false
+};
+
 $(document).keydown(function(e){
-    cntrlIsPressed = e.ctrlKey ? true : false;
-    shiftIsPressed = e.shiftKey ? true : false;
-    altIsPressed = e.altKey ? true : false;
-    demoIsPressed = e.keyCode === 68 ? true : false;
-    queueIsPressed = e.keyCode === 81 ? true : false;
+    e = e || window.event;
+    let key = e.key || e.keyCode;
+    if (key === global.settings.keyMap.x10){
+        keyMap.x10 = true;
+    }
+    if (key === global.settings.keyMap.x25){
+        keyMap.x25 = true;
+    }
+    if (key === global.settings.keyMap.x100){
+        keyMap.x100 = true;
+    }
+    if (key === global.settings.keyMap.q){
+        keyMap.q = true;
+    }
 });
 $(document).keyup(function(e){
-    cntrlIsPressed = e.ctrlKey ? true : false;
-    shiftIsPressed = e.shiftKey ? true : false;
-    altIsPressed = e.altKey ? true : false;
-    demoIsPressed = e.keyCode === 68  ? false : true;
-    queueIsPressed = e.keyCode === 81 ? false : true;
+    e = e || window.event;
+    let key = e.key || e.keyCode;
+    if (key === global.settings.keyMap.x10){
+        keyMap.x10 = false;
+    }
+    if (key === global.settings.keyMap.x25){
+        keyMap.x25 = false;
+    }
+    if (key === global.settings.keyMap.x100){
+        keyMap.x100 = false;
+    }
+    if (key === global.settings.keyMap.q){
+        keyMap.q = false;
+    }
 });
-
-window.onmousemove = function(e){
-    cntrlIsPressed = e.ctrlKey ? true : false;
-    shiftIsPressed = e.shiftKey ? true : false;
-    altIsPressed = e.altKey ? true : false;
-    demoIsPressed = e.keyCode === 68  ? true : false;
-    queueIsPressed = e.keyCode === 81 ? true : false;
-}
+$(document).mousemove(function(e){
+    e = e || window.event;
+    Object.keys(global.settings.keyMap).forEach(function(k){
+        switch(global.settings.keyMap[k]){
+            case 'Shift':
+            case 16:
+                keyMap[k] = e.shiftKey ? true : false;
+                break;
+            case 'Control':
+            case 17:
+                keyMap[k] = e.ctrlKey ? true : false;
+                break;            
+            case 'Alt':
+            case 18:
+                keyMap[k] = e.altKey ? true : false;
+                break;
+            case 'Meta':
+            case 91:
+                keyMap[k] = e.metaKey ? true : false;
+                break;
+        }
+    });
+});
 
 export var keyMultiplierNumber = 1;
 export function keyMultiplier(){
     let number = 1;
     if (global.settings['mKeys']){
-        if (cntrlIsPressed){
+        if (keyMap.x10){
             number *= 10;
         }
-        if (shiftIsPressed){
+        if (keyMap.x25){
             number *= 25;
         }
-        if (altIsPressed){
+        if (keyMap.x100){
             number *= 100;
         }
     }
@@ -875,33 +1027,47 @@ export function resizeGame(){
     }
 }
 
+var affix_list = {
+    si: ['K','M','G','T','P','E','Z','Y'],
+    sci: ['e3','e6','e9','e12','e15','e18','e21','e24'],
+    sln: ['K','M','B','t','q','Q','s','S']
+};
+
 export function sizeApproximation(value,precision,fixed){
     if (value <= 9999){
         return +value.toFixed(precision);
     }
     else if (value <= 1000000){
-        return fixed ? +(value / 1000).toFixed(1) + 'K' : (Math.floor(value / 100) / 10) + 'K';
+        let affix = affix_list[global.settings.affix][0];
+        return fixed ? +(value / 1000).toFixed(1) + affix : (Math.floor(value / 100) / 10) + affix;
     }
     else if (value <= 1000000000){
-        return fixed ? +(value / 1000000).toFixed(1) + 'M' : (Math.floor(value / 10000) / 100) + 'M';
+        let affix = affix_list[global.settings.affix][1];
+        return fixed ? +(value / 1000000).toFixed(1) + affix : (Math.floor(value / 10000) / 100) + affix;
     }
     else if (value <= 1000000000000){
-        return fixed ? +(value / 1000000000).toFixed(1) + 'G' : (Math.floor(value / 10000000) / 100) + 'G';
+        let affix = affix_list[global.settings.affix][2];
+        return fixed ? +(value / 1000000000).toFixed(1) + affix : (Math.floor(value / 10000000) / 100) + affix;
     }
     else if (value <= 1000000000000000){
-        return fixed ? +(value / 1000000000000).toFixed(1) + 'T' : (Math.floor(value / 10000000000) / 100) + 'T';
+        let affix = affix_list[global.settings.affix][3];
+        return fixed ? +(value / 1000000000000).toFixed(1) + affix : (Math.floor(value / 10000000000) / 100) + affix;
     }
     else if (value <= 1000000000000000000){
-        return fixed ? +(value / 1000000000000000).toFixed(1) + 'P' : (Math.floor(value / 10000000000000) / 100) + 'P';
+        let affix = affix_list[global.settings.affix][4];
+        return fixed ? +(value / 1000000000000000).toFixed(1) + affix : (Math.floor(value / 10000000000000) / 100) + affix;
     }
     else if (value <= 1000000000000000000000){
-        return fixed ? +(value / 1000000000000000000).toFixed(1) + 'E' : (Math.floor(value / 10000000000000000) / 100) + 'E';
+        let affix = affix_list[global.settings.affix][5];
+        return fixed ? +(value / 1000000000000000000).toFixed(1) + affix : (Math.floor(value / 10000000000000000) / 100) + affix;
     }
     else if (value <= 1000000000000000000000000){
-        return fixed ? +(value / 1000000000000000000000).toFixed(1) + 'Z' : (Math.floor(value / 10000000000000000000) / 100) + 'Z';
+        let affix = affix_list[global.settings.affix][6];
+        return fixed ? +(value / 1000000000000000000000).toFixed(1) + affix : (Math.floor(value / 10000000000000000000) / 100) + affix;
     }
     else {
-        return fixed ? +(value / 1000000000000000000000000).toFixed(1) + 'Y' : (Math.floor(value / 10000000000000000000000) / 100) + 'Y';
+        let affix = affix_list[global.settings.affix][7];
+        return fixed ? +(value / 1000000000000000000000000).toFixed(1) + affix : (Math.floor(value / 10000000000000000000000) / 100) + affix;
     }
 }
 
@@ -952,10 +1118,6 @@ window.reset = function reset(){
 
 // executes a soft reset
 window.soft_reset = function reset(){
-    Object.keys(vues).forEach(function (v){
-        vues[v].$destroy();
-    });
-
     let replace = {
         species : 'protoplasm', 
         Plasmid: { count: global.race.Plasmid.count },
@@ -990,6 +1152,7 @@ window.soft_reset = function reset(){
     let orbit = global.city.calendar.orbit;
     let biome = global.city.biome;
     let atmo = global.city.ptrait;
+    let geo = global.city.geology;
     global.city = {
         calendar: {
             day: 0,
@@ -1001,7 +1164,8 @@ window.soft_reset = function reset(){
             orbit: orbit
         },
         biome: biome,
-        ptrait: atmo
+        ptrait: atmo,
+        geology: geo
     };
 
     global.stats.days = 0;
@@ -1032,7 +1196,45 @@ export function clearStates(){
     global.interstellar = {};
     global.portal = {};
     global.starDock = {};
-    global.civic = { free: 0 };
+    global.civic = { free: 0, new: 0 };
+    global.civic['foreign'] = {
+        gov0: {
+            unrest: 0,
+            hstl: Math.floor(Math.seededRandom(80,100)),
+            mil: Math.floor(Math.seededRandom(75,125)),
+            eco: Math.floor(Math.seededRandom(60,90)),
+            spy: 0,
+            esp: 0,
+            trn: 0,
+            sab: 0,
+            act: 'none',
+            occ: false
+        },
+        gov1: {
+            unrest: 0,
+            hstl: Math.floor(Math.seededRandom(0,20)),
+            mil: Math.floor(Math.seededRandom(125,175)),
+            eco: Math.floor(Math.seededRandom(80,120)),
+            spy: 0,
+            esp: 0,
+            trn: 0,
+            sab: 0,
+            act: 'none',
+            occ: false
+        },
+        gov2: {
+            unrest: 0,
+            hstl: Math.floor(Math.seededRandom(40,60)),
+            mil: Math.floor(Math.seededRandom(200,300)),
+            eco: Math.floor(Math.seededRandom(130,170)),
+            spy: 0,
+            esp: 0,
+            trn: 0,
+            sab: 0,
+            act: 'none',
+            occ: false
+        }
+    };
     global.resource = {};
     global.evolution = {};
     global.event = 100;
@@ -1041,12 +1243,13 @@ export function clearStates(){
     global.stats.starved = 0;
     global.stats.died = 0;
     global.stats.attacks = 0;
-    global.settings.civTabs = 0;
+    
     global.settings.showEvolve = true;
     global.settings.showCity = false;
     global.settings.showIndustry = false;
     global.settings.showResearch = false;
     global.settings.showCivic = false;
+    global.settings.showMil = false;
     global.settings.showResources = false;
     global.settings.showMarket = false;
     global.settings.showStorage = false;
@@ -1073,8 +1276,12 @@ export function clearStates(){
     global.settings.portal.badlands = false;
     global.settings.portal.pit = false;
     global.settings.arpa = false;
+    global.settings.civTabs = 0;
+    global.settings.govTabs = 0;
     global.settings.resTabs = 0;
     global.settings.spaceTabs = 0;
+    global.settings.marketTabs = 0
+    global.settings.statsTabs = 0
     global.settings.disableReset = false;
     global.arpa = {};
 }

@@ -1,5 +1,5 @@
-import { global, vues, messageQueue, set_alevel, poppers } from './vars.js';
-import { svgIcons, svgViewBox, format_emblem } from './functions.js'; 
+import { global, messageQueue, set_alevel, poppers } from './vars.js';
+import { svgIcons, svgViewBox, format_emblem, vBind } from './functions.js'; 
 import { loc } from './locale.js'
 
 if (!global.stats['achieve']){
@@ -15,6 +15,11 @@ var achievements = {
         name: loc("achieve_apocalypse_name"),
         desc: loc("achieve_apocalypse_desc"),
         flair: loc("achieve_apocalypse_flair")
+    },
+    anarchist: {
+        name: loc("achieve_anarchist_name"),
+        desc: loc("achieve_anarchist_desc"),
+        flair: loc("achieve_anarchist_flair")
     },
     squished: {
         name: loc("achieve_squished_name"),
@@ -276,6 +281,26 @@ var achievements = {
         desc: loc("achieve_genus_aquatic_desc"),
         flair: loc("achieve_genus_aquatic_flair")
     },
+    genus_fey: {
+        name: loc("achieve_genus_fey_name"),
+        desc: loc("achieve_genus_fey_desc"),
+        flair: loc("achieve_genus_fey_flair")
+    },
+    genus_heat: {
+        name: loc("achieve_genus_heat_name"),
+        desc: loc("achieve_genus_heat_desc"),
+        flair: loc("achieve_genus_heat_flair")
+    },
+    genus_polar: {
+        name: loc("achieve_genus_polar_name"),
+        desc: loc("achieve_genus_polar_desc"),
+        flair: loc("achieve_genus_polar_flair")
+    },
+    genus_sand: {
+        name: loc("achieve_genus_sand_name"),
+        desc: loc("achieve_genus_sand_desc"),
+        flair: loc("achieve_genus_sand_flair")
+    },
     genus_demonic: {
         name: loc("achieve_genus_demonic_name"),
         desc: loc("achieve_genus_demonic_desc"),
@@ -466,6 +491,46 @@ var achievements = {
         desc: loc("achieve_extinct_octigoran_desc"),
         flair: loc("achieve_extinct_octigoran_flair")
     },
+    extinct_dryad: {
+        name: loc("achieve_extinct_dryad_name"),
+        desc: loc("achieve_extinct_dryad_desc"),
+        flair: loc("achieve_extinct_dryad_flair")
+    },
+    extinct_satyr: {
+        name: loc("achieve_extinct_satyr_name"),
+        desc: loc("achieve_extinct_satyr_desc"),
+        flair: loc("achieve_extinct_satyr_flair")
+    },
+    extinct_phoenix: {
+        name: loc("achieve_extinct_phoenix_name"),
+        desc: loc("achieve_extinct_phoenix_desc"),
+        flair: loc("achieve_extinct_phoenix_flair")
+    },
+    extinct_salamander: {
+        name: loc("achieve_extinct_salamander_name"),
+        desc: loc("achieve_extinct_salamander_desc"),
+        flair: loc("achieve_extinct_salamander_flair")
+    },
+    extinct_yeti: {
+        name: loc("achieve_extinct_yeti_name"),
+        desc: loc("achieve_extinct_yeti_desc"),
+        flair: loc("achieve_extinct_yeti_flair")
+    },
+    extinct_wendigo: {
+        name: loc("achieve_extinct_wendigo_name"),
+        desc: loc("achieve_extinct_wendigo_desc"),
+        flair: loc("achieve_extinct_wendigo_flair")
+    },
+    extinct_tuskin: {
+        name: loc("achieve_extinct_tuskin_name"),
+        desc: loc("achieve_extinct_tuskin_desc"),
+        flair: loc("achieve_extinct_tuskin_flair")
+    },
+    extinct_kamel: {
+        name: loc("achieve_extinct_kamel_name"),
+        desc: loc("achieve_extinct_kamel_desc"),
+        flair: loc("achieve_extinct_kamel_flair")
+    },
     extinct_balorg: {
         name: loc("achieve_extinct_balorg_name"),
         desc: loc("achieve_extinct_balorg_desc"),
@@ -524,6 +589,26 @@ const feats = {
         desc: loc("feat_supermassive_desc"),
         flair: loc("feat_supermassive_flair")
     },
+    rocky_road: {
+        name: loc("feat_rocky_road_name"),
+        desc: loc("feat_rocky_road_desc"),
+        flair: loc("feat_rocky_road_flair")
+    },
+    nephilim: {
+        name: loc("feat_nephilim_name"),
+        desc: loc("feat_nephilim_desc"),
+        flair: loc("feat_nephilim_flair")
+    },
+    halloween: {
+        name: loc("feat_boo_name"),
+        desc: loc("feat_boo_desc"),
+        flair: loc("feat_boo_flair")
+    },
+    thanksgiving: {
+        name: loc("feat_gobble_gobble_name"),
+        desc: loc("feat_gobble_gobble_desc"),
+        flair: loc("feat_gobble_gobble_flair")
+    },
     heavy_genus_humanoid: {
         name: loc("feat_heavy_genus_humanoid_name"),
         desc: loc("feat_heavy_genus_humanoid_desc"),
@@ -568,6 +653,26 @@ const feats = {
         name: loc("feat_heavy_genus_fungi_name"),
         desc: loc("feat_heavy_genus_fungi_desc"),
         flair: loc("feat_heavy_genus_fungi_flair")
+    },
+    heavy_genus_fey: {
+        name: loc("feat_heavy_genus_fey_name"),
+        desc: loc("feat_heavy_genus_fey_desc"),
+        flair: loc("feat_heavy_genus_fey_flair")
+    },
+    heavy_genus_heat: {
+        name: loc("feat_heavy_genus_heat_name"),
+        desc: loc("feat_heavy_genus_heat_desc"),
+        flair: loc("feat_heavy_genus_heat_flair")
+    },
+    heavy_genus_polar: {
+        name: loc("feat_heavy_genus_polar_name"),
+        desc: loc("feat_heavy_genus_polar_desc"),
+        flair: loc("feat_heavy_genus_polar_flair")
+    },
+    heavy_genus_sand: {
+        name: loc("feat_heavy_genus_sand_name"),
+        desc: loc("feat_heavy_genus_sand_desc"),
+        flair: loc("feat_heavy_genus_sand_flair")
     },
     heavy_genus_aquatic: {
         name: loc("feat_heavy_genus_aquatic_name"),
@@ -668,10 +773,6 @@ export function setupStats(){
 }
 
 export function drawAchieve(){
-    if (vues['vue_achieve']){
-        vues['vue_achieve'].$destroy();
-    }
-
     $('#achievePanel').empty();
     let achieve = $('#achievePanel');
     let earned = 0;
@@ -693,14 +794,15 @@ export function drawAchieve(){
 
     Object.keys(feats).forEach(function (feat){
         if (global.stats.feat[feat]){
-            let star = global.stats.feat[feat] > 1 ? `<p class="flair"><svg class="star${global.stats.feat[feat]}" version="1.1" x="0px" y="0px" width="10px" height="10px" viewBox="${svgViewBox('star')}" xml:space="preserve">${svgIcons('star')}</svg></p>` : '';
+            let star = global.stats.feat[feat] > 1 ? `<p class="flair"><svg class="star${global.stats.feat[feat]}" version="1.1" x="0px" y="0px" width="16px" height="16px" viewBox="${svgViewBox('star')}" xml:space="preserve">${svgIcons('star')}</svg></p>` : '';
             achieve.append($(`<b-tooltip :label="feat('${feat}')" position="is-bottom" size="is-small" animated><div class="achievement"><span class="has-text-danger">${feats[feat].name}</span><span>${feats[feat].desc}</span>${star}</div></b-tooltip>`));
         }
     });
 
     achieve.prepend(`<div class="has-text-warning">${loc("achieve_draw_achieve_earned",[earned,total])}</div>`);
-
-    let avue = {
+    
+    vBind({
+        el: '#achievePanel',
         methods: {
             flair(flair){
                 return achievements[flair].flair;
@@ -709,10 +811,7 @@ export function drawAchieve(){
                 return feats[flair].flair;
             }
         }
-    }
-    
-    vues['vue_achieve'] = new Vue(avue);
-    vues['vue_achieve'].$mount('#achievePanel');
+    });
 
     let a_level = 1;
     if (global.race['no_plasmid']){ a_level++; }
@@ -781,7 +880,7 @@ export function checkAchievements(){
                 }
             }
         }
-        if (total >= 25){
+        if (total >= 12){
             unlockAchieve('vigilante');
         }
     }
@@ -845,6 +944,23 @@ export function checkAchievements(){
     if (global.interstellar['stellar_engine'] && (global.interstellar['stellar_engine'].mass + global.interstellar['stellar_engine'].exotic) >= 100){
         unlockFeat('supermassive');
     }
+    const date = new Date();
+    if (date.getMonth() === 9 && date.getDate() === 31){
+        if (global.race.universe === 'micro'){
+            unlockFeat('halloween',true);
+        }
+        else {
+            unlockFeat('halloween');
+        }
+    }
+    else if (date.getMonth() === 10 && date.getDate() >= 22 && date.getDate() <= 28){
+        if (global.race.universe === 'micro'){
+            unlockFeat('thanksgiving',true);
+        }
+        else {
+            unlockFeat('thanksgiving');
+        }
+    }
 }
 
 export function drawPerks(){
@@ -884,6 +1000,13 @@ export function drawPerks(){
         perks.append(`<div><span class="has-text-warning">${loc("achieve_perks_enlightened")}</span></div>`);
     }
 
+    if (global.stats.achieve['whitehole']){
+        unlocked++;
+        let bonus = global.stats.achieve['whitehole'].l * 5;
+        perks.append(`<div><span class="has-text-warning">${loc("achieve_perks_whitehole")}</span></div>`);
+        perks.append(`<div><span class="has-text-warning">${loc("achieve_perks_whitehole2",[bonus])}</span></div>`);
+    }
+
     if (global.stats.achieve['heavyweight']){
         unlocked++;
         let bonus = global.stats.achieve['heavyweight'].l * 4;
@@ -903,6 +1026,12 @@ export function drawPerks(){
         if (global.stats.achieve['dissipated'].l >= 4){
             perks.append(`<div><span class="has-text-warning">${loc("achieve_perks_dissipated4",[1])}</span></div>`);
         }
+    }
+
+    if (global.stats.achieve['anarchist']){
+        unlocked++;
+        let bonus = global.stats.achieve['anarchist'].l * 10;
+        perks.append(`<div><span class="has-text-warning">${loc("achieve_perks_anarchist",[bonus])}</span></div>`);
     }
 
     if (global.genes['creep']){
@@ -963,7 +1092,7 @@ export function drawPerks(){
     if (global.genes['transcendence']){ 
         unlocked++; 
         perks.append(`<div><span class="has-text-warning">${loc("arpa_genepool_transcendence_desc")}</span></div>`); 
-    } 
+    }
 
     if (global.genes['queue']){ 
         unlocked++; 
@@ -999,10 +1128,6 @@ export function drawPerks(){
 }
 
 export function drawStats(){
-    if (vues['vue_stats']){
-        vues['vue_stats'].$destroy();
-    }
-
     $('#statsPanel').empty();
     let stats = $('#statsPanel');
     
@@ -1037,8 +1162,9 @@ export function drawStats(){
     stats.append(`<div><span class="has-text-warning">${loc("achieve_stats_died_in_combat")}</span> {{ died }}</div>`);
     stats.append(`<div><span class="has-text-warning">${loc("achieve_stats_attacks_made")}</span> {{ attacks }}</div>`);
     stats.append(`<div><span class="has-text-warning">${loc("achieve_stats_game_days_played")}</span> {{ days }}</div>`);
-
-    let svue = {
+    
+    vBind({
+        el: '#statsPanel',
         data: global.stats,
         filters: {
             played(d){
@@ -1054,8 +1180,5 @@ export function drawStats(){
                 return d + global.stats.tdied;
             }
         }
-    }
-    
-    vues['vue_stats'] = new Vue(svue);
-    vues['vue_stats'].$mount('#statsPanel');
+    });
 }

@@ -770,6 +770,24 @@ a {
             margin-left: 1rem;
         }
 
+        .b-numberinput {
+            width: 100%;
+        }
+
+        .market {
+            margin-left: 1rem;
+            margin-right: 1rem;
+            .button {
+                height: 1.6875rem;
+            }
+            input {
+                height: 1.6875rem;
+            }
+        }
+
+        .help {
+            margin-left: 1rem;
+        } 
     }
     
     .importExport {
@@ -891,7 +909,7 @@ a {
         display: inline-flex;
         cursor: default;
         margin-right: .5rem;
-        width: 10rem;
+        width: 9rem;
     }
     
     .buy {
@@ -909,6 +927,7 @@ a {
     
     .order {
         .basic-button();
+        min-width: 4.5rem;
     }
 
     .trade {
@@ -1253,8 +1272,11 @@ body .modal > div.popper.wide {
         text-align: center;
         .button {
             height: 1.5rem;
-            width: 4.5625rem;
+            width: 19%;
             line-height: .75rem;
+        }
+        :first-child {
+            width: 24%;
         }
     }
 }
@@ -1434,7 +1456,8 @@ html.dark {
     .has-text-fade {
         color: #5e5e5e !important;
     }
-    .has-text-special {
+    .has-text-special,
+    .has-text-flair {
         color: #91006c !important;
     }
     .has-text-advanced {
@@ -1760,7 +1783,8 @@ html.light {
     .has-text-fade {
         color: #5e5e5e !important;
     }
-    .has-text-special {
+    .has-text-special,
+    .has-text-flair {
         color: #91006c !important;
     }
     .has-text-caution {
@@ -2012,6 +2036,9 @@ html.night {
     .has-text-special {
         color: #c50094 !important;
     }
+    .has-text-flair {
+        color: #d39753 !important;
+    }
     background-color: #000;
     .main {
         .content {
@@ -2077,6 +2104,15 @@ html.night {
     .modal .actionSpace {
         background-color: #000;
     }
+    .has-numberinput {
+        input {
+            color: #fff;
+            background: #000;
+        }
+        .button {
+            background: #000;
+        }
+    }
 }
 
 .night .modal .action {
@@ -2096,7 +2132,10 @@ html.redgreen {
         color: #9900cc !important;
     }
     .has-text-special {
-        color: #666600;
+        color: #ffff9e !important;
+    }
+    .has-text-flair {
+        color: #00ff00 !important;
     }
     .meter {
         &.low {

@@ -207,6 +207,12 @@ if (convertVersion(global['version']) < 4031){
     }
 }
 
+if (convertVersion(global['version']) < 4032){
+    if (global.race.species === 'balorg'){
+        global.race['slaver'] = 1;  
+    }
+}
+
 if (convertVersion(global['version']) < 5000){
     global['portal'] = {};
     if (global['city'] && global.city['factory'] && !global.city.factory['Stanene']){
@@ -361,7 +367,13 @@ if (convertVersion(global['version']) < 7004 && global['queue'] && global['queue
     }
 }
 
-global['version'] = '0.7.6';
+if (convertVersion(global['version']) < 7007 && global['queue'] && global['queue']['queue']){
+    for (let i=0; i<global.queue.queue.length; i++){
+        global.queue.queue[i]['qs'] = 1;
+    }
+}
+
+global['version'] = '0.7.9';
 delete global['beta'];
 
 if (global.civic['cement_worker'] && global.civic.cement_worker.impact === 0.25){
@@ -691,6 +703,11 @@ if (!global.race['evil'] && global.race['immoral']){
     delete global.race['immoral'];
 }
 
+const date = new Date();
+if (global.race.species === 'elven' && date.getMonth() === 11 && date.getDate() >= 17){
+    global.race['slaver'] = 1;
+}
+
 $('html').addClass(global.settings.theme);
 
 if (!global.city['morale']){
@@ -812,10 +829,6 @@ if (!global['arpa']){
     global['arpa'] = {};
 }
 
-if (global.race.species === 'balorg'){
-    global.race['slaver'] = 1;
-}
-
 if (global.city['factory']){
     if (!global.city.factory['Lux']){
         global.city.factory['Lux'] = 0;
@@ -859,6 +872,18 @@ if (global.tech['unify']){
 
 if (!global.civic['new']){
     global.civic['new'] = 0;
+}
+
+if (!global.civic['d_job']){
+    if (global.race['carnivore'] || global.race['soul_eater']){
+        global.civic['d_job'] = 'unemployed';
+    }
+    else if (global.tech['agriculture'] && global.tech['agriculture'] >= 1){
+        global.civic['d_job'] = 'farmer';
+    }
+    else{
+        global.civic['d_job'] = 'unemployed';
+    }
 }
 
 global.settings.animated = true;
@@ -1050,23 +1075,6 @@ export function sizeApproximation(value,precision,fixed){
 $(window).resize(function(){
     resizeGame();
 });
-
-window.exportGame = function exportGame(){
-    $('#importExport').val(LZString.compressToBase64(JSON.stringify(global)));
-    $('#importExport').select();
-    document.execCommand('copy');
-}
-
-window.importGame = function importGame(){
-    if ($('#importExport').val().length > 0){
-        let saveState = JSON.parse(LZString.decompressFromBase64($('#importExport').val()));
-        if (saveState && 'evolution' in saveState && 'settings' in saveState && 'stats' in saveState && 'plasmid' in saveState.stats){
-            global = saveState;
-            save.setItem('evolved',LZString.compressToUTF16(JSON.stringify(global)));
-            window.location.reload();
-        }
-    }
-}
 
 export function srSpeak(text, priority) {
     var el = document.createElement("div");

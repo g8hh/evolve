@@ -75,7 +75,7 @@
   "c_cat": "建筑分类",
   "q_key": "队列快捷键",
   "q_any": "乱序队列",
-  "queue": "Queue",
+  "queue": "队列",
   "expose": "脚本支持",
   "import": "导入存档",
   "export": "导出存档",

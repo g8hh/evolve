@@ -3040,6 +3040,58 @@ function fastLoop(){
 
         breakdown.p['Money'] = money_bd;
 
+        // Crafting
+        if (global.tech['foundry']){
+            let craft_costs = global.race['resourceful'] ? 0.9 : 1;
+            let crafting_costs = craftCost();
+            let crafting_usage = {};
+
+            Object.keys(crafting_costs).forEach(function (craft){
+                let num = global.city.foundry[craft];
+                let craft_ratio = craftingRatio(craft);
+                if (global.tech['v_train']){
+                    craft_ratio *= 2;
+                }
+                if (global.genes['crafty']){
+                    craft_ratio *= 1 + ((global.genes.crafty - 1) * 0.5);
+                }
+                if (global.race['ambidextrous']){
+                    craft_ratio *= 1 + (global.race['ambidextrous'] * 0.02);
+                }
+
+                let speed = global.genes['crafty'] ? 2 : 1;
+                let volume = Math.floor(global.resource[crafting_costs[craft][0].r].amount / (crafting_costs[craft][0].a * speed * craft_costs / 140));
+                for (let i=1; i<crafting_costs[craft].length; i++){
+                    let temp = Math.floor(global.resource[crafting_costs[craft][i].r].amount / (crafting_costs[craft][i].a * speed * craft_costs / 140));
+                    if (temp < volume){
+                        volume = temp;
+                    }
+                }
+                if (num < volume){
+                    volume = num;
+                }
+
+                for (let i=0; i<crafting_costs[craft].length; i++){
+                    let final = volume * crafting_costs[craft][i].a * craft_costs * speed * time_multiplier / 140;
+                    modRes(crafting_costs[craft][i].r, -(final));
+                    if (typeof crafting_usage[crafting_costs[craft][i].r] === 'undefined'){
+                        crafting_usage[crafting_costs[craft][i].r] = final / time_multiplier;
+                    }
+                    else {
+                        crafting_usage[crafting_costs[craft][i].r] += final / time_multiplier;
+                    }
+                }
+
+                modRes(craft, craft_ratio * volume * speed * time_multiplier / 140);
+            });
+
+            Object.keys(crafting_usage).forEach(function (used){
+                if (crafting_usage[used] > 0){
+                    breakdown.p.consume[used][loc('job_craftsman')] = -(crafting_usage[used]);
+                }
+            });
+        }
+
         // Detect new unlocks
         if (!global.settings.showResearch && (global.resource.Lumber.amount >= 5 || global.resource.Stone.amount >= 6)){
             global.settings.showResearch = true;
@@ -3138,7 +3190,7 @@ function fastLoop(){
 
     // main resource delta tracking
     Object.keys(global.resource).forEach(function (res) {
-        if (global['resource'][res].rate > 0){
+        if (global['resource'][res].rate > 0 || (global['resource'][res].rate === 0 && global['resource'][res].max === -1)){
             diffCalc(res,main_timer);
         }
     });
@@ -4134,7 +4186,9 @@ function midLoop(){
                     element.addClass('cnam');
                 }
                 if (global.city[action]){
-                    global.city[action]['time'] = timeFormat(timeCheck(c_action));
+                    let tc = timeCheck(c_action,false,true);
+                    global.city[action]['time'] = timeFormat(tc.t);
+                    global.city[action]['bn'] = tc.r;
                 }
             }
         });
@@ -4195,6 +4249,24 @@ function midLoop(){
                 });
             });
         }
+
+        let genePool = arpa('GeneTech');
+        Object.keys(genePool).forEach(function (action){
+            if (genePool[action] && genePool[action].cost){
+                let c_action = genePool[action];
+                let element = $('#'+c_action.id);
+                if (element.length > 0){
+                    if ( (global.race['universe'] !== 'antimatter' && c_action.cost > global.race.Plasmid.count) || (global.race['universe'] === 'antimatter' && c_action.cost > global.race.Plasmid.anti) ){
+                        if (!element.hasClass('cna')){
+                            element.addClass('cna');
+                        }
+                    }
+                    else if (element.hasClass('cna')){
+                        element.removeClass('cna');
+                    }
+                }
+            }
+        });
 
         if (global.space['swarm_control']){
             global.space.swarm_control.s_max = global.space.swarm_control.count * (global.tech['swarm'] && global.tech['swarm'] >= 2 ? 18 : 10);
@@ -4541,7 +4613,7 @@ function midLoop(){
                     $(this).addClass('has-text-danger');
                 }
             }
-            else if ($(this).hasClass('has-text-danger')){
+            else if ($(this).hasClass('has-text-danger') || $(this).hasClass('has-text-alert')){
                 $(this).removeClass('has-text-danger');
                 $(this).addClass('has-text-dark');
             }
@@ -4827,45 +4899,6 @@ function longLoop(){
                 global.city.calendar.moon = 0;
             }
 
-            // Crafting
-            if (global.tech['foundry'] && (global.city.calendar.moon === 0 || (global.city.calendar.moon === 14 && global.genes['crafty']))){
-                let craft_costs = global.race['resourceful'] ? 0.9 : 1;
-                let crafting_costs = craftCost();
-                Object.keys(crafting_costs).forEach(function (craft){
-                    let num = global.city.foundry[craft];
-                    let craft_ratio = craftingRatio(craft);
-                    if (global.tech['v_train']){
-                        craft_ratio *= 2;
-                    }
-                    if (global.genes['crafty']){
-                        craft_ratio *= 1 + ((global.genes.crafty - 1) * 0.5);
-                    }
-                    if (global.race['ambidextrous']){
-                        craft_ratio *= 1 + (global.race['ambidextrous'] * 0.02);
-                    }
-
-                    let volume = Math.floor(global.resource[crafting_costs[craft][0].r].amount / (crafting_costs[craft][0].a * craft_costs));
-                    for (let i=1; i<crafting_costs[craft].length; i++){
-                        let temp = Math.floor(global.resource[crafting_costs[craft][i].r].amount / (crafting_costs[craft][i].a * craft_costs));
-                        if (temp < volume){
-                            volume = temp;
-                        }
-                    }
-                    if (num < volume){
-                        volume = num;
-                    }
-                    for (let i=0; i<crafting_costs[craft].length; i++){
-                        let final = volume * crafting_costs[craft][i].a * craft_costs;
-                        global.resource[crafting_costs[craft][i].r].amount -= final;
-                    }
-                    global.resource[craft].amount += craft_ratio * volume;
-
-                    let sec = global.race['slow'] ? 1100 : (global.race['hyper'] ? 950 : 1000);
-                    let time = global.genes['crafty'] ? 70000 : 140000;
-                    global.resource[craft].diff = +((craft_ratio * volume) / (time / sec)).toFixed(5);
-                });
-            }
-
             setWeather();
         }
 
@@ -5093,11 +5126,33 @@ function diffCalc(res,period){
     let sec = global.race['slow'] ? 1100 : (global.race['hyper'] ? 950 : 1000);
     global.resource[res].diff = +(global.resource[res].delta / (period / sec)).toFixed(2);
     global.resource[res].delta = 0;
-    if (global.resource[res].diff < 0 && !$(`#res${res} .diff`).hasClass('has-text-danger')){
-        $(`#res${res} .diff`).addClass('has-text-danger');
+    if (global.race['decay']){
+        if (global.resource[res].diff < 0){
+            if (breakdown.p.consume[res][loc('evo_challenge_decay')] > global.resource[res].diff){
+                if (!$(`#res${res} .diff`).hasClass('has-text-danger')){
+                    $(`#res${res} .diff`).removeClass('has-text-warning');
+                    $(`#res${res} .diff`).addClass('has-text-danger');
+                }
+            }
+            else {
+                if (!$(`#res${res} .diff`).hasClass('has-text-warning')){
+                    $(`#res${res} .diff`).removeClass('has-text-danger');
+                    $(`#res${res} .diff`).addClass('has-text-warning');
+                }
+            }
+        }
+        else if (global.resource[res].diff >= 0 && ($(`#res${res} .diff`).hasClass('has-text-danger') || $(`#res${res} .diff`).hasClass('has-text-warning'))){
+            $(`#res${res} .diff`).removeClass('has-text-danger');
+            $(`#res${res} .diff`).removeClass('has-text-warning');
+        }
     }
-    else if (global.resource[res].diff >= 0 && $(`#res${res} .diff`).hasClass('has-text-danger')){
-        $(`#res${res} .diff`).removeClass('has-text-danger');
+    else {
+        if (global.resource[res].diff < 0 && !$(`#res${res} .diff`).hasClass('has-text-danger')){
+            $(`#res${res} .diff`).addClass('has-text-danger');
+        }
+        else if (global.resource[res].diff >= 0 && $(`#res${res} .diff`).hasClass('has-text-danger')){
+            $(`#res${res} .diff`).removeClass('has-text-danger');
+        }
     }
 }
 

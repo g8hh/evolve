@@ -174,7 +174,7 @@
   "job_coal_miner_desc2": "煤矿工人是一类特殊的矿工，他们愿意在最脏的矿井里工作，从地下深处开采煤炭和铀。",
   "job_craftsman": "工匠",
   "job_craftsman_desc": "工匠可以被指派用原材料制作各种建筑材料。",
-  "job_craftsman_hover": "Craftsman will work diligently to produce the assigned resources.",
+  "job_craftsman_hover": "工匠们会努力完成指派的工作。",
   "job_cement_worker": "水泥厂工人",
   "job_cement_worker_desc": "水泥厂工人把石头变成水泥，每个工人生产%0的水泥，每秒消耗3块石头。",
   "job_banker": "银行家",

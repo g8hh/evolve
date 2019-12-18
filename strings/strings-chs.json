@@ -403,7 +403,7 @@
   "city_boot_camp": "新兵训练营",
   "city_boot_camp_desc": "训练士兵",
   "city_boot_camp_effect": "新士兵训练速度提高 %0%",
-  "city_boot_camp_effect2": "Spy training reduced by %0 seconds",
+  "city_boot_camp_effect2": "间谍的培训时间减少 %0 秒",
   "city_basic_housing_title": "小木屋",
   "city_basic_housing_orc_title": "棚屋",
   "city_basic_housing_wolven_title": "兽穴",

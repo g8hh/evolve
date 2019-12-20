@@ -2807,7 +2807,7 @@
   "space_home_test_launch_action": "你已经成功地将你的第一枚火箭发射到了太空。",
   "space_home_satellite_title": "卫星",
   "space_home_satellite_desc": "发射科学卫星",
-  "space_home_satellite_effect2": "+4% %0 沃登克里弗塔知识上限",
+  "space_home_satellite_effect2": "+4% %0知识上限",
   "space_home_satellite_effect3": "+1% 科学家效率",
   "space_home_gps_title": "GPS卫星",
   "space_home_gps_desc": "发射一颗GPS卫星",

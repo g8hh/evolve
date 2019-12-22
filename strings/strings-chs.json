@@ -519,7 +519,7 @@
   "city_oil_depot_desc": "燃料仓库",
   "city_trade": "贸易站",
   "city_trade_desc": "增加贸易航线容量",
-  "city_trade_effect": "+%0 贸易路线",
+  "city_trade_effect": " 贸易路线 +%0",
   "city_wharf": "码头",
   "city_wharf_desc": "码头为船只提供了一个停靠的地方",
   "city_wharf_effect": "+1% 贸易盈利",

@@ -43,7 +43,7 @@
   "citizen": "公民",
   "colonist": "殖民者",
   "space_miner": "太空矿工",
-  "plus_max_resource": "%1 上限 +%0",
+  "plus_max_resource": "%1上限 +%0",
   "plus_max_crates": "板条箱上限 +%0",
   "plus_max_containers": "集装箱上限 +%0",
   "plus_max_citizens": "公民上限 +%0",

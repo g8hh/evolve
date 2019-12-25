@@ -377,7 +377,7 @@
   "city_dist_utility": "公共事业部门",
   "city_gift": "节日礼物",
   "city_gift_desc": "一个特别的，包装精美的圣诞礼盒",
-  "city_gift_msg": "你获得了 %1 %0的礼物！",
+  "city_gift_msg": "你获得了节日礼物 %0 %1！",
   "city_food": "收集食物",
   "city_food_desc": "收获并保存食物",
   "city_trick": "Trick or Treat!",

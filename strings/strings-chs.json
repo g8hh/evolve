@@ -538,7 +538,7 @@
   "city_max_entertainer": "艺人上限 +1",
   "city_max_morale": "士气上限 +1%",
   "city_temple": "寺庙",
-  "city_temple_desc": "你的种族相信它是由%0的物种创造的。为他们奉献一座庙宇。",
+  "city_temple_desc": "你的种族相信自己的造物主是一种%0，并为他们奉献一座庙宇",
   "city_temple_effect1": "生产力提升 %0%",
   "city_temple_effect2": "质粒加成提升 %0%",
   "city_temple_effect3": "贸易路线 +1",

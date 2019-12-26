@@ -2296,7 +2296,8 @@ function fastLoop(){
                 if (global.city.geology['Uranium']){
                     ash_base *= global.city.geology['Uranium'] + 1;
                 }
-                uranium_bd[loc('city_coal_ash')] = uranium_bd[loc('city_coal_ash')] + (ash_base / 65 / global_multiplier);
+                let ash = (ash_base / 65 / global_multiplier);
+                uranium_bd[loc('city_coal_ash')] = uranium_bd[loc('city_coal_ash')] ? uranium_bd[loc('city_coal_ash')] + ash : ash;
                 modRes('Uranium', (ash_base * time_multiplier) / 65);
             }
 
@@ -4929,6 +4930,20 @@ function longLoop(){
             global.tech['decay'] = 1;
             messageQueue(loc('deterioration5',[races[global.race.species].name]),'danger');
             drawTech();
+        }
+
+        if (global.tech['decay'] && global.tech['decay'] >= 2){
+            let fortify = 0;
+            if (global.genes.minor['fortify']){
+                fortify += global.genes.minor['fortify'];
+            }
+            if (global.race.minor['fortify']){
+                fortify += global.race.minor['fortify'];
+            }
+            global.race.gene_fortify = fortify;
+        }
+        else {
+            global.race.gene_fortify = 0;
         }
 
         if (!global.tech['genesis'] && global.race.deterioration >= 1 && global.tech['high_tech'] && global.tech['high_tech'] >= 10){

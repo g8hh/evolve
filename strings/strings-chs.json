@@ -2927,7 +2927,7 @@
   "space_gas_mining_effect2": "电力消耗 %0kW",
   "space_gas_storage_title": "%0 燃料库",
   "space_gas_storage_desc": "轨道仓库用来储存燃料",
-  "space_gas_star_dock_title": "空间对接",
+  "space_gas_star_dock_title": "太空船坞",
   "space_gas_star_dock_desc_req": "限制一个",
   "space_gas_star_dock_effect1": "建造创世飞船",
   "space_gas_moon_info_desc": "%0 是绕气体巨行星%1轨道飞行的最大的卫星。",

@@ -1457,7 +1457,7 @@
   "modal_droid_res_label": "分配一个机器人来采 %0",
   "modal_graphene_produce": "每秒消耗 %0 %1 生产 %2",
   "stardock_warn": "你必须先完成星际飞船的计划",
-  "sentience": "恭喜！ 您已经进化成一种 %1 的 %0 被称作 %2",
+  "sentience": "恭喜！ 您已经进化成一种%1的%0，被称作%2。",
   "achieve_unlock_achieve": "成就已解锁！ %0",
   "achieve_draw_achieve_earned": "成就获得: %0 of %1",
   "achieve_stats_overall": "总体",

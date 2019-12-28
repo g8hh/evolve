@@ -437,7 +437,7 @@
   "city_soul_well_desc": "吸引灵魂",
   "city_soul_well_effect": "+%0 灵魂生成",
   "city_slave_pen": "奴隶围栏",
-  "city_slave_pen_effect": "为在战斗中俘虏的奴隶提供住所。每个围栏可以容纳%0个奴隶。",
+  "city_slave_pen_effect": "为在战斗中俘虏的奴隶提供住所，每个围栏可以容纳 %0 个奴隶。",
   "city_slave_pen_effect2": "您当前正在为%1个可能的奴隶中的%0个提供住所。",
   "city_farm": "农场",
   "city_farm_desc": "生产食物",

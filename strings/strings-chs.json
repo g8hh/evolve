@@ -2566,7 +2566,7 @@
   "planet_stormy_desc": "强风在这个星球上很常见，会引发更多的风暴。",
   "planet_ozone": "臭氧",
   "planet_ozone_desc": "这颗行星上的臭氧层非常薄弱，导致更多的太阳辐射穿透大气层，晒太多太阳可能会致命",
-  "planet_ozone_bd": 紫外线照射",
+  "planet_ozone_bd": "紫外线照射",
   "planet_magnetic": "磁性",
   "planet_magnetic_desc": "这颗行星的磁场异常强大。",
   "planet_trashed": "Trashed",

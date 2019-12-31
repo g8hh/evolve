@@ -619,7 +619,7 @@
   "tech_apartment_effect": "高入住率的综合住宅楼，每住房人口上限 +5",
   "tech_housing_cost": "减少房屋的成本",
   "tech_steel_beams": "钢梁",
-  "tech_steel_beams_effect": "引入坚固的钢梁降低%0和%1的建筑材料需求，成本蠕变 -2%。注：每级建筑的成本相较前一级的增长率，基准值为 23%，成本蠕变重新计算后，建筑成本将大幅降低",
+  "tech_steel_beams_effect": "引入坚固的钢梁降低%0和%1的建筑材料需求，成本蠕变 -2%。假设每级建筑的成本增长率为 23% ，经该科技重新计算后降为 21%",
   "tech_mythril_beams": "秘银横梁",
   "tech_mythril_beams_effect": "引入牢不可破的秘银横梁降低%0和%1的建筑材料需求，成本蠕变由 -2% 降低到 -4%",
   "tech_neutronium_walls": "中子壁",

@@ -910,7 +910,7 @@
   "tech_research_grant_effect": "每个图书馆提升大学的知识上限 2%",
   "tech_scientific_journal": "学术期刊",
   "tech_scientific_journal_desc": "出版学术期刊",
-  "tech_scientific_journal_effect": "科学家会在学术期刊上发表他的研究，每位科学家会提升图书馆的知识上限加成 12%",
+  "tech_scientific_journal_effect": "科学家会在学术期刊上发表他的研究，每位科学家提升图书馆的知识上限加成 12%",
   "tech_adjunct_professor": "兼职教授",
   "tech_adjunct_professor_effect": "教授们会提升科学家的效率，每座%0提升科学量的知识产量 1%",
   "tech_tesla_coil": "特斯拉线圈",

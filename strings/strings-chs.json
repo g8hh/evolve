@@ -3002,7 +3002,7 @@
   "interstellar_habitat_effect": " 人口上限 +%0，电力消耗 %1kW",
   "interstellar_mining_droid_title": "采矿机器人",
   "interstellar_mining_droid_effect": "采矿机器人的任务是从地面提取有价值的材料。可用于开采金刚砂、铀、煤或铝。",
-  "interstellar_processing_title": "加工设施",
+  "interstellar_processing_title": "金刚砂加工设施",
   "interstellar_processing_effect": "提升采矿机器人的金刚砂产量 %0%",
   "interstellar_fusion_title": "聚变反应堆",
   "interstellar_fusion_effect": "发电量 %0kW，每秒氘消耗 %1",

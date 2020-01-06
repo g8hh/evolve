@@ -3055,7 +3055,7 @@
   "interstellar_citadel_effect2": "水泥厂产量提高 %0%",
   "interstellar_citadel_effect3": "金刚砂加工设施效率提升 %0%",
   "interstellar_citadel_effect4": "石墨烯工厂产量提升 %0%",
-  "interstellar_citadel_power": "电力消耗 %0kW，每级总站额外电力消耗 %1kW",
+  "interstellar_citadel_power": "电力消耗 %0kW，每级要塞额外电力消耗 %1kW",
   "interstellar_citadel_flair": "蛋糕在哪里？",
   "interstellar_citadel_effect_bd": "AI核心",
   "interstellar_blackhole_name": "黑洞",

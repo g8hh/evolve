@@ -3075,7 +3075,7 @@
   "interstellar_stellar_engine": "恒星引擎",
   "interstellar_stellar_engine_desc": "恒星引擎",
   "interstellar_stellar_engine_effect": "建造恒星引擎的 1%",
-  "interstellar_stellar_engine_complete": "恒星引擎已完成，，发电量 %0kW",
+  "interstellar_stellar_engine_complete": "恒星引擎竣工，发电量 %0kW",
   "interstellar_stellar_engine_effect2": "黑洞质量是 %0 个太阳质量",
   "interstellar_stellar_engine_effect3": "黑洞质量是 %0 个太阳质量，其中奇异物质组成了 %1 太阳质量",
   "interstellar_mass_ejector": "质量喷射器",

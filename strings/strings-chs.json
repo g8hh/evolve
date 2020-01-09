@@ -1931,7 +1931,7 @@
   "arpa_projects_monument_effect1": "每级纪念碑提升士气上限 2%",
   "arpa_projects_railway_title": "铁路",
   "arpa_projects_railway_desc": "建造一条新铁路扩展贸易",
-  "arpa_projects_railway_effect1": "每条铁路增加 %0 贸易路线，提升 %1% 的贸易盈利，每 %2 个货场增加 %3 条贸易路线",
+  "arpa_projects_railway_effect1": "贸易盈利提升 %1%，每条铁路增加 %0 贸易路线（该贸易路线与受货场数量挂钩，每 %2 个货场增加 %3 条）",
   "arpa_perks_creep": "成本蠕变降低 %0%",
   "arpa_perks_store1": "质粒增加存储 %0%",
   "arpa_perks_store2": "Each Plasmid and Phage increase storage by %0%",

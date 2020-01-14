@@ -1,3 +1,40 @@
+#### 0.7.18 - 1/12/2020 ####
+Theocracy temple bonus raised from 5% to 12%<br>
+Technocracy knowledge discount raised from 5% to 8%<br>
+Corpocracy Casino Bonus raised from +100% to +200%<br>
+Corpocracy Luxury Good Bonus raised from +50% to +150%<br>
+Corpocracy Tourism Bonus raised from +50% to +100%<br>
+Corpocracy morale penalty lowered from -15% to -10%<br>
+Corpocracy Manufacturing Bonus raised from +15% to +20%<br>
+Miner's Dream now scales the information that is revealed depending on the star level of the achievement<br>
+Slaves now appear as a resource<br>
+Alternate universes now award icons for complex achievements<br>
+
+#### 0.7.17 - 1/9/2020 ####
+Fixed an issue with displaying foreign powers in civics tab on unlock<br>
+
+#### 0.7.16 - 1/8/2020 ####
+Exploration Missions can be queued again<br>
+The game will now notify the user if the current version is out of date<br>
+
+Changes by Beorseder<br>
+Geology deposit aesthetic changes on planet selection<br>
+Miner's Dream Achievement & Perk<br>
+
+#### 0.7.15 - 1/7/2020 ####
+Queueing the World Collider will no longer lag the game<br>
+Multi-segement projects will now have extra segments cleared from the queue on completion<br>
+Spy and Government related popovers that would sometimes get stuck open will now clear<br>
+Queued projects that will not complete due to lack of production will now display a green [Never] instead of -1 second timer.<br>
+Multi-segment projects no longer block queueing ARPA projects unless they consumed the entire queue space<br>
+
+#### 0.7.14 - 12/31/2019 ####
+Research Categorization option by Naryl<br>
+
+#### 0.7.13 - 12/30/2019 ####
+Gene decay will no longer result in a negative plasmid count<br>
+Gene fortification is slightly more effective<br>
+
 #### 0.7.12 - 12/19/2019 ####
 Gene Fortification<br>
 Fixed Cultural Supremacy popover<br>

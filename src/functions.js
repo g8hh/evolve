@@ -69,6 +69,9 @@ export function mainVue(){
             city(){
                 return loc('settings5');
             },
+            tech(){
+                return loc('settings9');
+            },
             qKey(){
                 return loc('settings6');
             },
@@ -343,7 +346,7 @@ export function timeCheck(c_action,track,detailed){
                             }
                         }
                         else {
-                            time = -1;
+                            time = -9999999;
                         }
                     }
                 }
@@ -480,7 +483,7 @@ function technoAdjust(costs){
         var newCosts = {};
         Object.keys(costs).forEach(function (res){
             if (res === 'Knowledge'){
-                newCosts[res] = function(){ return Math.round(costs[res]() * 0.95); }
+                newCosts[res] = function(){ return Math.round(costs[res]() * 0.92); }
             }
             else if (res === 'Money'){
                 newCosts[res] = function(){ return costs[res](); }

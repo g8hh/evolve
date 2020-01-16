@@ -472,7 +472,7 @@
   "city_bank_desc": "%0 的银行",
   "city_graveyard": "墓地",
   "city_graveyard_desc": "增加骨头产量",
-  "city_graveyard_effect": "+%0% 回收者骨头产量",
+  "city_graveyard_effect": "回收者的骨头产量提升 %0%",
   "city_lumber_yard": "伐木场",
   "city_lumber_yard_desc": "提升木材产量",
   "city_lumber_yard_effect": "木材产量提升 %0%",

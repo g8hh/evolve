@@ -992,11 +992,33 @@ function genetics(){
             breakdown.append(`<div class="trait major has-text-success">${loc('arpa_race_genetic_gain')}</div>`)
 
             let trait_list = [];
+            let conflict_traits = ['dumb','smart','carnivore','herbivore']; //Conflicting traits are paired together
             Object.keys(races).forEach(function (race){
                 if (races[race].type === races[global.race.species].type){
                     Object.keys(races[race].traits).forEach(function (trait){
                         if (!global.race[trait] && trait !== 'soul_eater'){
-                            trait_list.push(trait);
+                            let conflict_pos = conflict_traits.indexOf(trait);
+                            if (conflict_pos === -1){
+                                trait_list.push(trait);
+                            }
+                            else{
+                                let is_conflict = false;
+                                switch (conflict_pos % 2){
+                                    case 0:
+                                        if (global.race[conflict_traits[conflict_pos + 1]]){
+                                            is_conflict = true;
+                                        }
+                                        break;
+                                    case 1:
+                                        if (global.race[conflict_traits[conflict_pos - 1]]){
+                                            is_conflict = true;
+                                        }
+                                        break;
+                                }
+                                if (!is_conflict) {
+                                    trait_list.push(trait);
+                                }
+                            }
                         }
                     });
                 }
@@ -1099,19 +1121,19 @@ function genetics(){
                 },
                 geneCost(t){
                     let cost = sizeApproximation(fibonacci(global.race.minor[t] ? global.race.minor[t] + 4 : 4));
-                    return loc('arpa_gene_buy',[t,cost]);
+                    return loc('arpa_gene_buy',[loc('trait_' + t + '_name'),cost]);
                 },
                 phageCost(t){
                     let cost = sizeApproximation(fibonacci(global.genes.minor[t] ? global.genes.minor[t] + 4 : 4));
-                    return loc('arpa_phage_buy',[t,cost]);
+                    return loc('arpa_phage_buy',[loc('trait_' + t + '_name'),cost]);
                 },
                 removeCost(t){
                     let cost = global.race['modified'] ? global.race['modified'] * 25 : 10;
-                    return loc('arpa_remove',[t,cost,global.race.universe === 'antimatter' ? loc('resource_AntiPlasmid_name') : loc('resource_Plasmid_name')]);
+                    return loc('arpa_remove',[loc('trait_' + t + '_name'),cost,global.race.universe === 'antimatter' ? loc('resource_AntiPlasmid_plural_name') : loc('resource_Plasmid_plural_name')]);
                 },
                 addCost(t){
                     let cost = global.race['modified'] ? global.race['modified'] * 25 : 10;
-                    return loc('arpa_gain',[t,cost,global.race.universe === 'antimatter' ? loc('resource_AntiPlasmid_name') : loc('resource_Plasmid_name')]);
+                    return loc('arpa_gain',[loc('trait_' + t + '_name'),cost,global.race.universe === 'antimatter' ? loc('resource_AntiPlasmid_plural_name') : loc('resource_Plasmid_plural_name')]);
                 },
                 genePurchasable(t){
                     let cost = fibonacci(global.race.minor[t] ? global.race.minor[t] + 4 : 4);

@@ -91,7 +91,7 @@ export const actions = {
                 DNA(){ return (global.evolution['nucleus'].count * (global.evolution['multicellular'] && global.evolution['multicellular'].count > 0 ? 12 : 16)) + 18; }
             },
             effect(){
-                let dna = global.evolution['bilateral_symmetry'] || global.evolution['poikilohydric'] || global.evolution['spores'] ? 2 : 1;
+                let dna = (global.evolution['bilateral_symmetry'] && global.evolution['bilateral_symmetry'].count > 0) || (global.evolution['poikilohydric'] && global.evolution['poikilohydric'].count > 0) || (global.evolution['spores'] && global.evolution['spores'].count > 0) ? 2 : 1;
                 return loc('evo_nucleus_effect',[dna]);
             },
             action(){
@@ -2771,7 +2771,7 @@ export const actions = {
                     global.city['slave_pen'].count++;
                     global.resource.Slave.display = true;
                     global.resource.Slave.amount = global.city.slave_pen.slaves;
-                    global.resource.Slave.max = globa.city.slave_pen.count * 5;
+                    global.resource.Slave.max = global.city.slave_pen.count * 5;
                     return true;
                 }
                 return false;
@@ -2921,7 +2921,12 @@ export const actions = {
             },
             action(){
                 if (payCosts($(this)[0].cost)){
-                    global.civic['garrison'].display = true;
+                    global.settings['showMil'] = true;
+                    if (!global.civic.garrison.display){
+                        global.civic.garrison.display = true;
+                        vBind({el: `#garrison`},'update');
+                        vBind({el: `#c_garrison`},'update');
+                    }
                     let gain = global.tech['military'] >= 5 ? 3 : 2;
                     if (global.race['chameleon']){
                         gain -= global.city.garrison.count;
@@ -2929,9 +2934,6 @@ export const actions = {
                     global.civic['garrison'].max += gain;
                     global.city['garrison'].count++;
                     global.resource.Furs.display = true;
-                    global.settings['showMil'] = true;
-                    vBind({el: `#garrison`},'update');
-                    vBind({el: `#c_garrison`},'update');
                     return true;
                 }
                 return false;
@@ -8918,12 +8920,6 @@ export const actions = {
             action(){
                 if (payCosts($(this)[0].cost)){
                     global.city['garrison'] = { count: 0 };
-                    let tech = $(this)[0].grant[0];
-                    global.tech[tech] = $(this)[0].grant[1];
-                    $('#garrison').empty();
-                    $('#c_garrison').empty();
-                    buildGarrison($('#garrison'),true);
-                    buildGarrison($('#c_garrison'),false);
                     return true;
                 }
                 return false;
@@ -9060,6 +9056,7 @@ export const actions = {
                     let tech = $(this)[0].grant[0];
                     global.tech[tech] = $(this)[0].grant[1];
                     vBind({el: `#garrison`},'update');
+                    vBind({el: `#c_garrison`},'update');
                     return true;
                 }
                 return false;
@@ -9082,6 +9079,7 @@ export const actions = {
                     let tech = $(this)[0].grant[0];
                     global.tech[tech] = $(this)[0].grant[1];
                     vBind({el: `#garrison`},'update');
+                    vBind({el: `#c_garrison`},'update');
                     return true;
                 }
                 return false;
@@ -9104,6 +9102,7 @@ export const actions = {
                     let tech = $(this)[0].grant[0];
                     global.tech[tech] = $(this)[0].grant[1];
                     vBind({el: `#garrison`},'update');
+                    vBind({el: `#c_garrison`},'update');
                     return true;
                 }
                 return false;
@@ -9146,6 +9145,7 @@ export const actions = {
                     let tech = $(this)[0].grant[0];
                     global.tech[tech] = $(this)[0].grant[1];
                     vBind({el: `#garrison`},'update');
+                    vBind({el: `#c_garrison`},'update');
                     return true;
                 }
                 return false;
@@ -9168,6 +9168,7 @@ export const actions = {
                     let tech = $(this)[0].grant[0];
                     global.tech[tech] = $(this)[0].grant[1];
                     vBind({el: `#garrison`},'update');
+                    vBind({el: `#c_garrison`},'update');
                     if (global.race.species === 'sharkin'){
                         unlockAchieve('laser_shark');
                     }
@@ -9193,6 +9194,7 @@ export const actions = {
                     let tech = $(this)[0].grant[0];
                     global.tech[tech] = $(this)[0].grant[1];
                     vBind({el: `#garrison`},'update');
+                    vBind({el: `#c_garrison`},'update');
                     return true;
                 }
                 return false;
@@ -9215,6 +9217,7 @@ export const actions = {
                     let tech = $(this)[0].grant[0];
                     global.tech[tech] = $(this)[0].grant[1];
                     vBind({el: `#garrison`},'update');
+                    vBind({el: `#c_garrison`},'update');
                     return true;
                 }
                 return false;
@@ -12685,7 +12688,7 @@ function sentience(){
     }
 
     if (global.race['no_crispr']){
-        let bad = ['diverse','arrogant','angry','lazy','herbivore','paranoid','greedy','puny','dumb','nearsighted','gluttony','slow','hard_of_hearing','pessimistic','solitary','pyrophobia','skittish','nyctophilia','fraile','atrophy','invertebrate','pathetic'];
+        let bad = ['diverse','arrogant','angry','lazy','herbivore','paranoid','greedy','puny','dumb','nearsighted','gluttony','slow','hard_of_hearing','pessimistic','solitary','pyrophobia','skittish','nyctophilia','frail','atrophy','invertebrate','pathetic'];
         for (let i=0; i<10; i++){
             let trait = bad[Math.rand(0,bad.length)];
             if ((global.race['carnivore'] && trait === 'herbivore') || (global.race['smart'] && trait === 'dumb')) {
@@ -12792,6 +12795,8 @@ function sentience(){
     }
 
     defineGarrison();
+    buildGarrison($('#c_garrison'),false);
+    foreignGov();
 }
 
 function fanaticism(god){

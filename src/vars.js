@@ -239,7 +239,7 @@ if (convertVersion(global['version']) <= 5011 && global.stats['died']){
 }
 
 if (convertVersion(global['version']) <= 5016 && global.race.species === 'mantis'){
-    delete global.race['fraile'];
+    delete global.race['frail'];
     global.race['cannibalize'] = 1;
     global.city['s_alter'] = {
         count: 0,
@@ -379,7 +379,13 @@ if (convertVersion(global['version']) < 7014){
     }
 }
 
-global['version'] = '0.7.18';
+if (convertVersion(global['version']) < 7019 && global.race['fraile']){
+    delete global.race['fraile'];
+    global.race['frail'] = 1;
+}
+
+
+global['version'] = '0.7.20';
 delete global['beta'];
 
 if (global.civic['cement_worker'] && global.civic.cement_worker.impact === 0.25){
@@ -627,7 +633,7 @@ if (!global.race['minor']){
     global.race['minor'] = {};
 }
 
-if (typeof global.settings['showMil'] === "undefined"){
+if (!global.settings.hasOwnProperty('showMil')){
     global.settings['showMil'] = true;
 }
 if (!global.settings['affix']){

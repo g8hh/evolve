@@ -1,3 +1,12 @@
+#### 0.7.20 - 1/20/2020 ####
+Bug Fixes by Beorseder<br>
+Fixed bug where purchasing Multicellular would double DNA generation from Nuclei instead of Bilateral Symmetry/Poikilohydric/Spores<br>
+New population from the Infectious trait now go into the set Default job, instead of always Unemployed<br>
+Controlled Mutation will no longer offer conflicting traits<br>
+
+#### 0.7.19 - 1/14/2020 ####
+Bug Fixes<br>
+
 #### 0.7.18 - 1/12/2020 ####
 Theocracy temple bonus raised from 5% to 12%<br>
 Technocracy knowledge discount raised from 5% to 8%<br>

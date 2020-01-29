@@ -1982,7 +1982,7 @@
   "arpa_genepool_karyokinesis_title": "核分裂",
   "arpa_genepool_cytokinesis_title": "胞质分裂",
   "arpa_genepool_mitosis_title": "有丝分裂",
-  "arpa_genepool_mitosis_desc": "每次突变获得的质粒数量提升 %0",
+  "arpa_genepool_mitosis_desc": "每次突变获得的质粒数量提升，上限为 %0",
   "arpa_genepool_metaphase_title": "分裂中期",
   "arpa_genepool_mutation_title": "突变",
   "arpa_genepool_mutation_desc": "获得使用质粒去除主要种族特性的能力",

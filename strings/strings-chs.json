@@ -554,7 +554,7 @@
   "city_shrine_morale": "士气提升 %0%",
   "city_shrine_metal": "金属产量提升  %0%",
   "city_shrine_know": "知识上限提升 %0",
-  "city_shrine_tax": "%0% 税收提升 %0%",
+  "city_shrine_tax": "税收收入提升 %0%",
   "city_s_alter": "祭坛",
   "city_s_alter_desc": "点击献祭一位市民",
   "city_s_alter_rage": "战斗评级：+%0% [%1]",

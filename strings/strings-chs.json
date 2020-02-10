@@ -2967,7 +2967,7 @@
   "space_belt_station_title": "空间站",
   "space_belt_station_desc": "深空采矿站",
   "space_belt_station_effect3": "氦-3消耗 %0",
-  "space_belt_station_effect4": "%2消耗 %0，电力消耗 1kW",
+  "space_belt_station_effect4": "%2消耗 %0，电力消耗 %1kW",
   "space_belt_elerium_ship_title": "超铀采矿船",
   "space_belt_elerium_ship_effect1": "需要2名太空矿工",
   "space_belt_elerium_ship_effect2": "超铀产量 %0",

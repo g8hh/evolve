@@ -1,3 +1,22 @@
+#### 0.7.24 - 2/12/2020 ####
+Special Prestige icons awarded to players from certain feats can now be set to replace the standard Star icon<br>
+
+#### 0.7.23 - 2/11/2020 ####
+Steelen Challenge now requires Bioseed as its win condition<br>
+Added Feat for Blackhole reset with Steelen Challenge<br>
+Added V-Day Event stuff<br>
+
+#### 0.7.22 - 2/9/2020 ####
+Steelen Challenge<br>
+Graveyards are now removed upon gaining Kindling Kindred.<br>
+If Default job is set to Farmer/Lumberjack for Carnivore/Kindling Kindred, it will be changed to Unemployed upon adding those traits.<br>
+Fixed bug where gaining Carnivore and having no Grain Mills would make Smokehouses unpurchasable until refresh.<br>
+Cargo Yard now requires the construction of a Transfer Station to be unlocked.<br>
+Mitosis/Metaphase effect now appears on perks list.<br>
+
+#### 0.7.21 - 1/28/2020 ####
+More bug fixes<br>
+
 #### 0.7.20 - 1/20/2020 ####
 Bug Fixes by Beorseder<br>
 Fixed bug where purchasing Multicellular would double DNA generation from Nuclei instead of Bilateral Symmetry/Poikilohydric/Spores<br>

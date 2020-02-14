@@ -301,6 +301,9 @@ $('#topBar .planetWrap .planet').on('mouseover',function(){
         if (global.race['joyless']){
             challenges = challenges + `<div>${loc('evo_challenge_joyless_desc')}</div>`;
         }
+        if (global.race['steelen']){
+            challenges = challenges + `<div>${loc('evo_challenge_steelen_desc')}</div>`;
+        }
         if (global.race['decay']){
             challenges = challenges + `<div>${loc('evo_challenge_decay_desc')}</div>`;
         }
@@ -376,7 +379,7 @@ if (global.race.species === 'protoplasm'){
             }
         }
 
-        if (global.race.seeded || global.stats.achieve['creator']){
+        if (global.race.seeded || (global.stats.achieve['creator'] && global.stats.achieve['creator'].l >= 1)){
             let race_options = ['human','orc','elven','troll','orge','cyclops','kobold','goblin','gnome','cath','wolven','centaur','tortoisan','gecko','slitheryn','arraak','pterodacti','dracnid','sporgar','shroomi','mantis','scorpid','antid','entish','cacti','sharkin','octigoran','imp','balorg','seraph','unicorn','dryad','satyr','phoenix','salamander','yeti','wendigo','tuskin','kamel'];
             for (var i = 0; i < race_options.length; i++){
                 if (global.evolution[race_options[i]] && global.evolution[race_options[i]].count == 0){
@@ -399,7 +402,7 @@ if (global.race.species === 'protoplasm'){
         }
 
         challengeActionHeader()
-        var challenge_actions = ['junker','joyless','decay'];
+        var challenge_actions = ['junker','joyless','steelen','decay'];
         for (var i = 0; i < challenge_actions.length; i++){
             if (global.evolution[challenge_actions[i]] && global.evolution[challenge_actions[i]].count == 0){
                 addAction('evolution',challenge_actions[i]);
@@ -472,6 +475,7 @@ resourceAlt();
 var gene_sequence = global.arpa['sequence'] && global.arpa['sequence']['on'] ? global.arpa.sequence.on : 0;
 function fastLoop(){
     keyMultiplier();
+    const date = new Date();
     
     breakdown.p['Global'] = {};
     var global_multiplier = 1;
@@ -1717,6 +1721,9 @@ function fastLoop(){
             }
             else {
                 var lowerBound = global.tech['reproduction'] ? global.tech['reproduction'] : 0;
+                if (global.tech['reproduction'] && date.getMonth() === 1 && date.getDate() === 14){
+                    lowerBound += 5;
+                }
                 if (global.race['fast_growth']){
                     lowerBound *= 2;
                     lowerBound += 2;
@@ -1791,7 +1798,7 @@ function fastLoop(){
             if (global.race['ancient_ruins']){
                 sundial_base++;
             }
-            if (global.stats.achieve['extinct_junker']){
+            if (global.stats.achieve['extinct_junker'] && global.stats.achieve['extinct_junker'].l >= 1){
                 sundial_base++;
             }
             if (global.city.ptrait === 'magnetic'){
@@ -2217,6 +2224,10 @@ function fastLoop(){
             let consume_oil = global.race['forge'] ? 0 : global.city['smelter'].Oil * 0.35;
             iron_smelter = global.city['smelter'].Iron;
             let steel_smelter = global.city['smelter'].Steel;
+            if (global.race['steelen']) {
+                iron_smelter += steel_smelter;
+                steel_smelter = 0;
+            }
             let oil_bonus = global.race['forge'] ? global.city['smelter'].Wood + global.city['smelter'].Coal + global.city['smelter'].Oil : global.city['smelter'].Oil;
             while (iron_smelter + steel_smelter > global.city['smelter'].Wood + global.city['smelter'].Coal + global.city['smelter'].Oil ){
                 if (steel_smelter > 0){
@@ -2311,6 +2322,10 @@ function fastLoop(){
                 modRes('Coal', -(coal_consume * time_multiplier));
 
                 let steel_base = 1;
+                if (global.stats.achieve['steelen'] && global.stats.achieve['steelen'].l >= 1) {
+                    let steelen_bonus = (global.stats.achieve['steelen'].l * 2) / 100;
+                    steel_base *= (1 + steelen_bonus);
+                }
                 for (i = 4; i <= 6; i++) {
                     if (global.tech['smelting'] >= i) {
                         steel_base *= 1.2;
@@ -3252,7 +3267,7 @@ function midLoop(){
         // Resource caps
         var caps = {
             Money: 1000,
-            Knowledge: global.stats.achieve['extinct_junker'] ? 1000 : 100,
+            Knowledge: global.stats.achieve['extinct_junker'] && global.stats.achieve['extinct_junker'].l >= 1 ? 1000 : 100,
             Food: 1000,
             Crates: 0,
             Containers: 0,
@@ -4593,6 +4608,9 @@ function midLoop(){
                 if (c_action.action()){
                     messageQueue(loc('research_success',[global.r_queue.queue[idx].label]),'success');
                     gainTech(global.r_queue.queue[idx].type);
+                    if (c_action['post']) {
+                        c_action.post();
+                    }
                     global.r_queue.queue.splice(idx,1);
                 }
             }

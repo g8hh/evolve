@@ -2659,7 +2659,7 @@
   "civics_espionage_actions": "谍报活动",
   "civics_train": "等待",
   "civics_progress": "正在培训间谍",
-  "civics_spy_warning": "间谍的工作已经很完美了，再执行这类任务毫无意义。（效果达到上限）",
+  "civics_spy_warning": "间谍的工作效果已达到上限",
   "civics_spy_influence": "亲善",
   "civics_spy_influence_desc": "改善与%0的关系，被捕风险很低",
   "civics_spy_influence_success": "通过间谍的隐秘行动，%0与你的双边关系提升了 %1% 。",

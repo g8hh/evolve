@@ -2917,7 +2917,7 @@
   "space_red_fabrication_effect2": "每位宇宙居民提升产量 2%",
   "space_red_factory_title": "行星工厂",
   "space_red_factory_desc": "生产工业产品",
-  "space_red_factory_effect1": "工厂可以生产任何数量的工业产品，每个行星工厂耗电 %0kW",
+  "space_red_factory_effect1": "工厂可以生产任何数量的工业产品，每个行星工厂耗电 3kW",
   "space_red_factory_effect2": "产量提升 5%",
   "space_red_factory_effect3": "氦-3消耗 %0",
   "space_red_biodome_title": "生物穹顶",

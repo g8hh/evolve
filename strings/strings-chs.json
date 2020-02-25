@@ -2955,7 +2955,7 @@
   "space_hell_swarm_plant_effect1": "蜂群卫星的成本降低 %0%",
   "space_sun_info_name": "太阳 (Sun) ",
   "space_sun_info_desc": "位于%0系统中心的恒星。",
-  "space_sun_mission_title": "太阳任务",
+  "space_sun_mission_title": "太阳 (Sun) 任务",
   "space_sun_mission_desc": "启动太阳任务",
   "space_sun_mission_effect1": "启动一项研究太阳的任务",
   "space_sun_swarm_control_title": "控制站",

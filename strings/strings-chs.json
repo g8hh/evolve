@@ -1464,7 +1464,7 @@
   "modal_build_wood": "每秒燃烧 %0 %1为冶炼厂提供燃料",
   "modal_build_coal1": "每秒燃烧 %0 %1为冶炼厂提供燃料",
   "modal_build_coal2": "每秒燃烧 %0 %1为冶炼厂提供燃料，并产生微量的%2",
-  "modal_build_oil": "每秒燃烧 %1 %0为冶炼厂提供燃料，并微量提升冶炼厂产量",
+  "modal_build_oil": "投入%1作为冶炼厂的燃料，每单位%1(%0)可使产量提升 0.5%。",
   "modal_factory_operate": "操作",
   "modal_factory_lux": "奢侈品",
   "modal_factory_lux_label": "每秒消耗 %0 %1，生产价值 $%2 的奢侈品，自动出售",

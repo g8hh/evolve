@@ -2724,7 +2724,7 @@
   "civics_garrison_wounded_desc": "受伤的士兵在战斗中效果较差，更容易死亡。 受伤的士兵会随着时间的推移而愈合",
   "civics_garrison_defensive_rate": "防守评级",
   "civics_garrison_offensive_rate": "进攻评级",
-  "civics_mad_reset_desc": "重置游戏,你将会获得一些 %0 和一些小奖励，重置前建议导出一份存档。",
+  "civics_mad_reset_desc": "通过核爆重置游戏，你将会获得一些 %0 和一些小奖励，建议先导出一份存档。",
   "civics_mad_arm_missiles": "武装导弹",
   "civics_mad_disarm_missiles": "解除导弹",
   "civics_mad_launch_missiles": "发射导弹",

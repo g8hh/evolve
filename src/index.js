@@ -205,6 +205,7 @@ export function index(){
         {i: 'nuclear',  f: 'steelem'},
         {i: 'zombie',   f: 'the_misery'},
         {i: 'fire',     f: 'ill_advised'},
+        {i: 'mask',     f: 'friday'},
         {i: 'heart',    f: 'valentine'},
         {i: 'ghost',    f: 'halloween'},
         {i: 'turkey',   f: 'thanksgiving'},
@@ -227,6 +228,8 @@ export function index(){
             return 'zombie';
         case 'ill_advised':
             return 'fire';
+        case 'friday':
+            return 'mask';
         case 'valentine':
             return 'heart';
         case 'halloween':
@@ -246,7 +249,7 @@ export function index(){
             <span>{{ 'theme' | label }} </span>
             <b-dropdown hoverable>
                 <button class="button is-primary" slot="trigger">
-                    <span>{{ s.theme | namecase }}</span>
+                    <span>{{ 'theme_' + s.theme | label }}</span>
                     <i class="fas fa-sort-down"></i>
                 </button>
                 <b-dropdown-item v-on:click="dark">{{ 'theme_dark' | label }}</b-dropdown-item>

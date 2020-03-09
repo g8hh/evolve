@@ -379,12 +379,10 @@ if (global.race.species === 'protoplasm'){
             }
         }
 
-        if (global.race.seeded || (global.stats.achieve['creator'] && global.stats.achieve['creator'].l >= 1)){
-            let race_options = ['human','orc','elven','troll','orge','cyclops','kobold','goblin','gnome','cath','wolven','centaur','tortoisan','gecko','slitheryn','arraak','pterodacti','dracnid','sporgar','shroomi','mantis','scorpid','antid','entish','cacti','sharkin','octigoran','imp','balorg','seraph','unicorn','dryad','satyr','phoenix','salamander','yeti','wendigo','tuskin','kamel'];
-            for (var i = 0; i < race_options.length; i++){
-                if (global.evolution[race_options[i]] && global.evolution[race_options[i]].count == 0){
-                    addAction('evolution',race_options[i]);
-                }
+        let race_options = ['human','orc','elven','troll','orge','cyclops','kobold','goblin','gnome','cath','wolven','centaur','tortoisan','gecko','slitheryn','arraak','pterodacti','dracnid','sporgar','shroomi','mantis','scorpid','antid','entish','cacti','sharkin','octigoran','imp','balorg','seraph','unicorn','dryad','satyr','phoenix','salamander','yeti','wendigo','tuskin','kamel'];
+        for (var i = 0; i < race_options.length; i++){
+            if (global.evolution[race_options[i]] && global.evolution[race_options[i]].count == 0){
+                addAction('evolution',race_options[i]);
             }
         }
     }
@@ -676,7 +674,7 @@ function fastLoop(){
             global.evolution['dna'] = 1;
             addAction('evolution','dna');
             global.resource.DNA.display = true;
-            if (global.stats.achieve['creator'] && global.stats.achieve['creator'].l > 1){
+            if (global.stats.achieve['mass_extinction'] && global.stats.achieve['mass_extinction'].l > 1){
                 modRes('RNA', global.resource.RNA.max);
                 modRes('DNA', global.resource.RNA.max);
             }
@@ -1446,6 +1444,10 @@ function fastLoop(){
             moraleCap += 10 - Math.floor(global.civic.taxes.tax_rate / 2);
         }
 
+        if (global.stats.achieve['joyless']){
+            moraleCap += global.stats.achieve['joyless'].l * 2;
+        }
+
         let m_min = global.race['optimistic'] ? 60 : 50;
         if (global.civic.govern.fr > 0){
             let rev = morale / 2;
@@ -1979,6 +1981,9 @@ function fastLoop(){
                 breakdown.p['Alloy'] = alloy_bd;
                 modRes('Alloy', delta * time_multiplier);
             }
+            else {
+                breakdown.p['Alloy'] = 0;
+            }
 
             if (global.city.factory['Polymer'] && global.city.factory['Polymer'] > 0){
                 operating += global.city.factory.Polymer;
@@ -2036,6 +2041,9 @@ function fastLoop(){
                 polymer_bd[loc('hunger')] = ((hunger - 1) * 100) + '%';
                 breakdown.p['Polymer'] = polymer_bd;
                 modRes('Polymer', delta * time_multiplier);
+            }
+            else {
+                breakdown.p['Polymer'] = 0;
             }
 
             if (global.city.factory['Nano'] && global.city.factory['Nano'] > 0){
@@ -2095,6 +2103,9 @@ function fastLoop(){
                 breakdown.p['Nano_Tube'] = nano_bd;
                 modRes('Nano_Tube', delta * time_multiplier);
             }
+            else {
+                breakdown.p['Nano_Tube'] = 0;
+            }
 
             if (global.city.factory['Stanene'] && global.city.factory['Stanene'] > 0){
                 operating += global.city.factory.Stanene;
@@ -2146,6 +2157,9 @@ function fastLoop(){
                 stanene_bd[loc('hunger')] = ((hunger - 1) * 100) + '%';
                 breakdown.p['Stanene'] = stanene_bd;
                 modRes('Stanene', delta * time_multiplier);
+            }
+            else {
+                breakdown.p['Stanene'] = 0;
             }
         }
 
@@ -2440,6 +2454,9 @@ function fastLoop(){
             graphene_bd[loc('hunger')] = ((hunger - 1) * 100) + '%';
             breakdown.p['Graphene'] = graphene_bd;
             modRes('Graphene', delta * time_multiplier);
+        }
+        else {
+            breakdown.p['Graphene'] = 0;
         }
 
         // Lumber
@@ -3219,8 +3236,8 @@ function fastLoop(){
 function midLoop(){
     if (global.race.species === 'protoplasm'){
         let base = 100;
-        if (global.stats.achieve['creator'] && global.stats.achieve['creator'].l > 1){
-            base += 50 * (global.stats.achieve['creator'].l - 1);
+        if (global.stats.achieve['mass_extinction'] && global.stats.achieve['mass_extinction'].l > 1){
+            base += 50 * (global.stats.achieve['mass_extinction'].l - 1);
         }
         var caps = {
             RNA: base,
@@ -4313,8 +4330,8 @@ function midLoop(){
                     global.race.mutation++;
                     let trait = randomMinorTrait();
                     let gene = global.genes['synthesis'] ? (2 ** (global.race.mutation - 1)) * (global.genes['synthesis'] + 1) : global.race.mutation;
-                    if (global.stats.achieve['mass_extinction']){
-                        gene *= global.stats.achieve['mass_extinction'].l + 1;
+                    if (global.stats.achieve['creator']){
+                        gene = Math.round(gene * (1 + (global.stats.achieve['creator'].l * 0.5)));
                     }
                     messageQueue(loc('gene_therapy',[trait,gene]),'success');
                     global.resource.Genes.amount += gene;

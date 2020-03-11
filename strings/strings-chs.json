@@ -563,7 +563,7 @@
   "city_temple_effect5": "Increases the storage effect of Anti-Plasmids by %0%.",
   "city_shrine": "神社",
   "city_shrine_desc": "独角兽神社",
-  "city_shrine_effect": "所有神社加成合并后",
+  "city_shrine_effect": "升级神社所获加成依月相而定，当前神社所有加成合计：",
   "city_shrine_morale": "士气提升 %0%",
   "city_shrine_metal": "金属产量提升  %0%",
   "city_shrine_know": "知识上限提升 %0",

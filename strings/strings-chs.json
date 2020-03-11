@@ -1292,7 +1292,7 @@
   "tech_starcharts_effect": "绘制行星的轨道图，以确定前往更远目的地的最佳路线。",
   "tech_colonization": "移民",
   "tech_colonization_desc": "%0 移民",
-  "tech_colonization_effect": "从技术上讲，在一个地方没有种植作物就不算成功移民。通过设计一个生物穹顶来“完成移民” %0。",
+  "tech_colonization_effect": "从技术上讲，在一个地方没有种植作物就不算成功移民。通过设计一个生物穹顶来“完成移民”。",
   "tech_red_tower": "%0 控制塔",
   "tech_red_tower_effect": "太空交通控制塔可以帮助管控进出%0的交通。",
   "tech_space_manufacturing": "太空制造业",

@@ -2603,62 +2603,116 @@
   "trait_frail": "你的种族很脆弱，在战斗中更容易死亡",
 
   "trait_malnutrition": "你的种族在营养不良的时候比大多数种族都能更好地发挥作用",
+
   "trait_claws": "你的种族长有爪子，在战斗中更高效，战斗评级提升 20%",
+
   "trait_atrophy": "如果吃不饱，你的种族萎缩得更快",
+
   "trait_hivemind": "你的种族拥有蜂群思维，单独工作时效率极低，群体工作效率极高。算法详见WIKI",
+
   "trait_tunneler": "你的种族天然善于挖掘隧道，使矿井生产更便宜。",
+
   "trait_frenzy": "你的种族闻到血腥气会变得疯狂，战斗后暂时提升士气，且免疫战争贩子效果。",
+
   "trait_apex_predator": "你是一个非常危险的捕食者。狩猎和战斗力提高，但装甲技术是不可用的。（战斗评级+25%，狩猎产量+50%，禁装甲研究）",
+
   "trait_invertebrate": "你缺乏骨骼结构，这意味着你不能从战斗中带走那么多的战利品",
+
   "trait_suction_grip": "您卓越的抓握力可提高所有生产效率",
+
   "trait_suction_grip_bd": "抓握",
   "trait_befuddle": "你天生的狡诈可以帮助你更快地完成间谍行动。",
+
   "trait_environmentalist": "你在所有其他事情之上寻求与自然的平衡",
+
   "trait_unorganized": "组织一场革命需要更长的时间。",
+
   "trait_musical": "艺人更能有效地取悦大众",
+
   "trait_revive": "你的士兵有时会在被杀后复活。它更可能发生在炎热的气候中",
+
   "trait_slow_regen": "你的士兵伤口愈合速度降低",
+
   "trait_forge": "你的种族会喷火，熔炉不用燃料，直接获得石油产量加成，地热发电厂的效率提升 1kW",
+
   "trait_autoignition": "你的种族体温火热，容易引燃纸张，图书馆知识产量加成由 5% 降为 3%",
+
   "trait_blurry": "出于某种原因，没有人能好好地看你一眼。间谍不太可能在间谍活动中被抓",
+
   "trait_snowy": "你的种族如此热爱雪，以至于在没有雪的时候他们会变得沮丧。",
+
   "trait_ravenous": "你总是饥肠辘辘，什么都吃。",
+
   "trait_ghostly": "你与空灵的联系有助于吸引灵魂。",
+
   "trait_lawless": "你对中央权威的不尊重让你更频繁地更换政府。",
+
   "trait_mistrustful": "冲突会让你更快地失去在对手城市的声誉。",
+
   "trait_humpback": "你可以长时间不吃东西，也可以从工地上搬运更多的基本材料。",
+
   "trait_thalassophobia": "你不喜欢大面积的水域，也不会投资开发海洋。",
+
   "trait_evil": "你的种族是邪恶的。",
   "trait_evil_name": "恶魔",
+
   "trait_immoral": "你的种族是不道德的，喜欢冲突。",
+
   "trait_fiery": "你的皮肤被邪恶的火焰灼伤，使你成为战场上最可怕的对手之一。",
+
   "trait_terrifying": "你太可怕了，没有人愿意和你交易。",
+
   "trait_slaver": "你利用任何你能俘获的人作为强制劳动力，经常把他们活活累死。",
+
   "trait_slaver_bd": "奴隶",
+
   "trait_compact": "你体型很小，因此不需要很多材料来建造东西。",
+
   "trait_pathetic": "你在战斗中是可怜的，其他恶魔视你为小害虫。",
+
   "trait_conniving": "你暗算他人的方式使你能谈下最棒的交易。",
+
   "trait_blissful": "你的种族总是处于极乐状态中，不会抵制税收，低快乐度对生产力的惩罚减半",
+
   "trait_pompous": "你的种族傲慢的态度阻碍了学术追求，教授的知识产量 -75%",
+
   "trait_unified": "你的种族是团结的，彼此之间不打仗，开局直接达成统一",
+
   "trait_spiritual": "你的种族灵性使寺庙对产量的加成提升 13%",
-  "trait_truthful": "你的种族不能撒谎，这让你天生不擅长某些职业，银行家对税收收入的加成减半",
+
+    "trait_truthful": "你的种族不能撒谎，这让你天生不擅长某些职业，银行家对税收收入的加成减半",
+
   "trait_rainbow": "你的种族喜欢彩虹，雨后的晴天所有物资产量提升 50%",
+
   "trait_rainbow_bd": "彩虹",
   "trait_magnificent": "你的种族是伟大的光之种族，信奉者会建造神社，为你献上赞歌，神社奖励见WIKI",
+
   "trait_noble": "你的种族天性高贵，不会腐败，税率限定在10%~20%之间",
+
   "trait_tactical": "你的种族天生具有的战术思维，战斗评级提升 5%",
+
   "trait_analytical": "你的种族有一个增强的分析头脑，知识产量提升 1%",
+
   "trait_promiscuous": "你的种族的出生率很高",
+
   "trait_resilient": "你的种族对恶劣环境天生自然适应能力，煤炭和铀的产量提升 +2%",
+
   "trait_cunning": "你的种族对追踪狩猎有亲和力，狩猎产量提升 5%",
+
   "trait_hardy": "你的种族能吃苦的生理机能让你能忍受水泥制造的艰苦条件，水泥产量提升 1%",
+
   "trait_ambidextrous": "你的种族拥有灵巧的双手，工匠的产量提升 0.2%",
+
   "trait_industrious": "你的种族天生勤奋，采矿时，铜和铁的产量提升 2%",
+
   "trait_content": "你的种族天生容易满足，减少压力，每人口工作压力由0.2变更为1/(5+等级*0.4)",
+
   "trait_fibroblast": "你的种族有增强的成纤维细胞增加士兵的愈合速率",
+
   "trait_metallurgist": "你的种族有冶金的本领，合金产量提升 4%",
+  "trait_metallurgist_name": "Metallurgist",
   "trait_gambler": "你的种族沉迷于赌博，赌场资金上限提升 4%，赌场收入提升见WIKI",
+  "trait_gambler_name": "Gambler",
   "biome_grassland_name": "草原",
   "biome_grassland": "草原世界的表面覆盖着平原，是理想的农业世界，作物生长更容易",
   "biome_oceanic_name": "海洋",
@@ -2892,8 +2946,8 @@
   "resource_Plasmid_name": "质粒",
   "resource_Plasmid_plural_name": "质粒",
   "resource_AntiPlasmid_name": "反质粒",
-  "resource_Phage_name": "噬菌体",
   "resource_AntiPlasmid_plural_name": "反质粒",
+  "resource_Phage_name": "噬菌体",
   "resource_Dark_name": "暗能量",
   "resource_market_buy": "购买",
   "resource_market_sell": "出售",
@@ -2905,7 +2959,6 @@
   "resource_market_trade_routes": "贸易路线",
   "resource_modal_crate_construct": "构建板条箱",
   "resource_modal_crate_construct_desc": "消耗 %0 %1 构建一个板条箱，每个板条箱提升 %2 存储上限",
-  "resource_modal_crate_construct_kind_desc": "建造一个板条箱，花费200石头",
   "resource_modal_crate_unassign": "取消分配板条箱",
   "resource_modal_crate_unassign_desc": "从该资源中删除板条箱 (-%0 上限)",
   "resource_modal_crate_owned": "拥有的板条箱:",
@@ -3153,7 +3206,6 @@
   "interstellar_nebula_name": "螺旋星云",
   "interstellar_nebula_desc1": "螺旋星云相当远，694光年，但这可能是一个非常丰富的氦-3来源，能为你的扩张提供燃料",
   "interstellar_nebula_desc2": "螺旋星云相当远，694光年，它富含有价值的氦-3",
-  "interstellar_nebula_mission": "螺旋星云任务",
   "interstellar_nebula_mission_effect": "派一艘飞船到螺旋星云去评估它是否有可能进行气体开采",
   "interstellar_nebula_mission_result": "螺旋星云如预期的那样富含氦-3，它也含有氘，并且检测到了超铀的沉积物",
   "interstellar_nexus_title": "枢纽站",
@@ -3188,7 +3240,6 @@
   "interstellar_blackhole_desc3": "这个黑洞位于距离 %0 487光年的地方，就黑洞而言，它的质量相当于%1个太阳。",
   "interstellar_blackhole_desc4": "这个黑洞位于距离 %0 487光年的地方，就黑洞而言，它的质量相当于%1个太阳, 其中奇异物质组成了 %2 太阳质量。",
   "interstellar_blackhole_desc5": "如果不知何故爆炸的话，这个黑洞价值 %0 %3, %1 噬菌体, 以及 %2 暗能量……",
-  "interstellar_blackhole_mission": "黑洞任务",
   "interstellar_blackhole_mission_effect": "侦察黑洞…为了科学！",
   "interstellar_blackhole_mission_result": "虽然非常危险，但是这个黑洞相对比较小，这使得研究更容易进行。",
   "interstellar_blackhole_unstable": "黑洞开始放出奇怪的读数，这可能是由于奇异物质污染。",

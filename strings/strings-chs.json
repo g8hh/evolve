@@ -2467,69 +2467,70 @@
   "trait_weak": "你的种族不擅长重体力劳动任务，伐木工、采石工、矿工的产量 -10%",
   "trait_weak_name": "Weak",
   "trait_large": "你的种族个头很大，因此建筑物所需的材料更多，建筑成本蠕变 +1%",
-
+  "trait_large_name": "Large",
   "trait_strong": "你的种族有很大的力量，可以收获更多的基础资源，食物、木材、石头的点击获取数量由 1 提升到 2",
-
+  "trait_strong_name": "Strong",
   "trait_cold_blooded": "你的种族对外界温度很敏感，详见WIKI",
-
+  "trait_cold_blooded_name": "Cold Blooded",
   "trait_scales": "你的种族受到鳞片的保护，鳞片是一种天然的盔甲，可减少阵亡士兵数量，详见WIKI",
-
+  "trait_scales_name": "Scales",
   "trait_hollow_bones": "你的种族有很轻的骨头，需要较少的制作材料来建造结构",
-
+  "trait_hollow_bones_name": "Hollow Bones",
   "trait_rigid": "你的种族有一个僵硬的骨骼结构，所以制造效率较低",
-
+  "trait_rigid_name": "Rigid",
   "trait_fast_growth": "你的种族孕育得很快，因此人口增长比其他种族更快",
-
+  "trait_fast_growth_name": "Fast Growth",
   "trait_high_metabolism": "你的种族代谢食物很快，因此你需要更多的食物",
-
+  "trait_high_metabolism_name": "High Metabolism",
   "trait_photosynth": "你的种族通过与太阳的光合作用产生部分需求的食物",
-
+  "trait_photosynth_name": "Photosynth",
   "trait_asymmetrical": "你的种族是不对称的。这给了你一个更可怕的外观，使贸易更难进行。",
-
+  "trait_asymmetrical_name": "Asymmetrical",
   "trait_spores": "你的种族在有风的时候繁殖得很快。",
-
+  "trait_spores_name": "Spores",
   "trait_spongy": "你的种族在雨雪天不会繁殖。",
-
+  "trait_spongy_name": "Spongy",
   "trait_elusive": "你的间谍很少被抓到。",
-
+  "trait_elusive_name": "Elusive",
   "trait_iron_allergy": "铁对你是有毒的，它必须小心处理，从而使采矿和精炼缓慢",
-
+  "trait_iron_allergy_name": "Iron Allergy",
   "trait_smoldering": "你的种族酷爱炎热的天气，持续的高温每天叠加 +0.35% 产量，夏天士气 +5%",
-
+  "trait_smoldering_name": "Smoldering",
   "trait_cold_intolerance": "你的种族厌恶寒冷的天气，持续的低温每天叠加 -0.25% 产量",
-
+  "trait_cold_intolerance_name": "Cold Intolerance",
   "trait_chilled": "你的种族酷爱寒冷的天气，持续的低温每天叠加 +0.35% 产量，冬天士气 +5%",
+  "trait_chilled_name": "Chilled",
   "trait_heat_intolerance": "你的种族厌恶炎热的天气，持续的高温每天叠加 -0.25% 产量",
-
+  "trait_heat_intolerance_name": "Heat Intolerance",
   "trait_scavenger": "你可以指派拾荒者去寻找有用的提高生产力的物品。",
-
+  "trait_scavenger_name": "Scavenger",
   "trait_nomadic": "你的游牧生活方式使得贸易更加困难",
-
+  "trait_nomadic_name": "Nomadic",
   "trait_submerged": "你的种族生活在水下，士气不受天气影响",
-
+  "trait_submerged_name": "Submerged",
   "trait_low_light": "你的种族生活在水下，阳光不易渗透，农场和农民的产量 -10%",
-
+  "trait_low_light_name": "Low Light",
   "trait_creative": "你的种族天生的创造力会使高级项目得到更快发展，成本蠕变 -1%",
-
+  "trait_creative_name": "Creative",
   "trait_diverse": "你的种族多样性特质使得军事单位缺乏凝聚力，训练士兵的基准速度由 2.5 降为 2",
-    "trait_diverse_name": "多样性",
+  "trait_diverse_name": "多样性",
   "trait_studious": "你的种族在学习时比一般种族更专注。因此，获得知识的速度更快",
-
+  "trait_studious_name": "Studious",
   "trait_arrogant": "你的种族固有的自大往往会导致你们在谈判中付出过高的代价",
-
+  "trait_arrogant_name": "Arrogant",
   "trait_brute": "你的种族热爱战斗，而且更容易招募新兵来参加战斗",
-
+  "trait_brute_name": "Brute",
   "trait_angry": "你的种族在饥饿时会很快发火",
-
+  "trait_angry_name": "Angry",
   "trait_lazy": "你的种族最喜欢一个懒惰的下午。在炎热的天气里，生产力 -10%",
-
+  "trait_lazy_name": "Lazy",
   "trait_lazy_bd": "懒惰",
   "trait_carnivore": "你的种族是食肉动物，不从事农业。",
-  
+  "trait_carnivore_name": "Carnivore",
   "trait_pack_mentality": "你的种族喜欢群居生活。",
-
+  "trait_pack_mentality_name": "Pack Mentality",
   "trait_tracker": "你的种族擅长追踪游戏，因此从狩猎中获得更多。",
-
+  "trait_tracker_name": "Tracker",
   "trait_beast_of_burden": "当你赢得一场军事冲突时，你的种族能够带走更多的战利品。",
 
   "trait_herbivore": "你的种族不吃肉。",

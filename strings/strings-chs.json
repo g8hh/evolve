@@ -173,6 +173,7 @@
   "job_lumberjack_desc": "伐木工人从森林里砍伐%1，每位伐木工人每秒生产 %0 %1。",
   "job_reclaimer": "回收者",
   "job_reclaimer_desc": "回收者会寻觅死亡的生灵，每位回收者每秒生成 %0 骨骼和 %1 肉。",
+  "job_reclaimer_desc2": "回收者会寻觅死亡的生灵，每位回收者每秒生成 %0 骨骼。",
   "job_quarry_worker": "采石场工人",
   "job_quarry_worker_desc": "采石场工人负责开采%1，每位石工每秒生产 %0 %1。",
   "job_scavenger": "拾荒者",
@@ -885,7 +886,6 @@
   "tech_steel_vault": "钢库",
   "tech_steel_vault_effect": "用重型钢门和墙壁加固银行金库，增加资金的存储容量。",
   "tech_eebonds": "EE系列债券",
-  "tech_eebonds_desc": "EE系列债券",
   "tech_eebonds_effect": "创建新的EE系列储蓄债券，其到期价值要高得多。每位市民都会增加600资金上限。",
   "tech_swiss_banking": "瑞士银行",
   "tech_swiss_banking_effect": "通过新的培训，你的银行家将学会如何创造性地存钱。每个银行家增加5%的银行金库容量。",
@@ -1044,7 +1044,6 @@
   "tech_alloy_drills": "合金钻",
   "tech_alloy_drills_effect": "用新合金制造的强化钻头预计将使石油产量提升 25%",
   "tech_fracking": "水力压裂",
-  "tech_fracking_desc": "水力压裂",
   "tech_fracking_effect": "一种新的石油开采技术，有争议但有效。石油井架产量提升 40%",
   "tech_mythril_drills": "秘银钻",
   "tech_mythril_drills_effect": "新型秘银钻将提升你的石油井架的效率",
@@ -1377,7 +1376,6 @@
   "tech_star_dock": "星际船坞",
   "tech_star_dock_effect": "设计一个可用于建造先进船舶的星际船坞。",
   "tech_interstellar": "星际探测器",
-  "tech_interstellar_desc": "星际探测器",
   "tech_interstellar_effect": "在太阳系外进行侦察需要设计比现役的更先进的探测器。",
   "tech_genesis_ship": "创世飞船",
   "tech_genesis_ship_effect": "设计一艘“创世”号飞船，它将用于为遥远的星球播种生命",
@@ -2453,84 +2451,157 @@
   "race_junker_solar_gas_moon": "地中海贫血 (Thalassemia) ",
   "race_junker_solar_dwarf": "畸形 (Malform) ",
   "trait_fortify": "你的基因已经被强化以抵抗基因衰退。",
+  "trait_fortify_name": "Fortify",
   "trait_adaptable": "你的种族更容易被基因治疗改变，基因突变所需序列 -10%",
+  "trait_adaptable_name": "Adaptable",
   "trait_wasteful": "你的种族生性挥霍，制造产品时需要更多的材料",
+  "trait_wasteful_name": "Wasteful",
   "trait_xenophobic": "你的种族不喜欢外族人，这减少了你可以经营的贸易路线的数量，贸易站和码头的贸易路线 -1",
+  "trait_xenophobic_name": "Xenophobic",
   "trait_beast": "你的种族敏锐的感官帮助你发现猎物的气味，有风的天气，狩猎收益 +15%",
+  "trait_beast_name": "Beast",
   "trait_cautious": "你的种族在雨雪天战斗力会减弱，雨雪天气，狩猎收益 -10%",
+  "trait_cautious_name": "Cautious",
   "trait_small": "你的种族个头很小，因此建筑物所需的材料更少，地面建筑成本蠕变 -1%，太空建筑成本蠕变 -0.5%",
+  "trait_small_name": "Small",
   "trait_weak": "你的种族不擅长重体力劳动任务，伐木工、采石工、矿工的产量 -10%",
+  "trait_weak_name": "Weak",
   "trait_large": "你的种族个头很大，因此建筑物所需的材料更多，建筑成本蠕变 +1%",
+
   "trait_strong": "你的种族有很大的力量，可以收获更多的基础资源，食物、木材、石头的点击获取数量由 1 提升到 2",
+
   "trait_cold_blooded": "你的种族对外界温度很敏感，详见WIKI",
+
   "trait_scales": "你的种族受到鳞片的保护，鳞片是一种天然的盔甲，可减少阵亡士兵数量，详见WIKI",
+
   "trait_hollow_bones": "你的种族有很轻的骨头，需要较少的制作材料来建造结构",
+
   "trait_rigid": "你的种族有一个僵硬的骨骼结构，所以制造效率较低",
+
   "trait_fast_growth": "你的种族孕育得很快，因此人口增长比其他种族更快",
+
   "trait_high_metabolism": "你的种族代谢食物很快，因此你需要更多的食物",
+
   "trait_photosynth": "你的种族通过与太阳的光合作用产生部分需求的食物",
+
   "trait_asymmetrical": "你的种族是不对称的。这给了你一个更可怕的外观，使贸易更难进行。",
+
   "trait_spores": "你的种族在有风的时候繁殖得很快。",
+
   "trait_spongy": "你的种族在雨雪天不会繁殖。",
+
   "trait_elusive": "你的间谍很少被抓到。",
+
   "trait_iron_allergy": "铁对你是有毒的，它必须小心处理，从而使采矿和精炼缓慢",
+
   "trait_smoldering": "你的种族酷爱炎热的天气，持续的高温每天叠加 +0.35% 产量，夏天士气 +5%",
+
   "trait_cold_intolerance": "你的种族厌恶寒冷的天气，持续的低温每天叠加 -0.25% 产量",
+
   "trait_chilled": "你的种族酷爱寒冷的天气，持续的低温每天叠加 +0.35% 产量，冬天士气 +5%",
   "trait_heat_intolerance": "你的种族厌恶炎热的天气，持续的高温每天叠加 -0.25% 产量",
+
   "trait_scavenger": "你可以指派拾荒者去寻找有用的提高生产力的物品。",
+
   "trait_nomadic": "你的游牧生活方式使得贸易更加困难",
+
   "trait_submerged": "你的种族生活在水下，士气不受天气影响",
+
   "trait_low_light": "你的种族生活在水下，阳光不易渗透，农场和农民的产量 -10%",
+
   "trait_creative": "你的种族天生的创造力会使高级项目得到更快发展，成本蠕变 -1%",
+
   "trait_diverse": "你的种族多样性特质使得军事单位缺乏凝聚力，训练士兵的基准速度由 2.5 降为 2",
-  "trait_diverse_name": "多样性",
+    "trait_diverse_name": "多样性",
   "trait_studious": "你的种族在学习时比一般种族更专注。因此，获得知识的速度更快",
+
   "trait_arrogant": "你的种族固有的自大往往会导致你们在谈判中付出过高的代价",
+
   "trait_brute": "你的种族热爱战斗，而且更容易招募新兵来参加战斗",
+
   "trait_angry": "你的种族在饥饿时会很快发火",
+
   "trait_lazy": "你的种族最喜欢一个懒惰的下午。在炎热的天气里，生产力 -10%",
+
   "trait_lazy_bd": "懒惰",
   "trait_carnivore": "你的种族是食肉动物，不从事农业。",
+  
   "trait_pack_mentality": "你的种族喜欢群居生活。",
+
   "trait_tracker": "你的种族擅长追踪游戏，因此从狩猎中获得更多。",
+
   "trait_beast_of_burden": "当你赢得一场军事冲突时，你的种族能够带走更多的战利品。",
+
   "trait_herbivore": "你的种族不吃肉。",
-  "trait_pack_rat": "你的种族擅长把大部分的东西装进任何储存空间。",
+
+    "trait_pack_rat": "你的种族擅长把大部分的东西装进任何储存空间。",
+
   "trait_paranoid": "你的种族是多疑的，出于对银行的不信任，银行的资金上限 -10%。",
+
   "trait_greedy": "你的种族是贪婪的，不会自愿放弃金钱，这会减少税收收入。",
+
   "trait_merchant": "你的种族天生就有讨价还价的本事。",
+
   "trait_smart": "你的种族更容易理解新概念，知识消耗 -10%。",
+
   "trait_puny": "你的种族不擅长战斗，战斗最低幸运值从 5 降为 3，基准战斗评级 -10%。",
+
   "trait_dumb": "你的种族不容易理解新概念，知识消耗 +5%。",
+
   "trait_tough": "你的种族很坚强，可以经受住最艰苦的工作，而不至于变得虚弱。",
+
   "trait_nearsighted": "你的种族是近视，阅读时需要更大的字体。",
+
   "trait_intelligent": "你的种族总是充分利用科学的最新进展。",
+
   "trait_intelligent_bd": "智慧",
   "trait_regenerative": "你的种族天生愈合得很快。",
+
   "trait_gluttony": "你的种族总是很饿，会吃得更多。",
+
   "trait_slow": "你的种族行动缓慢，做事很少着急。",
+
   "trait_armored": "你的种族是天生覆盖着装甲，因此在战斗中更难受到致命伤害。",
+
   "trait_optimistic": "你的种族总是试图寻找最好的结果，压力 -10%",
+
   "trait_chameleon": "你的种族天生喜欢隐藏，从而更厌恶拥有常备军。（战斗评级为基准值的 120%，不与爪特性叠加，每兵营提供的兵力 -1）",
+
   "trait_slow_digestion": "你的种族消化食物的速度很慢，因此不容易挨饿。",
+  
   "trait_hard_of_hearing": "你的种族听力不好，因此听课的效果就不那么好了。",
   "trait_resourceful": "你的种族很机智，制造时浪费更少。",
+
   "trait_selenophobia": "你的种族喜欢无月之夜。",
+
   "trait_leathery": "你的种族皮肤坚韧，使你更能忍耐坏天气。",
+
   "trait_pessimistic": "你的种族很容易消沉。",
+
   "trait_hoarder": "你的种族喜欢囤积金钱。",
+
   "trait_solitary": "你的种族更喜欢独自生活而不是和别人一起生活。",
+
   "trait_kindling_kindred": "你的种族不擅长砍伐树木来获取木材，所有的木材花费都被移除了，但其他的花费却增加了。",
+
   "trait_pyrophobia": "你的种族害怕火，因此冶炼厂的运转更慢。",
+
   "trait_hyper": "你的种族永远不会停滞不前，总是会做些什么。",
+
   "trait_skittish": "你的种族容易受到惊吓，雷雨天士气 -12%",
+
   "trait_infectious": "你的种族通过感染其他生物和接管宿主来传播",
+
   "trait_parasite": "你的种族是一种寄生虫，必须感染寄主受害者才能增长种群",
+
   "trait_toxic": "你的种族的天然毒性使你们能抵抗有毒的工作场所，从而在工厂更有生产力",
+
   "trait_nyctophilia": "你的种族不喜欢阳光直射，当阳光充足时，他们的生产效率会降低",
+
   "trait_cannibalize": "你是食人族，会吃你自己的同类。通过摄取它们来增强自己的力量",
+
   "trait_frail": "你的种族很脆弱，在战斗中更容易死亡",
+
   "trait_malnutrition": "你的种族在营养不良的时候比大多数种族都能更好地发挥作用",
   "trait_claws": "你的种族长有爪子，在战斗中更高效，战斗评级提升 20%",
   "trait_atrophy": "如果吃不饱，你的种族萎缩得更快",

@@ -2062,10 +2062,10 @@
   "arpa_auto_seq_label": "启用/禁用自动基因测序。",
   "arpa_mutate_desc": "研究有益的基因突变。更多的生物实验室将加快这一进程",
   "arpa_sequence_desc": "测序你的基因组，这将解开DNA的秘密。更多的生物实验室将加快这一进程",
-  "arpa_gene_buy": "花费%1基因提升%0的等级，用基因购买的等级只对当前种族有效。",
-  "arpa_phage_buy": "花费%1噬菌体提升%0的等级，用噬菌体购买的升级对未来所有的种族都有效。",
-  "arpa_remove": "从你的种族移除%0，花费 %1 %2，这个过程不太容易逆转。",
-  "arpa_gain": "给你的种族增加%0，花费 %1 %2，这个过程不太容易逆转。",
+  "arpa_gene_buy": "花费 %1 基因提升%0的等级，用基因购买的等级只对当前种族有效。",
+  "arpa_phage_buy": "花费 %1 噬菌体提升%0的等级，用噬菌体购买的升级对未来所有的种族都有效。",
+  "arpa_remove": "花费 %1 %2从你的种族移除%0，这个过程不太容易逆转。",
+  "arpa_gain": "花费 %1 %2给你的种族增加%0，这个过程不太容易逆转。",
   "time_never": "永不",
   "race_prehistoric": "史前",
   "race_protoplasm": "原生质",
@@ -2676,46 +2676,46 @@
   "trait_conniving": "你的种族善于暗算他人，使你能在交易中获利。市场购买价格 -5%，出售价格 +14%",
   "trait_conniving_name": " [诡计多端] 特质",
   "trait_blissful": "你的种族总是处于极乐状态中，不会抵制税收，低快乐度对生产力的惩罚减半",
-
+  "trait_blissful_name": "Blissful",
   "trait_pompous": "你的种族傲慢的态度阻碍了学术追求，教授的知识产量 -75%",
-
+  "trait_pompous_name": "Pompous",
   "trait_unified": "你的种族是团结的，彼此之间不打仗，开局直接达成统一",
-
+  "trait_unified_name": "Unified",
   "trait_spiritual": "你的种族灵性使寺庙对产量的加成提升 13%",
-
-    "trait_truthful": "你的种族不能撒谎，这让你天生不擅长某些职业，银行家对税收收入的加成减半",
-
+  "trait_spiritual_name": "Spiritual",
+  "trait_truthful": "你的种族不能撒谎，这让你天生不擅长某些职业，银行家对税收收入的加成减半",
+  "trait_truthful_name": "Truthful",
   "trait_rainbow": "你的种族喜欢彩虹，雨后的晴天所有物资产量提升 50%",
-
+  "trait_rainbow_name": "Rainbow",
   "trait_rainbow_bd": "彩虹",
-  "trait_magnificent": "你的种族是伟大的光之种族，信奉者会建造神社，为你献上赞歌，神社奖励见WIKI",
-
-  "trait_noble": "你的种族天性高贵，不会腐败，税率限定在10%~20%之间",
-
-  "trait_tactical": "你的种族天生具有的战术思维，战斗评级提升 5%",
-
-  "trait_analytical": "你的种族有一个增强的分析头脑，知识产量提升 1%",
-
+  "trait_magnificent": "你的种族是伟大的光之种族，信奉者会建造神社，为你献上赞歌。神社奖励见WIKI",
+  "trait_magnificent_name": "Magnificent",
+  "trait_noble": "你的种族天性高贵，不会腐败。税率限定在10%~20%之间",
+  "trait_noble_name": "Noble",
+  "trait_tactical": "你的种族天生具有的战术思维。战斗评级提升 5%",
+  "trait_tactical_name": " [战术思维] 特质",
+  "trait_analytical": "你的种族有一个增强的分析头脑。知识产量提升 1%",
+  "trait_analytical_name": " [善于分析] 特质",
   "trait_promiscuous": "你的种族的出生率很高",
-
+  "trait_promiscuous_name": " [个性开放] 特质",
   "trait_resilient": "你的种族对恶劣环境天生自然适应能力，煤炭和铀的产量提升 +2%",
-
-  "trait_cunning": "你的种族对追踪狩猎有亲和力，狩猎产量提升 5%",
-
+  "trait_resilient_name": " [适应性] 特质",
+  "trait_cunning": "你的种族对追踪狩猎有亲和力。狩猎产量提升 5%",
+  "trait_cunning_name": " [灵巧] 特质",
   "trait_hardy": "你的种族能吃苦的生理机能让你能忍受水泥制造的艰苦条件，水泥产量提升 1%",
-
+  "trait_hardy_name": " [吃苦耐劳] 特质",
   "trait_ambidextrous": "你的种族拥有灵巧的双手，工匠的产量提升 0.2%",
-
+  "trait_ambidextrous_name": " [左右开弓] 特质",
   "trait_industrious": "你的种族天生勤奋，采矿时，铜和铁的产量提升 2%",
-
+  "trait_industrious_name": " [勤奋] 特质",
   "trait_content": "你的种族天生容易满足，减少压力，每人口工作压力由0.2变更为1/(5+等级*0.4)",
-
+  "trait_content_name": " [易满足] 特质",
   "trait_fibroblast": "你的种族有增强的成纤维细胞增加士兵的愈合速率",
-
-  "trait_metallurgist": "你的种族有冶金的本领，合金产量提升 4%",
-  "trait_metallurgist_name": "Metallurgist",
-  "trait_gambler": "你的种族沉迷于赌博，赌场资金上限提升 4%，赌场收入提升见WIKI",
-  "trait_gambler_name": "Gambler",
+  "trait_fibroblast_name": " [成纤维细胞] 特质",
+  "trait_metallurgist": "你的种族善于冶金。合金产量提升 4%",
+  "trait_metallurgist_name": " [冶金学家] 特质",
+  "trait_gambler": "你的种族沉迷于赌博。赌场资金上限提升 4%，赌场收入提升见WIKI",
+  "trait_gambler_name": " [赌徒] 特质",
   "biome_grassland_name": "草原",
   "biome_grassland": "草原世界的表面覆盖着平原，是理想的农业世界，作物生长更容易",
   "biome_oceanic_name": "海洋",

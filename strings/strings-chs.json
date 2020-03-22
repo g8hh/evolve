@@ -2517,7 +2517,7 @@
   "trait_creative": "你的种族天生的创造力会使高级项目得到更快发展，成本蠕变 -1%",
   "trait_creative_name": "Creative",
   "trait_diverse": "你的种族多样性特质使得军事单位缺乏凝聚力，训练士兵的基准速度由 2.5 降为 2",
-  "trait_diverse_name": "多样性",
+  "trait_diverse_name": " [多样性] 特质",
   "trait_studious": "你的种族在学习时比一般种族更专注。因此，获得知识的速度更快",
   "trait_studious_name": "Studious",
   "trait_arrogant": "你的种族固有的自大往往会导致你们在谈判中付出过高的代价",
@@ -2530,7 +2530,7 @@
   "trait_lazy_name": "Lazy",
   "trait_lazy_bd": "懒惰",
   "trait_carnivore": "你的种族是食肉动物，不从事农业。",
-  "trait_carnivore_name": "Carnivore",
+  "trait_carnivore_name": " [食肉动物] 特质",
   "trait_pack_mentality": "你的种族喜欢群居生活。",
   "trait_pack_mentality_name": "Pack Mentality",
   "trait_tracker": "你的种族擅长追踪游戏，因此从狩猎中获得更多。",
@@ -2658,25 +2658,23 @@
 
   "trait_thalassophobia": "你不喜欢大面积的水域，也不会投资开发海洋。",
 
-  "trait_evil": "你的种族是邪恶的。",
-  "trait_evil_name": "恶魔",
-
-  "trait_immoral": "你的种族是不道德的，喜欢冲突。",
-
-  "trait_fiery": "你的皮肤被邪恶的火焰灼伤，使你成为战场上最可怕的对手之一。",
-
-  "trait_terrifying": "你太可怕了，没有人愿意和你交易。",
-
-  "trait_slaver": "你利用任何你能俘获的人作为强制劳动力，经常把他们活活累死。",
-
+  "trait_evil": "你的种族是邪恶的。木材、毛皮、胶合板等物资以骨头、肉、骸骨织物等代替",
+  "trait_evil_name": " [恶魔] 特质",
+  "trait_immoral": "你的种族是邪恶的，喜欢冲突。战争贩子效果反转，提升士气",
+  "trait_immoral_name": " [邪恶] 特质",
+  "trait_fiery": "你的种族全身燃烧着邪恶的火焰，使你成为战场上的噩梦。战斗评级 +65%，狩猎产量 +25%",
+  "trait_fiery_name": " [燃烧] 特质",
+  "trait_terrifying": "你的种族外貌太恐怖了，没有人愿意和你交易",
+  "trait_terrifying_name": " [可怖] 特质",
+  "trait_slaver": "你的种族会奴役俘虏作为强制劳动力，经常把他们活活累死。允许建造奴隶围栏，每个奴隶提升产量 0.28%",
+  "trait_slaver_name": " [奴隶贩子] 特质",
   "trait_slaver_bd": "奴隶",
-
-  "trait_compact": "你体型很小，因此不需要很多材料来建造东西。",
-
-  "trait_pathetic": "你在战斗中是可怜的，其他恶魔视你为小害虫。",
-
-  "trait_conniving": "你暗算他人的方式使你能谈下最棒的交易。",
-
+  "trait_compact": "你的种族体型很小，不需要很多材料来建造东西。地面建筑成本蠕变 -2%，太空建筑成本蠕变 -1%",
+  "trait_compact_name": " [袖珍] 特质",
+  "trait_pathetic": "你的种族是无力的，其他恶魔在战斗中视你为小虫子。战斗评级 -25%",
+  "trait_pathetic_name": " [无力] 特质",
+  "trait_conniving": "你的种族善于暗算他人，使你能在交易中获利。市场购买价格 -5%，出售价格 +14%",
+  "trait_conniving_name": " [诡计多端] 特质",
   "trait_blissful": "你的种族总是处于极乐状态中，不会抵制税收，低快乐度对生产力的惩罚减半",
 
   "trait_pompous": "你的种族傲慢的态度阻碍了学术追求，教授的知识产量 -75%",

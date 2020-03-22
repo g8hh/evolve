@@ -457,7 +457,7 @@
   "city_soul_well_effect": "+%0 灵魂生成",
   "city_slave_pen": "奴隶围栏",
   "city_slave_pen_effect": "为在战斗中俘虏的奴隶提供住所，每个围栏可以容纳 %0 个奴隶。",
-  "city_slave_pen_effect2": "您当前正在为%1个可能的奴隶中的%0个提供住所。",
+  "city_slave_pen_effect2": "当前奴隶总数为 %0 名，奴隶围栏总容量为 %1。",
   "city_farm": "农场",
   "city_farm_desc": "生产食物",
   "city_farm_effect": "食物产量提升 %0",
@@ -2536,128 +2536,129 @@
   "trait_tracker": "你的种族擅长追踪游戏，因此从狩猎中获得更多。",
   "trait_tracker_name": "Tracker",
   "trait_beast_of_burden": "当你赢得一场军事冲突时，你的种族能够带走更多的战利品。",
-
+  "trait_beast_of_burden_name": "Beast of Burden",
   "trait_herbivore": "你的种族不吃肉。",
-
-    "trait_pack_rat": "你的种族擅长把大部分的东西装进任何储存空间。",
-
+  "trait_herbivore_name": "Herbivore",
+  "trait_pack_rat": "你的种族擅长把大部分的东西装进任何储存空间。",
+  "trait_pack_rat_name": "Pack Rat",
   "trait_paranoid": "你的种族是多疑的，出于对银行的不信任，银行的资金上限 -10%。",
-
+  "trait_paranoid_name": "Paranoid",
   "trait_greedy": "你的种族是贪婪的，不会自愿放弃金钱，这会减少税收收入。",
-
+  "trait_greedy_name": "Greedy",
   "trait_merchant": "你的种族天生就有讨价还价的本事。",
-
+  "trait_merchant_name": "Merchant",
   "trait_smart": "你的种族更容易理解新概念，知识消耗 -10%。",
-
+  "trait_smart_name": "Smart",
   "trait_puny": "你的种族不擅长战斗，战斗最低幸运值从 5 降为 3，基准战斗评级 -10%。",
-
+  "trait_puny_name": "Puny",
   "trait_dumb": "你的种族不容易理解新概念，知识消耗 +5%。",
-
+  "trait_dumb_name": "Dumb",
   "trait_tough": "你的种族很坚强，可以经受住最艰苦的工作，而不至于变得虚弱。",
-
+  "trait_tough_name": "Tough",
   "trait_nearsighted": "你的种族是近视，阅读时需要更大的字体。",
-
+  "trait_nearsighted_name": "Nearsighted",
   "trait_intelligent": "你的种族总是充分利用科学的最新进展。",
-
+  "trait_intelligent_name": "Intelligent",
   "trait_intelligent_bd": "智慧",
   "trait_regenerative": "你的种族天生愈合得很快。",
-
+  "trait_regenerative_name": "Regnerative",
   "trait_gluttony": "你的种族总是很饿，会吃得更多。",
-
+  "trait_gluttony_name": "Gluttony",
   "trait_slow": "你的种族行动缓慢，做事很少着急。",
-
+  "trait_slow_name": "Slow",
   "trait_armored": "你的种族是天生覆盖着装甲，因此在战斗中更难受到致命伤害。",
-
+  "trait_armored_name": "Armored",
   "trait_optimistic": "你的种族总是试图寻找最好的结果，压力 -10%",
-
+  "trait_optimistic_name": "Optimistic",
   "trait_chameleon": "你的种族天生喜欢隐藏，从而更厌恶拥有常备军。（战斗评级为基准值的 120%，不与爪特性叠加，每兵营提供的兵力 -1）",
-
+  "trait_chameleon_name": "Chameleon",
   "trait_slow_digestion": "你的种族消化食物的速度很慢，因此不容易挨饿。",
-  
+  "trait_slow_digestion_name": "Slow Digestion",
   "trait_hard_of_hearing": "你的种族听力不好，因此听课的效果就不那么好了。",
+  "trait_hard_of_hearing_name": "Hard of Hearing",
   "trait_resourceful": "你的种族很机智，制造时浪费更少。",
-
+  "trait_resourceful_name": "Resourceful",
   "trait_selenophobia": "你的种族喜欢无月之夜。",
-
+  "trait_selenophobia_name": "Selenophobia",
   "trait_leathery": "你的种族皮肤坚韧，使你更能忍耐坏天气。",
-
+  "trait_leathery_name": "Leathery",
   "trait_pessimistic": "你的种族很容易消沉。",
-
+  "trait_pessimistic_name": "Pessimistic",
   "trait_hoarder": "你的种族喜欢囤积金钱。",
-
+  "trait_hoarder_name": "Hoarder",
   "trait_solitary": "你的种族更喜欢独自生活而不是和别人一起生活。",
-
+  "trait_solitary_name": "Solitary",
   "trait_kindling_kindred": "你的种族不擅长砍伐树木来获取木材，所有的木材花费都被移除了，但其他的花费却增加了。",
-
+  "trait_kindling_kindred_name": "Kindling Kindred",
   "trait_pyrophobia": "你的种族害怕火，因此冶炼厂的运转更慢。",
-
+  "trait_pyrophobia_name": "Pyrophobia",
   "trait_hyper": "你的种族永远不会停滞不前，总是会做些什么。",
-
+  "trait_hyper_name": "Hyper",
   "trait_skittish": "你的种族容易受到惊吓，雷雨天士气 -12%",
-
+  "trait_skittish_name": "Skittish",
   "trait_infectious": "你的种族通过感染其他生物和接管宿主来传播",
-
+  "trait_infectious_name": "Infectious",
   "trait_parasite": "你的种族是一种寄生虫，必须感染寄主受害者才能增长种群",
-
+  "trait_parasite_name": "Parasite",
   "trait_toxic": "你的种族的天然毒性使你们能抵抗有毒的工作场所，从而在工厂更有生产力",
-
+  "trait_toxic_name": "Toxic",
   "trait_nyctophilia": "你的种族不喜欢阳光直射，当阳光充足时，他们的生产效率会降低",
-
+  "trait_nyctophilia_name": "Nyctophilia",
   "trait_cannibalize": "你是食人族，会吃你自己的同类。通过摄取它们来增强自己的力量",
-
+  "trait_cannibalize_name": "Cannibalize",
   "trait_frail": "你的种族很脆弱，在战斗中更容易死亡",
-
+  "trait_frail_name": "Frail",
   "trait_malnutrition": "你的种族在营养不良的时候比大多数种族都能更好地发挥作用",
-
+  "trait_malnutrition_name": "Malnutrition",
   "trait_claws": "你的种族长有爪子，在战斗中更高效，战斗评级提升 20%",
-
+  "trait_claws_name": "Claws",
   "trait_atrophy": "如果吃不饱，你的种族萎缩得更快",
-
+  "trait_atrophy_name": "Atrophy",
   "trait_hivemind": "你的种族拥有蜂群思维，单独工作时效率极低，群体工作效率极高。算法详见WIKI",
-
+  "trait_hivemind_name": "Hivemind",
   "trait_tunneler": "你的种族天然善于挖掘隧道，使矿井生产更便宜。",
-
+  "trait_tunneler_name": "Tunneler",
   "trait_frenzy": "你的种族闻到血腥气会变得疯狂，战斗后暂时提升士气，且免疫战争贩子效果。",
-
+  "trait_frenzy_name": "Frenzy",
   "trait_apex_predator": "你是一个非常危险的捕食者。狩猎和战斗力提高，但装甲技术是不可用的。（战斗评级+25%，狩猎产量+50%，禁装甲研究）",
-
+  "trait_apex_predator_name": "Apex Predator",
   "trait_invertebrate": "你缺乏骨骼结构，这意味着你不能从战斗中带走那么多的战利品",
-
+  "trait_invertebrate_name": "Invertebrate",
   "trait_suction_grip": "您卓越的抓握力可提高所有生产效率",
-
+  "trait_suction_grip_name": "Suction Grip",
   "trait_suction_grip_bd": "抓握",
   "trait_befuddle": "你天生的狡诈可以帮助你更快地完成间谍行动。",
-
+  "trait_befuddle_name": "Befuddle",
   "trait_environmentalist": "你在所有其他事情之上寻求与自然的平衡",
-
+  "trait_environmentalist_name": "Environmentalist",
   "trait_unorganized": "组织一场革命需要更长的时间。",
-
+  "trait_unorganized_name": "Unorganized",
   "trait_musical": "艺人更能有效地取悦大众",
-
+  "trait_musical_name": "Musical",
   "trait_revive": "你的士兵有时会在被杀后复活。它更可能发生在炎热的气候中",
-
+  "trait_revive_name": "Revive",
   "trait_slow_regen": "你的士兵伤口愈合速度降低",
-
+  "trait_slow_regen_name": "Slow Regen",
   "trait_forge": "你的种族会喷火，熔炉不用燃料，直接获得石油产量加成，地热发电厂的效率提升 1kW",
-
+  "trait_forge_name": "Forge",
   "trait_autoignition": "你的种族体温火热，容易引燃纸张，图书馆知识产量加成由 5% 降为 3%",
-
+  "trait_autoignition_name": "Autoignition",
   "trait_blurry": "出于某种原因，没有人能好好地看你一眼。间谍不太可能在间谍活动中被抓",
-
+  "trait_blurry_name": "Blurry",
   "trait_snowy": "你的种族如此热爱雪，以至于在没有雪的时候他们会变得沮丧。",
-
+  "trait_snowy_name": "Snowy",
   "trait_ravenous": "你总是饥肠辘辘，什么都吃。",
-
+  "trait_ravenous_name": "Ravenous",
   "trait_ghostly": "你与空灵的联系有助于吸引灵魂。",
-
+  "trait_ghostly_name": "Ghostly",
   "trait_lawless": "你对中央权威的不尊重让你更频繁地更换政府。",
-
+  "trait_lawless_name": "Lawless",
   "trait_mistrustful": "冲突会让你更快地失去在对手城市的声誉。",
-
+  "trait_mistrustful_name": "Mistrustful",
   "trait_humpback": "你可以长时间不吃东西，也可以从工地上搬运更多的基本材料。",
-
+  "trait_humpback_name": "Humpback",
   "trait_thalassophobia": "你不喜欢大面积的水域，也不会投资开发海洋。",
-
+  "trait_thalassophobia_name": "Thalassophobia",
   "trait_evil": "你的种族是邪恶的。木材、毛皮、胶合板等物资以骨头、肉、骸骨织物等代替",
   "trait_evil_name": " [恶魔] 特质",
   "trait_immoral": "你的种族是邪恶的，喜欢冲突。战争贩子效果反转，提升士气",
@@ -2698,17 +2699,17 @@
   "trait_analytical_name": " [善于分析] 特质",
   "trait_promiscuous": "你的种族的出生率很高",
   "trait_promiscuous_name": " [个性开放] 特质",
-  "trait_resilient": "你的种族对恶劣环境天生自然适应能力，煤炭和铀的产量提升 +2%",
+  "trait_resilient": "你的种族对恶劣环境天生自然适应能力。煤炭和铀的产量提升 +2%",
   "trait_resilient_name": " [适应性] 特质",
   "trait_cunning": "你的种族对追踪狩猎有亲和力。狩猎产量提升 5%",
   "trait_cunning_name": " [灵巧] 特质",
-  "trait_hardy": "你的种族能吃苦的生理机能让你能忍受水泥制造的艰苦条件，水泥产量提升 1%",
+  "trait_hardy": "你的种族能吃苦的生理机能让你能忍受水泥制造的艰苦条件。水泥产量提升 1%",
   "trait_hardy_name": " [吃苦耐劳] 特质",
-  "trait_ambidextrous": "你的种族拥有灵巧的双手，工匠的产量提升 0.2%",
+  "trait_ambidextrous": "你的种族拥有灵巧的双手。工匠的产量提升 0.2%",
   "trait_ambidextrous_name": " [左右开弓] 特质",
-  "trait_industrious": "你的种族天生勤奋，采矿时，铜和铁的产量提升 2%",
+  "trait_industrious": "你的种族天生勤奋。采矿时，铜和铁的产量提升 2%",
   "trait_industrious_name": " [勤奋] 特质",
-  "trait_content": "你的种族天生容易满足，减少压力，每人口工作压力由0.2变更为1/(5+等级*0.4)",
+  "trait_content": "你的种族天生容易满足，减少压力。每人口工作压力由0.2变更为1/(5+等级*0.4)",
   "trait_content_name": " [易满足] 特质",
   "trait_fibroblast": "你的种族有增强的成纤维细胞增加士兵的愈合速率",
   "trait_fibroblast_name": " [成纤维细胞] 特质",

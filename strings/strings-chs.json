@@ -3205,7 +3205,7 @@
   "interstellar_cargo_yard_effect": "仓库存储提升 %0%",
   "interstellar_cruiser_title": "巡洋舰",
   "interstellar_dyson_title": "戴森网",
-  "interstellar_dyson_effect": "建造戴森网的 1%",
+  "interstellar_dyson_effect": "建造戴森网的 1%，全部完成后，发电量 175Kw",
   "interstellar_dyson_complete": "戴森网已经建造完成, 发电量 %0kW",
   "interstellar_nebula_name": "螺旋星云",
   "interstellar_nebula_desc1": "螺旋星云相当远，694光年，但这可能是一个非常丰富的氦-3来源，能为你的扩张提供燃料",

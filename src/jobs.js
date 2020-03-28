@@ -114,6 +114,9 @@ export const job_desc = {
         let morale = global.race['musical'] ? global.tech['theatre'] + 1: global.tech['theatre'];
         return global.tech['superstar'] ? loc('job_entertainer_desc2',[morale,1]) : loc('job_entertainer_desc',[morale]);
     },
+    priest: function(){
+        return loc('job_priest_desc');
+    },
     professor: function(){
         let impact = +(global.race['studious'] ? global.civic.professor.impact + 0.25 : global.civic.professor.impact).toFixed(2);
         if (global.tech['science'] && global.tech['science'] >= 3){
@@ -153,6 +156,9 @@ export const job_desc = {
     },
     hell_surveyor(){
         return loc('job_hell_surveyor_desc');
+    },
+    crew(){
+        return loc('job_crew_desc');
     }
 }
 
@@ -169,12 +175,14 @@ export function defineJobs(){
     loadJob('craftsman',1,5,'advanced');
     loadJob('cement_worker',0.4,5,'advanced');
     loadJob('entertainer',1,10,'advanced');
+    loadJob('priest',1,3,'advanced');
     loadJob('professor',0.5,6,'advanced');
     loadJob('scientist',1,5,'advanced');
     loadJob('banker',0.1,6,'advanced');
     loadJob('colonist',1,5,'advanced');
     loadJob('space_miner',1,5,'advanced');
     loadJob('hell_surveyor',1,1,'advanced');
+    loadJob('crew',1,4,'alert');
     loadFoundry();
 }
 
@@ -263,11 +271,12 @@ function loadJob(job, impact, stress, color){
     civ_container.append(controls);
     $('#jobs').append(civ_container);
     
-    var sub = $(`<span role="button" aria-label="remove ${job}" class="sub has-text-danger" @click="sub"><span>&laquo;</span></span>`);
-    var add = $(`<span role="button" aria-label="add ${job}" class="add has-text-success" @click="add"><span>&raquo;</span></span>`);
-    
-    controls.append(sub);
-    controls.append(add);
+    if (job !== 'crew'){
+        var sub = $(`<span role="button" aria-label="remove ${job}" class="sub has-text-danger" @click="sub"><span>&laquo;</span></span>`);
+        var add = $(`<span role="button" aria-label="add ${job}" class="add has-text-success" @click="add"><span>&raquo;</span></span>`);
+        controls.append(sub);
+        controls.append(add);
+    }
     
     new Vue({
         el: `#${id}`,
@@ -296,7 +305,12 @@ function loadJob(job, impact, stress, color){
                 for (let i=0; i<keyMult; i++){
                     if (global.civic[job].workers > 0){
                         global.civic[job].workers--;
-                        global.civic.free++;
+                        if (global.civic.d_job === 'unemployed' || job === global.civic.d_job){
+                            global.civic.free++;
+                        }
+                        else {
+                            global.civic[global.civic.d_job].workers++;
+                        }
                         global.civic[job].assigned = global.civic[job].workers;
                     }
                     else {
@@ -359,7 +373,7 @@ export function loadFoundry(){
         var foundry = $(`<div class="job"><div class="foundry job_label"><h3 class="has-text-warning">${loc('craftsman_assigned')}</h3><span :class="level()">{{ f.crafting }} / {{ c.max }}</span></div></div>`);
         $('#foundry').append(foundry);
 
-        let list = ['Plywood','Brick','Wrought_Iron','Sheet_Metal','Mythril','Aerogel'];
+        let list = ['Plywood','Brick','Wrought_Iron','Sheet_Metal','Mythril','Aerogel','Nanoweave'];
         for (let i=0; i<list.length; i++){
             let res = list[i];
             if (global.resource[res].display){
@@ -413,7 +427,12 @@ export function loadFoundry(){
                             global.city.foundry[res]--;
                             global.civic.craftsman.workers--;
                             global.city.foundry.crafting--;
-                            global.civic.free++;
+                            if (global.civic.d_job === 'unemployed'){
+                                global.civic.free++;
+                            }
+                            else {
+                                global.civic[global.civic.d_job].workers++;
+                            }
                         }
                         else {
                             break;
@@ -424,16 +443,7 @@ export function loadFoundry(){
                     var popper = $(`<div id="popCraft${res}" class="popper has-background-light has-text-dark"></div>`);
                     $('#main').append(popper);
                     let name = global.resource[res].name;
-                    let multiplier = craftingRatio(res);
-                    if (global.tech['v_train']){
-                        multiplier *= 2;
-                    }
-                    if (global.genes['crafty']){
-                        multiplier *= 1 + ((global.genes.crafty - 1) * 0.5);
-                    }
-                    if (global.race['ambidextrous']){
-                        multiplier *= 1 + (global.race['ambidextrous'] * 0.02);
-                    }
+                    let multiplier = craftingRatio(res,true);
                     let speed = global.genes['crafty'] ? 2 : 1;
                     let final = +(global.city.foundry[res] * multiplier * speed / 140).toFixed(2);
                     let bonus = (multiplier * speed * 100).toFixed(0);

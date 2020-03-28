@@ -83,6 +83,12 @@ export function index(){
                     <span aria-hidden="true">{{ 'tab_interstellar' | label }}</span>
                 </template>
             </b-tab-item>
+            <b-tab-item id="galaxy" :visible="s.showGalactic">
+                <template slot="header">
+                    <h2 class="is-sr-only">{{ 'tab_galactic' | label }}</h2>
+                    <span aria-hidden="true">{{ 'tab_galactic' | label }}</span>
+                </template>
+            </b-tab-item>
             <b-tab-item id="portal" :visible="s.showPortal">
                 <template slot="header">
                     <h2 class="is-sr-only">{{ 'tab_portal' | label }}</h2>
@@ -206,6 +212,9 @@ export function index(){
         {i: 'zombie',   f: 'the_misery'},
         {i: 'fire',     f: 'ill_advised'},
         {i: 'mask',     f: 'friday'},
+        {i: 'skull',    f: 'demon_slayer'},
+        {i: 'martini',  f: 'utopia'},
+        {i: 'trash',    f: 'garbage_pie'},
         {i: 'heart',    f: 'valentine'},
         {i: 'clover',   f: 'leprechaun'},
         {i: 'ghost',    f: 'halloween'},
@@ -220,25 +229,6 @@ export function index(){
         else if (global.settings.icon === icons[i]['i']){
             global.settings.icon = 'star';
         }
-    }
-
-    switch (name){
-        case 'steelem':
-            return 'nuclear';
-        case 'the_misery':
-            return 'zombie';
-        case 'ill_advised':
-            return 'fire';
-        case 'friday':
-            return 'mask';
-        case 'valentine':
-            return 'heart';
-        case 'halloween':
-            return 'ghost';
-        case 'thanksgiving':
-            return 'turkey';
-        case 'xmas':
-            return 'present';
     }
 
     // Settings Tab
@@ -282,7 +272,6 @@ export function index(){
         <div id="localization" class="localization"></div>
         <b-switch class="setting" v-model="s.mKeys"><b-tooltip :label="keys()" position="is-bottom" size="is-small" multilined animated>{{ 'm_keys' | label }}</b-tooltip></b-switch>
         <b-switch class="setting" v-model="s.cLabels"><b-tooltip :label="city()" position="is-bottom" size="is-small" multilined animated>{{ 'c_cat' | label }}</b-tooltip></b-switch>
-        <b-switch class="setting" v-model="s.tLabels"><b-tooltip :label="tech()" position="is-bottom" size="is-small" multilined animated>{{ 't_cat' | label }}</b-tooltip></b-switch>
         <b-switch class="setting" v-model="s.qKey"><b-tooltip :label="qKey()" position="is-bottom" size="is-small" multilined animated>{{ 'q_key' | label }}</b-tooltip></b-switch>
         <b-switch class="setting" v-model="s.qAny"><b-tooltip :label="qAny()" position="is-bottom" size="is-small" multilined animated>{{ 'q_any' | label }}</b-tooltip></b-switch>
         <b-switch class="setting" v-model="s.expose"><b-tooltip :label="expose()" position="is-bottom" size="is-small" multilined animated>{{ 'expose' | label }}</b-tooltip></b-switch>

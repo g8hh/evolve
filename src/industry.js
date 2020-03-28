@@ -1,4 +1,4 @@
-import { global, keyMultiplier, sizeApproximation } from './vars.js';
+import { global, keyMultiplier, sizeApproximation, p_on } from './vars.js';
 import { loc } from './locale.js';
 import { vBind } from './functions.js';
 
@@ -21,34 +21,34 @@ export function loadIndustry(industry,parent,bind){
 
 export const f_rate = {
     Lux: {
-        demand: [0.14,0.21,0.28,0.35],
-        fur: [2,3,4,5]
+        demand: [0.14,0.21,0.28,0.35,0.42],
+        fur: [2,3,4,5,6]
     },
     Alloy: {
-        copper: [0.75,1.12,1.49,1.86],
-        aluminium: [1,1.5,2,2.5],
-        output: [0.075,0.112,0.149,0.186]
+        copper: [0.75,1.12,1.49,1.86,2.23],
+        aluminium: [1,1.5,2,2.5,3],
+        output: [0.075,0.112,0.149,0.186,0.223]
     },
     Polymer: {
-        oil_kk: [0.22,0.33,0.44,0.55],
-        oil: [0.18,0.27,0.36,0.45],
-        lumber: [15,22,29,36],
-        output: [0.125,0.187,0.249,0.311],
+        oil_kk: [0.22,0.33,0.44,0.55,0.66],
+        oil: [0.18,0.27,0.36,0.45,0.54],
+        lumber: [15,22,29,36,43],
+        output: [0.125,0.187,0.249,0.311,0.373],
     },
     Nano_Tube: {
-        coal: [8,12,16,20],
-        neutronium: [0.05,0.075,0.1,0.125],
-        output: [0.2,0.3,0.4,0.5],
+        coal: [8,12,16,20,24],
+        neutronium: [0.05,0.075,0.1,0.125,0.15],
+        output: [0.2,0.3,0.4,0.5,0.6],
     },
     Stanene: {
-        aluminium: [30,45,60,75],
-        nano: [0.02,0.03,0.04,0.05],
-        output: [0.6,0.9,1.2,1.5],
+        aluminium: [30,45,60,75,90],
+        nano: [0.02,0.03,0.04,0.05,0.06],
+        output: [0.6,0.9,1.2,1.5,1.8],
     }
 };
 
 function loadSmelter(parent,bind){
-    let fuel = $(`<div><span class="has-text-warning">${loc('modal_smelter_fuel')}:</span> <span :class="level()">{{s.count | on}}/{{ s.count }}</span></div>`);
+    let fuel = $(`<div><span class="has-text-warning">${loc('modal_smelter_fuel')}:</span> <span :class="level()">{{s.count | on}}/{{ s.cap }}</span></div>`);
     parent.append(fuel);
 
     if (!global.race['forge']){
@@ -151,7 +151,7 @@ function loadSmelter(parent,bind){
             addWood(){
                 let keyMult = keyMultiplier();
                 for (let i=0; i<keyMult; i++){
-                    if (global.city.smelter.Wood + global.city.smelter.Coal + global.city.smelter.Oil < global.city.smelter.count){
+                    if (global.city.smelter.Wood + global.city.smelter.Coal + global.city.smelter.Oil < global.city.smelter.cap){
                         global.city.smelter.Wood++;
                         global.city.smelter.Iron++;
                     }
@@ -191,7 +191,7 @@ function loadSmelter(parent,bind){
             addCoal(){
                 let keyMult = keyMultiplier();
                 for (let i=0; i<keyMult; i++){
-                    if (global.city.smelter.Wood + global.city.smelter.Coal + global.city.smelter.Oil < global.city.smelter.count){
+                    if (global.city.smelter.Wood + global.city.smelter.Coal + global.city.smelter.Oil < global.city.smelter.cap){
                         global.city.smelter.Coal++;
                         global.city.smelter.Iron++;
                     }
@@ -231,7 +231,7 @@ function loadSmelter(parent,bind){
             addOil(){
                 let keyMult = keyMultiplier();
                 for (let i=0; i<keyMult; i++){
-                    if (global.city.smelter.Wood + global.city.smelter.Coal + global.city.smelter.Oil < global.city.smelter.count){
+                    if (global.city.smelter.Wood + global.city.smelter.Coal + global.city.smelter.Oil < global.city.smelter.cap){
                         global.city.smelter.Oil++;
                         global.city.smelter.Iron++;
                     }
@@ -335,12 +335,12 @@ function loadSmelter(parent,bind){
             }
         },
         filters: {
-            on: function(c){
+            on(c){
                 return global.city.smelter.Wood + global.city.smelter.Coal + global.city.smelter.Oil;
             },
-            diffSize: function (value){
+            diffSize(value){
                 return value > 0 ? `+${sizeApproximation(value,2)}` : sizeApproximation(value,2);
-            },
+            }
         }
     });
 }
@@ -422,6 +422,9 @@ function loadFactory(parent,bind){
             },
             addItem: function(item){
                 let max = global.space['red_factory'] ? global.space.red_factory.on + global.city.factory.on : global.city.factory.on;
+                if (global.interstellar['int_factory'] && p_on['int_factory']){
+                    max += p_on['int_factory'] * 2;
+                }
                 let keyMult = keyMultiplier();
                 for (var i=0; i<keyMult; i++){
                     if (global.city.factory.Lux + global.city.factory.Alloy + global.city.factory.Polymer + global.city.factory.Nano + global.city.factory.Stanene < max){
@@ -484,6 +487,9 @@ function loadFactory(parent,bind){
             level(){
                 let on = global.city.factory.Lux + global.city.factory.Alloy + global.city.factory.Polymer + global.city.factory.Nano + global.city.factory.Stanene;
                 let max = global.space['red_factory'] ? global.space.red_factory.on + global.city.factory.on : global.city.factory.on;
+                if (global.interstellar['int_factory'] && p_on['int_factory']){
+                    max += p_on['int_factory'] * 2;
+                }
                 return colorRange(on,max);
             }
         },
@@ -492,7 +498,11 @@ function loadFactory(parent,bind){
                 return global.city.factory.Lux + global.city.factory.Alloy + global.city.factory.Polymer + global.city.factory.Nano + global.city.factory.Stanene;
             },
             max(){
-                return global.space['red_factory'] ? global.space.red_factory.on + global.city.factory.on : global.city.factory.on;
+                let max = global.space['red_factory'] ? global.space.red_factory.on + global.city.factory.on : global.city.factory.on;
+                if (global.interstellar['int_factory'] && p_on['int_factory']){
+                    max += p_on['int_factory'] * 2;
+                }
+                return max;
             }
         }
     });

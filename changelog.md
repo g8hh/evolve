@@ -1,3 +1,32 @@
+#### 0.8.0 - 3/27/2020
+Intergalactic Content<br>
+Universe Mastery Rework<br>
+-Each Universe now tracks its own mastery level responsible for 40% of the mastery bonus, the remaining 60% comes from the general mastery level<br>
+-Standard Universe mastery rules remains unchanged<br>
+Micro icons can now be earned for none Micro achievements. These will not count for standard mastery, only Micro mastery<br>
+Unification 3.0, the unification system has been reworked<br>
+Federation Government type<br>
+New Faith CRISPR line of upgrades, unlocks priest job<br>
+Universal, Standard and Mastered CRISPR Upgrades, for masters of the universes<br>
+Added Negotiator CRISPR upgrade<br>
+Added Persuasive Minor Gene<br>
+Extended the Deify and Study Ancients tech trees<br>
+Enhanced Droids upgrade for War Droids<br>
+Repair Droids for Fortress<br>
+Smoldering and Chilled now have reduced effectiveness after 100 stacks<br>
+Removed Heavy Genus Feats, these were redundant with Universe Icons<br>
+Blackhole reset now also grants species level extinction achievement<br>
+Power cost of Mass Ejector increased to 3kW<br>
+Genetics lab custom mutation costs rescaled to static values depending on the genetic trait<br>
+Colonists will now be automatically assigned when a Living Quarter is completed if the default job has any available citizens<br>
+Biodome redesigned, produces less food but increases living quarter capacity for Citizens<br>
+More robust research catagories<br>
+Various racial traits now apply to ARPA projects<br>
+Human Creative trait rescaled<br>
+Large cost creep penalty reduced to 0.005 from 0.01<br>
+Strong gathering bonus increased from 2 to 5<br>
+Compact lowered from -0.02 to -0.015<br>
+
 #### 0.7.28 - 3/16/2020 ####
 Antimatter Universe now gives a 10% prestige bonus post MAD<br>
 St. Patricks Day event<br>

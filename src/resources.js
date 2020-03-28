@@ -1,5 +1,5 @@
 import { global, keyMultiplier, poppers, breakdown, sizeApproximation, p_on, red_on, achieve_level } from './vars.js';
-import { clearElement, vBind, modRes } from './functions.js';
+import { vBind, clearElement, modRes, calc_mastery } from './functions.js';
 import { races } from './races.js';
 import { loc } from './locale.js';
 
@@ -29,6 +29,9 @@ export const resource_values = {
     Nano_Tube: 750,
     Graphene: 3000,
     Stanene: 3600,
+    Bolognium: 9000,
+    Vitreloy: 10200,
+    Orichalcum: 99000,
     Genes: 0,
     Soul_Gem: 0,
 };
@@ -44,7 +47,7 @@ export const tradeRatio = {
     Cement: 1,
     Coal: 1,
     Oil: 0.5,
-    Uranium: 0.15,
+    Uranium: 0.12,
     Steel: 0.5,
     Titanium: 0.25,
     Alloy: 0.2,
@@ -59,6 +62,9 @@ export const tradeRatio = {
     Nano_Tube: 0.1,
     Graphene: 0.1,
     Stanene: 0.1,
+    Bolognium: 0.12,
+    Vitreloy: 0.12,
+    Orichalcum: 0.05,
 }
 
 export const atomic_mass = {
@@ -87,12 +93,16 @@ export const atomic_mass = {
     Nano_Tube: 15.083,
     Graphene: 26.9615,
     Stanene: 33.9615,
+    Bolognium: 75.898,
+    Vitreloy: 41.08,
+    Orichalcum: 237.8,
     Plywood: 7.666,
     Brick: 20.009,
     Wrought_Iron: 55.845,
     Sheet_Metal: 26.9815,
     Mythril: 94.239,
-    Aerogel: 7.84
+    Aerogel: 7.84,
+    Nanoweave: 23.71
 };
 
 export function craftCost(){
@@ -104,6 +114,7 @@ export function craftCost(){
             Sheet_Metal: [{ r: 'Aluminium', a: 130 }],
             Mythril: [{ r: 'Iridium', a: 110 },{ r: 'Alloy', a: 260 }],
             Aerogel: [{ r: 'Graphene', a: 2550 },{ r: 'Infernite', a: 55 }],
+            Nanoweave: [{ r: 'Nano_Tube', a: 1109 },{ r: 'Vitreloy', a: 45 }],
         }
         : {
             Plywood: [{ r: 'Lumber', a: 100 }],
@@ -112,10 +123,11 @@ export function craftCost(){
             Sheet_Metal: [{ r: 'Aluminium', a: 120 }],
             Mythril: [{ r: 'Iridium', a: 100 },{ r: 'Alloy', a: 250 }],
             Aerogel: [{ r: 'Graphene', a: 2500 },{ r: 'Infernite', a: 50 }],
+            Nanoweave: [{ r: 'Nano_Tube', a: 1000 },{ r: 'Vitreloy', a: 40 }],
         };
 }
 
-export function craftingRatio(res){
+export function craftingRatio(res,auto){
     let skill = global.tech['foundry'] >= 5 ? (global.tech['foundry'] >= 8 ? 0.08 : 0.05) : 0.03;
     let multiplier = global.tech['foundry'] >= 2 ? 1 + (global.city.foundry.count * skill) : 1;
     if (global.tech['foundry'] >= 3 && global.city.foundry[res] > 1){
@@ -132,9 +144,18 @@ export function craftingRatio(res){
         if (global.tech['mars'] >= 4){
             multiplier += p_on['red_factory'] * 0.05;
         }
+        if (global.interstellar['int_factory'] && p_on['int_factory']){
+            multiplier += p_on['int_factory'] * 0.1;
+        }
     }
     if (global.space['fabrication']){
         multiplier += red_on['fabrication'] * global.civic.colonist.workers * 0.02;
+    }
+    if (res === 'Mythril' && p_on['stellar_forge']){
+        multiplier += p_on['stellar_forge'] * 0.05;
+    }
+    if (auto && p_on['stellar_forge']){
+        multiplier += p_on['stellar_forge'] * 0.1;
     }
     if (global.race['crafty']){
         multiplier += 0.03;
@@ -147,6 +168,17 @@ export function craftingRatio(res){
     }
     if (global.civic.govern.type === 'socialist'){
         multiplier *= 1.25;
+    }
+    if (auto){
+        if (global.tech['v_train']){
+            multiplier *= 2;
+        }
+        if (global.genes['crafty']){
+            multiplier *= 1 + ((global.genes.crafty - 1) * 0.5);
+        }
+        if (global.race['ambidextrous']){
+            multiplier *= 1 + (global.race['ambidextrous'] * 0.02);
+        }
     }
     if (global.race.Plasmid.count > 0){
         multiplier *= plasmidBonus() / 8 + 1;
@@ -216,6 +248,9 @@ export function defineResources(){
         loadResource('Nano_Tube',0,1,false,false,'advanced');
         loadResource('Graphene',0,1,false,true,'advanced');
         loadResource('Stanene',0,1,false,true,'advanced');
+        loadResource('Bolognium',0,1,false,true,'advanced');
+        loadResource('Vitreloy',0,1,false,true,'advanced');
+        loadResource('Orichalcum',0,1,false,true,'advanced');
         loadResource('Genes',-2,0,false,false,'advanced');
         loadResource('Soul_Gem',-2,0,false,false,'advanced');
         loadResource('Plywood',-1,0,false,false,'danger');
@@ -224,13 +259,16 @@ export function defineResources(){
         loadResource('Sheet_Metal',-1,0,false,false,'danger');
         loadResource('Mythril',-1,0,false,false,'danger');
         loadResource('Aerogel',-1,0,false,false,'danger');
+        loadResource('Nanoweave',-1,0,false,false,'danger');
         loadRouteCounter();
         loadContainerCounter();
+        initGalaxyTrade();
     }
     loadSpecialResource('Plasmid');
     loadSpecialResource('AntiPlasmid');
     loadSpecialResource('Phage');
     loadSpecialResource('Dark');
+    loadSpecialResource('Harmony');
 }
 
 // Load resource function
@@ -542,9 +580,9 @@ function marketItem(mount,market_item,name,color,full){
     if (full){
         let trade = $(`<span class="trade" v-show="m.active"><span class="has-text-warning">${loc('resource_market_routes')}</span></span>`);
         market_item.append(trade);
-        trade.append($(`<b-tooltip :label="aBuy('${name}')" position="is-bottom" size="is-small" multilined animated><span role="button" aria-label="import ${name}" class="sub has-text-success" @click="autoBuy('${name}')"><span>+</span></span></b-tooltip>`));
+        trade.append($(`<b-tooltip :label="aSell('${name}')" position="is-bottom" size="is-small" multilined animated><span role="button" aria-label="export ${name}" class="sub has-text-danger" @click="autoSell('${name}')"><span>-</span></span></b-tooltip>`));
         trade.append($(`<span class="current">{{ r.trade | trade }}</span>`));
-        trade.append($(`<b-tooltip :label="aSell('${name}')" position="is-bottom" size="is-small" multilined animated><span role="button" aria-label="export ${name}" class="add has-text-danger" @click="autoSell('${name}')"><span>-</span></span></b-tooltip>`));
+        trade.append($(`<b-tooltip :label="aBuy('${name}')" position="is-bottom" size="is-small" multilined animated><span role="button" aria-label="import ${name}" class="add has-text-success" @click="autoBuy('${name}')"><span>+</span></span></b-tooltip>`));
         trade.append($(`<span role="button" class="zero has-text-advanced" @click="zero('${name}')">${loc('cancel_routes')}</span>`));
         tradeRouteColor(name);
     }
@@ -562,9 +600,18 @@ function marketItem(mount,market_item,name,color,full){
                 return loc('resource_market_auto_sell_desc',[tradeRatio[res],unit,price]);
             },
             aBuy(res){
-                let unit = tradeRatio[res] === 1 ? loc('resource_market_unit') : loc('resource_market_units');
+                let rate = tradeRatio[res];
+                if (global.race['persuasive']){
+                    rate *= 1 + (global.race['persuasive'] / 100);
+                }
+                if (global.genes['trader']){
+                    let mastery = calc_mastery();
+                    rate *= 1 + (mastery / 100);
+                }
+                rate = +(rate).toFixed(2);
+                let unit = rate === 1 ? loc('resource_market_unit') : loc('resource_market_units');
                 let price = tradeBuyPrice(res);
-                return loc('resource_market_auto_buy_desc',[tradeRatio[res],unit,price]);
+                return loc('resource_market_auto_buy_desc',[rate,unit,price]);
             },
             purchase(res){
                 if (!global.race['no_trade']){
@@ -670,6 +717,129 @@ function marketItem(mount,market_item,name,color,full){
             },
             namespace(val){
                 return val.replace("_", " ");
+            }
+        }
+    });
+}
+
+function initGalaxyTrade(){
+    $('#market').append($(`<div id="galaxyTrade" v-show="t.xeno && t.xeno >= 5" class="market-header galaxyTrade"><h2 class="is-sr-only">${loc('galaxy_trade')}</h2></div>`));
+    galacticTrade();
+}
+
+export const galaxyOffers = [
+    {
+        buy: { res: 'Deuterium', vol: 5 },
+        sell: { res: 'Helium_3', vol: 25 }
+    },
+    {
+        buy: { res: 'Neutronium', vol: 2.5 },
+        sell: { res: 'Copper', vol: 200 }
+    },
+    {
+        buy: { res: 'Adamantite', vol: 3 },
+        sell: { res: 'Iron', vol: 300 }
+    },
+    {
+        buy: { res: 'Elerium', vol: 1 },
+        sell: { res: 'Oil', vol: 125 }
+    },
+    {
+        buy: { res: 'Nano_Tube', vol: 10 },
+        sell: { res: 'Titanium', vol: 20 }
+    },
+    {
+        buy: { res: 'Graphene', vol: 25 },
+        sell: { res: 'Lumber', vol: 1000 }
+    },
+    {
+        buy: { res: 'Stanene', vol: 40 },
+        sell: { res: 'Aluminium', vol: 800 }
+    },
+    {
+        buy: { res: 'Bolognium', vol: 0.75 },
+        sell: { res: 'Uranium', vol: 4 }
+    },
+    {
+        buy: { res: 'Vitreloy', vol: 1 },
+        sell: { res: 'Infernite', vol: 1 }
+    }
+];
+
+export function galacticTrade(modal){
+    let galaxyTrade = modal ? modal : $(`#galaxyTrade`);
+    if (!modal){
+        $(`#galaxyTrade`).empty();
+    }
+
+    if (global.galaxy['trade']){
+        galaxyTrade.append($(`<div class="market-item trade-header"><span class="has-text-special">${loc('galaxy_trade')}</span></div>`));
+
+        for (let i=0; i<galaxyOffers.length; i++){
+            let offer = $(`<div class="market-item trade-offer"></div>`);
+            galaxyTrade.append(offer);
+
+            offer.append($(`<span class="offer-item has-text-success">${global.resource[galaxyOffers[i].buy.res].name}</span>`));
+            offer.append($(`<span class="offer-vol has-text-advanced">+{{ '${i}' | t_vol }}/s</span>`));
+            
+            offer.append($(`<span class="offer-item has-text-danger">${global.resource[galaxyOffers[i].sell.res].name}</span>`));
+            offer.append($(`<span class="offer-vol has-text-caution">-${galaxyOffers[i].sell.vol}/s</span>`));
+
+            let trade = $(`<span class="trade"><span class="has-text-warning">${loc('resource_market_routes')}</span></span>`);
+            offer.append(trade);
+            
+            let assign = loc('galaxy_freighter_assign',[global.resource[galaxyOffers[i].buy.res].name,global.resource[galaxyOffers[i].sell.res].name]);
+            let unassign = loc('galaxy_freighter_unassign',[global.resource[galaxyOffers[i].buy.res].name,global.resource[galaxyOffers[i].sell.res].name]);
+            trade.append($(`<b-tooltip :label="desc('${unassign}')" position="is-bottom" size="is-small" multilined animated><span role="button" aria-label="${unassign}" class="sub has-text-danger" @click="less('${i}')"><span>-</span></span></b-tooltip>`));
+            trade.append($(`<span class="current">{{ g.f${i} }}</span>`));
+            trade.append($(`<b-tooltip :label="desc('${assign}')" position="is-bottom" size="is-small" multilined animated><span role="button" aria-label="${assign}" class="add has-text-success" @click="more('${i}')"><span>+</span></span></b-tooltip>`));
+        }
+
+        let totals = $(`<div class="market-item trade-offer"><span class="tradeTotal"><span class="has-text-caution">${loc('resource_market_galactic_trade_routes')}</span> {{ g.cur }} / {{ g.max }}</span></div>`);
+        galaxyTrade.append(totals);
+    }
+
+    vBind({
+        el: modal ? '#specialModal' : '#galaxyTrade',
+        data: {
+            g: global.galaxy.trade,
+            t: global.tech
+        },
+        methods: {
+            less(idx){
+                let keyMutipler = keyMultiplier();
+                if (global.galaxy.trade[`f${idx}`] >= keyMutipler){
+                    global.galaxy.trade[`f${idx}`] -= keyMutipler;
+                }
+                else {
+                    global.galaxy.trade[`f${idx}`] = 0;
+                }
+            },
+            more(idx){
+                let keyMutipler = keyMultiplier();
+                if (global.galaxy.trade.cur < global.galaxy.trade.max){
+                    if (keyMutipler > global.galaxy.trade.max - global.galaxy.trade.cur){
+                        keyMutipler = global.galaxy.trade.max - global.galaxy.trade.cur;
+                    }
+                    global.galaxy.trade[`f${idx}`] += keyMutipler;
+                }
+            },
+            desc(s){
+                return s; 
+            }
+        },
+        filters: {
+            t_vol(idx){
+                let buy_vol = galaxyOffers[idx].buy.vol;
+                if (global.race['persuasive']){
+                    buy_vol *= 1 + (global.race['persuasive'] / 100);
+                }
+                if (global.genes['trader']){
+                    let mastery = calc_mastery();
+                    buy_vol *= 1 + (mastery / 100);
+                }
+                buy_vol = +(buy_vol).toFixed(2);
+                return buy_vol;
             }
         }
     });
@@ -833,6 +1003,7 @@ function breakdownPopover(id,name,type){
                         if (val != 0 && !isNaN(val)){
                             let type = val > 0 ? 'success' : 'danger';
                             let label = mod.replace("_"," ");
+                            label = mod.replace(/\+.+$/,"");
                             col1.append(`<div class="modal_bd"><span>${label}</span><span class="has-text-${type}">{{ ${t}['${mod}'] | translate }}</span></div>`);
                         }
                     });
@@ -849,6 +1020,7 @@ function breakdownPopover(id,name,type){
                 if (val != 0 && !isNaN(val)){
                     let type = val > 0 ? 'success' : 'danger';
                     let label = mod.replace("_"," ");
+                    label = mod.replace(/\+.+$/,"");
                     col2.append(`<div class="modal_bd"><span>${label}</span><span class="has-text-${type}">{{ consume.${name}['${mod}'] | fix | translate }}</span></div>`);
                 }
             });
@@ -943,7 +1115,7 @@ function breakdownPopover(id,name,type){
 
 function loadRouteCounter(){
     let no_market = global.race['no_trade'] ? ' nt' : '';
-    var market_item = $(`<div id="tradeTotal" v-show="active" class="market-item"><span class="tradeTotal${no_market}"><span class="has-text-warning">${loc('resource_market_trade_routes')}</span> {{ trade }} / {{ mtrade }}</span></div>`);
+    var market_item = $(`<div id="tradeTotal" v-show="active" class="market-item"><span class="tradeTotal${no_market}"><span class="has-text-caution">${loc('resource_market_trade_routes')}</span> {{ trade }} / {{ mtrade }}</span></div>`);
     $('#market').append(market_item);
     vBind({
         el: '#tradeTotal',
@@ -1140,6 +1312,9 @@ export function crateValue(){
     if (global.tech['container'] && global.tech['container'] >= 6){
         create_value += global.tech['container'] >= 7 ? 1200 : 500;
     }
+    if (global.tech['container'] && global.tech['container'] >= 8){
+        create_value += 4000;
+    }
     create_value *= global.stats.achieve['blackhole'] ? 1 + (global.stats.achieve.blackhole.l * 0.05) : 1;
     return Math.round(spatialReasoning(create_value));
 }
@@ -1153,14 +1328,17 @@ export function containerValue(){
         container_value += global.tech['steel_container'] >= 5 ? 1000 : 400;
     }
     if (global.tech['steel_container'] && global.tech['steel_container'] >= 6){
-        container_value += 1000;
+        container_value += global.tech['steel_container'] >= 7 ? 7500 : 1000;
+    }
+    if (global.tech['steel_container'] && global.tech['steel_container'] >= 8){
+        container_value += 8000;
     }
     container_value *= global.stats.achieve['blackhole'] ? 1 + (global.stats.achieve.blackhole.l * 0.05) : 1;
     return Math.round(spatialReasoning(container_value));
 }
 
-export function initMarket(){
-    let market = $(`<div id="market-qty" class="market-header"><h2 class="is-sr-only">${loc('resource_market')}</h2</div>`);
+function initMarket(){
+    let market = $(`<div id="market-qty" class="market-header"><h2 class="is-sr-only">${loc('resource_market')}</h2></div>`);
     clearElement($('#market'));
     $('#market').append(market);
     loadMarket();
@@ -1172,8 +1350,8 @@ function initStorage(){
     $('#resStorage').append(store);
     
     if (global.resource['Crates'] && global.resource['Containers']){
-        store.append($(`<b-tooltip :label="buildCrateLabel()" position="is-bottom" class="crate" animated multilined><button :aria-label="buildCrateLabel()" v-show="cr.display" class="button" @click="crate">${loc('resource_modal_crate_construct')}</button></b-tooltip>`));
-        store.append($(`<b-tooltip :label="buildContainerLabel()" position="is-bottom" class="container" animated multilined><button :aria-label="buildContainerLabel()" v-show="cn.display" class="button" @click="container">${loc('resource_modal_container_construct')}</button></b-tooltip>`));
+        store.append($(`<b-tooltip :label="buildCrateDesc()" position="is-bottom" class="crate" animated multilined><button :aria-label="buildCrateDesc()" v-show="cr.display" class="button" @click="crate">${loc('resource_modal_crate_construct')}</button></b-tooltip>`));
+        store.append($(`<b-tooltip :label="buildContainerDesc()" position="is-bottom" class="container" animated multilined><button :aria-label="buildContainerDesc()" v-show="cn.display" class="button" @click="container">${loc('resource_modal_container_construct')}</button></b-tooltip>`));
 
         vBind({
             el: '#createHead',
@@ -1188,10 +1366,10 @@ function initStorage(){
                 container(){
                     buildContainer();
                 },
-                buildCrateLabel(){
+                buildCrateDesc(){
                     return buildCrateLabel();
                 },
-                buildContainerLabel(){
+                buildContainerDesc(){
                     return buildContainerLabel();
                 },
             }
@@ -1273,7 +1451,7 @@ function initEjector(){
 
 function loadEjector(name,color){
     if (atomic_mass[name] && global.interstellar['mass_ejector']){
-        let ejector = $(`<div id="eject${name}" class="market-item"><h3 class="res has-text-${color}">${global.resource[name].name}</h3></div>`);
+        let ejector = $(`<div id="eject${name}" class="market-item" v-show="r.display"><h3 class="res has-text-${color}">${global.resource[name].name}</h3></div>`);
         $('#resEjector').append(ejector);
 
         let res = $(`<span class="trade"></span>`);
@@ -1334,10 +1512,19 @@ export function spatialReasoning(value){
         value *= 1 + (plasmids / divisor);
     }
     if (global.race.universe === 'standard'){
-        value *= 1 + (global.race.Dark.count / 200);
+        let de = global.race.Dark.count;
+        if (global.race.Harmony.count > 0){
+            de *= 1 + (global.race.Harmony.count * 0.0001);
+        }
+        value *= 1 + (de / 200);
     }
     if (global.race.universe === 'antimatter' && global.city['temple'] && global.city['temple'].count){
-        value *= 1 + (global.city.temple.count * 0.06);
+        let temple = 0.06;
+        if (global.genes['ancients'] && global.genes['ancients'] >= 2 && global.civic.priest.display){
+            let priest = global.genes['ancients'] >= 4 ? 0.0012 : 0.0008;
+            temple += priest * global.civic.priest.workers;
+        }
+        value *= 1 + (global.city.temple.count * temple);
     }
     return Math.round(value);
 }
@@ -1371,6 +1558,10 @@ export function plasmidBonus(type){
             let temple_bonus = global.tech['anthropology'] && global.tech['anthropology'] >= 1 ? 0.08 : 0.05;
             if (global.tech['fanaticism'] && global.tech['fanaticism'] >= 2){
                 temple_bonus += global.civic.professor.workers * 0.002;
+            }
+            if (global.genes['ancients'] && global.genes['ancients'] >= 2 && global.civic.priest.display){
+                let priest_bonus = global.genes['ancients'] >= 4 ? 0.0015 : 0.001;
+                temple_bonus += priest_bonus * global.civic.priest.workers;
             }
             if (global.race['spiritual']){
                 temple_bonus *= 1.13;

@@ -3325,7 +3325,7 @@
   "space_gas_moon_drone_desc": "采矿无人机",
   "space_gas_moon_drone_effect1": "采矿前哨产量 +6%",
   "space_gas_moon_oil_extractor_title": "石油提取器",
-  "space_gas_moon_oil_extractor_effect1": "石油产量 +%0，电力消耗 %1kW",
+  "space_gas_moon_oil_extractor_effect1": "石油产量 +%0",
   "space_belt_info_name": "小行星带 (Asteroid Belt) ",
   "space_belt_info_desc": "小行星带 (Asteroid Belt) 位于%0和%1之间，潜在的资源非常丰富",
   "space_belt_info_desc2": "你必须派遣太空矿工来增加小行星带的支持",

@@ -1429,7 +1429,7 @@
   "tech_swarm_convection": "蜂群对流",
   "tech_swarm_convection_effect": "在蜂群卫星中加入石墨烯，每颗蜂群卫星的发电量从 0.5kW 提升到 0.65kW。",
   "tech_orichalcum_panels": "奥利哈刚太阳能面板",
-  "tech_orichalcum_panels_effect": "加装了奥利哈刚太阳能面板，每颗蜂群卫星的发电量从 0.65kW 提升到 1.00kW。",
+  "tech_orichalcum_panels_effect": "加装了奥利哈刚太阳能面板，每颗蜂群卫星的发电量进一步提高。",
   "tech_dyson_net": "戴森网",
   "tech_dyson_net_effect": "之前设计一个戴森球的尝试没有成功，但是现在有可能在比邻星周围建立一个戴森网。戴森网不是用硬壳材料围绕恒星，而是用一种高导电性的网状材料围绕着比它小得多的比邻星。",
   "tech_dyson_sphere2_effect": "通过现代科学技术，戴森网可以升级成一个完整的戴森球了。",

@@ -382,7 +382,7 @@
   "evo_challenge_craft_effect": "禁止手动制作建材",
   "evo_challenge_crispr": "CRISPR削弱",
   "evo_challenge_crispr_desc": "CRISPR成本蠕变削弱",
-  "evo_challenge_crispr_effect": "CRISPR成本蠕变只起到20%的作用，另外随机获得一个负面的基因特质。",
+  "evo_challenge_crispr_effect": "CRISPR成本蠕变只起到20%的作用，随机获得一个负面特质。",
   "evo_challenge_junker": "遗传绝境",
   "evo_challenge_junker_desc": "你的基因简直是个灾难，是一个集各种族所有基因缺陷于一身的灾难",
   "evo_challenge_junker_effect": "该挑战将触发%0，禁止交易，禁止手动制作建材，CRISPR成本蠕变削弱到20%。该种族将会有许多可怕的基因缺陷，试着用核弹重置以求安乐……",

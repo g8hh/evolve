@@ -3548,7 +3548,7 @@
   "galaxy_starbase_civ_crew": "需要 %0 名平民船员",
   "galaxy_starbase_mil_crew": "需要 %0 名军人船员",
   "galaxy_ship_dock": "船坞",
-  "galaxy_ship_dock_effect": "星门支持 +%0",
+  "galaxy_ship_dock_effect": "每船坞星门支持 +%0",
   "galaxy_gateway_depot": "星门仓库",
   "galaxy_gateway_depot_effect": "通电后，%1储量上限 +%0",
   "galaxy_fuel_consume": "仙女座星云舰队",

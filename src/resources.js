@@ -379,7 +379,7 @@ function loadResource(name,max,rate,tradable,stackable,color){
         for (let i=0; i<inc.length; i++){
             craft.append($(`<span id="inc${name}${inc[i]}" @mouseover="hover('${name}',${inc[i]})" @mouseout="unhover('${name}',${inc[i]})"><a @click="craft('${name}',${inc[i]})" aria-label="craft ${inc[i]} ${name}">+<span class="craft" data-val="${inc[i]}">${inc[i]}</span></a></span>`));
         }
-        craft.append($(`<span id="inc${name}A"><a @click="craft('${name}','A')" aria-label="craft max ${name}">+A</a></span>`));
+        craft.append($(`<span id="inc${name}A" @mouseover="hover('${name}','A')" @mouseout="unhover('${name}','A')"><a @click="craft('${name}','A')" aria-label="craft max ${name}">+<span class="craft" data-val="${'A'}">A</span></a></span>`));
     }
     else {
         res_container.append($(`<span></span>`));
@@ -464,14 +464,35 @@ function loadResource(name,max,rate,tradable,stackable,color){
                 $('#main').append(popper);
 
                 let bonus = (craftingRatio(res) * 100).toFixed(0);
-                popper.append($(`<div>+${bonus}% Crafted ${global.resource[res].name}</div>`));
-
+                popper.append($(`<div class="has-text-info">${loc('manual_crafting_hover_bonus',[bonus,global.resource[res].name])}</div>`));
+                
                 let craft_costs = craftCost();
-                for (let i=0; i<craft_costs[res].length; i++){
-                    let num = typeof vol === 'number' ? vol * craft_costs[res][i].a : vol;
-                    popper.append($(`<div>${global.resource[craft_costs[res][i].r].name} <span class="craft" data-val="${num}">${num}</span></div>`));
+                let crafts = $(`<div><span class="has-text-success">${loc('manual_crafting_hover_craft')} </span></div>`);
+                let num_crafted = 0;
+                if (typeof vol !== 'number'){
+                    num_crafted = global.resource[craft_costs[res][0].r].amount / craft_costs[res][0].a;
+                    if (craft_costs[res].length > 1){
+                        for (let i=1; i<craft_costs[res].length; i++){
+                            let curr_max = global.resource[craft_costs[res][i].r].amount / craft_costs[res][i].a;
+                            if (curr_max < num_crafted){
+                                num_crafted = curr_max;
+                            }
+                        }
+                    }
+                    crafts.append($(`<span class="has-text-advanced">${sizeApproximation((bonus / 100) * num_crafted,1)} ${global.resource[res].name}</span>`));
                 }
-
+                else {
+                    num_crafted = keyMultiplier() * vol;
+                    let total_crafted = sizeApproximation((bonus / 100) * num_crafted,1);
+                    crafts.append($(`<span class="has-text-advanced"><span class="craft" data-val="${total_crafted}">${total_crafted}</span> ${global.resource[res].name}</span>`));
+                }
+                let costs = $(`<div><span class="has-text-danger">${loc('manual_crafting_hover_use')} </span></div>`);
+                for (let i=0; i<craft_costs[res].length; i++){
+                    costs.append($(`<span class="has-text-caution">${sizeApproximation(num_crafted * craft_costs[res][i].a,1)} ${global.resource[craft_costs[res][i].r].name}</span>`));
+                }
+                popper.append(crafts);
+                popper.append(costs);
+                
                 popper.show();
                 poppers[`r${res}${vol}`] = new Popper($(`#inc${res}${vol}`),popper);
             },

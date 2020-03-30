@@ -613,7 +613,7 @@ const genePool = {
         action(){
             if (payPlasmids('negotiator')){
                 global.genes['trader'] = 1;
-                vBind({el: `#galaxyTrade`},'update');
+                updateTrades();
                 return true;
             }
             return false;
@@ -1156,28 +1156,55 @@ function genetics(){
             },
             methods: {
                 gene(t){
-                    let cost = fibonacci(global.race.minor[t] ? global.race.minor[t] + 4 : 4);
-                    if (t === 'mastery'){ cost *= 5; }
-                    if (global.resource.Genes.amount >= cost){
-                        global.resource.Genes.amount -= cost;
-                        global.race.minor[t] ? global.race.minor[t]++ : global.race.minor[t] = 1;
-                        global.race[t] ? global.race[t]++ : global.race[t] = 1;
+                    let curr_iteration = 0;
+                    let iterations = keyMultiplier();
+                    let can_purchase = true;
+                    let redraw = false;
+                    while (curr_iteration < iterations && can_purchase){
+                        let cost = fibonacci(global.race.minor[t] ? global.race.minor[t] + 4 : 4);
+                        if (t === 'mastery'){ cost *= 5; }
+                        if (global.resource.Genes.amount >= cost){
+                            global.resource.Genes.amount -= cost;
+                            global.race.minor[t] ? global.race.minor[t]++ : global.race.minor[t] = 1;
+                            global.race[t] ? global.race[t]++ : global.race[t] = 1;
+                            redraw = true;
+                        }
+                        else {
+                            can_purchase = false;
+                        }
+                        curr_iteration++;
+                    }
+                    if (redraw){
                         genetics();
                         if (t === 'persuasive'){
-                            vBind({el: `#galaxyTrade`},'update');
+                            updateTrades();
                         }
                     }
                 },
                 phage(t){
-                    let cost = fibonacci(global.genes.minor[t] ? global.genes.minor[t] + 4 : 4);
-                    if (t === 'mastery'){ cost *= 2; }
-                    if (global.race.Phage.count >= cost){
-                        global.race.Phage.count -= cost;
-                        global.genes.minor[t] ? global.genes.minor[t]++ : global.genes.minor[t] = 1;
-                        global.race[t] ? global.race[t]++ : global.race[t] = 1;
+                    let curr_iteration = 0;
+                    let iterations = keyMultiplier();
+                    let can_purchase = true;
+                    let redraw = false;
+                    while (curr_iteration < iterations && can_purchase){
+                        let cost = fibonacci(global.genes.minor[t] ? global.genes.minor[t] + 4 : 4);
+                        if (t === 'mastery'){ cost *= 2; }
+                        if (global.race.Phage.count >= cost){
+                            global.race.Phage.count -= cost;
+                            global.genes.minor[t] ? global.genes.minor[t]++ : global.genes.minor[t] = 1;
+                            global.race[t] ? global.race[t]++ : global.race[t] = 1;
+                            genetics();
+                            redraw = true;
+                        }
+                        else {
+                            can_purchase = false;
+                        }
+                        curr_iteration++;
+                    }
+                    if (redraw){
                         genetics();
                         if (t === 'persuasive'){
-                            vBind({el: `#galaxyTrade`},'update');
+                            updateTrades();
                         }
                     }
                 },
@@ -1486,6 +1513,11 @@ export function buildArpa(pro,num,update){
                 if (pro === 'monument'){
                     global.arpa['m_type'] = pick_monument();
                     $(`#arpa${pro} .head .desc`).html(arpaProjects[pro].title());
+                    for (let i=0; i<global.queue.queue.length; i++){
+                        if (global.queue.queue[i].action === 'monument') {
+                            global.queue.queue[i].label = arpaProjects['monument'].title();
+                        }
+                    }
                 }
                 if (pro === 'launch_facility'){
                     removeFromQueue(['arpalaunch_facility']);
@@ -1498,7 +1530,7 @@ export function buildArpa(pro,num,update){
                     clearElement($(`#popArpa${pro}`),true);
                     physics();
                     renderSpace();
-                    messageQueue(loc('arpa_projects_launch_facility_msg'),'success');
+                    messageQueue(loc('arpa_projects_launch_facility_msg'),'info');
                 }
                 drawTech();
             }
@@ -1524,4 +1556,11 @@ function arpaProjectCosts(id,project){
         }
     });
     return cost;
+}
+
+function updateTrades() {
+    Object.keys(global.resource).forEach(function (res){
+        vBind({el: `#market-${res}`},'update');
+    });
+    vBind({el: `#galaxyTrade`},'update');
 }

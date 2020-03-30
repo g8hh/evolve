@@ -3034,7 +3034,7 @@
   "civics_garrison_campaign_no_soldier": "没有士兵就不能发动战争。",
   "civics_garrison_gained": "获得了 ",
   "civics_garrison_quant_money": "$%0，",
-  "civics_garrison_quant_res": "%0 %1，",
+  "civics_garrison_quant_res": "%0 %1， ",
   "civics_garrison_victorious": "你的军队胜利了！%0 名士兵阵亡。",
   "civics_garrison_victorious_revive": "你的军队胜利了！%0 名士兵阵亡，%1 名士兵幸存。",
   "civics_garrison_capture": "您已捕获 %0 个新奴隶。",

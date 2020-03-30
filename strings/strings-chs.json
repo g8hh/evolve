@@ -3090,7 +3090,7 @@
   "govern_technocracy_effect": "知识需求 -%0%，但其他物资需求 +%1%",
   "govern_federation": "联邦制",
   "govern_federation_desc": "联邦是一种名义上处于中央政府的领导，但各州自治的政府体系",
-  "govern_federation_effect": "统一的效果提升,但有些有些有些东西不好……",
+  "govern_federation_effect": "每占领一个敌方城市，物资产量 +%0，吞并或购买需要支付城市维护费用，军事占领则不需要。",
   "govern_federation_effect_alt": "统一产量加成 +%0%。",
   "resource_market": "市场",
   "resource_trade_qty": "贸易数量",

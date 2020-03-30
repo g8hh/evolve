@@ -2997,7 +2997,7 @@
   "civics_spy_sabotage_success": "通过间谍的隐秘行动，%0的军事力量被削弱了 %1 。",
   "civics_spy_incite": "煽动",
   "civics_spy_incite_desc": "煽动%0国内的叛乱，被捕风险极高",
-  "civics_spy_incite_success": "通过间谍的隐秘行动，将%0的内乱等级提升了 %1% 。",
+  "civics_spy_incite_success": "通过间谍的隐秘行动，%0的内乱等级提升了 %1% 。",
   "civics_spy_annex": "吞并",
   "civics_spy_annex_goal": "%0 处于内乱中，如果你将士气提升到 %1，就可以直接吞并 %0。",
   "civics_spy_annex_desc": "%0 处于内乱中，该国市民们对你有高度的认同感，吞并 %0 的机会已经成熟。",

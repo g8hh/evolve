@@ -3609,7 +3609,7 @@
   "galaxy_ore_processor_effect": "矿石处理 +%0%",
   "galaxy_scavenger": "清道夫",
   "galaxy_scavenger_desc": "寻找外星科技",
-  "galaxy_scavenger_effect": "知识上限 +%0%",
+  "galaxy_scavenger_effect": "知识上限 +%0",
   "galaxy_scavenger_effect2": " 大学知识上限 +%0%",
   "galaxy_scavenger_find": "清道夫们修复了一个外星数据库，可用于研究外星科技。",
   "galaxy_chthonian": "幽冥星系",

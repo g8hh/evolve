@@ -1471,7 +1471,7 @@
   "tech_unification": "统一",
   "tech_unification_desc": "统一%0",
   "tech_unification_effect": "提出一个由你统治世界的计划。",
-  "tech_unification_effect2": "你必须将三个敌对国家都纳入控制。",
+  "tech_unification_effect2": "你必须将三个敌对国家都纳入控制。控制方法有：征服（围攻对方城市并完成占领），吞并（双边关系不低于50，对方内乱程度不低于50），收购（潜伏在对方的间谍不少于3名）。",
   "tech_wc_conquest": "征服统一",
   "tech_wc_conquest_desc": "军事征服%0",
   "tech_wc_conquest_desc_req": "需要占领所有敌军城市",

@@ -2273,7 +2273,7 @@ const interstellarProjects = {
                     return `<div>${loc('interstellar_dyson_sphere_effect')}</div><div>${loc('space_dwarf_reactor_effect1',[powerModifier(power)])}</div><div class="has-text-special">${loc('space_dwarf_collider_effect2',[remain])}</div>`;
                 }
                 else {
-                    return loc('interstellar_dyson_complete',[powerModifier(750)]);
+                    return loc('interstellar_dyson_sphere_complete',[powerModifier(750)]);
                 }
             },
             action(){
@@ -4434,11 +4434,11 @@ export function piracy(region,rating,raw){
         let pillage = 0.75;
         switch(region){
             case 'gxy_stargate':
-                pirate = 0.5 * global.tech.piracy;
+                pirate = 0.1 * global.tech.piracy;
                 pillage = 0.5;
                 break;
             case 'gxy_gateway':
-                pirate = 0.5 * global.tech.piracy;
+                pirate = 0.1 * global.tech.piracy;
                 pillage = 1;
                 break;
             case 'gxy_gorddon':

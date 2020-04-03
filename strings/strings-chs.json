@@ -261,7 +261,7 @@
   "event_protest8": "A group is protesting against the social injustice that they need to work when animals don't.",
   "event_protest9": "Protests have broken out after some officials were caught in a scandal.",
   "event_protest": "抗议",
-  "event_spy": "一名在 %0 行动的间谍遭到抓捕并处决。",
+  "event_spy": "间谍在 %0 的行动宣告失败，遭到抓捕并处决。",
   "event_spy_fail": "间谍在 %0 的行动宣告失败。",
   "evo_rna": "点击生成 %0 RNA",
   "evo_dna_title": "DNA",

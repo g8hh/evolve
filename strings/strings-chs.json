@@ -1121,7 +1121,7 @@
   "tech_uranium_storage": "铀存储",
   "tech_uranium_storage_effect": "通过为了存储铀而专门规划的区域升级你的燃料库",
   "tech_uranium_ash": "铀灰",
-  "tech_uranium_ash_effect": "学习如何从煤炭中提取铀（按照冶炼厂和煤电厂消耗煤总数的 1/65 产生铀）。译者注：这是一种煤燃烧过程中铀定向富集和提取的方法，在煤中加入添加剂，充分混合后燃烧，添加剂与气态铀反应生成固态铀酸盐，通过氧化浸出提取铀。",
+  "tech_uranium_ash_effect": "学习如何从煤炭中提取铀。游戏中按照冶炼厂和煤电厂消耗煤总数的 1/65 产生铀。",
   "tech_breeder_reactor": "增殖反应堆",
   "tech_breeder_reactor_effect": "增殖反应堆允许你更充分地消耗核燃料，这增加了裂变反应堆的总输出",
   "tech_mine_conveyor": "矿山输送带",

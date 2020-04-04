@@ -2888,7 +2888,7 @@
   "trait_hardy": "你的种族能吃苦的生理机能让你能忍受水泥制造的艰苦条件。水泥产量 +1%",
   "trait_hardy_name": " [吃苦耐劳] 特质",
   "trait_hardy_effect": "水泥产量提升",
-  "trait_ambidextrous": "你的种族拥有灵巧的双手。工匠产量 +2%",
+  "trait_ambidextrous": "你的种族拥有灵巧的双手。工匠产量提升，详见WIKI",
   "trait_ambidextrous_name": " [左右开弓] 特质",
   "trait_ambidextrous_effect": "工匠产量提升",
   "trait_industrious": "你的种族天生勤奋。采矿时，铜和铁的产量 +2%",

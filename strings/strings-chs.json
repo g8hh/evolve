@@ -1014,7 +1014,7 @@
   "tech_adjunct_professor_effect": "教授们会提升科学家的效率，每座%0提升科学家的知识产量 1%",
   "tech_tesla_coil": "特斯拉线圈",
   "tech_tesla_coil_desc": "特斯拉线圈",
-  "tech_tesla_coil_effect": "通俗来讲，特斯拉线圈就是一个人工闪电制造器。用特斯拉线圈升级%0，通电时知识上限由 2000 提升到 2500",
+  "tech_tesla_coil_effect": "通俗来讲，特斯拉线圈就是一个人工闪电制造器。用特斯拉线圈升级%0，通电时知识上限基准值由 2000 提升到 2500",
   "tech_internet": "互联网",
   "tech_internet_effect": "互联网是一场革命，它极大地改变了信息交换的方式。大学和图书馆的知识上限 +40%",
   "tech_observatory": "太空观测站",

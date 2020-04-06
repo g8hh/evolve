@@ -2635,7 +2635,7 @@
   "trait_xenophobic_name": " [仇外] 特质",
   "trait_beast": "你的种族敏锐的感官帮助你发现猎物的气味，有风的天气，狩猎收益 +15%",
   "trait_beast_name": " [野兽] 特质",
-  "trait_cautious": "你的种族在雨天战斗力会减弱，雨天狩猎收益 -10%",
+  "trait_cautious": "你的种族在雨天战斗力会减弱，战斗评级 -10%",
   "trait_cautious_name": " [谨慎] 特质",
   "trait_small": "你的种族个头很小，因此建筑物所需的材料更少，地面建筑成本蠕变 -1%，太空建筑成本蠕变 -0.5%",
   "trait_small_name": " [矮小] 特质",

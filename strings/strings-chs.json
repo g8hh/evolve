@@ -1606,7 +1606,7 @@
   "tech_advanced_emplacement_effect": "用新技术对自动炮台进行升级，提升其效率。",
   "star_dock_probe": "星际探测器",
   "star_dock_probe_desc": "星际探测器",
-  "star_dock_probe_effect": "每一个星际探测器都能增加生命播种飞船所能探测到的宜居星球数量。",
+  "star_dock_probe_effect": "星际探测器能增加生命播种飞船所能探测到的宜居星球数量。",
   "star_dock_seeder": "生命播种飞船",
   "star_dock_seeder_desc1": "需完成 100 个分项工程",
   "star_dock_seeder_desc2": "飞船工程进度：100%",

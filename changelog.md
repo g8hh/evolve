@@ -1,3 +1,10 @@
+#### 0.8.4 - 4/4/2020
+Fixed breaking bug with Rigid trait<br>
+
+#### 0.8.3 - 4/3/2020
+Federation now reduces the soldier requirement of occupied cities by 5<br>
+Fixed incorrect Industrious string<br>
+
 #### 0.8.2 - 3/30/2020
 Piracy in the Gateway and Stargate regions ramp up more slowly as you explore Andromeda<br>
 Fixed formatting of multiline Crafting Tooltip cost display<br>

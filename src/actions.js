@@ -2409,7 +2409,7 @@ export const actions = {
             no_queue(){ return true },
             action(){
                 if(global['resource']['Food'].amount < global['resource']['Food'].max){
-                    modRes('Food',global.race['strong'] ? 5 : 1);
+                    modRes('Food',global.race['strong'] ? traits.strong.vars[0] : 1);
                 }
                 return false;
             }
@@ -2440,7 +2440,7 @@ export const actions = {
             no_queue(){ return true },
             action(){
                 if (global['resource']['Lumber'].amount < global['resource']['Lumber'].max){
-                    modRes('Lumber',global.race['strong'] ? 5 : 1);
+                    modRes('Lumber',global.race['strong'] ? traits.strong.vars[0] : 1);
                 }
                 return false;
             }
@@ -2454,7 +2454,7 @@ export const actions = {
             no_queue(){ return true },
             action(){
                 if (global['resource']['Stone'].amount < global['resource']['Stone'].max){
-                    modRes('Stone',global.race['strong'] ? 5 : 1);
+                    modRes('Stone',global.race['strong'] ? traits.strong.vars[0] : 1);
                 }
                 return false;
             }
@@ -2477,13 +2477,13 @@ export const actions = {
             no_queue(){ return true },
             action(){
                 if (global['resource']['Lumber'].amount < global['resource']['Lumber'].max){
-                    modRes('Lumber',global.race['strong'] ? 5 : 1);
+                    modRes('Lumber',global.race['strong'] ? traits.strong.vars[0] : 1);
                 }
                 if (global.race['soul_eater'] && global.tech['primitive'] && global['resource']['Food'].amount < global['resource']['Food'].max){
-                    modRes('Food',global.race['strong'] ? 5 : 1);
+                    modRes('Food',global.race['strong'] ? traits.strong.vars[0] : 1);
                 }
                 if (global.resource.Furs.display && global['resource']['Furs'].amount < global['resource']['Furs'].max){
-                    modRes('Furs',global.race['strong'] ? 5 : 1);
+                    modRes('Furs',global.race['strong'] ? traits.strong.vars[0] : 1);
                 }
                 return false;
             }
@@ -3764,7 +3764,7 @@ export const actions = {
                 Furs(offset){ return costMultiplier('trade', offset, 65, 1.36); }
             },
             effect(){
-                let routes = global.race['xenophobic'] ? global.tech.trade : global.tech.trade + 1;
+                let routes = global.race['xenophobic'] || global.race['nomadic'] ? global.tech.trade : global.tech.trade + 1;
                 if (global.tech['trade'] && global.tech['trade'] >= 3){
                     routes--;
                 }
@@ -3773,7 +3773,7 @@ export const actions = {
             action(){
                 if (payCosts($(this)[0].cost)){
                     global.city['trade'].count++;
-                    let routes = global.race['xenophobic'] ? global.tech.trade : global.tech.trade + 1;
+                    let routes = global.race['xenophobic'] || global.race['nomadic'] ? global.tech.trade : global.tech.trade + 1;
                     if (global.tech['trade'] && global.tech['trade'] >= 3){
                         routes--;
                     }
@@ -7793,7 +7793,7 @@ export const actions = {
             effect: loc('tech_electricity_effect'),
             action(){
                 if (payCosts($(this)[0].cost)){
-                    messageQueue('Electricity is a major advancement for your people, the future possibilities are endless.','info');
+                    messageQueue(loc('tech_electricity_msg'),'info');
                     global.city['power'] = 0;
                     global.city['powered'] = true;
                     global.city['coal_power'] = {
@@ -8586,7 +8586,7 @@ export const actions = {
                     let tech = $(this)[0].grant[0];
                     global.tech[tech] = $(this)[0].grant[1];
                     global.resource.Polymer.display = true;
-                    messageQueue(loc('tech_polymer_avail'));
+                    messageQueue(loc('tech_polymer_avail'),'info');
                     defineIndustry();
                     return true;
                 }
@@ -8627,7 +8627,7 @@ export const actions = {
             action(){
                 if (payCosts($(this)[0].cost)){
                     global.resource.Nanoweave.display = true;
-                    messageQueue(loc('tech_nanoweave_avail'));
+                    messageQueue(loc('tech_nanoweave_avail'),'info');
                     loadFoundry();
                     return true;
                 }
@@ -8652,7 +8652,7 @@ export const actions = {
                     let tech = $(this)[0].grant[0];
                     global.tech[tech] = $(this)[0].grant[1];
                     global.resource.Stanene.display = true;
-                    messageQueue(loc('tech_stanene_avail'));
+                    messageQueue(loc('tech_stanene_avail'),'info');
                     defineIndustry();
                     return true;
                 }
@@ -8678,7 +8678,7 @@ export const actions = {
                     global.tech[tech] = $(this)[0].grant[1];
                     global.resource.Nano_Tube.display = true;
                     global.city.factory['Nano'] = 0;
-                    messageQueue('Nano Tubes are now available for manufacture');
+                    messageQueue(loc('tech_nano_tubes_msg'),'info');
                     defineIndustry();
                     return true;
                 }
@@ -14202,7 +14202,7 @@ function sentience(){
         s1: civ2name.s1
     };
 
-    messageQueue(loc('sentience',[races[global.race.species].type,races[global.race.species].entity,races[global.race.species].name]));
+    messageQueue(loc('sentience',[races[global.race.species].type,races[global.race.species].entity,races[global.race.species].name]),'info');
 
     if (global.race['slow'] || global.race['hyper']){
         save.setItem('evolved',LZString.compressToUTF16(JSON.stringify(global)));
@@ -14218,17 +14218,8 @@ function sentience(){
 }
 
 function fanaticism(god){
-    switch (god){
-        case 'human':
-            fanaticTrait('creative');
-            break;
-        case 'elven':
-            fanaticTrait('studious');
-            break;
-        case 'orc':
-            fanaticTrait('brute');
-            break;
-        case 'cath':
+    switch (races[god].fanaticism){
+        case 'carnivore':
             if (global.race['herbivore']){
                 randomMinorTrait();
                 arpa('Genetics');
@@ -14240,19 +14231,7 @@ function fanaticism(god){
                 }
             }
             break;
-        case 'wolven':
-            fanaticTrait('tracker');
-            break;
-        case 'centaur':
-            fanaticTrait('beast_of_burden');
-            break;
-        case 'kobold':
-            fanaticTrait('pack_rat');
-            break;
-        case 'goblin':
-            fanaticTrait('merchant');
-            break;
-        case 'gnome':
+        case 'smart':
             if (global.race['dumb']){
                 randomMinorTrait();
                 arpa('Genetics');
@@ -14261,111 +14240,18 @@ function fanaticism(god){
                 fanaticTrait('smart');
             }
             break;
-        case 'orge':
-            fanaticTrait('tough');
-            break;
-        case 'cyclops':
-            fanaticTrait('intelligent');
-            break;
-        case 'troll':
-            fanaticTrait('regenerative');
-            break;
-        case 'tortoisan':
-            fanaticTrait('armored');
-            break;
-        case 'gecko':
-            fanaticTrait('optimistic');
-            break;
-        case 'slitheryn':
-            fanaticTrait('slow_digestion');
-            break;
-        case 'arraak':
-            fanaticTrait('resourceful');
-            break;
-        case 'pterodacti':
-            fanaticTrait('leathery');
-            break;
-        case 'dracnid':
-            fanaticTrait('hoarder');
-            break;
-        case 'entish':
-            fanaticTrait('kindling_kindred');
-            break;
-        case 'cacti':
-            fanaticTrait('hyper');
-            break;
-        case 'sporgar':
+        case 'infectious':
             fanaticTrait('infectious');
             if (global.race.species === 'human'){
                 unlockAchieve(`infested`);
             }
             break;
-        case 'shroomi':
-            fanaticTrait('toxic');
-            break;
-        case 'mantis':
-            fanaticTrait('cannibalize');
-            break;
-        case 'scorpid':
-            fanaticTrait('claws');
-            break;
-        case 'antid':
-            fanaticTrait('hivemind');
-            break;
-        case 'sharkin':
-            fanaticTrait('frenzy');
-            break;
-        case 'octigoran':
-            fanaticTrait('suction_grip');
-            break;
-        case 'dryad':
-            fanaticTrait('befuddle');
-            break;
-        case 'satyr':
-            fanaticTrait('musical');
-            break;
-        case 'phoenix':
-            fanaticTrait('revive');
-            break;
-        case 'salamander':
-            fanaticTrait('forge');
-            break;
-        case 'yeti':
-            fanaticTrait('blurry');
-            break;
-        case 'wendigo':
-            fanaticTrait('ghostly');
-            break;
-        case 'tuskin':
-            fanaticTrait('lawless');
-            break;
-        case 'kamel':
-            fanaticTrait('humpback');
-            break;
-        case 'balorg':
-            fanaticTrait('fiery');
-            break;
-        case 'imp':
-            fanaticTrait('conniving');
-            break;
-        case 'seraph':
-            fanaticTrait('spiritual');
-            break;
-        case 'unicorn':
-            fanaticTrait('magnificent');
-            break;
-        case 'custom':
-            let trait = 'pathetic';
-            for (let i=0; i<global.custom.race0.traits.length; i++){
-                if (traits[global.custom.race0.traits[i]].val > traits[trait].val){
-                    trait = global.custom.race0.traits[i];
-                }
-            }
-            fanaticTrait(trait);
+        case 'none':
+            randomMinorTrait();
+            arpa('Genetics')
             break;
         default:
-            randomMinorTrait();
-            arpa('Genetics');
+            fanaticTrait(races[god].fanaticism);
             break;
     }
 }

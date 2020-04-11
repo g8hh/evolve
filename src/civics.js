@@ -2,7 +2,7 @@ import { global, poppers, clearStates, save, keyMultiplier, resizeGame, sizeAppr
 import { loc } from './locale.js';
 import { calcPrestige, clearElement, timeFormat, vBind, modRes, messageQueue, genCivName } from './functions.js';
 import { unlockAchieve, unlockFeat, checkAchievements } from './achieve.js';
-import { races, racialTrait } from './races.js';
+import { races, racialTrait, traits } from './races.js';
 import { loadIndustry } from './industry.js';
 
 // Sets up government in civics tab
@@ -885,7 +885,7 @@ export function buildGarrison(garrison,full){
                     case 3:
                         return loc('civics_garrison_tactic_assault_desc');
                     case 4:
-                        return loc('civics_garrison_tactic_siege_desc',[20]);
+                        return loc('civics_garrison_tactic_siege_desc',[global.civic.govern.type === 'federation' ? 15 : 20]);
                 }
             },
             hireLabel(){
@@ -1055,8 +1055,8 @@ function battleAssessment(gov){
 function war_campaign(gov){
     if (global.civic.foreign[`gov${gov}`].occ){
         global.civic.foreign[`gov${gov}`].occ = false;
-        global.civic.garrison.max += 20;
-        global.civic.garrison.workers += 20;
+        global.civic.garrison.max += global.civic.govern.type === 'federation' ? 15 : 20;
+        global.civic.garrison.workers += global.civic.govern.type === 'federation' ? 15 : 20;
         return;
     }
     if (global.civic.foreign[`gov${gov}`].buy || global.civic.foreign[`gov${gov}`].anx){
@@ -1146,7 +1146,7 @@ function war_campaign(gov){
             armor += Math.floor(death * 0.75);
         }
         if (global.race['scales']){
-            armor += 2;
+            armor += traits.scales.vars[0];
         }
         if (global.tech['armor']){
             armor += global.tech['armor'];
@@ -1467,8 +1467,9 @@ function war_campaign(gov){
             }
         }
 
-        if (global.civic.garrison.tactic === 4 && global.civic.garrison.workers >= 20){
-            global.civic.garrison.workers -= 20;
+        let occCost = global.civic.govern.type === 'federation' ? 15 : 20;
+        if (global.civic.garrison.tactic === 4 && global.civic.garrison.workers >= occCost){
+            global.civic.garrison.workers -= occCost;
             global.civic.foreign[`gov${gov}`].occ = true;
             global.civic.foreign[`gov${gov}`].sab = 0;
             global.civic.foreign[`gov${gov}`].act = 'none';
@@ -1498,7 +1499,7 @@ function war_campaign(gov){
             armor += Math.floor(death * 0.75);
         }
         if (global.race['scales']){
-            armor++;
+            armor += traits.scales.vars[1];
         }
         if (global.tech['armor']){
             armor += global.tech['armor'];
@@ -1620,7 +1621,7 @@ export function armyRating(val,type,wound){
             army *= 1.2;
         }
         if (global.race['cautious'] && global.city.calendar.weather === 0){
-            army *= 0.9;
+            army *= 1 - (traits.cautious.vars[0] / 100);
         }
         if (global.race['apex_predator']){
             army *= 1.25;
@@ -1654,7 +1655,7 @@ export function armyRating(val,type,wound){
             army *= 1.1;
         }
         if (global.race['beast'] && global.city.calendar.wind === 1){
-            army *= 1.15;
+            army *= 1 + (traits.beast.vars[0] / 100);
         }
         if (global.race['apex_predator']){
             army *= 1.5;

@@ -1,6 +1,6 @@
 import { global, save, webWorker, achieve_level, universe_level } from './vars.js';
 import { loc } from './locale.js';
-import { races } from './races.js';
+import { races, traits } from './races.js';
 import { actions } from './actions.js';
 
 export function mainVue(){
@@ -276,9 +276,10 @@ export function costMultiplier(structure,offset,base,mutiplier,cat){
         }
         mutiplier -= +(dark).toFixed(5);
     }
-    if (global.race['small']){ mutiplier -= 0.01; }
-    else if (global.race['large']){ mutiplier += 0.005; }
-    if (global.race['compact']){ mutiplier -= 0.015; }
+
+    if (global.race['small']){ mutiplier -= traits.small.vars[0]; }
+    else if (global.race['large']){ mutiplier += traits.large.vars[0]; }
+    if (global.race['compact']){ mutiplier -= traits.compact.vars[0]; }
     if (global.race['tunneler'] && (structure === 'mine' || structure === 'coal_mine')){ mutiplier -= 0.01; }
     if (global.tech['housing_reduction'] && (structure === 'basic_housing' || structure === 'cottage')){
         mutiplier -= global.tech['housing_reduction'] * 0.02;
@@ -341,8 +342,8 @@ export function spaceCostMultiplier(action,offset,base,mutiplier,sector){
     else if (global.genes['creep'] && global.race['no_crispr']){
         mutiplier -= global.genes['creep'] * 0.002;
     }
-    if (global.race['small']){ mutiplier -= 0.005; }
-    if (global.race['compact']){ mutiplier -= 0.0075; }
+    if (global.race['small']){ mutiplier -= traits.small.vars[1]; }
+    if (global.race['compact']){ mutiplier -= traits.compact.vars[1]; }
     if (global.race.Harmony.count > 0 && global.stats.achieve[`ascended`]){
         let boost = 0;
         switch (global.race.universe){
@@ -601,7 +602,7 @@ export function calcPrestige(type){
     let garrisoned = global.civic.garrison.workers;
     for (let i=0; i<3; i++){
         if (global.civic.foreign[`gov${i}`].occ){
-            garrisoned += 20;
+            garrisoned += global.civic.govern.type === 'federation' ? 15 : 20;
         }
     }
 
@@ -678,7 +679,7 @@ export function calcPrestige(type){
             default:
                 break;
         }
-        gains.harmony = harmony;
+        gains.harmony = parseFloat(harmony.toFixed(2));
     }
 
     return gains;
@@ -766,7 +767,7 @@ function craftAdjust(costs){
         var newCosts = {};
         Object.keys(costs).forEach(function (res){
             if (res === 'Plywood' || res === 'Brick' || res === 'Wrought_Iron' || res === 'Sheet_Metal' || res === 'Mythril' || res === 'Aerogel'){
-                newCosts[res] = function(){ return Math.round(costs[res]() * 0.95); }
+                newCosts[res] = function(){ return Math.round(costs[res]() * (1 - (traits.hollow_bones.vars[0] / 100))); }
             }
             else {
                 newCosts[res] = function(){ return Math.round(costs[res]()); }

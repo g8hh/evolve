@@ -2,7 +2,7 @@ import { global, save, webWorker, poppers, resizeGame, breakdown, keyMultiplier,
 import { loc, locales } from './locale.js';
 import { setupStats, unlockAchieve, checkAchievements, drawAchieve } from './achieve.js';
 import { vBind, mainVue, timeCheck, timeFormat, powerModifier, modRes, messageQueue, calc_mastery } from './functions.js';
-import { races, racialTrait, randomMinorTrait, biomes, planetTraits } from './races.js';
+import { races, traits, racialTrait, randomMinorTrait, biomes, planetTraits } from './races.js';
 import { defineResources, resource_values, spatialReasoning, craftCost, plasmidBonus, tradeRatio, craftingRatio, crateValue, containerValue, tradeSellPrice, tradeBuyPrice, atomic_mass, galaxyOffers } from './resources.js';
 import { defineJobs, job_desc, loadFoundry } from './jobs.js';
 import { f_rate } from './industry.js';
@@ -2005,18 +2005,18 @@ function fastLoop(){
             let consume = (global.resource[global.race.species].amount + soldiers - (global.civic.free * 0.5));
             consume *= (global.race['gluttony'] ? 1.1 : 1);
             if (global.race['high_metabolism']){
-                consume *= 1.05;
+                consume *= 1 + (traits.high_metabolism.vars[0] / 100);
             }
             if (global.race['photosynth']){
                 switch(global.city.calendar.weather){
                     case 0:
-                        consume *= global.city.calendar.temp === 0 ? 1 : 0.9;
+                        consume *= global.city.calendar.temp === 0 ? 1 : (1 - (traits.photosynth.vars[2] / 100));
                         break;
                     case 1:
-                        consume *= 0.8;
+                        consume *= 1 - (traits.photosynth.vars[1] / 100);
                         break;
                     case 2:
-                        consume *= 0.6;
+                        consume *= 1 - (traits.photosynth.vars[0] / 100);
                         break;
                 }
             }
@@ -4147,13 +4147,13 @@ function midLoop(){
         }
         if (!global.tech['world_control']){
             if (global.civic.foreign.gov0.occ){
-                lCaps['garrison'] -= 20;
+                lCaps['garrison'] -= global.civic.govern.type === 'federation' ? 15 : 20;
             }
             if (global.civic.foreign.gov1.occ){
-                lCaps['garrison'] -= 20;
+                lCaps['garrison'] -= global.civic.govern.type === 'federation' ? 15 : 20;
             }
             if (global.civic.foreign.gov2.occ){
-                lCaps['garrison'] -= 20;
+                lCaps['garrison'] -= global.civic.govern.type === 'federation' ? 15 : 20;
             }
         }
         if (global.race['slaver'] && global.tech['slaves'] && global.city['slave_pen']) {
@@ -5192,7 +5192,8 @@ function midLoop(){
             if (global.arpa.sequence.time <= 0){
                 global.arpa.sequence.max = 50000 * (1 + (global.race.mutation ** 2));
                 if (global.race['adaptable']){
-                    global.arpa.sequence.max = Math.floor(global.arpa.sequence.max * 0.9);
+                    let adapt = 1 - (traits.adaptable.vars[0] / 100);
+                    global.arpa.sequence.max = Math.floor(global.arpa.sequence.max * adapt);
                 }
                 global.arpa.sequence.progress = 0;
                 global.arpa.sequence.time = global.arpa.sequence.max;
@@ -5279,7 +5280,7 @@ function midLoop(){
                 global.resource.Elerium.display = true;
                 modRes('Elerium',1);
                 drawTech();
-                messageQueue(loc('discover_elerium'));
+                messageQueue(loc('discover_elerium'),'info');
             }
         }
 
@@ -5287,7 +5288,7 @@ function midLoop(){
             if (Math.rand(0,100) <= p_on['outpost']){
                 global.space['oil_extractor'] = { count: 0, on: 0 };
                 global.tech['gas_moon'] = 2;
-                messageQueue(loc('discover_oil',[races[global.race.species].solar.gas_moon]));
+                messageQueue(loc('discover_oil',[races[global.race.species].solar.gas_moon]),'info');
                 renderSpace();
             }
         }
@@ -5363,7 +5364,7 @@ function midLoop(){
                     }
                     global.queue.queue[i]['t_max'] = time;
                     if (global.settings.qAny){
-                        if (Math.floor(global.queue.queue[i]['time']) === 0){
+                        if (Math.floor(global.queue.queue[i]['time']) <= 1){
                             if (!stop){
                                 c_action = t_action;
                                 idx = i;
@@ -5905,7 +5906,7 @@ function longLoop(){
     if (global.tech['xeno'] && global.tech['xeno'] >= 4 && !global.tech['piracy']){
         if (Math.rand(0,5) === 0){
             global.tech['piracy'] = 1;
-            messageQueue(loc('galaxy_piracy_msg',[races[global.galaxy.alien2.id].name]),'danger');
+            messageQueue(loc('galaxy_piracy_msg',[races[global.galaxy.alien2.id].name]),'info');
             renderSpace();
         }
     }
@@ -6064,13 +6065,13 @@ function longLoop(){
             global.resource[global.race.species].amount--;
             global.civic.garrison.workers--;
             global.civic.garrison.crew--;
-            messageQueue(loc('galaxy_encounter'),'danger');
+            messageQueue(loc('galaxy_encounter'),'info');
             drawTech();
         }
 
         if (global.galaxy['scavenger'] && global.tech['conflict'] && global.tech['conflict'] === 4 && gal_on['scavenger'] > 0 && Math.rand(0, 50) >= gal_on['scavenger']){
             global.tech['conflict'] = 5;
-            messageQueue(loc('galaxy_scavenger_find'),'success');
+            messageQueue(loc('galaxy_scavenger_find'),'info');
             drawTech();
         }
 
@@ -6173,7 +6174,7 @@ function steelCheck(){
     if (global.resource.Steel.display === false && Math.rand(0,1250) === 0){
         global.resource.Steel.display = true;
         modRes('Steel',1);
-        messageQueue(loc('steel_sample'),'success');
+        messageQueue(loc('steel_sample'),'info');
     }
 }
 

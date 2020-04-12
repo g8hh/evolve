@@ -17,7 +17,7 @@ export function index(){
             <b-tooltip :label="temp()" :aria-label="temp()" position="is-bottom" size="is-small" multilined animated><i id="temp" class="temp wi"></i></b-tooltip>
             </span>
         </span>
-        <span class="version"><a href="https://github.com/${global.beta ? 'evolvebeta' : 'pmotschmann'}/Evolve/blob/master/changelog.md" target="_blank"></a></span>
+        <span class="version" id="versionLog"><a href="wiki.html#changelog" target="_blank"></a></span>
     </div>`);
 
     let main = $(`<div id="main" class="main"></div>`);
@@ -217,6 +217,7 @@ export function index(){
         {i: 'trash',    f: 'garbage_pie'},
         {i: 'heart',    f: 'valentine'},
         {i: 'clover',   f: 'leprechaun'},
+        {i: 'bunny',    f: 'easter'},
         {i: 'ghost',    f: 'halloween'},
         {i: 'turkey',   f: 'thanksgiving'},
         {i: 'present',  f: 'xmas'}
@@ -312,5 +313,5 @@ export function index(){
     columns.append(`<div id="queueColumn" class="queueCol column"></div>`);
 
     // Bottom Bar
-    $('body').append(`<div class="promoBar"><span class="left"><h1 class="has-text-warning">Evolve</span> by <span class="has-text-success">Demagorddon</h1></span><span class="right"><h2 class="is-sr-only">External Links</h2><a href="https://shimo.im/sheets/b6cmL0JsHHskrkdq" target="_blank" style="color: red;">中文Wiki</a> | <a href="https://shimo.im/sheets/tg6VPQgCKhrYW9QG/" target="_blank" style="color: green;">最全中文Wiki</a> | <a href="https://www.reddit.com/r/EvolveIdle/" target="_blank">Reddit</a> | <a href="https://discord.gg/dcwdQEr" target="_blank">Discord</a> | <a href="https://github.com/pmotschmann/Evolve" target="_blank">GitHub</a> | <a href="https://www.patreon.com/demagorddon" target="_blank">Patreon</a> | <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=PTRJZBW9J662C&currency_code=USD&source=url" target="_blank">Donate</a></span></div>`);
+    $('body').append(`<div class="promoBar"><span class="left"><h1 class="has-text-warning">Evolve</span> by <span class="has-text-success">Demagorddon</h1></span><span class="right"><h2 class="is-sr-only">External Links</h2><a href="wiki.html" target="_blank">Wiki</a> | <a href="https://shimo.im/sheets/b6cmL0JsHHskrkdq" target="_blank" style="color: red;">中文Wiki</a> | <a href="https://shimo.im/sheets/tg6VPQgCKhrYW9QG/" target="_blank" style="color: green;">最全中文Wiki</a> | <a href="https://www.reddit.com/r/EvolveIdle/" target="_blank">Reddit</a> | <a href="https://discord.gg/dcwdQEr" target="_blank">Discord</a> | <a href="https://github.com/pmotschmann/Evolve" target="_blank">GitHub</a> | <a href="https://www.patreon.com/demagorddon" target="_blank">Patreon</a> | <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=PTRJZBW9J662C&currency_code=USD&source=url" target="_blank">Donate</a></span></div>`);
 }

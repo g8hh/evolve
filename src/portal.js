@@ -1,5 +1,6 @@
 import { global, poppers, keyMultiplier, p_on } from './vars.js';
 import { vBind, clearElement, spaceCostMultiplier, messageQueue } from './functions.js';
+import { traits } from './races.js';
 import { armyRating } from './civics.js';
 import { payCosts, setAction } from './actions.js';
 import { checkRequirements, incrementStruct } from './space.js';
@@ -318,14 +319,14 @@ const fortressModules = {
                 vBind({el: `#fort`},'update');
             },
             cost: {
-                Money(offset){ return global.portal.soul_forge.count >= 1 ? 0 : spaceCostMultiplier('soul_forge', offset, 25000000, 1.25, 'portal'); },
-                Graphene(offset){ return global.portal.soul_forge.count >= 1 ? 0 : spaceCostMultiplier('soul_forge', offset, 1500000, 1.25, 'portal'); },
-                Infernite(offset){ return global.portal.soul_forge.count >= 1 ? 0 : spaceCostMultiplier('soul_forge', offset, 25000, 1.25, 'portal'); },
-                Bolognium(offset){ return global.portal.soul_forge.count >= 1 ? 0 : spaceCostMultiplier('soul_forge', offset, 100000, 1.25, 'portal'); },
+                Money(offset){ return global.portal.hasOwnProperty('soul_forge') && global.portal.soul_forge.count >= 1 ? 0 : spaceCostMultiplier('soul_forge', offset, 25000000, 1.25, 'portal'); },
+                Graphene(offset){ return global.portal.hasOwnProperty('soul_forge') && global.portal.soul_forge.count >= 1 ? 0 : spaceCostMultiplier('soul_forge', offset, 1500000, 1.25, 'portal'); },
+                Infernite(offset){ return global.portal.hasOwnProperty('soul_forge') && global.portal.soul_forge.count >= 1 ? 0 : spaceCostMultiplier('soul_forge', offset, 25000, 1.25, 'portal'); },
+                Bolognium(offset){ return global.portal.hasOwnProperty('soul_forge') && global.portal.soul_forge.count >= 1 ? 0 : spaceCostMultiplier('soul_forge', offset, 100000, 1.25, 'portal'); },
             },
             effect(){
                 let desc = `<div>${loc('portal_soul_forge_effect',[global.resource.Soul_Gem.name])}</div>`;
-                if (global.portal.soul_forge.count >= 1){
+                if (global.portal.hasOwnProperty('soul_forge') && global.portal.soul_forge.count >= 1){
                     let cap = global.tech.hell_pit >= 6 ? 750000 : 1000000;
                     desc = desc + `<div>${loc('portal_soul_forge_effect2',[global.portal.soul_forge.kills,cap])}</div>`;
                 }
@@ -801,10 +802,10 @@ function casualties(demons,pat_armor,ambush){
 export function bloodwar(){
     let pat_armor = global.tech['armor'] ? global.tech['armor'] : 0;
     if (global.race['armored']){
-        pat_armor += 2;
+        pat_armor += traits.armored.vars[1];
     }
     if (global.race['scales']){
-        pat_armor += 1;
+        pat_armor += traits.scales.vars[2];
     }
 
     let forgeOperating = false;                    
@@ -1047,7 +1048,10 @@ export function bloodwar(){
 
     // Surveyor threats
     if (global.civic.hell_surveyor.display && global.civic.hell_surveyor.workers > 0){
-        let divisor = global.race['blurry'] ? 1250 : 1000;
+        let divisor = 1000;
+        if (global.race['blurry']){
+            divisor *= 1 + (traits.blurry.vars[0] / 100);
+        }
         if (global.tech['infernite'] && global.tech.infernite >= 5){
             divisor += 250;
         }

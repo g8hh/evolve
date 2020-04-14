@@ -3979,7 +3979,7 @@
   "wiki_trait_effect_angry": "饥饿时产量惩罚增加 %0% 。",
   "wiki_trait_effect_lazy": "在炎热温度下，产量减少 %0% 。",
   "wiki_trait_effect_carnivore": "失业人口变为猎人。农业 研究无法进行。",
-  "wiki_trait_effect_pack_mentality": "兽穴成本蠕变增加 %0 ，茅屋、公寓成本蠕变减少 %1 。",
+  "wiki_trait_effect_pack_mentality": "第一级住房成本蠕变增加 %0 ，第二、三级住房成本蠕变减少 %1 。",
   "wiki_trait_effect_tracker": "狩猎产量增加 %0% 。",
   "wiki_trait_effect_beast_of_burden": "从战役中获得的物资增加 %0% 。",
   "wiki_trait_effect_herbivore": "狩猎不获得食物。",

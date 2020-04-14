@@ -3959,7 +3959,7 @@
   "wiki_trait_effect_spongy": "下雨时人口不会增长。（优先级高于寄生虫特质和孢子特质）",
   "wiki_trait_effect_submerged": "士气不受天气影响。",
   "wiki_trait_effect_low_light": "农场及农民产量减少 %0% 。",
-  "wiki_trait_effect_elusive": "间谍永远不会被抓获。",
+  "wiki_trait_effect_elusive": "间谍永远不会被抓获，地狱维度巡逻队被攻击的概率减少。（无法与壁虎族的变色龙特质叠加）",
   "wiki_trait_effect_iron_allergy": "铁的产量减少 %0% 。",
   "wiki_trait_effect_smoldering": "夏天士气增加 %0% ，春天时不获得士气加成。连续炎热天气下，前100天以内，每天产量都多增加 %1% ，100天以后，每天产量都多增加 %2% 。",
   "wiki_trait_effect_cold_intolerance": "连续寒冷天气下，每天产量都多减少 %0% 。",

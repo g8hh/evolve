@@ -4037,7 +4037,7 @@
   "wiki_trait_effect_blurry": "间谍任务更容易成功。勘探者死亡率减少 %0% 。",
   "wiki_trait_effect_snowy": "天气不是下雪时，士气减少 %0 至 %1 。",
   "wiki_trait_effect_ravenous": "食物消耗量增加，且每秒消耗当前食物存储量的33%。",
-  "wiki_trait_effect_ghostly": "猎人食物产量增加 %0% 。每个灵魂井的基础食物产量增加 %1 。",
+  "wiki_trait_effect_ghostly": "猎人食物产量增加 %0% 。每个灵魂井的基础食物产量增加 %1 。灵魂宝石掉落值降低15%。（该值越低越好）",
   "wiki_trait_effect_lawless": "改革社会体制的冷却时间减少 %0% 。",
   "wiki_trait_effect_mistrustful": "每次攻击时双边关系额外减少1。",
   "wiki_trait_effect_humpback": "因饥饿死亡的阈值增加 %0 （通常为1.25），如果食物产量≥食物消耗/阈值，则不会有市民因为饥饿死亡。",

@@ -3999,7 +3999,7 @@
   "wiki_trait_effect_armored": "士兵战死数量减少 %0% 。地狱维度巡逻队护甲 +%1。",
   "wiki_trait_effect_optimistic": "士气最低值增加10%，工作压力减少 %0% 。",
   "wiki_trait_effect_chameleon": "每个军营减少一名士兵，战斗评分增加 %0% 。（无法与蝎子族的爪特质叠加）地狱维度巡逻队被攻击的概率减少。（无法与精怪的难以捉摸特质叠加）",
-  "wiki_trait_effect_slow_digestion": "因饥饿死亡的阈值变为 %0 （通常为1.25），如果食物产量≥食物消耗/阈值，则不会有市民因为饥饿死亡。",
+  "wiki_trait_effect_slow_digestion": "因饥饿死亡的阈值增加 %0 （通常为1.25），如果食物产量≥食物消耗/阈值，则不会有市民因为饥饿死亡。",
   "wiki_trait_effect_hard_of_hearing": "大学的知识上限减少 %0% 。",
   "wiki_trait_effect_resourceful": "锻造的材料消耗减少 %0% 。",
   "wiki_trait_effect_selenophobia": "月相影响产量，从满月时减少10%到新月时增加4%之间变化。",

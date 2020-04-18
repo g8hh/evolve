@@ -546,6 +546,16 @@ function fastLoop(){
             global_multiplier *= (1 + faith);
         }
     }
+    if (global.race['ascended']){
+        breakdown.p['Global'][loc('achieve_ascended_name')] = `5%`;
+        global_multiplier *= 1.05;
+    }
+    if (global.race['untapped']){
+        if (global.race['untapped'] > 0){
+            breakdown.p['Global'][loc('trait_untapped_bd')] = `${global.race.untapped / 2}%`;
+            global_multiplier *= 1 + (global.race.untapped / 200);
+        }
+    }
     if (global.race['rainbow'] && global.race['rainbow'] > 1){
         breakdown.p['Global'][loc('trait_rainbow_bd')] = `${traits.rainbow.vars[0]}%`;
         global_multiplier *= 1 + (traits.rainbow.vars[0] / 100);
@@ -2294,6 +2304,9 @@ function fastLoop(){
             }
             if (global.city.ptrait === 'magnetic'){
                 sundial_base++;
+            }
+            if (global.race['ascended']){
+                sundial_base += 2;
             }
 
             let professors_base = global.civic.professor.workers;
@@ -4328,6 +4341,10 @@ function midLoop(){
         if (global.race['slaver'] && global.tech['slaves'] && global.city['slave_pen']) {
             caps['Slave'] = global.city.slave_pen.count * 5;
             bd_Slave[loc('city_slave_pen')] = global.city.slave_pen.count * 5 + 'v';
+
+            if (caps['Slave'] < global.city.slave_pen.slaves){
+                global.city.slave_pen.slaves = caps['Slave'];
+            }
         }
         if (global.city['basic_housing']){
             caps[global.race.species] += global.city['basic_housing'].count;

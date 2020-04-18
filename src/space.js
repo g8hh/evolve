@@ -1,5 +1,5 @@
 import { save, global, webWorker, clearStates, poppers, keyMultiplier, sizeApproximation, p_on, red_on, belt_on, int_on, gal_on, quantum_level } from './vars.js';
-import { clearElement, powerModifier, powerCostMod, calcPrestige, spaceCostMultiplier, vBind, messageQueue, randomKey } from './functions.js';
+import { vBind, messageQueue, clearElement, powerModifier, powerCostMod, calcPrestige, spaceCostMultiplier, calcGenomeScore, randomKey } from './functions.js';
 import { unlockAchieve, checkAchievements } from './achieve.js';
 import { races, traits, genus_traits } from './races.js';
 import { spatialReasoning, defineResources, galacticTrade } from './resources.js';
@@ -5358,10 +5358,10 @@ function ascendLab(){
     Object.keys(unlockedTraits).sort().forEach(function (trait){
         if (traits.hasOwnProperty(trait) && traits[trait].type === 'major'){
             if (traits[trait].val >= 0){
-                trait_list = trait_list + `<div class="field"><b-tooltip :label="trait('${trait}')" position="is-bottom" size="is-small" multilined animated><b-checkbox :input="geneEdit()" v-model="traitlist" native-value="${trait}"><span class="has-text-success">${loc(`trait_${trait}_name`)}</span> (<span class="has-text-advanced">${traits[trait].val}</span>)</b-checkbox></b-tooltip></div>`;
+                trait_list = trait_list + `<div class="field"><b-tooltip :label="trait('${trait}')" position="is-bottom" size="is-small" multilined animated><b-checkbox :input="geneEdit()" v-model="traitlist" native-value="${trait}"><span class="has-text-success">${loc(`trait_${trait}_name`)}</span> (<span class="has-text-advanced">{{ '${trait}' | cost }}</span>)</b-checkbox></b-tooltip></div>`;
             }
             else {
-                negative = negative + `<div class="field"><b-tooltip :label="trait('${trait}')" position="is-bottom" size="is-small" multilined animated><b-checkbox :input="geneEdit()" v-model="traitlist" native-value="${trait}"><span class="has-text-danger">${loc(`trait_${trait}_name`)}</span> (<span class="has-text-caution">${traits[trait].val}</span>)</b-checkbox></b-tooltip></div>`;
+                negative = negative + `<div class="field"><b-tooltip :label="trait('${trait}')" position="is-bottom" size="is-small" multilined animated><b-checkbox :input="geneEdit()" v-model="traitlist" native-value="${trait}"><span class="has-text-danger">${loc(`trait_${trait}_name`)}</span> (<span class="has-text-caution">{{ '${trait}' | cost }}</span>)</b-checkbox></b-tooltip></div>`;
             }
         }
     });
@@ -5440,29 +5440,24 @@ function ascendLab(){
                     ascend();
                 }
             }
-        }
-    });
-}
-
-function calcGenomeScore(genome){
-    let genes = 0;
-
-    if (global.stats.achieve[`ascended`]){
-        let types = ['l','a','h','e','m'];
-        for (let i=0; i<types.length; i++){
-            if (global.stats.achieve.ascended.hasOwnProperty(types[i])){
-                genes += global.stats.achieve.ascended[types[i]];
+        },
+        filters: {
+            cost(trait){
+                let bonus_complexity = 0;
+                let complex = genome.traitlist.includes(trait) ? genome.traitlist.length - 3 : genome.traitlist.length - 2;
+                if (global.stats.achieve['technophobe'] && global.stats.achieve.technophobe.l >= 1){
+                    bonus_complexity = global.stats.achieve.technophobe.l;
+                    complex -= bonus_complexity;
+                }
+                let complexity = genome.traitlist.length >= 4 + bonus_complexity ? Math.floor(complex / 2) : 0;
+                let cost = traits[trait].val + complexity;
+                if (traits[trait].val < 0 && cost >= 0){
+                    cost = -1;
+                }
+                return cost;
             }
         }
-    }
-
-    Object.keys(genus_traits[genome.genus]).forEach(function (t){
-        genes -= traits[t].val;
     });
-    for (let i=0; i<genome.traitlist.length; i++){
-        genes -= traits[genome.traitlist[i]].val;
-    }
-    return genes;
 }
 
 function ascend(){
@@ -5474,6 +5469,7 @@ function ascend(){
     let orbit = global.city.calendar.orbit;
     let biome = global.city.biome;
     let atmo = global.city.ptrait;
+    let geo = global.city.geology;
     let plasmid = global.race.Plasmid.count;
     let antiplasmid = global.race.Plasmid.anti;
     let phage = global.race.Phage.count;
@@ -5542,10 +5538,15 @@ function ascend(){
         Dark: { count: global.race.Dark.count },
         Harmony: { count: harmony },
         universe: global.race.universe,
-        seeded: true,
-        probes: 4,
+        seeded: false,
         seed: Math.floor(Math.seededRandom(10000)),
+        ascended: true,
     };
+
+    Object.keys(geo).forEach(function (g){
+        geo[g] += 0.02;
+    });
+
     global.city = {
         calendar: {
             day: 0,
@@ -5557,7 +5558,8 @@ function ascend(){
             orbit: orbit
         },
         biome: biome,
-        ptrait: atmo
+        ptrait: atmo,
+        geology: geo
     };
     global.tech = { theology: 1 };
     clearStates();

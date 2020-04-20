@@ -1486,7 +1486,7 @@
   "tech_wc_conquest_desc": "军事征服%0",
   "tech_wc_conquest_desc_req": "需要占领所有敌军城市",
   "tech_wc_conquest_effect": "用军事力量去征服世界吧",
-  "tech_unification_warning": "统一会改变游戏，冲突将不再发生，你将获得大量的资源，详见WIKI",
+  "tech_unification_warning": "统一会改变游戏，战争不再发生，你将获得大量的资源，详见WIKI",
   "tech_wc_morale": "文化统一",
   "tech_wc_morale_desc": "文化征服%0",
   "tech_wc_morale_desc_req": "需要 %0% 士气",

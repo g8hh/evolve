@@ -4059,7 +4059,7 @@
   "wiki_trait_effect_humpback": "因饥饿死亡的阈值增加 %0 （通常为1.25），如果食物产量≥食物消耗/阈值，则不会有市民因为饥饿死亡。",
   "wiki_trait_effect_thalassophobia": "无法建造码头。",
   "wiki_trait_effect_fiery": "战斗评级 +%0%，狩猎产量 +%1%。",
-  "wiki_trait_effect_terrifying": "一切贸易被禁止，战利品新增：钛。",
+  "wiki_trait_effect_terrifying": "禁止贸易，战利品新增：钛。",
   "wiki_trait_effect_slaver": "可以通过战斗捕获奴隶，增加所有物资产量。",
   "wiki_trait_effect_compact": "地面建筑成本蠕变 -%0，太空建筑成本蠕变 -%1。",
   "wiki_trait_effect_conniving": "市场购买价格 -%0% ，市场售卖价格 +%1% 。",

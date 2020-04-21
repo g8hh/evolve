@@ -546,7 +546,7 @@
   "city_metal_refinery": "金属精炼厂",
   "city_metal_refinery_desc": "精炼铝",
   "city_metal_refinery_effect": "使采石场工人能够开采铝，铝产量 +%0%。",
-  "city_metal_refinery_effect2": "供电 %2kW，铝产量 +%1%",
+  "city_metal_refinery_effect2": "供电 %2kW 铝产量加成从 +%0% 提升到 +%1%",
   "city_mine": "矿井",
   "city_mine_desc": "雇佣矿工",
   "city_mine_effect1": "矿工上限 +1",

@@ -1040,7 +1040,7 @@
   "tech_dimensional_readings": "维度读数",
   "tech_dimensional_readings_effect": "升级探测无人机的传感器，使其传送回更多有关地狱维度的信息，是极具科学的吸引力的一件事。每供电一个探测无人机，知识上限 +1000，大学知识上限 +2%，生命科学实验室知识上限 +2%",
   "tech_quantum_entanglement": "量子纠缠",
-  "tech_quantum_entanglement_effect": "通过研究中子星的超致密材料学习量子纠缠的秘密，每建一座沃登克里弗塔或通天塔，深空实验室的知识上限 +%0%",
+  "tech_quantum_entanglement_effect": "通过研究中子星的超致密材料学习量子纠缠的秘密，每建造一座沃登克里弗塔或通天塔，深空实验室的知识上限 +%0%",
   "tech_expedition": "科学考察",
   "tech_expedition_effect": "吸引科学家去更遥远的地方进行科学考察。半人马座α星系的深空实验室对科学家们虚席以待。",
   "tech_subspace_sensors": "子空间传感器",

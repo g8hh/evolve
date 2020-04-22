@@ -3493,7 +3493,7 @@
   "interstellar_stellar_forge_title": "恒星熔炉",
   "interstellar_stellar_forge_effect": "工匠产量 +%0%",
   "interstellar_stellar_forge_effect2": "秘银产量 +%0%",
-  "interstellar_stellar_forge_effect3": "冶炼产量 +%0",
+  "interstellar_stellar_forge_effect3": "冶炼厂工位 +%0",
   "interstellar_stellar_forge_flair": "我这只手燃烧如鲜红的太阳！它高声叫我抓住产量！",
   "interstellar_blackhole_name": "黑洞",
   "interstellar_blackhole_desc1": "在距离 %0 487.0 光年外发现了一个小黑洞。",

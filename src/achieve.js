@@ -625,6 +625,11 @@ export const feats = {
         desc: loc("feat_the_misery_desc"),
         flair: loc("feat_the_misery_flair")
     },
+    energetic: {
+        name: loc("feat_energetic_name"),
+        desc: loc("feat_energetic_desc"),
+        flair: loc("feat_energetic_flair")
+    },
     garbage_pie: {
         name: loc("feat_garbage_pie_name"),
         desc: loc("feat_garbage_pie_desc"),
@@ -1160,7 +1165,7 @@ export function checkAchievements(){
 
     // total achievements feat
     {
-        for (let t_level=a_level; t_level >= 0; t_level--){
+        for (let t_level=a_level; t_level >= 1; t_level--){
 
             let total = 0;
             const keys = Object.keys(achievements)

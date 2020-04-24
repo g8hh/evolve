@@ -856,7 +856,7 @@ export function bloodwar(){
 
     let game_base = global.stats.achieve['technophobe'] && global.stats.achieve.technophobe.l >= 5 ? 9000 : 10000;
     let gem_chance = game_base - global.portal.fortress.pity;
-    if (global.race.universe === 'evil'){
+    if (global.race.universe === 'evil' && global.race.Dark.count > 0){
         let de = global.race.Dark.count;
         if (global.race.Harmony.count > 0){
             de *= 1 + (global.race.Harmony.count * 0.01);
@@ -870,7 +870,7 @@ export function bloodwar(){
         }
     }
     if (global.race['ghostly']){
-        gem_chance = Math.round(gem_chance * 0.85);
+        gem_chance = Math.round(gem_chance * ((100 - traits.ghostly.vars[2]) / 100));
     }
 
     // Patrols

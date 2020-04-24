@@ -992,6 +992,10 @@ export const actions = {
                     global.evolution['final'] = 100;
                     addAction('evolution','sentience');
                     addRaces(['arraak','pterodacti','dracnid']);
+                    if (races.custom.hasOwnProperty('type') && races.custom.type === 'avian'){
+                        global.evolution['custom'] = { count: 0 };
+                        addAction('evolution','custom');
+                    }
                     if (global.genes['challenge']){
                         global.evolution['bunker'] = { count: 0 };
                         addAction('evolution','bunker');
@@ -1019,6 +1023,10 @@ export const actions = {
                     global.evolution['final'] = 100;
                     addAction('evolution','sentience');
                     addRaces(['tortoisan','gecko','slitheryn']);
+                    if (races.custom.hasOwnProperty('type') && races.custom.type === 'reptilian'){
+                        global.evolution['custom'] = { count: 0 };
+                        addAction('evolution','custom');
+                    }
                     if (global.genes['challenge']){
                         global.evolution['bunker'] = { count: 0 };
                         addAction('evolution','bunker');
@@ -2832,13 +2840,7 @@ export const actions = {
                 Stone(offset){ return costMultiplier('farm', offset, 10, 1.36); }
             },
             effect(){
-                let farming = global.tech['agriculture'] >= 2 ? 1.25 : 0.75;
-                farming *= global.city.biome === 'grassland' ? 1.1 : 1;
-                farming *= global.tech['agriculture'] >= 7 ? 1.1 : 1;
-                farming *= global.city.biome === 'hellscape' ? 0.25 : 1;
-                farming *= global.city.ptrait === 'trashed' ? 0.75 : 1;
-                farming = +farming.toFixed(2);
-                return global.tech['farm'] ? `<div>${loc('city_farm_effect',[farming])}</div><div>${loc('plus_max_resource',[1,loc('citizen')])}</div>` : loc('city_farm_effect',[farming]);
+                return global.tech['farm'] ? `<div>${loc('city_farm_effect')}</div><div>${loc('plus_max_resource',[1,loc('citizen')])}</div>` : loc('city_farm_effect');
             },
             action(){
                 if (payCosts($(this)[0].cost)){
@@ -4353,7 +4355,7 @@ export const actions = {
             effect(){
                 let consume = 0.35;
                 let power = -($(this)[0].powered());
-                return global.race['environmentalist'] ? `+${power}kW` : `<span>+${power}kW.</span> <span class="has-text-caution">${loc('city_coal_power_effect',[consume])}</span>`;
+                return global.race['environmentalist'] ? `+${power}MW` : `<span>+${power}MW.</span> <span class="has-text-caution">${loc('city_coal_power_effect',[consume])}</span>`;
             },
             powered(){
                 return global.race['environmentalist']
@@ -4391,7 +4393,7 @@ export const actions = {
             effect(){
                 let consume = 0.65;
                 let power = -($(this)[0].powered());
-                return global.race['environmentalist'] ? `+${power}kW` : `<span>+${power}kW.</span> <span class="has-text-caution">${loc('city_oil_power_effect',[consume])}</span>`;
+                return global.race['environmentalist'] ? `+${power}MW` : `<span>+${power}MW.</span> <span class="has-text-caution">${loc('city_oil_power_effect',[consume])}</span>`;
             },
             powered(){
                 if (global.race['environmentalist']){
@@ -4436,7 +4438,7 @@ export const actions = {
             },
             effect(){
                 let consume = 0.1;
-                return `<span>+${-($(this)[0].powered())}kW.</span> <span class="has-text-caution">${loc('city_fission_power_effect',[consume])}</span>`;
+                return `<span>+${-($(this)[0].powered())}MW.</span> <span class="has-text-caution">${loc('city_fission_power_effect',[consume])}</span>`;
             },
             powered(){ return powerModifier(global.tech['uranium'] >= 4 ? -18 : -14); },
             action(){
@@ -10706,7 +10708,7 @@ export const actions = {
             title: loc('tech_encoding'),
             desc: loc('tech_encoding_desc'),
             category: 'religion',
-            era: 'early_space',
+            era: 'deep_space',
             reqs: { ancient_study: 1, mars: 5 },
             grant: ['ancient_study',2],
             cost: {
@@ -10749,7 +10751,7 @@ export const actions = {
             title: loc('tech_infusion'),
             desc: loc('tech_infusion_desc'),
             category: 'religion',
-            era: 'early_space',
+            era: 'deep_space',
             reqs: { ancient_deify: 1, mars: 5 },
             grant: ['ancient_deify',2],
             cost: {
@@ -11167,7 +11169,7 @@ export const actions = {
             title: loc('tech_swarm_plant'),
             desc: loc('tech_swarm_plant'),
             category: 'power_generation',
-            era: 'early_space',
+            era: 'deep_space',
             reqs: { solar: 3, hell: 1, gas_moon: 1 },
             grant: ['solar',4],
             cost: {
@@ -11826,7 +11828,7 @@ export const actions = {
             title: loc('tech_tachyon'),
             desc: loc('tech_tachyon'),
             category: 'progress',
-            era: 'deep_space',
+            era: 'interstellar',
             reqs: { wsc: 1 },
             grant: ['ftl',1],
             cost: {

@@ -1702,7 +1702,7 @@
   "achieve_perks_technophobe3": "开局拥有 %0 灵魂宝石",
   "achieve_perks_technophobe3a": "开局拥有 %0 灵魂宝石",
   "achieve_perks_technophobe4": "灵魂宝石掉率 +%0%",
-  "achieve_perks_technophobe5": "TRANS:+%0 custom race complexity.",
+  "achieve_perks_technophobe5": "自定义种族时，选择特质数量超出基准值将触发基因奢侈税，原基准为 4 个特质，现额外增加 %0 个",
   "achieve_apocalypse_name": "启示录（Apocalypse）",
   "achieve_apocalypse_desc": "用核武清除自己。（Wiped Yourself out with Nuclear Weapons.）",
   "achieve_apocalypse_flair": "避难所也救不了你！（The Vaults didn't Help!）",

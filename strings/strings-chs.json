@@ -1439,7 +1439,7 @@
   "tech_swarm_control_ai": "AI蜂群卫星控制",
   "tech_swarm_control_ai_effect": "通过人工智能控制太阳能蜂群卫星，每个蜂群卫星控制站最多可以操作 18 颗卫星。",
   "tech_quantum_swarm": "量子蜂群",
-  "tech_quantum_swarm_effect": "通过使用量子处理器升级蜂群工厂AI，工厂的效率受知识上限的限制。",
+  "tech_quantum_swarm_effect": "使用量子处理器升级蜂群工厂AI，效率受知识上限的加成。",
   "tech_perovskite_cell": "钙钛矿电池",
   "tech_perovskite_cell_effect": "钙钛矿太阳能电池效率更高。每颗蜂群卫星的发电量从 0.35kW 提升到 0.5kW。",
   "tech_swarm_convection": "蜂群对流",

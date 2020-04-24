@@ -86,6 +86,7 @@
   "star": "星辰",
   "party": "生日帽",
   "martini": "马提尼酒",
+  "lightbulb": "TRANS:Lightbulb",
   "nuclear": "核弹",
   "zombie": "僵尸",
   "fire": "火焰",
@@ -2067,6 +2068,9 @@
   "feat_the_misery_name": "苦难（The Misery）",
   "feat_the_misery_desc": "坚持使用基因灾难直到黑洞重置或飞升。（Used the Genetic Rejects to Initiate a Late Game Reset Option.）",
   "feat_the_misery_flair": "你肯定有无数次抓狂到干脆扔个核弹重置掉是吧？（You Know You Only Had to MAD, Right?）",
+  "feat_energetic_name": "TRANS:Energizer",
+  "feat_energetic_desc": "TRANS:Ascended without building any thermal collectors.",
+  "feat_energetic_flair": "TRANS:It just keeps going and going and going...",
   "feat_garbage_pie_name": "垃圾馅饼（Garbage Pie）",
   "feat_garbage_pie_desc": "不对特质作任何改良，让这些基因灾难飞升。（Ascended the Genetic Rejects without Modifying Them.）",
   "feat_garbage_pie_flair": "一地鸡毛，一无所获。（Hold Nothing, Extra Onions.）",
@@ -3795,7 +3799,7 @@
   "wiki_menu_traits": "特质",
   "wiki_menu_structures": "建筑",
   "wiki_menu_prehistoric": "史前进化",
-  "wiki_menu_plantery": "地面",
+  "wiki_menu_planetary": "TRANS:Planetary",
   "wiki_menu_space": "太空",
   "wiki_menu_interstellar": "星际",
   "wiki_menu_intergalactic": "星系",
@@ -4081,5 +4085,5 @@
   "wiki_tech_sundial2": "在当前星球第一次核弹重置后 +1。",
   "wiki_tech_sundial3": "在获得安乐死特权后 +1。",
   "wiki_tech_sundial4": "在磁性星球上 +1。",
-  "wiki_structure_plantery_slaughter": "邪恶种族特有的基本资源采集选项，取代了其他相关的基本资源采集选项。"
+  "wiki_structure_planetary_slaughter": "TRANS:Basic gathering option for Evil races, this replaces the other standard gathering methods."
 }

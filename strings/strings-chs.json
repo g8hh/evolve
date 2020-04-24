@@ -3799,7 +3799,7 @@
   "wiki_menu_traits": "特质",
   "wiki_menu_structures": "建筑",
   "wiki_menu_prehistoric": "史前进化",
-  "wiki_menu_planetary": "TRANS:Planetary",
+  "wiki_menu_planetary": "地面",
   "wiki_menu_space": "太空",
   "wiki_menu_interstellar": "星际",
   "wiki_menu_intergalactic": "星系",
@@ -4085,5 +4085,5 @@
   "wiki_tech_sundial2": "在当前星球第一次核弹重置后 +1。",
   "wiki_tech_sundial3": "在获得安乐死特权后 +1。",
   "wiki_tech_sundial4": "在磁性星球上 +1。",
-  "wiki_structure_planetary_slaughter": "TRANS:Basic gathering option for Evil races, this replaces the other standard gathering methods."
+  "wiki_structure_planetary_slaughter": "邪恶种族特有的基本资源采集选项，取代了其他相关的基本资源采集选项。"
 }

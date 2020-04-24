@@ -2691,7 +2691,7 @@
   "trait_fast_growth_name": " [高速繁殖] 特质",
   "trait_high_metabolism": "你的种族代谢食物的速度很快。",
   "trait_high_metabolism_name": " [高速代谢] 特质",
-  "trait_photosynth": "你的种族通过与太阳的光合作用产生部分食物，晴天时食物消耗 -40% ，多云时食物消耗量 -20% ，下雨但非寒冷时食物消耗 -10% 。",
+  "trait_photosynth": "你的种族通过光合作用产生部分食物减少消耗，晴天 -40% ，多云 -20% ，下雨但非寒冷 -10% 。",
   "trait_photosynth_name": " [光合作用] 特质",
   "trait_asymmetrical": "你的种族不对称的外观过于可怕，使贸易更难进行，市场出售价格 -20% ，如同时拥有商人特质，则此特质不生效。",
   "trait_asymmetrical_name": " [不对称] 特质",

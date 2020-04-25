@@ -3300,7 +3300,7 @@
   "space_red_mine_title": "矿井",
   "space_red_mine_desc": "行星采矿设施",
   "space_red_mine_effect": "每行星居民提升%1产量 +%0",
-  "space_red_mine_desc_bd": "行星矿工",
+  "space_red_mine_desc_bd": "%0 矿工",
   "space_red_fabrication_title": "铸造厂",
   "space_red_fabrication_desc": "行星铸造厂",
   "space_red_fabrication_effect1": "工匠人数上限 +1",

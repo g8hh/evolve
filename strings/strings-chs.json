@@ -3732,7 +3732,7 @@
   "fortress_stationed": "驻扎士兵负责堡垒的防御工作。",
   "fortress_wall": "城墙剩余耐久：",
   "fortress_sieged": "堡垒击退了一波恶魔生物的围攻，%0 只恶魔被杀死了，城墙出现了 %1% 的破损，修理工作已经展开。",
-  "fortress_lost": "堡垒被恶魔生物占领了，所有在堡垒工作的士兵和勘探者都被恶魔生物残忍杀害了。",
+  "fortress_lost": "堡垒被恶魔生物占领了，驻扎士兵、巡逻队和勘探者全部遇难。",
   "fortress_patrol": "　巡逻队数量：",
   "fortress_patrol_desc": "派出 %0 支队伍在恶魔丛生的废土上巡逻。",
   "fortress_patrol_size": "　巡逻队规模：",

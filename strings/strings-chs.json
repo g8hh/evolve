@@ -2756,7 +2756,7 @@
   "trait_greedy_name": " [贪婪] 特质",
   "trait_merchant": "你的种族天生就有讨价还价的本事。",
   "trait_merchant_name": " [商人] 特质",
-  "trait_smart": "你的种族更容易理解新概念。",
+  "trait_smart": "你的种族更容易理解新概念，知识成本 -10% 。",
   "trait_smart_name": " [聪明] 特质",
   "trait_puny": "你的种族不擅长战斗。",
   "trait_puny_name": " [弱小] 特质",

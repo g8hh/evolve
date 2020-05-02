@@ -2066,9 +2066,11 @@ export const actions = {
                     global.evolution['junker'] = { count: 0 };
                     global.evolution['joyless'] = { count: 0 };
                     global.evolution['steelen'] = { count: 0 };
-                    global.evolution['emfield'] = { count: 0 };
                     if (global.stats.achieve['whitehole']){
                         global.evolution['decay'] = { count: 0 };
+                    }
+                    if (global.stats.achieve['ascended']){
+                        global.evolution['emfield'] = { count: 0 };
                     }
                     challengeGeneHeader();
                     if (global.race.universe === 'antimatter'){
@@ -3969,7 +3971,7 @@ export const actions = {
                         faith *= 1 + (traits.spiritual.vars[0] / 100);
                     }
                     if (global.civic.govern.type === 'theocracy'){
-                        faith *= 1.05;
+                        faith *= 1.12;
                     }
                     faith = +(faith).toFixed(3);
                     let temple = 6;
@@ -3992,7 +3994,7 @@ export const actions = {
                         faith *= 1 + (traits.spiritual.vars[0] / 100);
                     }
                     if (global.civic.govern.type === 'theocracy'){
-                        faith *= 1.05;
+                        faith *= 1.12;
                     }
                     faith = +(faith).toFixed(3);
                     desc = `<div>${loc('city_temple_effect1',[faith])}</div>`;
@@ -4010,7 +4012,7 @@ export const actions = {
                         plasmid *= 1 + (traits.spiritual.vars[0] / 100);
                     }
                     if (global.civic.govern.type === 'theocracy'){
-                        plasmid *= 1.05;
+                        plasmid *= 1.12;
                     }
                     plasmid = +(plasmid).toFixed(3);
                     desc = `<div>${loc('city_temple_effect2',[plasmid])}</div>`;
@@ -13343,7 +13345,8 @@ export function drawCity(){
 export function drawTech(){
     let techs = {};
     let old_techs = {};
-    let tech_categories = []
+    let new_techs = [];
+    let tech_categories = [];
     let old_categories = [];
     let all_categories = [];
     Object.keys(actions.tech).forEach(function (tech_name){
@@ -13383,10 +13386,24 @@ export function drawTech(){
             if (!(category in techs)) {
                 techs[category] = [];
             }
-
-            addAction('tech', tech_name);
+            
+            new_techs.push(tech_name);
         }
     });
+
+	new_techs.sort(function(a, b) {
+		if(actions.tech[a].cost.Knowledge == undefined){
+			return -1;
+		}
+		if(actions.tech[b].cost.Knowledge == undefined){
+			return 1;
+		}
+		return actions.tech[a].cost.Knowledge() > actions.tech[b].cost.Knowledge() ? 1 : -1;
+	}); 
+    new_techs.forEach(function(tech_name) {
+        addAction('tech', tech_name);
+    });
+
 
     all_categories.forEach(function(category){
         clearElement($(`#tech-dist-${category}`),true);

@@ -133,7 +133,7 @@ $('#morale').on('mouseover',function(){
         moralePopper.append(`<p class="modal_bd"><span>${loc('morale_entertainment')}</span> <span class="has-text-${type}"> ${+(global.city.morale.entertain).toFixed(1)}%</span></p>`);
     }
     if (global.city.morale.season !== 0){
-        let season = global.city.calendar.season === 0 ? loc('morale_spring') : loc('morale_winter');
+        let season = global.city.calendar.season === 0 ? loc('morale_spring') : global.city.calendar.season === 1 ? loc('morale_summer') : loc('morale_winter');
         let type = global.city.morale.season > 0 ? 'success' : 'danger';
         moralePopper.append(`<p class="modal_bd"><span>${season}</span> <span class="has-text-${type}"> ${+(global.city.morale.season).toFixed(1)}%</span></p>`);
     }
@@ -158,6 +158,14 @@ $('#morale').on('mouseover',function(){
     if (global.civic.govern.type === 'corpocracy'){
         total -= 10;
         moralePopper.append(`<p class="modal_bd"><span>${loc('govern_corpocracy')}</span> <span class="has-text-danger"> -10%</span></p>`);
+    }
+    if (global.civic.govern.type === 'republic'){
+        total += 20;
+        moralePopper.append(`<p class="modal_bd"><span>${loc('govern_republic')}</span> <span class="has-text-success"> +20%</span></p>`);
+    }
+    if (global.civic.govern.type === 'federation'){
+        total += 10;
+        moralePopper.append(`<p class="modal_bd"><span>${loc('govern_federation')}</span> <span class="has-text-success"> +10%</span></p>`);
     }
 
     total = +(total).toFixed(1);
@@ -561,8 +569,8 @@ function fastLoop(){
         global_multiplier *= 1 + (traits.rainbow.vars[0] / 100);
     }
     if (global.tech['world_control']){
-        breakdown.p['Global'][loc('tech_unification')] = global.civic.govern.type === 'federation' ? '30%' : '25%';
-        global_multiplier *= global.civic.govern.type === 'federation' ? 1.3 : 1.25;
+        breakdown.p['Global'][loc('tech_unification')] = global.civic.govern.type === 'federation' ? '32%' : '25%';
+        global_multiplier *= global.civic.govern.type === 'federation' ? 1.32 : 1.25;
     }
     else {
         let occupy = 0;
@@ -806,6 +814,12 @@ function fastLoop(){
 
         if (global.civic.govern.type === 'corpocracy'){
             morale -= 10;
+        }
+        if (global.civic.govern.type === 'republic'){
+            morale += 20;
+        }
+        if (global.civic.govern.type === 'federation'){
+            morale += 10;
         }
 
         if (global.race['frenzy']){
@@ -1823,7 +1837,7 @@ function fastLoop(){
             morale -= high_tax * 0.5;
         }
 
-        if (!global.race['frenzy'] && global.civic.garrison.protest + global.civic.garrison.fatigue > 2){
+        if (global.civic.govern.type !== 'autocracy' && !global.race['frenzy'] && global.civic.garrison.protest + global.civic.garrison.fatigue > 2){
             let warmonger = Math.round(Math.log2(global.civic.garrison.protest + global.civic.garrison.fatigue));
             global.city.morale.warmonger = global.race['immoral'] ? warmonger : -(warmonger);
             morale += global.city.morale.warmonger;
@@ -2364,6 +2378,11 @@ function fastLoop(){
             if (global.city['library']){
                 know_bd[loc('city_library')] = ((library_mult - 1) * 100) + '%';
             }
+            if (global.civic.govern.type === 'technocracy'){
+                know_bd[loc('govern_technocracy')] = '10%';
+                delta *= 1.1;
+            }
+
             breakdown.p['Knowledge'] = know_bd;
 
             if (gene_consume > 0) {
@@ -2414,8 +2433,7 @@ function fastLoop(){
                     delta *= 0.8;
                 }
 
-                delta *= hunger;
-                FactoryMoney = delta + 'v'; //Money doesn't normally have hunger/tax breakdowns. Better to lump in the manually calculable total.
+                FactoryMoney = delta * hunger; //Money doesn't normally have hunger/tax breakdowns. Better to lump in the manually calculable total.
 
                 if (global.race['discharge'] && global.race['discharge'] > 0){
                     delta *= 0.5;
@@ -2463,10 +2481,10 @@ function fastLoop(){
                     factory_output *= 1 + (global.race['metallurgist'] * 0.04);
                 }
                 if (global.civic.govern.type === 'corpocracy'){
-                    factory_output *= 1.2;
+                    factory_output *= 1.3;
                 }
                 if (global.civic.govern.type === 'socialist'){
-                    factory_output *= 1.05;
+                    factory_output *= 1.1;
                 }
 
                 let delta = factory_output;
@@ -2531,10 +2549,10 @@ function fastLoop(){
                     factory_output *= 1.42;
                 }
                 if (global.civic.govern.type === 'corpocracy'){
-                    factory_output *= 1.2;
+                    factory_output *= 1.3;
                 }
                 if (global.civic.govern.type === 'socialist'){
-                    factory_output *= 1.05;
+                    factory_output *= 1.1;
                 }
 
                 let delta = factory_output;
@@ -2604,10 +2622,10 @@ function fastLoop(){
                     factory_output *= 1.42;
                 }
                 if (global.civic.govern.type === 'corpocracy'){
-                    factory_output *= 1.2;
+                    factory_output *= 1.3;
                 }
                 if (global.civic.govern.type === 'socialist'){
-                    factory_output *= 1.05;
+                    factory_output *= 1.1;
                 }
 
                 let delta = factory_output;
@@ -2668,10 +2686,10 @@ function fastLoop(){
                     factory_output *= 1 + (traits.toxic.vars[1] / 100);
                 }
                 if (global.civic.govern.type === 'corpocracy'){
-                    factory_output *= 1.2;
+                    factory_output *= 1.3;
                 }
                 if (global.civic.govern.type === 'socialist'){
-                    factory_output *= 1.05;
+                    factory_output *= 1.1;
                 }
 
                 let delta = factory_output;
@@ -2716,8 +2734,11 @@ function fastLoop(){
             cement_base *= racialTrait(global.civic.cement_worker.workers,'factory');
 
             let factory_output = workDone * cement_base;
+            if (global.civic.govern.type === 'corpocracy'){
+                factory_output *= 1.3;
+            }
             if (global.civic.govern.type === 'socialist'){
-                factory_output *= 1.05;
+                factory_output *= 1.1;
             }
 
             let powered_mult = 1;
@@ -2736,7 +2757,7 @@ function fastLoop(){
             cement_bd[loc('city_cement_plant_bd')] = factory_output + 'v';
             cement_bd[loc('power')] = ((powered_mult - 1) * 100) + '%';
 
-            if (global.race['discharge'] && global.race['discharge'] > 0){
+            if (global.race['discharge'] && global.race['discharge'] > 0 && p_on['cement_plant'] > 0){
                 powered_mult = (powered_mult - 1) * 0.5 + 1;
                 cement_bd[`ᄂ${loc('evo_challenge_discharge')}`] = '-50%';
             }
@@ -2993,8 +3014,11 @@ function fastLoop(){
             modRes('Coal', -(consume_coal * time_multiplier));
             modRes('Oil', -(consume_oil * time_multiplier));
 
+            if (global.civic.govern.type === 'corpocracy'){
+                graphene_production *= 1.3;
+            }
             if (global.civic.govern.type === 'socialist'){
-                graphene_production *= 1.05;
+                graphene_production *= 1.1;
             }
 
             let ai = 1;
@@ -3005,13 +3029,13 @@ function fastLoop(){
 
             let graphene_bd = {};
             let delta = graphene_production * ai * zigguratBonus() * hunger * global_multiplier;
-
+            graphene_bd[loc('interstellar_g_factory_bd')] = (graphene_production * zigguratBonus()) + 'v';
+            
             if (global.race['discharge'] && global.race['discharge'] > 0){
                 delta *= 0.5;
                 graphene_bd[`ᄂ${loc('evo_challenge_discharge')}`] = '-50%';
             }
             
-            graphene_bd[loc('interstellar_g_factory_bd')] = (graphene_production * zigguratBonus()) + 'v';
             if (p_on['citadel'] > 0){
                 graphene_bd[loc('interstellar_citadel_effect_bd')] = ((ai - 1) * 100) + '%';
             }
@@ -3057,8 +3081,11 @@ function fastLoop(){
                 modRes('Bolognium', -(consume_bolognium * time_multiplier));
                 modRes('Stanene', -(consume_stanene * time_multiplier));
 
+                if (global.civic.govern.type === 'corpocracy'){
+                    vitreloy_production *= 1.3;
+                }
                 if (global.civic.govern.type === 'socialist'){
-                    vitreloy_production *= 1.05;
+                    vitreloy_production *= 1.1;
                 }
 
                 let zig = zigguratBonus();
@@ -3144,7 +3171,7 @@ function fastLoop(){
                 lumber_bd[loc('job_lumberjack')] = lumber_base + 'v';
                 lumber_bd[loc('city_lumber_yard')] = ((lumber_yard - 1) * 100) + '%';
                 lumber_bd[loc('city_sawmill')] = ((power_mult - 1) * 100) + '%';
-                if (global.race['discharge'] && global.race['discharge'] > 0){
+                if (global.race['discharge'] && global.race['discharge'] > 0 && p_on['sawmill'] > 0){
                     power_mult = (power_mult - 1) * 0.5 + 1;
                     lumber_bd[`ᄂ${loc('evo_challenge_discharge')}`] = '-50%';
                 }
@@ -3182,7 +3209,7 @@ function fastLoop(){
             stone_bd[loc('city_rock_quarry')] = ((rock_quarry - 1) * 100) + '%';
             stone_bd[loc('power')] = ((power_mult - 1) * 100) + '%';
 
-            if (global.race['discharge'] && global.race['discharge'] > 0){
+            if (global.race['discharge'] && global.race['discharge'] > 0 && p_on['rock_quarry'] > 0){
                 power_mult = (power_mult - 1) * 0.5 + 1;
                 stone_bd[`ᄂ${loc('evo_challenge_discharge')}`] = '-50%';
             }
@@ -3283,7 +3310,7 @@ function fastLoop(){
                 copper_bd[loc('job_miner')] = (copper_base) + 'v';
                 copper_bd[loc('power')] = ((copper_power - 1) * 100) + '%';
 
-                if (global.race['discharge'] && global.race['discharge'] > 0){
+                if (global.race['discharge'] && global.race['discharge'] > 0 && p_on['mine'] > 0){
                     copper_power = (copper_power - 1) * 0.5 + 1;
                     copper_bd[`ᄂ${loc('evo_challenge_discharge')}`] = '-50%';
                 }
@@ -3324,7 +3351,7 @@ function fastLoop(){
                 iron_bd[loc('job_miner')] = (iron_base) + 'v';
                 iron_bd[loc('power')] = ((iron_power - 1) * 100) + '%';
 
-                if (global.race['discharge'] && global.race['discharge'] > 0){
+                if (global.race['discharge'] && global.race['discharge'] > 0 && p_on['mine'] > 0){
                     iron_power = (iron_power - 1) * 0.5 + 1;
                     iron_bd[`ᄂ${loc('evo_challenge_discharge')}`] = '-50%';
                 }
@@ -3414,7 +3441,7 @@ function fastLoop(){
             coal_bd[loc('job_coal_miner')] = coal_base + 'v';
             coal_bd[loc('power')] = ((power_mult - 1) * 100) + '%';
 
-            if (global.race['discharge'] && global.race['discharge'] > 0){
+            if (global.race['discharge'] && global.race['discharge'] > 0 && p_on['coal_mine'] > 0){
                 power_mult = (power_mult - 1) * 0.5 + 1;
                 coal_bd[`ᄂ${loc('evo_challenge_discharge')}`] = '-50%';
             }
@@ -3794,7 +3821,7 @@ function fastLoop(){
 
             income_base *= (global.civic.taxes.tax_rate / 20);
             if (global.civic.govern.type === 'oligarchy'){
-                income_base *= 0.9;
+                income_base *= 0.95;
             }
             if (global.civic.govern.type === 'corpocracy'){
                 income_base *= 0.5;
@@ -3830,7 +3857,7 @@ function fastLoop(){
             money_bd[loc('city_temple')] = ((temple_mult - 1) * 100) + '%';
             money_bd[loc('city_shrine')] = ((shrine_mult - 1) * 100) + '%';
             money_bd[loc('city_factory')] = FactoryMoney + 'v';
-            if (global.race['discharge'] && global.race['discharge'] > 0){
+            if (global.race['discharge'] && global.race['discharge'] > 0 && FactoryMoney > 0){
                 money_bd[`ᄂ${loc('evo_challenge_discharge')}`] = '-50%';
             }
             modRes('Money', +(delta * time_multiplier).toFixed(2));
@@ -6173,13 +6200,13 @@ function longLoop(){
 
         {
             let extreme = global.tech['currency'] && global.tech['currency'] >= 5 ? true : false;
-            let tax_cap = global.civic.govern.type === 'oligarchy' ? 40 : 30;
+            let tax_cap = global.civic.govern.type === 'oligarchy' ? 50 : 30;
             if (extreme || global.race['terrifying']){
                 tax_cap += 20;
             }
             if (global.race['noble']){
-                if (global.civic.taxes.tax_rate > 20){
-                    global.civic.taxes.tax_rate = 20;
+                if (global.civic.taxes.tax_rate > global.civic.govern.type === 'oligarchy' ? 40 : 20){
+                    global.civic.taxes.tax_rate = global.civic.govern.type === 'oligarchy' ? 40 : 20;
                 }
             }
             else if (global.civic.taxes.tax_rate > tax_cap){

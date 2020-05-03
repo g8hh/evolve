@@ -3219,7 +3219,7 @@
   "resource_Dark_desc_s": "仓储上限 +%0% 。",
   "resource_Dark_desc_e": "战利品获取 +%0%，灵魂宝石掉率增加。",
   "resource_Dark_desc_m": "地面建筑成本蠕变 -%0，太空建筑成本蠕变 -%1 。",
-  "resource_Dark_desc_h": "太阳系内燃料成本 -%0%，太阳系外燃烧成本 -%1% 。",
+  "resource_Dark_desc_h": "太阳系内燃料成本 -%0%，太阳系外燃料成本 -%1% 。",
   "resource_Dark_desc_a": "所有电力设备的发电量 +%0%。",
   "resource_Harmony_name": "和谐水晶",
   "resource_Harmony_desc": "每颗和谐水晶提升暗能量效果 +%0% 。在当前宇宙，太空建筑的成本蠕变 -%1 。",

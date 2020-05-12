@@ -634,7 +634,7 @@
   "city_coal_power_desc": "用煤炭发电",
   "city_coal_power_effect": "煤消耗 %0",
   "city_hydro_power": "水电站",
-  "city_hydro_power_desc": "发电",
+  "city_hydro_power_desc": "水力发电",
   "city_coal_ash": "煤灰",
   "city_oil_power": "石油发电厂",
   "city_oil_power_desc": "用石油发电",

@@ -3541,7 +3541,7 @@
   "interstellar_blackhole_desc2": "这个黑洞位于距离 %0 487.0 光年的地方，就黑洞而言，它很小，因为它的质量只相当于 8 个太阳。",
   "interstellar_blackhole_desc3": "这个黑洞位于距离 %0 487.0 光年的地方，就黑洞而言，它的质量相当于 %1 个太阳。",
   "interstellar_blackhole_desc4": "这个黑洞位于距离 %0 487.0 光年的地方，就黑洞而言，它的质量相当于 %1 个太阳，其中奇异物质组成了 %2 个太阳质量。",
-  "interstellar_blackhole_desc5": "如果不知何故爆炸的话，这个黑洞价值 %0 %3，%1 噬菌体,以及 %2 暗能量……",
+  "interstellar_blackhole_desc5": "如果不知何故爆炸的话，这个黑洞价值 %0 %3，%1 噬菌体，以及 %2 暗能量……",
   "interstellar_blackhole_mission_effect": "侦察黑洞……为了科学！",
   "interstellar_blackhole_mission_result": "虽然非常危险，但是这个黑洞相对比较小，这使得研究更容易进行。",
   "interstellar_blackhole_unstable": "黑洞开始放出奇怪的读数，这可能是由于奇异物质污染。",

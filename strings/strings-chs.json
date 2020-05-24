@@ -787,7 +787,7 @@
   "tech_magic": "高科技法师",
   "tech_magic_effect": "高科技法师是一种新型的舞台演员，他们利用科技来表演“魔术”，艺人对士气的加成由 +2% 提升到 +3%",
   "tech_superstars": "超级明星",
-  "tech_superstars_effect": "将艺人们进行一系列包装，推广成超级娱乐明星，可进一步提高艺人的效率。每位艺人额外提升士气上限 +1%",
+  "tech_superstars_effect": "将艺人们进行一系列包装，推广成超级娱乐明星。每位艺人额外提升士气上限 +1%",
   "tech_radio": "广播",
   "tech_radio_effect": "%0 发出广播信号娱乐市民，士气 +1%",
   "tech_tv": "电视",

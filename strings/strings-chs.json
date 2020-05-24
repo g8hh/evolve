@@ -3597,7 +3597,7 @@
   "galaxy_armada": "我方舰队",
   "galaxy_piracy": "海盗",
   "galaxy_piracy_msg": "%0海盗已经盯上你，分配舰队到各个区域应对安全威胁。",
-  "galaxy_piracy_threat": "%0海盗舰队",
+  "galaxy_piracy_threat": "%0海盗控制区",
   "galaxy_piracy_none": "无",
   "galaxy_piracy_vlow": "极低",
   "galaxy_piracy_low": "低",

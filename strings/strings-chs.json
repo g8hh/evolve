@@ -3493,7 +3493,7 @@
   "interstellar_xfer_station_desc": "作为星系枢纽的深空转运站",
   "interstellar_cargo_yard_title": "星际货仓",
   "interstellar_cargo_yard_effect": "仓库存储上限 +%0%",
-  "interstellar_cruiser_title": "星际巡逻建",
+  "interstellar_cruiser_title": "星际巡逻舰",
   "interstellar_dyson_title": "戴森网",
   "interstellar_dyson_effect": "建造戴森网的 1%",
   "interstellar_dyson_complete": "戴森网已建成，发电量 %0MW",

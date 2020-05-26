@@ -3660,7 +3660,7 @@
   "galaxy_freighter_assign": "增加一艘 进口%0，出口%1 的货轮",
   "galaxy_freighter_unassign": "减少一艘 进口%0，出口%1 的货轮",
   "galaxy_alien": "%0星系",
-  "galaxy_alien1_desc": "%0星系是%0星云的核心星系，距离戈尔顿星系 4.2 光年。部署舰队及防御力量达到 1200 战力评级可彻底清除海盗势力。",
+  "galaxy_alien1_desc": "%0星系是%0星云的核心星系，距离戈尔顿星系 4.2 光年。部署舰队及防御力量达到 1000 战力评级可彻底清除海盗势力。",
   "galaxy_consulate": "领事馆",
   "galaxy_consulate_desc": "驻%0星系外交办事处",
   "galaxy_resort": "度假区",

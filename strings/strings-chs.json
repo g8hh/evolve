@@ -722,7 +722,7 @@
   "tech_neutronium_walls": "中子壁",
   "tech_neutronium_walls_effect": "添加由中子制成的承重墙降低%0和%1的建筑材料需求，成本蠕变再次 -2%",
   "tech_bolognium_alloy_beams": "钋合金横梁",
-  "tech_bolognium_alloy_beams_effect": "钋合金横梁可进一步降低%0和%1的建筑材料需求，成本蠕变再次 -2%？",
+  "tech_bolognium_alloy_beams_effect": "钋合金横梁可进一步降低%0和%1的建筑材料需求，成本蠕变再次 -2%",
   "tech_aphrodisiac": "催欲剂",
   "tech_aphrodisiac_desc": "研究如何促进人口增长",
   "tech_aphrodisiac_effect": "一种有助于人口增长的物质，基础生育指数由 0 提升到 1",

@@ -177,7 +177,7 @@
   "research_success": "%0 研发完成",
   "action_ready": "[%0] 后可支付",
   "cancel_routes": "清零",
-  "gain": "每秒%1获取 %0",
+  "gain": "每秒%1产量 %0",
   "spend": "每秒%1消耗 %0",
   "job_default": " 新市民会自动成为%0。",
   "job_farmer": "农民",

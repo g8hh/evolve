@@ -653,7 +653,7 @@
   "city_fission_power_effect": "铀消耗 %0",
   "city_mass_driver": "质量驱动器",
   "city_mass_driver_desc": "电磁发射系统",
-  "city_mass_driver_effect": "%1星系的石油和氦-3消耗 -%0%",
+  "city_mass_driver_effect": "降低%1星系的石油和氦-3消耗 %0%",
   "city_mass_driver_effect2": "每位科学家提升外星材料实验室知识上限 +%0",
   "city_on": "开启",
   "city_off": "关闭",

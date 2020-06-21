@@ -3629,7 +3629,7 @@
   "interstellar_sirius_name": "天狼星",
   "interstellar_sirius_desc": "天狼星是一个距离 %0 8.6 光年的双星星系，天狼星A是一颗M型恒星，天狼星B是一颗白矮星。",
   "interstellar_sirius_b_name": "天狼星B",
-  "interstellar_sirius_b_desc": "天狼星B是一颗白矮星，这意味着这意味着其核聚变已经停止，温度冷却到足以使表面凝固，但在数万亿年的时间里仍将散发大量的热量。",
+  "interstellar_sirius_b_desc": "天狼星B是一颗白矮星，这意味着其核聚变已经停止，温度冷却到足以使表面凝固，但在数万亿年的时间里仍将散发大量的热量。",
   "interstellar_sirius_mission_effect": "以前%0帝国对天狼星星系不感兴趣，但随着飞升计划的立项，人们重燃对白矮星的兴趣，天狼星星系离%1星系很近，是一个理想的研究对象。",
   "interstellar_sirius_b": "天狼星B研究计划",
   "interstellar_sirius_b_effect": "研究天狼星B以解开其秘密",

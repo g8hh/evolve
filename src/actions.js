@@ -1,6 +1,6 @@
 import { global, save, poppers, webWorker, keyMultiplier, clearStates, keyMap, srSpeak, sizeApproximation, p_on, moon_on, gal_on, quantum_level } from './vars.js';
 import { loc } from './locale.js';
-import { timeCheck, timeFormat, vBind, clearElement, costMultiplier, genCivName, powerModifier, powerCostMod, calcPrestige, adjustCosts, modRes, messageQueue, dragQueue, format_emblem, calcGenomeScore, getEaster, easterEgg } from './functions.js';
+import { timeCheck, timeFormat, vBind, clearElement, costMultiplier, genCivName, powerModifier, powerCostMod, calcPrestige, adjustCosts, modRes, messageQueue, dragQueue, format_emblem, calc_mastery, calcGenomeScore, getEaster, easterEgg } from './functions.js';
 import { unlockAchieve, unlockFeat, drawAchieve, checkAchievements } from './achieve.js';
 import { races, traits, genus_traits, randomMinorTrait, cleanAddTrait, biomes, planetTraits } from './races.js';
 import { defineResources, loadMarket, galacticTrade, spatialReasoning, resource_values, atomic_mass } from './resources.js';
@@ -380,8 +380,7 @@ export const actions = {
                         }
                     }
                     else {
-                        //addRaces(['entish','cacti','pinguicula']);
-                        addRaces(['entish','cacti']);
+                        addRaces(['entish','cacti','pinguicula']);
                         if (races.custom.hasOwnProperty('type') && races.custom.type === 'plant'){
                             global.evolution['custom'] = { count: 0 };
                             addAction('evolution','custom');
@@ -1120,7 +1119,7 @@ export const actions = {
                     else if (global.evolution['chloroplasts']){
                         races.push('entish');
                         races.push('cacti');
-                        //races.push('pinguicula');
+                        races.push('pinguicula');
                         if (global.hasOwnProperty('custom') && global.custom.race0.genus === 'plant'){
                             races.push('custom');
                         }
@@ -1764,7 +1763,7 @@ export const actions = {
             },
             emblem(){ return format_emblem('extinct_cacti'); }
         },
-        /*pinguicula: {
+        pinguicula: {
             id: 'evo-pinguicula',
             title(){ return races.pinguicula.name; },
             desc(){ return `${loc("evo_evolve")} ${races.pinguicula.name}`; },
@@ -1783,7 +1782,7 @@ export const actions = {
                 return false;
             },
             emblem(){ return format_emblem('extinct_pinguicula'); }
-        },*/
+        },
         sharkin: {
             id: 'evo-sharkin',
             title(){ return races.sharkin.name; },
@@ -2113,7 +2112,10 @@ export const actions = {
                         global.evolution['decay'] = { count: 0 };
                     }
                     if (global.stats.achieve['ascended']){
-                        global.evolution['emfield'] = { count: 0 };
+                        global.evolution['emfield'] = { count: 0 };                        
+                    }
+                    if (global.stats.achieve['shaken']){
+                        global.evolution['cataclysm'] = { count: 0 };
                     }
                     challengeGeneHeader();
                     if (global.race.universe === 'antimatter'){
@@ -2125,8 +2127,7 @@ export const actions = {
                     addAction('evolution','trade');
                     addAction('evolution','craft');
                     addAction('evolution','crispr');
-                    challengeActionHeader();
-                    addAction('evolution','junker');
+                    challengeActionHeader();                    
                     addAction('evolution','joyless');
                     addAction('evolution','steelen');
                     if (global.stats.achieve['whitehole']){
@@ -2134,6 +2135,11 @@ export const actions = {
                     }
                     if (global.stats.achieve['ascended']){
                         addAction('evolution','emfield');
+                    }
+                    scenarioActionHeader();
+                    addAction('evolution','junker');
+                    if (global.stats.achieve['shaken']){
+                        addAction('evolution','cataclysm');
                     }
                 }
                 return false;
@@ -2153,6 +2159,8 @@ export const actions = {
                     if (global.race['no_plasmid']){
                         delete global.race['no_plasmid'];
                         $(`#${$(this)[0].id}`).removeClass('hl');
+                        delete global.race['cataclysm'];
+                        $(`#evo-cataclysm`).removeClass('hl');
                     }
                     else {
                         global.race['no_plasmid'] = 1;
@@ -2177,6 +2185,8 @@ export const actions = {
                     if (global.race['weak_mastery']){
                         delete global.race['weak_mastery'];
                         $(`#${$(this)[0].id}`).removeClass('hl');
+                        delete global.race['cataclysm'];
+                        $(`#evo-cataclysm`).removeClass('hl');
                     }
                     else {
                         global.race['weak_mastery'] = 1;
@@ -2201,6 +2211,8 @@ export const actions = {
                     if (global.race['no_trade']){
                         delete global.race['no_trade'];
                         $(`#${$(this)[0].id}`).removeClass('hl');
+                        delete global.race['cataclysm'];
+                        $(`#evo-cataclysm`).removeClass('hl');
                     }
                     else {
                         global.race['no_trade'] = 1;
@@ -2225,6 +2237,8 @@ export const actions = {
                     if (global.race['no_craft']){
                         delete global.race['no_craft'];
                         $(`#${$(this)[0].id}`).removeClass('hl');
+                        delete global.race['cataclysm'];
+                        $(`#evo-cataclysm`).removeClass('hl');
                     }
                     else {
                         global.race['no_craft'] = 1;
@@ -2250,6 +2264,8 @@ export const actions = {
                         if (global.race['no_crispr']){
                             delete global.race['no_crispr'];
                             $(`#${$(this)[0].id}`).removeClass('hl');
+                            delete global.race['cataclysm'];
+                            $(`#evo-cataclysm`).removeClass('hl');
                         }
                         else {
                             global.race['no_crispr'] = 1;
@@ -2262,36 +2278,6 @@ export const actions = {
                 return false;
             },
             highlight(){ return global.race['no_crispr'] ? true : false; }
-        },
-        junker: {
-            id: 'evo-junker',
-            title: loc('evo_challenge_junker'),
-            desc(){ return global.race.universe === 'micro' ? `<div class="has-text-danger">${loc('evo_challenge_micro_warn')}</div><div class="has-text-danger">${loc('evo_no_toggle')}</div>` : `<div>${loc('evo_challenge_junker_desc')}</div><div class="has-text-danger">${loc('evo_no_toggle')}</div>`; },
-            cost: {
-                DNA(){ return 25; }
-            },
-            effect(){
-                let challengeType = global.race.universe === 'antimatter' ? loc('evo_challenge_mastery') : loc('evo_challenge_plasmid');
-                return global.city.biome === 'hellscape' && global.race.universe !== 'evil' ? `<div>${loc('evo_challenge_junker_effect',[challengeType])}</div><div class="has-text-special">${loc('evo_warn_unwise')}</div>` : loc('evo_challenge_junker_effect',[challengeType]); },
-            action(){
-                if (payCosts(actions.evolution.junker.cost)){
-                    global.race.species = 'junker';
-                    global.race['junker'] = 1;
-                    if (global.race.universe === 'antimatter') {
-                        global.race['weak_mastery'] = 1;
-                    }
-                    else {
-                        global.race['no_plasmid'] = 1;
-                    }
-                    global.race['no_trade'] = 1;
-                    global.race['no_craft'] = 1;
-                    global.race['no_crispr'] = 1;
-                    sentience();
-                }
-                return false;
-            },
-            emblem(){ return format_emblem('extinct_junker'); },
-            flair: loc('evo_challenge_junker_flair')
         },
         joyless: {
             id: 'evo-joyless',
@@ -2405,6 +2391,90 @@ export const actions = {
             flair: loc('evo_challenge_emfield_flair'),
             highlight(){ return global.race['emfield'] ? true : false; }
         },
+        junker: {
+            id: 'evo-junker',
+            title: loc('evo_challenge_junker'),
+            desc(){ return global.race.universe === 'micro' ? `<div class="has-text-danger">${loc('evo_challenge_micro_warn')}</div><div class="has-text-danger">${loc('evo_no_toggle')}</div>` : `<div>${loc('evo_challenge_junker_desc')}</div><div class="has-text-danger">${loc('evo_no_toggle')}</div>`; },
+            cost: {
+                DNA(){ return 50; }
+            },
+            effect(){
+                return global.city.biome === 'hellscape' && global.race.universe !== 'evil' ? `<div>${loc('evo_challenge_junker_effect')}</div><div class="has-text-special">${loc('evo_warn_unwise')}</div>` : loc('evo_challenge_junker_effect'); },
+            action(){
+                if (payCosts(actions.evolution.junker.cost)){
+                    global.race.species = 'junker';
+                    global.race['junker'] = 1;
+                    delete global.race['cataclysm'];
+                    if (global.race.universe === 'antimatter') {
+                        global.race['weak_mastery'] = 1;
+                    }
+                    else {
+                        global.race['no_plasmid'] = 1;
+                    }
+                    global.race['no_trade'] = 1;
+                    global.race['no_craft'] = 1;
+                    global.race['no_crispr'] = 1;
+                    sentience();
+                }
+                return false;
+            },
+            emblem(){ return format_emblem('extinct_junker'); },
+            flair: loc('evo_challenge_junker_flair')
+        },
+        cataclysm: {
+            id: 'evo-cataclysm',
+            title: loc('evo_challenge_cataclysm'),
+            desc(){ return global.race.universe === 'micro' ? `<div class="has-text-danger">${loc('evo_challenge_micro_warn')}</div>` : `<div>${loc('evo_challenge_cataclysm_desc')}</div>`; },
+            cost: {
+                DNA(){ return 50; }
+            },
+            effect(){
+                if (calc_mastery() >= 50){
+                    return `<div>${loc('evo_challenge_cataclysm_effect')}</div><div class="has-text-caution">${loc('evo_challenge_cataclysm_warn')}</div>`;
+                }
+                else {
+                    return `<div>${loc('evo_challenge_cataclysm_effect')}</div><div class="has-text-danger">${loc('evo_challenge_scenario_warn')}</div>`;
+                }
+            },
+            action(){
+                if (payCosts(actions.evolution.cataclysm.cost)){
+                    if (global.race['cataclysm']){
+                        delete global.race['cataclysm'];
+                        $(`#${$(this)[0].id}`).removeClass('hl');
+                    }
+                    else {
+                        global.race['cataclysm'] = 1;
+                        $(`#${$(this)[0].id}`).addClass('hl');
+
+                        if (global.race.universe === 'antimatter') {
+                            global.race['weak_mastery'] = 1;
+                            if (!$(`#evo-mastery`).hasClass('hl')){
+                                $(`#evo-mastery`).addClass('hl');
+                            }
+                        }
+                        else {
+                            global.race['no_plasmid'] = 1;
+                            if (!$(`#evo-plasmid`).hasClass('hl')){
+                                $(`#evo-plasmid`).addClass('hl');
+                            }
+                        }
+
+                        let genes = ['crispr','trade','craft'];
+                        for (let i=0; i<genes.length; i++){
+                            global.race[`no_${genes[i]}`] = 1;
+                            if (!$(`#evo-${genes[i]}`).hasClass('hl')){
+                                $(`#evo-${genes[i]}`).addClass('hl');
+                            }                        
+                        }
+                    }                    
+                    drawAchieve();
+                }
+                return false;
+            },
+            emblem(){ return format_emblem('iron_will'); },
+            flair: loc('evo_challenge_cataclysm_flair'),
+            highlight(){ return global.race['cataclysm'] ? true : false; }
+        },
     },
     city: {
         gift: {
@@ -2416,6 +2486,7 @@ export const actions = {
             reqs: { primitive: 1 },
             no_queue(){ return true },
             not_tech: ['santa'],
+            not_trait: ['cataclysm'],
             condition(){
                 const date = new Date();
                 if (date.getMonth() !== 11 || (date.getMonth() === 11 && (date.getDate() <= 16 || date.getDate() >= 25))){
@@ -2466,7 +2537,7 @@ export const actions = {
             },
             category: 'outskirts',
             reqs: { primitive: 1 },
-            not_trait: ['soul_eater'],
+            not_trait: ['soul_eater','cataclysm'],
             no_queue(){ return true },
             action(){
                 if(global['resource']['Food'].amount < global['resource']['Food'].max){
@@ -2497,7 +2568,7 @@ export const actions = {
             },
             category: 'outskirts',
             reqs: {},
-            not_trait: ['evil'],
+            not_trait: ['evil','cataclysm'],
             no_queue(){ return true },
             action(){
                 if (global['resource']['Lumber'].amount < global['resource']['Lumber'].max){
@@ -2508,10 +2579,11 @@ export const actions = {
         },
         stone: {
             id: 'city-stone',
-            title: loc('city_stone'),
-            desc: loc('city_stone_desc'),
+            title(){ return global.race['sappy'] ? loc('city_amber') : loc('city_stone'); },
+            desc(){ return global.race['sappy'] ? loc('city_amber_desc') : loc('city_stone_desc'); },
             category: 'outskirts',
             reqs: { primitive: 2 },
+            not_trait: ['cataclysm'],
             no_queue(){ return true },
             action(){
                 if (global['resource']['Stone'].amount < global['resource']['Stone'].max){
@@ -2534,7 +2606,7 @@ export const actions = {
             category: 'outskirts',
             reqs: {},
             trait: ['evil'],
-            not_trait: ['kindling_kindred'],
+            not_trait: ['kindling_kindred','cataclysm'],
             no_queue(){ return true },
             action(){
                 if (global['resource']['Lumber'].amount < global['resource']['Lumber'].max){
@@ -2556,6 +2628,7 @@ export const actions = {
             category: 'outskirts',
             reqs: { slaves: 2 },
             trait: ['slaver'],
+            not_trait: ['cataclysm'],
             cost: {
                 Money(){ return 25000 },
             },
@@ -2591,6 +2664,7 @@ export const actions = {
             category: 'outskirts',
             reqs: { mining: 1 },
             trait: ['cannibalize'],
+            not_trait: ['cataclysm'],
             cost: {
                 Stone(){ return global.city.hasOwnProperty('s_alter') && global.city['s_alter'].count >= 1 ? 0 : 100; }
             },
@@ -2678,6 +2752,7 @@ export const actions = {
             desc: loc('city_basic_housing_desc'),
             category: 'residential',
             reqs: { housing: 1 },
+            not_trait: ['cataclysm'],
             cost: {
                 Money(offset){
                     if (global.city['basic_housing'] && global.city['basic_housing'].count >= 5){
@@ -2690,7 +2765,9 @@ export const actions = {
                 Lumber(offset){ return global.race['kindling_kindred'] ? 0 : costMultiplier('basic_housing', offset, 10, 1.23); },
                 Stone(offset){ return global.race['kindling_kindred'] ? costMultiplier('basic_housing', offset, 10, 1.23) : 0; }
             },
-            effect: loc('plus_max_resource',[1,loc('citizen')]),
+            effect(){
+                return global.race['sappy'] ? `<div>${loc('plus_max_resource',[1,loc('citizen')])}</div><div>${loc('city_grove_effect',[2.5])}</div>` : loc('plus_max_resource',[1,loc('citizen')]);
+            },
             action(){
                 if (payCosts($(this)[0].cost)){
                     global['resource'][global.race.species].display = true;
@@ -2710,6 +2787,7 @@ export const actions = {
             desc: loc('city_cottage_desc'),
             category: 'residential',
             reqs: { housing: 2 },
+            not_trait: ['cataclysm'],
             cost: {
                 Money(offset){ return costMultiplier('cottage', offset, 900, 1.15); },
                 Plywood(offset){ return costMultiplier('cottage', offset, 25, 1.25); },
@@ -2743,6 +2821,7 @@ export const actions = {
             desc: `<div>${loc('city_apartment_desc')}</div><div class="has-text-special">${loc('requires_power')}</div>`,
             category: 'residential',
             reqs: { housing: 3 },
+            not_trait: ['cataclysm'],
             cost: {
                 Money(offset){ return costMultiplier('apartment', offset, 1750, 1.26) - 500; },
                 Furs(offset){ return costMultiplier('apartment', offset, 725, 1.32) - 500; },
@@ -2778,6 +2857,7 @@ export const actions = {
             desc(){ return global.race['detritivore'] ? loc('city_lodge_desc_alt') : loc('city_lodge_desc'); },
             category: 'residential',
             reqs: { housing: 1, currency: 1 },
+            not_trait: ['cataclysm'],
             condition(){
                 return ((global.race['soul_eater'] || global.race['detritivore']) && global.tech['s_lodge']) || (global.tech['hunting'] && global.tech['hunting'] >= 2) ? true : false;
             },
@@ -2802,6 +2882,7 @@ export const actions = {
             desc: loc('city_food_storage'),
             category: 'trade',
             reqs: { hunting: 1 },
+            not_trait: ['cataclysm'],
             cost: {
                 Money(offset){ return costMultiplier('smokehouse', offset, 85, 1.32); },
                 Lumber(offset){ return costMultiplier('smokehouse', offset, 65, 1.36) },
@@ -2827,6 +2908,7 @@ export const actions = {
             desc: loc('city_soul_well_desc'),
             category: 'trade',
             reqs: { soul_eater: 1 },
+            not_trait: ['cataclysm'],
             cost: {
                 Money(offset){ if (global.city['soul_well'] && global.city['soul_well'].count >= 3){ return costMultiplier('soul_well', offset, 50, 1.32);} else { return 0; } },
                 Lumber(offset){ return costMultiplier('soul_well', offset, 20, 1.36); },
@@ -2852,6 +2934,7 @@ export const actions = {
             desc: loc('city_slave_pen'),
             category: 'commercial',
             reqs: { slaves: 1 },
+            not_trait: ['cataclysm'],
             cost: {
                 Money(offset){ return costMultiplier('slave_pen', offset, 250, 1.32); },
                 Lumber(offset){ return costMultiplier('slave_pen', offset, 100, 1.36); },
@@ -2880,6 +2963,7 @@ export const actions = {
             desc: loc('city_farm_desc'),
             category: 'residential',
             reqs: { agriculture: 1 },
+            not_trait: ['cataclysm'],
             cost: {
                 Money(offset){ if (global.city['farm'] && global.city['farm'].count >= 3){ return costMultiplier('farm', offset, 50, 1.32);} else { return 0; } },
                 Lumber(offset){ return costMultiplier('farm', offset, 20, 1.36); },
@@ -2907,6 +2991,7 @@ export const actions = {
             desc: loc('city_compost_heap_desc'),
             category: 'residential',
             reqs: { compost: 1 },
+            not_trait: ['cataclysm'],
             cost: {
                 Money(offset){ if (global.city['compost'] && global.city['compost'].count >= 3){ return costMultiplier('compost', offset, 50, 1.32);} else { return 0; } },
                 Lumber(offset){ return costMultiplier('compost', offset, 12, 1.36); },
@@ -2952,6 +3037,7 @@ export const actions = {
             category: 'utility',
             reqs: { agriculture: 4 },
             not_tech: ['wind_plant'],
+            not_trait: ['cataclysm'],
             cost: {
                 Money(offset){ return costMultiplier('mill', offset, 1000, 1.31); },
                 Lumber(offset){ return costMultiplier('mill', offset, 600, 1.33); },
@@ -2988,6 +3074,7 @@ export const actions = {
             wiki: false,
             category: 'utility',
             reqs: { wind_plant: 1 },
+            not_trait: ['cataclysm'],
             cost: {
                 Money(offset){ return costMultiplier('windmill', offset, 1000, 1.31); },
                 Lumber(offset){ return costMultiplier('windmill', offset, 600, 1.33); },
@@ -3008,6 +3095,7 @@ export const actions = {
             desc: loc('city_food_storage'),
             category: 'trade',
             reqs: { agriculture: 3 },
+            not_trait: ['cataclysm'],
             cost: {
                 Money(offset){ return costMultiplier('silo', offset, 85, 1.32); },
                 Lumber(offset){ return costMultiplier('silo', offset, 65, 1.36) },
@@ -3034,6 +3122,7 @@ export const actions = {
             desc: loc('city_garrison_desc'),
             category: 'military',
             reqs: { military: 1, housing: 1 },
+            not_trait: ['cataclysm'],
             cost: {
                 Money(offset){ return costMultiplier('garrison', offset, 240, 1.5); },
                 Stone(offset){ return costMultiplier('garrison', offset, 260, 1.46); },
@@ -3074,6 +3163,7 @@ export const actions = {
             desc: loc('city_hospital_desc'),
             category: 'military',
             reqs: { medic: 1 },
+            not_trait: ['cataclysm'],
             cost: {
                 Money(offset){ return costMultiplier('hospital', offset, 22000, 1.32); },
                 Furs(offset){ return costMultiplier('hospital', offset, 4000, 1.32); },
@@ -3081,8 +3171,9 @@ export const actions = {
                 Aluminium(offset){ return costMultiplier('hospital', offset, 10000, 1.32); },
             },
             effect(){
+                let clinic = global.tech['reproduction'] && global.tech.reproduction >= 2 ? `<div>${loc('city_hospital_effect2')}</div>` : ``;
                 let healing = global.tech['medic'] >= 2 ? 10 : 5;
-                return loc('city_hospital_effect',[healing]);
+                return `<div>${loc('city_hospital_effect',[healing])}</div>${clinic}`;
             },
             action(){
                 if (payCosts($(this)[0].cost)){
@@ -3098,6 +3189,7 @@ export const actions = {
             desc: loc('city_boot_camp_desc'),
             category: 'military',
             reqs: { boot_camp: 1 },
+            not_trait: ['cataclysm'],
             cost: {
                 Money(offset){ return costMultiplier('boot_camp', offset, 50000, 1.32); },
                 Lumber(offset){ return costMultiplier('boot_camp', offset, 21500, 1.32); },
@@ -3128,6 +3220,7 @@ export const actions = {
             },
             category: 'trade',
             reqs: { storage: 1 },
+            not_trait: ['cataclysm'],
             cost: {
                 Money(offset){ return costMultiplier('shed', offset, 75, 1.22); },
                 Lumber(offset){
@@ -3239,6 +3332,7 @@ export const actions = {
             desc: loc('city_storage_yard_desc'),
             category: 'trade',
             reqs: { container: 1 },
+            not_trait: ['cataclysm'],
             cost: {
                 Money(offset){ return costMultiplier('storage_yard', offset, 10, 1.36); },
                 Brick(offset){ return costMultiplier('storage_yard', offset, 3, 1.35); },
@@ -3294,6 +3388,7 @@ export const actions = {
             desc: loc('city_warehouse_desc'),
             category: 'trade',
             reqs: { steel_container: 1 },
+            not_trait: ['cataclysm'],
             cost: {
                 Money(offset){ return costMultiplier('warehouse', offset, 400, 1.26); },
                 Cement(offset){ return costMultiplier('warehouse', offset, 75, 1.26); },
@@ -3344,6 +3439,7 @@ export const actions = {
             },
             category: 'commercial',
             reqs: { banking: 1 },
+            not_trait: ['cataclysm'],
             cost: {
                 Money(offset){ return costMultiplier('bank', offset, 250, 1.35); },
                 Lumber(offset){ return costMultiplier('bank', offset, 75, 1.32); },
@@ -3379,6 +3475,7 @@ export const actions = {
             desc: loc('city_graveyard_desc'),
             category: 'industrial',
             reqs: { reclaimer: 1 },
+            not_trait: ['cataclysm'],
             cost: {
                 Money(offset){ if (global.city['graveyard'] && global.city['graveyard'].count >= 5){ return costMultiplier('graveyard', offset, 5, 1.85);} else { return 0; } },
                 Lumber(offset){ return costMultiplier('graveyard', offset, 2, 1.95); },
@@ -3404,6 +3501,7 @@ export const actions = {
             desc: loc('city_lumber_yard_desc'),
             category: 'industrial',
             reqs: { axe: 1 },
+            not_trait: ['cataclysm'],
             cost: {
                 Money(offset){ if (global.city['lumber_yard'] && global.city['lumber_yard'].count >= 5){ return costMultiplier('lumber_yard', offset, 5, 1.85);} else { return 0; } },
                 Lumber(offset){ return costMultiplier('lumber_yard', offset, 6, 1.9); },
@@ -3430,6 +3528,7 @@ export const actions = {
             desc: loc('city_sawmill_desc'),
             category: 'industrial',
             reqs: { saw: 1 },
+            not_trait: ['cataclysm'],
             cost: {
                 Money(offset){ return costMultiplier('sawmill', offset, 3000, 1.26); },
                 Iron(offset){ return costMultiplier('sawmill', offset, 400, 1.26); },
@@ -3469,6 +3568,7 @@ export const actions = {
             desc: loc('city_rock_quarry_desc'),
             category: 'industrial',
             reqs: { mining: 1 },
+            not_trait: ['cataclysm','sappy'],
             cost: {
                 Money(offset){ if (global.city['rock_quarry'] && global.city['rock_quarry'].count >= 2){ return costMultiplier('rock_quarry', offset, 20, 1.45);} else { return 0; } },
                 Lumber(offset){ return costMultiplier('rock_quarry', offset, 50, 1.36); },
@@ -3505,6 +3605,7 @@ export const actions = {
             desc: loc('city_cement_plant_desc'),
             category: 'industrial',
             reqs: { cement: 1 },
+            not_trait: ['cataclysm'],
             cost: {
                 Money(offset){ return costMultiplier('cement_plant', offset, 3000, 1.5); },
                 Lumber(offset){ return costMultiplier('cement_plant', offset, 1800, 1.36); },
@@ -3542,6 +3643,7 @@ export const actions = {
             desc: loc('city_foundry_desc'),
             category: 'industrial',
             reqs: { foundry: 1 },
+            not_trait: ['cataclysm'],
             cost: {
                 Money(offset){ return costMultiplier('foundry', offset, 750, 1.36); },
                 Stone(offset){ return costMultiplier('foundry', offset, 100, 1.36); },
@@ -3594,6 +3696,7 @@ export const actions = {
             desc: `<div>${loc('city_factory_desc')}</div><div class="has-text-special">${loc('requires_power')}</div>`,
             category: 'industrial',
             reqs: { high_tech: 3 },
+            not_trait: ['cataclysm'],
             cost: {
                 Money(offset){ return costMultiplier('factory', offset, 25000, 1.32); },
                 Cement(offset){ return costMultiplier('factory', offset, 1000, 1.32); },
@@ -3630,6 +3733,7 @@ export const actions = {
             desc: loc('city_smelter_desc'),
             category: 'industrial',
             reqs: { smelting: 1 },
+            not_trait: ['cataclysm'],
             cost: {
                 Money(offset){ return costMultiplier('smelter', offset, 1000, 1.32); },
                 Iron(offset){ return costMultiplier('smelter', offset, 500, 1.33); }
@@ -3676,6 +3780,7 @@ export const actions = {
             desc: loc('city_metal_refinery_desc'),
             category: 'industrial',
             reqs: { alumina: 1 },
+            not_trait: ['cataclysm'],
             cost: {
                 Money(offset){ return costMultiplier('metal_refinery', offset, 2500, 1.35); },
                 Iron(offset){ return global.city.ptrait === 'unstable' ? costMultiplier('metal_refinery', offset, 125, 1.35) : 0; },
@@ -3685,7 +3790,8 @@ export const actions = {
             power_reqs: { alumina: 2 },
             effect() {
                 if (global.tech['alumina'] >= 2){
-                    return `<span>${loc('city_metal_refinery_effect',[6])}</span> <span class="has-text-caution">${loc('city_metal_refinery_effect2',[6,12,$(this)[0].powered()])}</span>`;
+                    let label = global.race['sappy'] ? 'city_metal_refinery_effect_alt' : 'city_metal_refinery_effect';
+                    return `<span>${loc(label,[6])}</span> <span class="has-text-caution">${loc('city_metal_refinery_effect2',[6,12,$(this)[0].powered()])}</span>`;
                 }
                 else {
                     return loc('city_metal_refinery_effect',[6]);
@@ -3712,6 +3818,7 @@ export const actions = {
             desc: loc('city_mine_desc'),
             category: 'industrial',
             reqs: { mining: 2 },
+            not_trait: ['cataclysm'],
             cost: {
                 Money(offset){ return costMultiplier('mine', offset, 60, 1.6); },
                 Lumber(offset){ return costMultiplier('mine', offset, 175, 1.38); }
@@ -3746,6 +3853,7 @@ export const actions = {
             desc: loc('city_coal_mine_desc'),
             category: 'industrial',
             reqs: { mining: 4 },
+            not_trait: ['cataclysm'],
             cost: {
                 Money(offset){ return costMultiplier('coal_mine', offset, 480, 1.4); },
                 Lumber(offset){ return costMultiplier('coal_mine', offset, 250, 1.36); },
@@ -3782,6 +3890,7 @@ export const actions = {
             desc: loc('city_oil_well_desc'),
             category: 'industrial',
             reqs: { oil: 1 },
+            not_trait: ['cataclysm'],
             cost: {
                 Money(offset){ return costMultiplier('oil_well', offset, 5000, 1.5); },
                 Iron(offset){ return global.city.ptrait === 'unstable' ? costMultiplier('oil_well', offset, 450, 1.5) : 0; },
@@ -3823,6 +3932,7 @@ export const actions = {
             desc: loc('city_oil_depot_desc'),
             category: 'trade',
             reqs: { oil: 2 },
+            not_trait: ['cataclysm'],
             cost: {
                 Money(offset){ return costMultiplier('oil_depot', offset, 2500, 1.46); },
                 Iron(offset){ return global.city.ptrait === 'unstable' ? costMultiplier('oil_depot', offset, 325, 1.36) : 0; },
@@ -3832,16 +3942,16 @@ export const actions = {
             effect() {
                 let oil = spatialReasoning(1000);
                 oil *= global.tech['world_control'] ? 1.5 : 1;
-                let effect = `<div>${loc('plus_max_resource',[oil,loc('resource_Oil_name')])}.</div>`;
+                let effect = `<div>${loc('plus_max_resource',[oil,global.resource.Oil.name])}.</div>`;
                 if (global.resource['Helium_3'].display){
                     let val = spatialReasoning(400);
                     val *= global.tech['world_control'] ? 1.5 : 1;
-                    effect = effect + `<div>${loc('plus_max_resource',[val,loc('resource_Helium_3_name')])}.</div>`;
+                    effect = effect + `<div>${loc('plus_max_resource',[val,global.resource.Helium_3.name])}.</div>`;
                 }
                 if (global.tech['uranium'] >= 2){
                     let val = spatialReasoning(250);
                     val *= global.tech['world_control'] ? 1.5 : 1;
-                    effect = effect + `<div>${loc('plus_max_resource',[val,loc('resource_Uranium_name')])}.</div>`;
+                    effect = effect + `<div>${loc('plus_max_resource',[val,global.resource.Uranium.name])}.</div>`;
                 }
                 return effect;
             },
@@ -3866,6 +3976,7 @@ export const actions = {
             desc: loc('city_trade_desc'),
             category: 'trade',
             reqs: { trade: 1 },
+            not_trait: ['cataclysm'],
             cost: {
                 Money(offset){ return costMultiplier('trade', offset, 500, 1.36); },
                 Lumber(offset){ return costMultiplier('trade', offset, 125, 1.36); },
@@ -3900,7 +4011,7 @@ export const actions = {
             category: 'trade',
             era: 'industrialized',
             reqs: { wharf: 1 },
-            not_trait: ['thalassophobia'],
+            not_trait: ['thalassophobia','cataclysm'],
             cost: {
                 Money(offset){ return costMultiplier('wharf', offset, 62000, 1.32); },
                 Lumber(offset){ return costMultiplier('wharf', offset, 44000, 1.32); },
@@ -3943,6 +4054,7 @@ export const actions = {
             desc: loc('city_tourist_center_desc'),
             category: 'commercial',
             reqs: { monument: 2 },
+            not_trait: ['cataclysm'],
             cost: {
                 Money(offset){ return costMultiplier('tourist_center', offset, 100000, 1.36); },
                 Stone(offset){ return costMultiplier('tourist_center', offset, 25000, 1.36); },
@@ -3951,9 +4063,10 @@ export const actions = {
                 Plywood(offset){ return costMultiplier('tourist_center', offset, 5000, 1.36); },
             },
             effect(){
-                let amp = global.civic.govern.type === 'corpocracy' ? 2 : 1;
-                let cas = global.civic.govern.type === 'corpocracy' ? 10 : 5;
-                let mon = global.civic.govern.type === 'corpocracy' ? 4 : 2;
+                let xeno = global.tech['monument'] && global.tech.monument >= 3 && p_on['s_gate'] ? 3 : 1;
+                let amp = (global.civic.govern.type === 'corpocracy' ? 2 : 1) * xeno;
+                let cas = (global.civic.govern.type === 'corpocracy' ? 10 : 5) * xeno;
+                let mon = (global.civic.govern.type === 'corpocracy' ? 4 : 2) * xeno;
                 return `<div class="has-text-caution">${loc('city_tourist_center_effect1',[global.resource.Food.name])}</div><div>${loc('city_tourist_center_effect2',[amp])}</div><div>${loc('city_tourist_center_effect3',[cas])}</div><div>${loc('city_tourist_center_effect4',[mon])}</div>`;
             },
             powered(){ return powerCostMod(1); },
@@ -3972,7 +4085,7 @@ export const actions = {
             desc: loc('city_amphitheatre_desc'),
             category: 'commercial',
             reqs: { theatre: 1 },
-            not_trait: ['joyless'],
+            not_trait: ['joyless','cataclysm'],
             cost: {
                 Money(offset){ return costMultiplier('amphitheatre', offset, 500, 1.55); },
                 Lumber(offset){ return costMultiplier('amphitheatre', offset, 50, 1.75); },
@@ -3994,40 +4107,19 @@ export const actions = {
         casino: {
             id: 'city-casino',
             title: loc('city_casino'),
-            desc: loc('city_casino_desc'),
+            desc: loc('city_casino'),
             category: 'commercial',
             reqs: { gambling: 1 },
+            not_trait: ['cataclysm'],
             cost: {
                 Money(offset){ return costMultiplier('casino', offset, 350000, 1.35); },
-                Iron(offset){ return global.city.ptrait === 'unstable' ? costMultiplier('amphitheatre', offset, 2000, 1.35) : 0; },
+                Iron(offset){ return global.city.ptrait === 'unstable' ? costMultiplier('casino', offset, 2000, 1.35) : 0; },
                 Furs(offset){ return costMultiplier('casino', offset, 60000, 1.35); },
                 Plywood(offset){ return costMultiplier('casino', offset, 10000, 1.35); },
                 Brick(offset){ return costMultiplier('casino', offset, 6000, 1.35); }
             },
             effect(){
-                let money = spatialReasoning(global.tech['gambling'] >= 3 ? 60000 : 40000);
-                if (global.race['gambler']){
-                    money *= 1 + (global.race['gambler'] * 0.04);
-                }
-                if (global.tech['world_control']){
-                    money = money * 1.25;
-                }
-                money = Math.round(money);
-                money = '$'+money;
-                let joy = global.race['joyless'] ? '' : `<div>${loc('city_max_entertainer',[1])}</div>`;
-                let desc = `<div>${loc('plus_max_resource',[money,loc('resource_Money_name')])}</div>${joy}<div>${loc('city_max_morale')}</div>`;
-                let cash = Math.log2(global.resource[global.race.species].amount) * (global.race['gambler'] ? 2.5 + (global.race['gambler'] / 10) : 2.5);
-                if (global.tech['gambling'] && global.tech['gambling'] >= 2){
-                    cash *= 1.5;
-                }
-                if (global.civic.govern.type === 'corpocracy'){
-                    cash *= 3;
-                }
-                if (global.civic.govern.type === 'socialist'){
-                    cash *= 0.8;
-                }
-                cash = +(cash).toFixed(2);
-                desc = desc + `<div>${loc('tech_casino_effect2',[cash])}</div>`;
+                let desc = casinoEffect();
                 desc = desc + `<div class="has-text-caution">${loc('minus_power',[$(this)[0].powered()])}</div>`;
                 return desc;
             },
@@ -4057,6 +4149,7 @@ export const actions = {
             },
             category: 'commercial',
             reqs: { theology: 2 },
+            not_trait: ['cataclysm'],
             cost: {
                 Money(offset){ return costMultiplier('temple', offset, 50, 1.36); },
                 Lumber(offset){ return costMultiplier('temple', offset, 25, 1.36); },
@@ -4065,72 +4158,7 @@ export const actions = {
                 Cement(offset){ return costMultiplier('temple', offset, 10, 1.36); }
             },
             effect(){
-                let desc;
-                if (global.race.universe === 'antimatter'){
-                    let faith = global.tech['anthropology'] && global.tech['anthropology'] >= 1 ? 0.8 : 0.5;
-                    if (global.tech['fanaticism'] && global.tech['fanaticism'] >= 2){
-                        faith += global.civic.professor.workers * 0.02;
-                    }
-                    if (global.genes['ancients'] && global.genes['ancients'] >= 2 && global.civic.priest.display){
-                        let priest_bonus = global.genes['ancients'] >= 4 ? 0.015 : 0.01;
-                        faith += priest_bonus * global.civic.priest.workers;
-                    }
-                    if (global.race['spiritual']){
-                        faith *= 1 + (traits.spiritual.vars[0] / 100);
-                    }
-                    if (global.civic.govern.type === 'theocracy'){
-                        faith *= 1.12;
-                    }
-                    faith = +(faith).toFixed(3);
-                    let temple = 6;
-                    if (global.genes['ancients'] && global.genes['ancients'] >= 2 && global.civic.priest.display){
-                        let priest = global.genes['ancients'] >= 4 ? 0.12 : 0.08;
-                        temple += priest * global.civic.priest.workers;
-                    }
-                    desc = `<div>${loc('city_temple_effect1',[faith])}</div><div>${loc('city_temple_effect5',[temple])}</div>`;
-                }
-                else if (global.race['no_plasmid']){
-                    let faith = global.tech['anthropology'] && global.tech['anthropology'] >= 1 ? 1.6 : 1;
-                    if (global.tech['fanaticism'] && global.tech['fanaticism'] >= 2){
-                        faith += +(global.civic.professor.workers * 0.04).toFixed(2);
-                    }
-                    if (global.genes['ancients'] && global.genes['ancients'] >= 2 && global.civic.priest.display){
-                        let priest_bonus = global.genes['ancients'] >= 4 ? 0.015 : 0.01;
-                        faith += priest_bonus * global.civic.priest.workers;
-                    }
-                    if (global.race['spiritual']){
-                        faith *= 1 + (traits.spiritual.vars[0] / 100);
-                    }
-                    if (global.civic.govern.type === 'theocracy'){
-                        faith *= 1.12;
-                    }
-                    faith = +(faith).toFixed(3);
-                    desc = `<div>${loc('city_temple_effect1',[faith])}</div>`;
-                }
-                else {
-                    let plasmid = global.tech['anthropology'] && global.tech['anthropology'] >= 1 ? 8 : 5;
-                    if (global.tech['fanaticism'] && global.tech['fanaticism'] >= 2){
-                        plasmid += +(global.civic.professor.workers * 0.2).toFixed(1);
-                    }
-                    if (global.genes['ancients'] && global.genes['ancients'] >= 2 && global.civic.priest.display){
-                        let priest_bonus = global.genes['ancients'] >= 4 ? 0.015 : 0.01;
-                        plasmid += priest_bonus * global.civic.priest.workers;
-                    }
-                    if (global.race['spiritual']){
-                        plasmid *= 1 + (traits.spiritual.vars[0] / 100);
-                    }
-                    if (global.civic.govern.type === 'theocracy'){
-                        plasmid *= 1.12;
-                    }
-                    plasmid = +(plasmid).toFixed(3);
-                    desc = `<div>${loc('city_temple_effect2',[plasmid])}</div>`;
-                }
-                if (global.tech['fanaticism'] && global.tech['fanaticism'] >= 3){
-                    desc = desc + `<div>${loc('city_temple_effect3')}</div>`;
-                }
-                if (global.tech['anthropology'] && global.tech['anthropology'] >= 4){
-                    desc = desc + `<div>${loc('city_temple_effect4')}</div>`;
-                }
+                let desc = templeEffect();
                 if (global.genes['ancients'] && global.genes['ancients'] >= 2){
                     global.civic.priest.display = true;
                     desc = desc + `<div>${loc('city_temple_effect6')}</div>`;
@@ -4154,6 +4182,7 @@ export const actions = {
             category: 'commercial',
             reqs: { theology: 2 },
             trait: ['magnificent'],
+            not_trait: ['cataclysm'],
             cost: {
                 Money(offset){ return costMultiplier('shrine', offset, 75, 1.32); },
                 Stone(offset){ return costMultiplier('shrine', offset, 65, 1.32); },
@@ -4225,6 +4254,7 @@ export const actions = {
             },
             category: 'science',
             reqs: { science: 1 },
+            not_trait: ['cataclysm'],
             cost: {
                 Money(offset){ return costMultiplier('university', offset, 900, 1.5) - 500; },
                 Lumber(offset){ return costMultiplier('university', offset, 500, 1.36) - 200; },
@@ -4290,6 +4320,7 @@ export const actions = {
             },
             category: 'science',
             reqs: { science: 2 },
+            not_trait: ['cataclysm'],
             cost: {
                 Money(offset){ return costMultiplier('library', offset, 45, 1.2); },
                 Iron(offset){ return global.city.ptrait === 'unstable' ? costMultiplier('library', offset, 4, 1.2) : 0; },
@@ -4347,6 +4378,7 @@ export const actions = {
             desc: loc('city_wardenclyffe_desc'),
             category: 'science',
             reqs: { high_tech: 1 },
+            not_trait: ['cataclysm'],
             cost: {
                 Money(offset){ return costMultiplier('wardenclyffe', offset, 5000, 1.22); },
                 Knowledge(offset){ return costMultiplier('wardenclyffe', offset, 1000, 1.22); },
@@ -4420,6 +4452,7 @@ export const actions = {
             desc: `<div>${loc('city_biolab_desc')}</div><div class="has-text-special">${loc('requires_power')}</div>`,
             category: 'science',
             reqs: { genetics: 1 },
+            not_trait: ['cataclysm'],
             cost: {
                 Money(offset){ return costMultiplier('biolab', offset, 25000, 1.3); },
                 Knowledge(offset){ return costMultiplier('biolab', offset, 5000, 1.3); },
@@ -4460,6 +4493,7 @@ export const actions = {
             },
             category: 'utility',
             reqs: { high_tech: 2 },
+            not_trait: ['cataclysm'],
             cost: {
                 Money(offset){ return costMultiplier('coal_power', offset, 10000, 1.22); },
                 Copper(offset){ return costMultiplier('coal_power', offset, 1800, 1.22) - 1000; },
@@ -4499,6 +4533,7 @@ export const actions = {
             },
             category: 'utility',
             reqs: { oil: 3 },
+            not_trait: ['cataclysm'],
             cost: {
                 Money(offset){ return costMultiplier('oil_power', offset, 50000, 1.22); },
                 Copper(offset){ return costMultiplier('oil_power', offset, 6500, 1.22) + 1000; },
@@ -4546,6 +4581,7 @@ export const actions = {
             desc: `<div>${loc('city_fission_power_desc')}</div><div class="has-text-special">${loc('requires_res',[loc('resource_Uranium_name')])}</div>`,
             category: 'utility',
             reqs: { high_tech: 5 },
+            not_trait: ['cataclysm'],
             cost: {
                 Money(offset){ return costMultiplier('fission_power', offset, 250000, 1.36); },
                 Copper(offset){ return costMultiplier('fission_power', offset, 13500, 1.36); },
@@ -4574,6 +4610,7 @@ export const actions = {
             desc: `<div>${loc('city_mass_driver_desc')}</div><div class="has-text-special">${loc('requires_power')}</div>`,
             category: 'utility',
             reqs: { mass: 1 },
+            not_trait: ['cataclysm'],
             cost: {
                 Money(offset){ return costMultiplier('mass_driver', offset, 375000, 1.32); },
                 Copper(offset){ return costMultiplier('mass_driver', offset, 33000, 1.32); },
@@ -4774,6 +4811,7 @@ export const actions = {
             category: 'housing',
             era: 'discovery',
             reqs: { housing: 2, smelting: 2 },
+            not_trait: ['cataclysm'],
             grant: ['housing_reduction',1],
             cost: {
                 Knowledge(){ return 11250; },
@@ -4883,6 +4921,25 @@ export const actions = {
                 return false;
             }
         },
+        fertility_clinic: {
+            id: 'tech-fertility_clinic',
+            title: loc('tech_fertility_clinic'),
+            desc: loc('tech_fertility_clinic'),
+            category: 'housing',
+            era: 'intergalactic',
+            reqs: { reproduction: 1, xeno: 6 },
+            grant: ['reproduction',2],
+            cost: {
+                Knowledge(){ return 4500000; }
+            },
+            effect: loc('tech_fertility_clinic_effect'),
+            action(){
+                if (payCosts($(this)[0].cost)){
+                    return true;
+                }
+                return false;
+            }
+        },
         smokehouse: {
             id: 'tech-smokehouse',
             title: loc('tech_smokehouse'),
@@ -4891,6 +4948,7 @@ export const actions = {
             era: 'civilized',
             reqs: { primitive: 3, storage: 1 },
             trait: ['carnivore'],
+            not_trait: ['cataclysm'],
             grant: ['hunting',1],
             cost: {
                 Knowledge(){ return 80; }
@@ -4957,6 +5015,7 @@ export const actions = {
             era: 'civilized',
             reqs: { primitive: 3 },
             trait: ['soul_eater'],
+            not_trait: ['cataclysm'],
             grant: ['soul_eater',1],
             cost: {
                 Knowledge(){ return 10; }
@@ -4978,6 +5037,7 @@ export const actions = {
             era: 'civilized',
             reqs: { primitive: 3 },
             trait: ['detritivore'],
+            not_trait: ['cataclysm'],
             grant: ['compost',1],
             cost: {
                 Knowledge(){ return 10; }
@@ -5036,7 +5096,7 @@ export const actions = {
             title: loc('tech_adv_mulching'),
             desc: loc('tech_adv_mulching'),
             category: 'compost',
-            era: 'civilized',
+            era: 'discovery',
             reqs: { compost: 3, high_tech: 2 },
             trait: ['detritivore'],
             grant: ['compost',4],
@@ -5058,7 +5118,7 @@ export const actions = {
             category: 'agriculture',
             era: 'civilized',
             reqs: { primitive: 3 },
-            not_trait: ['carnivore','soul_eater','detritivore'],
+            not_trait: ['carnivore','soul_eater','detritivore','cataclysm'],
             grant: ['agriculture',1],
             cost: {
                 Knowledge(){ return 10; }
@@ -5463,6 +5523,7 @@ export const actions = {
             title: loc('tech_stellar_forge'),
             desc: loc('tech_stellar_forge'),
             category: 'crafting',
+            era: 'intergalactic',
             reqs: { foundry: 8, high_tech: 15, gateway: 3, neutron: 1 },
             grant: ['star_forge',1],
             cost: {
@@ -5482,6 +5543,7 @@ export const actions = {
             title: loc('tech_stellar_smelting'),
             desc: loc('tech_stellar_smelting'),
             category: 'crafting',
+            era: 'intergalactic',
             reqs: { star_forge: 1, xeno: 4 },
             grant: ['star_forge',2],
             cost: {
@@ -5727,6 +5789,7 @@ export const actions = {
             action(){
                 if (payCosts($(this)[0].cost)){
                     global.city['casino'] = { count: 0, on: 0 };
+                    global.space['spc_casino'] = { count: 0, on: 0 };
                     return true;
                 }
                 return false;
@@ -5771,10 +5834,68 @@ export const actions = {
                 return false;
             }
         },
+        otb: {
+            id: 'tech-otb',
+            title: loc('tech_otb'),
+            desc: loc('tech_otb'),
+            category: 'banking',
+            era: 'deep_space',
+            reqs: { gambling: 3, banking: 10, high_tech: 10 },
+            grant: ['gambling',4],
+            cost: {
+                Knowledge(){ return 390000; }
+            },
+            effect: loc('tech_otb_effect'),
+            action(){
+                if (payCosts($(this)[0].cost)){
+                    return true;
+                }
+                return false;
+            }
+        },
+        online_gambling: {
+            id: 'tech-online_gambling',
+            title: loc('tech_online_gambling'),
+            desc: loc('tech_online_gambling'),
+            category: 'banking',
+            era: 'interstellar',
+            reqs: { gambling: 4, banking: 12 },
+            grant: ['gambling',5],
+            cost: {
+                Knowledge(){ return 800000; }
+            },
+            effect: loc('tech_online_gambling_effect'),
+            action(){
+                if (payCosts($(this)[0].cost)){
+                    return true;
+                }
+                return false;
+            }
+        },
+        bolognium_vaults: {
+            id: 'tech-bolognium_vaults',
+            title: loc('tech_bolognium_vaults'),
+            desc: loc('tech_bolognium_vaults'),
+            category: 'banking',
+            era: 'intergalactic',
+            reqs: { gambling: 5, gateway: 3 },
+            grant: ['gambling',6],
+            cost: {
+                Knowledge(){ return 3900000; },
+                Bolognium(){ return 180000; }
+            },
+            effect: loc('tech_bolognium_vaults_effect'),
+            action(){
+                if (payCosts($(this)[0].cost)){
+                    return true;
+                }
+                return false;
+            }
+        },
         mining: {
             id: 'tech-mining',
-            title: loc('tech_mining'),
-            desc: loc('tech_mining_desc'),
+            title(){ return global.race['sappy'] ? loc('tech_amber') : loc('tech_mining'); },
+            desc(){ return global.race['sappy'] ? loc('tech_amber') : loc('tech_mining_desc'); },
             category: 'mining',
             era: 'civilized',
             reqs: { primitive: 3 },
@@ -5782,7 +5903,7 @@ export const actions = {
             cost: {
                 Knowledge(){ return 45; }
             },
-            effect: loc('tech_mining_effect'),
+            effect(){ return global.race['sappy'] ? loc('tech_amber_effect') : loc('tech_mining_effect'); },
             action(){
                 if (payCosts($(this)[0].cost)){
                     global.city['rock_quarry'] = {
@@ -7605,6 +7726,7 @@ export const actions = {
             category: 'banking',
             era: 'early_space',
             reqs: { monuments: 2 },
+            not_trait: ['cataclysm'],
             grant: ['monument',2],
             cost: {
                 Knowledge(){ return 150000; }
@@ -7613,6 +7735,25 @@ export const actions = {
             action(){
                 if (payCosts($(this)[0].cost)){
                     global.city['tourist_center'] = { count: 0, on: 0 };
+                    return true;
+                }
+                return false;
+            }
+        },
+        xeno_tourism: {
+            id: 'tech-xeno_tourism',
+            title: loc('tech_xeno_tourism'),
+            desc: loc('tech_xeno_tourism'),
+            category: 'banking',
+            era: 'intergalactic',
+            reqs: { monuments: 2, xeno: 10 },
+            grant: ['monument',3],
+            cost: {
+                Knowledge(){ return 8000000; }
+            },
+            effect: loc('tech_xeno_tourism_effect'),
+            action(){
+                if (payCosts($(this)[0].cost)){
                     return true;
                 }
                 return false;
@@ -8353,6 +8494,9 @@ export const actions = {
             effect: loc('tech_lasers_effect'),
             action(){
                 if (payCosts($(this)[0].cost)){
+                    if (global.race['cataclysm']){
+                        unlockAchieve('iron_will',false,3);
+                    }
                     return true;
                 }
                 return false;
@@ -9323,13 +9467,13 @@ export const actions = {
             reqs: { primitive: 3 },
             era: 'civilized',
             grant: ['axe',1],
-            not_trait: ['kindling_kindred','evil'],
+            not_trait: ['kindling_kindred','evil','cataclysm'],
             cost: {
                 Knowledge(){ return 45; },
                 Lumber(){ return 20; },
                 Stone(){ return 20; }
             },
-            effect: loc('tech_stone_axe_effect'),
+            effect(){ return global.race['sappy'] ? loc('tech_amber_axe_effect') : loc('tech_stone_axe_effect'); },
             action(){
                 if (payCosts($(this)[0].cost)){
                     global.civic.lumberjack.display = true;
@@ -9492,6 +9636,7 @@ export const actions = {
             category: 'stone_gathering',
             era: 'civilized',
             reqs: { mining: 2 },
+            not_trait: ['cataclysm','sappy'],
             grant: ['hammer',1],
             cost: {
                 Knowledge(){ return 540; },
@@ -9512,6 +9657,7 @@ export const actions = {
             category: 'stone_gathering',
             era: 'civilized',
             reqs: { hammer: 1, mining: 3 },
+            not_trait: ['cataclysm','sappy'],
             grant: ['hammer',2],
             cost: {
                 Knowledge(){ return global.city.ptrait === 'unstable' ? 1350 : 2700; },
@@ -9532,6 +9678,7 @@ export const actions = {
             category: 'stone_gathering',
             era: 'discovery',
             reqs: { hammer: 2, smelting: 2 },
+            not_trait: ['cataclysm','sappy'],
             grant: ['hammer',3],
             cost: {
                 Knowledge(){ return 7200; },
@@ -9552,6 +9699,7 @@ export const actions = {
             category: 'stone_gathering',
             era: 'industrialized',
             reqs: { hammer: 3, high_tech: 3 },
+            not_trait: ['cataclysm','sappy'],
             grant: ['hammer',4],
             cost: {
                 Knowledge(){ return 40000; },
@@ -9572,6 +9720,7 @@ export const actions = {
             category: 'mining',
             era: 'civilized',
             reqs: { mining: 2 },
+            not_trait: ['cataclysm'],
             grant: ['pickaxe',1],
             cost: {
                 Knowledge(){ return 675; },
@@ -9592,6 +9741,7 @@ export const actions = {
             category: 'mining',
             era: 'civilized',
             reqs: { pickaxe: 1, mining: 3 },
+            not_trait: ['cataclysm'],
             grant: ['pickaxe',2],
             cost: {
                 Knowledge(){ return global.city.ptrait === 'unstable' ? 1600 : 3200; },
@@ -9693,6 +9843,7 @@ export const actions = {
             category: 'agriculture',
             era: 'civilized',
             reqs: { mining: 2, agriculture: 1 },
+            not_trait: ['cataclysm'],
             grant: ['hoe',1],
             cost: {
                 Knowledge(){ return 720; },
@@ -9793,6 +9944,7 @@ export const actions = {
             category: 'slaves',
             era: 'civilized',
             reqs: { military: 1, mining: 1 },
+            not_trait: ['cataclysm'],
             grant: ['slaves',1],
             trait: ['slaver'],
             cost: {
@@ -9836,6 +9988,7 @@ export const actions = {
             reqs: { mining: 1 },
             grant: ['sacrifice',1],
             trait: ['cannibalize'],
+            not_trait: ['cataclysm'],
             cost: {
                 Knowledge(){ return 60; }
             },
@@ -10254,7 +10407,7 @@ export const actions = {
             cost: {
                 Knowledge(){ return 210000; }
             },
-            effect(){ return `<div>${loc('tech_space_marines_effect1')}</div><div>${loc('tech_space_marines_effect2',[races[global.race.species].solar.red])}</div>` },
+            effect(){ return `<div>${loc('tech_space_marines_effect',[races[global.race.species].solar.red])}</div>` },
             action(){
                 if (payCosts($(this)[0].cost)){
                     global.space['space_barracks'] = { count: 0, on: 0 };
@@ -10262,7 +10415,7 @@ export const actions = {
                 }
                 return false;
             },
-            flair: 'Outer space treaty be damned.'
+            flair: loc('tech_space_marines_flair')
         },
         hammocks: {
             id: 'tech-hammocks',
@@ -10499,6 +10652,7 @@ export const actions = {
             category: 'special',
             era: 'globalized',
             reqs: { uranium: 1, explosives: 3, high_tech: 7 },
+            not_trait: ['cataclysm'],
             grant: ['mad',1],
             cost: {
                 Knowledge(){ return 120000; },
@@ -11561,6 +11715,30 @@ export const actions = {
                 return false;
             }
         },
+        orichalcum_sphere: {
+            id: 'tech-orichalcum_sphere',
+            title: loc('tech_orichalcum_sphere'),
+            desc: loc('tech_orichalcum_sphere'),
+            category: 'power_generation',
+            era: 'intergalactic',
+            reqs: { dyson: 1, science: 19 },
+            condition(){
+                return global.interstellar['dyson_sphere'] && global.interstellar.dyson_sphere.count >= 100 ? true : false;
+            },
+            grant: ['dyson',2],
+            cost: {
+                Knowledge(){ return 17500000; },
+                Orichalcum(){ return 250000; }
+            },
+            effect: loc('tech_orichalcum_sphere_effect'),
+            action(){
+                if (payCosts($(this)[0].cost)){
+                    global.interstellar['orichalcum_sphere'] = { count: 0 };
+                    return true;
+                }
+                return false;
+            }
+        },
         gps: {
             id: 'tech-gps',
             title: loc('tech_gps'),
@@ -11743,6 +11921,9 @@ export const actions = {
             action(){
                 if (payCosts($(this)[0].cost)){
                     global.space['elerium_ship'] = { count: 0, on: 0 };
+                    if (global.race['cataclysm']){
+                        unlockAchieve('iron_will',false,2);
+                    }
                     return true;
                 }
                 return false;
@@ -11947,7 +12128,7 @@ export const actions = {
             desc: loc('tech_star_dock'),
             category: 'special',
             era: 'deep_space',
-            reqs: { genesis: 2, space: 5 },
+            reqs: { genesis: 2, space: 5, high_tech: 10 },
             grant: ['genesis',3],
             cost: {
                 Knowledge(){ return 380000; },
@@ -11988,8 +12169,8 @@ export const actions = {
         },
         genesis_ship: {
             id: 'tech-genesis_ship',
-            title: loc('tech_genesis_ship'),
-            desc: loc('tech_genesis_ship'),
+            title(){ return global.race['cataclysm'] ? loc('tech_generational_ship') : loc('tech_genesis_ship'); },
+            desc(){ return global.race['cataclysm'] ? loc('tech_generational_ship') : loc('tech_genesis_ship'); },
             category: 'special',
             era: 'deep_space',
             reqs: { genesis: 4 },
@@ -11997,10 +12178,13 @@ export const actions = {
             cost: {
                 Knowledge(){ return 425000; },
             },
-            effect: loc('tech_genesis_ship_effect'),
+            effect(){ return global.race['cataclysm'] ? loc('tech_generational_effect') : loc('tech_genesis_ship_effect'); },
             action(){
                 if (payCosts($(this)[0].cost)){
                     global.starDock['seeder'] = { count: 0 };
+                    if (global.race['cataclysm']){
+                        unlockAchieve('iron_will',false,4);
+                    }
                     return true;
                 }
                 return false;
@@ -13164,6 +13348,26 @@ export const actions = {
                 return false;
             }
         },
+        soul_link: {
+            id: 'tech-soul_link',
+            title: loc('tech_soul_link'),
+            desc: loc('tech_soul_link'),
+            category: 'hell_dimension',
+            era: 'intergalactic',
+            reqs: { hell_pit: 6 },
+            grant: ['hell_pit',7],
+            cost: {
+                Knowledge(){ return 7500000; },
+                Vitreloy(){ return 250000; }
+            },
+            effect(){ return loc('tech_soul_link_effect'); },
+            action(){
+                if (payCosts($(this)[0].cost)){
+                    return true;
+                }
+                return false;
+            }
+        },
         gun_emplacement: {
             id: 'tech-gun_emplacement',
             title: loc('portal_gun_emplacement_title'),
@@ -13204,6 +13408,55 @@ export const actions = {
                 return false;
             }
         },
+        dial_it_to_11: {
+            id: 'tech-dial_it_to_11',
+            title: loc('tech_dial_it_to_11'),
+            desc: loc('tech_dial_it_to_11'),
+            category: 'science',
+            wiki: false,
+            era: 'deep_space',
+            reqs: { quaked: 1 },
+            grant: ['quaked',2],
+            cost: {
+                Knowledge(){ return 500000; }
+            },
+            effect(){
+                let gains = calcPrestige('bioseed');
+                let plasmidType = global.race.universe === 'antimatter' ? loc('resource_AntiPlasmid_plural_name') : loc('resource_Plasmid_plural_name');
+                return `<div>${loc('tech_dial_it_to_11_effect',[races[global.race.species].solar.dwarf,global.race['cataclysm'] ? races[global.race.species].solar.red : races[global.race.species].home])}</div><div class="has-text-danger">${loc('tech_dial_it_to_11_effect2')}</div><div class="has-text-special">${loc('star_dock_genesis_effect2',[gains.plasmid,plasmidType])}</div><div class="has-text-special">${loc('star_dock_genesis_effect3',[gains.phage])}</div>`; },
+            action(){
+                if (payCosts($(this)[0].cost)){
+                    $('#main').addClass('earthquake');
+                    setTimeout(function(){
+                        $('#main').removeClass('earthquake');
+                        cataclysm_end();
+                    }, 4000);
+                    return true;
+                }
+                return false;
+            },
+            flair(){ return loc('tech_dial_it_to_11_flair'); }
+        },
+        limit_collider: {
+            id: 'tech-limit_collider',
+            title: loc('tech_limit_collider'),
+            desc: loc('tech_limit_collider'),
+            category: 'science',
+            wiki: false,
+            era: 'deep_space',
+            reqs: { quaked: 1 },
+            grant: ['quaked',2],
+            cost: {
+                Knowledge(){ return 500000; }
+            },
+            effect(){ return loc('tech_limit_collider_effect'); },
+            action(){
+                if (payCosts($(this)[0].cost)){
+                    return true;
+                }
+                return false;
+            }
+        }
     },
     genes: arpa('GeneTech'),
     space: spaceTech(),
@@ -13237,13 +13490,14 @@ export const actions = {
         },
         seeder: {
             id: 'spcdock-seeder',
-            title: loc('star_dock_seeder'),
+            title(){ return global.race['cataclysm'] ? loc('star_dock_exodus') : loc('star_dock_seeder'); },
             desc(){
+                let label = global.race['cataclysm'] ? loc('star_dock_exodus') : loc('star_dock_seeder');
                 if (global.starDock.seeder.count >= 100){
-                    return `<div>${loc('star_dock_seeder')}</div><div class="has-text-special">${loc('star_dock_seeder_desc2')}</div>`;
+                    return `<div>${label}</div><div class="has-text-special">${loc('star_dock_seeder_desc2')}</div>`;
                 }
                 else {
-                    return `<div>${loc('star_dock_seeder')}</div><div class="has-text-special">${loc('star_dock_seeder_desc1')}</div>`;
+                    return `<div>${label}</div><div class="has-text-special">${loc('star_dock_seeder_desc1')}</div>`;
                 }
             },
             reqs: { genesis: 5 },
@@ -13259,7 +13513,7 @@ export const actions = {
             },
             effect(){
                 let remain = global.starDock.seeder.count < 100 ? loc('star_dock_seeder_status1',[100 - global.starDock.seeder.count]) : loc('star_dock_seeder_status2');
-                return `<div>${loc('star_dock_seeder_effect')}</div><div class="has-text-special">${remain}</div>`;
+                return `<div>${global.race['cataclysm'] ? loc('star_dock_exodus_effect') : loc('star_dock_seeder_effect')}</div><div class="has-text-special">${remain}</div>`;
             },
             action(){
                 if (global.starDock.seeder.count < 100 && payCosts($(this)[0].cost)){
@@ -13280,7 +13534,8 @@ export const actions = {
             id: 'spcdock-prep_ship',
             title: loc('star_dock_prep'),
             desc(){
-                return `<div>${loc('star_dock_prep_desc')}</div><div class="has-text-danger">${loc('star_dock_genesis_desc2')}</div>`;
+                let label = global.race['cataclysm'] ? loc('star_dock_prep_cata_desc') : loc('star_dock_prep_desc');
+                return `<div>${label}</div><div class="has-text-danger">${loc('star_dock_genesis_desc2')}</div>`;
             },
             reqs: { genesis: 6 },
             cost: {},
@@ -13288,7 +13543,8 @@ export const actions = {
             effect(){
                 let gains = calcPrestige('bioseed');
                 let plasmidType = global.race.universe === 'antimatter' ? loc('resource_AntiPlasmid_plural_name') : loc('resource_Plasmid_plural_name');
-                return `<div>${loc('star_dock_prep_effect')}</div><div class="has-text-special">${loc('star_dock_genesis_effect2',[gains.plasmid,plasmidType])}</div><div class="has-text-special">${loc('star_dock_genesis_effect3',[gains.phage])}</div>`;
+                let label = global.race['cataclysm'] ? loc('star_dock_prep_cata_effect') : loc('star_dock_prep_effect');
+                return `<div>${label}</div><div class="has-text-special">${loc('star_dock_genesis_effect2',[gains.plasmid,plasmidType])}</div><div class="has-text-special">${loc('star_dock_genesis_effect3',[gains.phage])}</div>`;
             },
             action(){
                 global.tech['genesis'] = 7;
@@ -13303,7 +13559,8 @@ export const actions = {
             id: 'spcdock-launch_ship',
             title: loc('star_dock_genesis'),
             desc(){
-                return `<div>${loc('star_dock_genesis_desc1')}</div><div class="has-text-danger">${loc('star_dock_genesis_desc2')}</div>`;
+                let label = global.race['cataclysm'] ? loc('star_dock_prep_cata_effect') : loc('star_dock_genesis_desc1');
+                return `<div>${label}</div><div class="has-text-danger">${loc('star_dock_genesis_desc2')}</div>`;
             },
             reqs: { genesis: 7 },
             cost: {},
@@ -13311,7 +13568,8 @@ export const actions = {
             effect(){
                 let gains = calcPrestige('bioseed');
                 let plasmidType = global.race.universe === 'antimatter' ? loc('resource_AntiPlasmid_plural_name') : loc('resource_Plasmid_plural_name');
-                return `<div>${loc('star_dock_genesis_effect1')}</div><div class="has-text-special">${loc('star_dock_genesis_effect2',[gains.plasmid,plasmidType])}</div><div class="has-text-special">${loc('star_dock_genesis_effect3',[gains.phage])}</div>`;
+                let label = global.race['cataclysm'] ? loc('star_dock_genesis_cata_effect1') : loc('star_dock_genesis_effect1');
+                return `<div>${label}</div><div class="has-text-special">${loc('star_dock_genesis_effect2',[gains.plasmid,plasmidType])}</div><div class="has-text-special">${loc('star_dock_genesis_effect3',[gains.phage])}</div>`;
             },
             action(){
                 bioseed();
@@ -13321,6 +13579,112 @@ export const actions = {
     },
     portal: fortressTech()
 };
+
+export function templeEffect(){
+    let desc;
+    if (global.race.universe === 'antimatter'){
+        let faith = global.tech['anthropology'] && global.tech['anthropology'] >= 1 ? 0.8 : 0.5;
+        if (global.tech['fanaticism'] && global.tech['fanaticism'] >= 2){
+            faith += global.civic.professor.workers * 0.02;
+        }
+        if (global.genes['ancients'] && global.genes['ancients'] >= 2 && global.civic.priest.display){
+            let priest_bonus = global.genes['ancients'] >= 4 ? 0.015 : 0.01;
+            faith += priest_bonus * global.civic.priest.workers;
+        }
+        if (global.race['spiritual']){
+            faith *= 1 + (traits.spiritual.vars[0] / 100);
+        }
+        if (global.civic.govern.type === 'theocracy'){
+            faith *= 1.12;
+        }
+        faith = +(faith).toFixed(3);
+        let temple = 6;
+        if (global.genes['ancients'] && global.genes['ancients'] >= 2 && global.civic.priest.display){
+            let priest = global.genes['ancients'] >= 4 ? 0.12 : 0.08;
+            temple += priest * global.civic.priest.workers;
+        }
+        desc = `<div>${loc('city_temple_effect1',[faith])}</div><div>${loc('city_temple_effect5',[temple])}</div>`;
+    }
+    else if (global.race['no_plasmid']){
+        let faith = global.tech['anthropology'] && global.tech['anthropology'] >= 1 ? 1.6 : 1;
+        if (global.tech['fanaticism'] && global.tech['fanaticism'] >= 2){
+            faith += +(global.civic.professor.workers * 0.04).toFixed(2);
+        }
+        if (global.genes['ancients'] && global.genes['ancients'] >= 2 && global.civic.priest.display){
+            let priest_bonus = global.genes['ancients'] >= 4 ? 0.015 : 0.01;
+            faith += priest_bonus * global.civic.priest.workers;
+        }
+        if (global.race['spiritual']){
+            faith *= 1 + (traits.spiritual.vars[0] / 100);
+        }
+        if (global.civic.govern.type === 'theocracy'){
+            faith *= 1.12;
+        }
+        faith = +(faith).toFixed(3);
+        desc = `<div>${loc('city_temple_effect1',[faith])}</div>`;
+    }
+    else {
+        let plasmid = global.tech['anthropology'] && global.tech['anthropology'] >= 1 ? 8 : 5;
+        if (global.tech['fanaticism'] && global.tech['fanaticism'] >= 2){
+            plasmid += +(global.civic.professor.workers * 0.2).toFixed(1);
+        }
+        if (global.genes['ancients'] && global.genes['ancients'] >= 2 && global.civic.priest.display){
+            let priest_bonus = global.genes['ancients'] >= 4 ? 0.015 : 0.01;
+            plasmid += priest_bonus * global.civic.priest.workers;
+        }
+        if (global.race['spiritual']){
+            plasmid *= 1 + (traits.spiritual.vars[0] / 100);
+        }
+        if (global.civic.govern.type === 'theocracy'){
+            plasmid *= 1.12;
+        }
+        plasmid = +(plasmid).toFixed(3);
+        desc = `<div>${loc('city_temple_effect2',[plasmid])}</div>`;
+    }
+    if (global.tech['fanaticism'] && global.tech['fanaticism'] >= 3){
+        desc = desc + `<div>${loc('city_temple_effect3')}</div>`;
+    }
+    if (global.tech['anthropology'] && global.tech['anthropology'] >= 4){
+        desc = desc + `<div>${loc('city_temple_effect4')}</div>`;
+    }    
+    return desc;
+}
+
+export function casinoEffect(){
+    let money = spatialReasoning(global.tech['gambling'] >= 3 ? 60000 : 40000);
+    if (global.tech['gambling'] >= 5){
+        money += global.tech['gambling'] >= 6 ? 240000 : 60000;
+    }
+    if (global.race['gambler']){
+        money *= 1 + (global.race['gambler'] * 0.04);
+    }
+    if (global.tech['world_control']){
+        money = money * 1.25;
+    }
+    if (global.tech['stock_exchange'] && global.tech['gambling'] >= 4){
+        money *= 1 + (global.tech['stock_exchange'] * 0.05);
+    }
+    money = Math.round(money);
+    money = '$'+money;
+    let joy = global.race['joyless'] ? '' : `<div>${loc('city_max_entertainer',[1])}</div>`;
+    let desc = `<div>${loc('plus_max_resource',[money,loc('resource_Money_name')])}</div>${joy}<div>${loc('city_max_morale')}</div>`;
+    let cash = Math.log2(global.resource[global.race.species].amount) * (global.race['gambler'] ? 2.5 + (global.race['gambler'] / 10) : 2.5);
+    if (global.tech['gambling'] && global.tech['gambling'] >= 2){
+        cash *= global.tech.gambling >= 5 ? 2 : 1.5;
+    }
+    if (global.tech['stock_exchange'] && global.tech['gambling'] >= 4){
+        cash *= 1 + (global.tech['stock_exchange'] * 0.01);
+    }
+    if (global.civic.govern.type === 'corpocracy'){
+        cash *= 3;
+    }
+    if (global.civic.govern.type === 'socialist'){
+        cash *= 0.8;
+    }
+    cash = +(cash).toFixed(2);
+    desc = desc + `<div>${loc('tech_casino_effect2',[cash])}</div>`;
+    return desc;
+}
 
 function evolveCosts(molecule,base,mult){
     if (global.evolution.hasOwnProperty(molecule)){
@@ -13685,7 +14049,7 @@ export function setAction(c_action,action,type,old){
         parent.append(element);
     }
 
-    if (c_action['special']){
+    if (c_action['special'] && (type !== 'geothermal' || global.race['cataclysm'])){
         var special = $(`<div class="special" role="button" title="${type} options" @click="trigModal"><svg version="1.1" x="0px" y="0px" width="12px" height="12px" viewBox="340 140 280 279.416" enable-background="new 340 140 280 279.416" xml:space="preserve">
             <path class="gear" d="M620,305.666v-51.333l-31.5-5.25c-2.333-8.75-5.833-16.917-9.917-23.917L597.25,199.5l-36.167-36.75l-26.25,18.083
                 c-7.583-4.083-15.75-7.583-23.916-9.917L505.667,140h-51.334l-5.25,31.5c-8.75,2.333-16.333,5.833-23.916,9.916L399.5,163.333
@@ -14604,6 +14968,13 @@ export function challengeActionHeader(){
     challenge.append($(`<div class="has-text-advanced">${loc('evo_challenge_run_desc')}</div>`));
 }
 
+export function scenarioActionHeader(){
+    let challenge = $(`<div class="challenge"></div>`);
+    $('#evolution').append(challenge);
+    challenge.append($(`<div class="divider has-text-warning"><h2 class="has-text-danger">${loc('evo_scenario')}</h2></div>`));
+    challenge.append($(`<div class="has-text-advanced">${loc('evo_scenario_desc')}</div>`));
+}
+
 function drawModal(c_action,type){
     if (type === 'red_factory' || type === 'int_factory'){
         type = 'factory';
@@ -14620,6 +14991,9 @@ function drawModal(c_action,type){
             smelterModal(body);
             break;
         case 'stellar_forge':
+            smelterModal(body);
+            break;
+        case 'geothermal':
             smelterModal(body);
             break;
         case 'factory':
@@ -14701,7 +15075,11 @@ function basicHousingLabel(){
             return loc('city_basic_housing_orc_title');
         case 'wolven':
             return loc('city_basic_housing_wolven_title');
+        case 'cacti':
+            return loc('city_basic_housing_entish_title');
         case 'entish':
+            return loc('city_basic_housing_entish_title');
+        case 'pinguicula':
             return loc('city_basic_housing_entish_title');
         case 'arraak':
             return loc('city_basic_housing_nest_title');
@@ -14774,8 +15152,12 @@ export function housingLabel(type){
 }
 
 function sentience(){
-    global.resource.RNA.display = false;
-    global.resource.DNA.display = false;
+    if (global.resource.hasOwnProperty('RNA')){
+        global.resource.RNA.display = false;
+    }
+    if (global.resource.hasOwnProperty('DNA')){
+        global.resource.DNA.display = false;
+    }
 
     var evolve_actions = ['rna','dna','membrane','organelles','nucleus','eukaryotic_cell','mitochondria'];
     for (var i = 0; i < evolve_actions.length; i++) {
@@ -14805,7 +15187,7 @@ function sentience(){
     }
 
     if (global.race['no_crispr']){
-        let bad = ['diverse','arrogant','angry','lazy','herbivore','paranoid','greedy','puny','dumb','nearsighted','gluttony','slow','hard_of_hearing','pessimistic','solitary','pyrophobia','skittish','nyctophilia','frail','atrophy','invertebrate','pathetic','invertebrate','unorganized','slow_regen','snowy','mistrustful'];
+        let bad = ['diverse','arrogant','angry','lazy','herbivore','paranoid','greedy','puny','dumb','nearsighted','gluttony','slow','hard_of_hearing','pessimistic','solitary','pyrophobia','skittish','nyctophilia','frail','atrophy','invertebrate','pathetic','invertebrate','unorganized','slow_regen','snowy','mistrustful','fragrant'];
         for (let i=0; i<10; i++){
             let trait = bad[Math.rand(0,bad.length)];
             if ((global.race['carnivore'] && trait === 'herbivore') || (global.race['smart'] && trait === 'dumb')) {
@@ -14876,6 +15258,7 @@ function sentience(){
 
     global.settings.civTabs = 1;
     global.settings.showEvolve = false;
+    global.settings.showCiv = true;
     global.settings.showCity = true;
 
     global.civic.govern.type = 'anarchy';
@@ -14919,7 +15302,12 @@ function sentience(){
         s1: civ2name.s1
     };
 
-    messageQueue(loc('sentience',[races[global.race.species].type,races[global.race.species].entity,races[global.race.species].name]),'info');
+    if (global.race['cataclysm']){
+        messageQueue(loc('cataclysm_sentience',[races[global.race.species].home,races[global.race.species].name]),'info');
+    }
+    else {
+        messageQueue(loc('sentience',[races[global.race.species].type,races[global.race.species].entity,races[global.race.species].name]),'info');
+    }
 
     if (global.stats.achieve['technophobe'] && global.stats.achieve.technophobe.l >= 1){
         global.resource.Steel.display = true;
@@ -14937,6 +15325,10 @@ function sentience(){
         }
     }
 
+    if (global.race['cataclysm']){
+        cataclysm();
+    }
+
     if (global.race['slow'] || global.race['hyper']){
         save.setItem('evolved',LZString.compressToUTF16(JSON.stringify(global)));
         if (webWorker.w){
@@ -14948,6 +15340,277 @@ function sentience(){
     defineGarrison();
     buildGarrison($('#c_garrison'),false);
     foreignGov();
+}
+
+function cataclysm(){
+    if (global.race['cataclysm']){
+        global.tech['unify'] = 2;
+        global.tech['spy'] = 5;
+        global.tech['primitive'] = 3;
+        global.tech['currency'] = 6;
+        global.tech['govern'] = 3;
+        global.tech['spy'] = 5;
+        global.tech['boot_camp'] = 1;
+        global.tech['medic'] = 1;
+        global.tech['military'] = 5;
+        global.tech['marines'] = 1;
+        global.tech['explosives'] = 3;
+        global.tech['trade'] = 3;
+        global.tech['wharf'] = 1;
+        global.tech['banking'] = 6;
+        global.tech['gambling'] = 1;
+        global.tech['home_safe'] = 1;
+        global.tech['housing'] = 3;
+        global.tech['smelting'] = 3;
+        global.tech['copper'] = 1;
+        global.tech['storage'] = 5;
+        global.tech['container'] = 4;
+        global.tech['steel_container'] = 3;
+        global.tech['mining'] = 4;
+        global.tech['cement'] = 5;
+        global.tech['oil'] = 7;
+        global.tech['mass'] = 1;
+        global.tech['alumina'] = 1;
+        global.tech['titanium'] = 2;
+        global.tech['polymer'] = 2;
+        global.tech['uranium'] = 4;
+        global.tech['foundry'] = 7;
+        global.tech['factory'] = 1;
+        global.tech['theatre'] = 3;
+        global.tech['broadcast'] = 2;
+        global.tech['mine_conveyor'] = 1;
+        global.tech['science'] = 9;
+        global.tech['high_tech'] = 7;
+        global.tech['genetics'] = 1;
+        global.tech['theology'] = 2;
+        global.tech['space'] = 6;
+        global.tech['solar'] = 3;
+        global.tech['luna'] = 2;
+        global.tech['hell'] = 1;
+        global.tech['mars'] = 5;
+        global.tech['gas_giant'] = 1;
+        global.tech['gas_moon'] = 2;
+        global.tech['asteroid'] = 3;
+        global.tech['satellite'] = 1;
+        global.tech['space_explore'] = 4;
+        global.tech['genesis'] = 2;
+
+        global.settings.showSpace = true;
+        global.settings.space.home = true;
+        global.settings.space.moon = true;
+        global.settings.space.red = true;
+        global.settings.space.hell = true;
+        global.settings.space.sun = true;
+        global.settings.space.gas = true;
+        global.settings.space.gas_moon = true;
+        global.settings.space.belt = true;
+        global.settings.space.dwarf = true;
+
+        global.settings.showCity = false;
+        global.settings.showIndustry = true;
+        global.settings.showResearch = true;
+        global.settings.showCivic = true;
+        global.settings.showMil = true;
+        global.settings.showResources = true;
+        global.settings.showMarket = true;
+        global.settings.showStorage = true;
+        global.settings.civTabs = 1;
+        global.settings.spaceTabs = 1;
+        global.settings.showGenetics = true;
+
+        //global.civic.garrison.display = true;
+        global.resource[global.race.species].display = true;
+        global.resource.Knowledge.display = true;
+        global.resource.Money.display = true;
+        global.resource.Food.display = true;
+        
+        global.resource.Stone.display = true;
+        global.resource.Furs.display = true;
+        global.resource.Copper.display = true;
+        global.resource.Iron.display = true;
+        global.resource.Aluminium.display = true;
+        global.resource.Cement.display = true;
+        global.resource.Coal.display = true;
+        global.resource.Oil.display = true;
+        global.resource.Uranium.display = true;
+        global.resource.Steel.display = true;
+        global.resource.Titanium.display = true;
+        global.resource.Alloy.display = true;
+        global.resource.Polymer.display = true;
+        global.resource.Iridium.display = true;
+        global.resource.Helium_3.display = true;        
+        global.resource.Brick.display = true;
+        global.resource.Wrought_Iron.display = true;
+        global.resource.Sheet_Metal.display = true;
+        global.resource.Mythril.display = true;
+        global.resource.Crates.display = true;
+        global.resource.Containers.display = true;
+
+        if (!global.race['kindling_kindred']){
+            global.resource.Lumber.display = true;
+            global.resource.Plywood.display = true;
+            global.resource.Lumber.max = 90000;
+            global.resource.Lumber.amount = 90000;
+            global.resource.Plywood.amount = 50000;
+        }
+
+        global.resource[global.race.species].max = 8;
+        global.resource[global.race.species].amount = 8;
+        global.resource.Crates.amount = 20;
+        global.resource.Containers.amount = 20;
+        global.resource.Money.max = 225000;
+        global.resource.Money.amount = 225000;
+        global.resource.Food.max = 1000;
+        global.resource.Food.amount = 1000;
+        global.resource.Oil.max = 1000;
+        global.resource.Oil.amount = 1000;
+        global.resource.Helium_3.max = 1000;
+        global.resource.Helium_3.amount = 1000;
+        global.resource.Uranium.max = 1000;
+        global.resource.Uranium.amount = 1000;
+        global.resource.Stone.max = 90000;
+        global.resource.Stone.amount = 90000;
+        global.resource.Furs.max = 40000;
+        global.resource.Furs.amount = 40000;
+        global.resource.Copper.max = 75000;
+        global.resource.Copper.amount = 75000;
+        global.resource.Iron.max = 75000;
+        global.resource.Iron.amount = 75000;
+        global.resource.Steel.max = 75000;
+        global.resource.Steel.amount = 75000;
+        global.resource.Aluminium.max = 75000;
+        global.resource.Aluminium.amount = 75000;
+        global.resource.Cement.max = 75000;
+        global.resource.Cement.amount = 75000;
+        global.resource.Titanium.max = 75000;
+        global.resource.Titanium.amount = 75000;
+        global.resource.Coal.max = 10000;
+        global.resource.Coal.amount = 10000;
+        global.resource.Alloy.max = 20000;
+        global.resource.Alloy.amount = 20000;
+        global.resource.Polymer.max = 20000;
+        global.resource.Polymer.amount = 20000;
+        global.resource.Iridium.max = 1000;
+        global.resource.Iridium.amount = 1000;
+        global.resource.Brick.amount = 50000;
+        global.resource.Wrought_Iron.amount = 50000;
+        global.resource.Sheet_Metal.amount = 50000;
+        global.resource.Mythril.amount = 8000;
+
+        global.resource.Iridium.crates = 5;
+        global.resource.Iridium.containers = 5;
+
+        global.civic.taxes.display = true;
+
+        global.civic.professor.display = true;
+        global.civic.scientist.display = true;
+        global.civic.cement_worker.display = true;
+        global.civic.colonist.display = true;
+        global.civic.space_miner.display = true;
+        
+        global.civic.colonist.max = 4;
+        global.civic.colonist.workers = 4;
+        global.civic.space_miner.max = 3;
+        global.civic.space_miner.workers = 2;
+        global.civic.professor.max = 1;
+        global.civic.professor.workers = 1;
+        global.civic.cement_worker.max = 1;
+        global.civic.cement_worker.workers = 1;
+
+        global.city.calendar.day++;
+        global.city.market.active = true;
+        global.city['power'] = 0;
+        global.city['powered'] = true;
+        
+        global.city['factory'] = { count: 0, on: 0, Lux: 0, Alloy: 0, Polymer: 1, Nano: 0, Stanene: 0 };
+        global.city['foundry'] = { count: 0, crafting: 0, Plywood: 0, Brick: 0, Bronze: 0, Wrought_Iron: 0, Sheet_Metal: 0, Mythril: 0, Aerogel: 0, Nanoweave: 0 };
+        global.city['smelter'] = { count: 0, cap: 2, Wood: 0, Coal: 0, Oil: 2, Iron: 1, Steel: 1 };
+        global.city['fission_power'] = { count: 0, on: 0 };
+        global.city['oil_power'] = { count: 0, on: 0 };
+        global.city['coal_power'] = { count: 0, on: 0 };
+        
+        global.city['mass_driver'] = { count: 0, on: 0 };
+        global.city['mine'] = { count: 0, on: 0 };
+        global.city['coal_mine'] = { count: 0, on: 0 };
+        global.city['oil_well'] = { count: 0 };
+        global.city['oil_depot'] = { count: 0 };
+        global.city['garrison'] = { count: 0, on: 0 };
+        global.city['basic_housing'] = { count: 0 };
+        global.city['cottage'] = { count: 0 };
+        global.city['apartment'] = { count: 0, on: 0 };
+        global.city['amphitheatre'] = { count: 0 };
+        global.city['casino'] = { count: 0, on: 0 };
+        global.city['rock_quarry'] = { count: 0, on: 0 };
+        global.city['metal_refinery'] = { count: 0, on: 0 };
+        global.city['storage_yard'] = { count: 0 };
+        global.city['warehouse'] = { count: 0 };
+        global.city['trade'] = { count: 0 };
+        global.city['wharf'] = { count: 0 };
+        global.city['bank'] = { count: 0 };
+        global.city['tourist_center'] = { count: 0, on: 0 };
+        global.city['university'] = { count: 0 };
+        global.city['library'] = { count: 0 };
+        global.city['wardenclyffe'] = { count: 0, on: 0 };
+        global.city['biolab'] = { count: 0, on: 0 };
+        global.city['lumber_yard'] = { count: 0 };
+        global.city['sawmill'] = { count: 0, on: 0 };
+        global.city['temple'] = { count: 0 };
+
+        global.space['satellite'] = { count: 1 };
+        global.space['propellant_depot'] = { count: 1 };
+        global.space['gps'] = { count: 4 };
+        global.space['nav_beacon'] = { count: 1, on: 1 };
+        global.space['moon_base'] = { count: 1, on: 1, support: 3, s_max: 3 };
+        global.space['iridium_mine'] = { count: 1, on: 1 };
+        global.space['helium_mine'] = { count: 1, on: 1 };
+        global.space['observatory'] = { count: 1, on: 1 };
+        global.space['spaceport'] = { count: 2, on: 2, support: 8, s_max: 10 };
+        global.space['red_tower'] = { count: 1, on: 1 };
+        global.space['living_quarters'] = { count: 4, on: 4 };
+        global.space['vr_center'] = { count: 0, on: 0 };
+        global.space['garage'] = { count: 1 };
+        global.space['red_mine'] = { count: 1, on: 1 };
+        global.space['fabrication'] = { count: 1, on: 1 };
+        global.space['red_factory'] = { count: 1, on: 1 };
+        global.space['exotic_lab'] = { count: 1, on: 1 };
+        global.space['ziggurat'] = { count: 0 };
+        global.space['space_barracks'] = { count: 1, on: 1 };
+        global.space['biodome'] = { count: 2, on: 2 };
+        global.space['laboratory'] = { count: 0, on: 0 };
+        global.space['geothermal'] = { count: 2, on: 2 };
+        global.space['spc_casino'] = { count: 0, on: 0 };
+        global.space['swarm_plant'] = { count: 0 };
+        global.space['swarm_control'] = { count: 5, support: 40, s_max: 50 };
+        global.space['swarm_satellite'] = { count: 40 };
+        global.space['gas_mining'] = { count: 2, on: 2 };
+        global.space['gas_storage'] = { count: 1 };
+        global.space['outpost'] = { count: 0, on: 0 };
+        global.space['drone'] = { count: 0 };
+        global.space['oil_extractor'] = { count: 2, on: 2 };
+        global.space['space_station'] = { count: 1, on: 1, support: 0, s_max: 3 };
+        global.space['iridium_ship'] = { count: 1, on: 1 };
+        global.space['elerium_ship'] = { count: 0, on: 0 };
+        global.space['elerium_prospector'] = { count: 0, on: 0 };
+        global.space['iron_ship'] = { count: 1, on: 1 };
+        global.space['elerium_contain'] = { count: 0, on: 0 };
+
+        global.civic['garrison'] = {
+            display: true,
+            disabled: false,
+            progress: 0,
+            tactic: 0,
+            workers: 2,
+            wounded: 0,
+            raid: 0,
+            max: 2
+        };
+
+        drawCity();
+        drawTech();
+        renderSpace();
+        arpa('Physics');
+        loadFoundry();
+    }
 }
 
 function fanaticism(god){
@@ -15131,6 +15794,10 @@ function bioseed(){
         unlockAchieve(`cult_of_personality`);
     }
 
+    if (global.race['cataclysm']){
+        unlockAchieve('iron_will',false,5);
+    }
+
     let good_rocks = 0;
     let bad_rocks = 0;
     Object.keys(global.city.geology).forEach(function (g){
@@ -15205,6 +15872,112 @@ function bioseed(){
 
     save.setItem('evolved',LZString.compressToUTF16(JSON.stringify(global)));
     window.location.reload();
+}
+
+function cataclysm_end(){
+    if (global.city.ptrait === 'unstable' && global.tech['quaked']){
+        if (webWorker.w){
+            webWorker.w.terminate();
+        }
+
+        global.lastMsg = false;
+
+        let plasmid = global.race.Plasmid.count;
+        let antiplasmid = global.race.Plasmid.anti;
+        let phage = global.race.Phage.count;
+
+        let gains = calcPrestige('bioseed');
+        let new_plasmid = gains.plasmid;        
+        let new_phage = gains.phage;
+        
+        global.stats.reset++;
+        global.stats.cataclysm++;
+        global.stats.tdays += global.stats.days;
+        global.stats.days = 0;
+        global.stats.tknow += global.stats.know;
+        global.stats.know = 0;
+        global.stats.tstarved += global.stats.starved;
+        global.stats.starved = 0;
+        global.stats.tdied += global.stats.died;
+        global.stats.died = 0;
+
+        phage += new_phage;
+        if (global.race.universe === 'antimatter'){
+            antiplasmid += new_plasmid;
+            global.stats.antiplasmid += new_plasmid;
+        }
+        else {
+            plasmid += new_plasmid;
+            global.stats.plasmid += new_plasmid;
+        }
+        global.stats.phage += new_phage;
+
+        unlockAchieve(`apocalypse`);
+        unlockAchieve(`squished`,true);
+        unlockAchieve(`extinct_${global.race.species}`);
+        if (global.civic.govern.type === 'anarchy'){
+            unlockAchieve(`anarchist`);
+        }
+        if (global.city.biome === 'hellscape' && races[global.race.species].type !== 'demonic'){
+            unlockFeat('take_no_advice');
+        }
+        checkAchievements();
+        unlockAchieve('shaken');
+        if (global.race['cataclysm']){
+            unlockAchieve('failed_history');
+        }
+
+        global['race'] = { 
+            species : global.race.species, 
+            gods: global.race.gods,
+            old_gods: global.race.old_gods,
+            rapid_mutation: 1,
+            ancient_ruins: 1,
+            Plasmid: { count: plasmid, anti: antiplasmid },
+            Phage: { count: phage },
+            Dark: { count: global.race.Dark.count },
+            Harmony: { count: global.race.Harmony.count },
+            universe: global.race.universe,
+            seeded: false,
+            ascended: global.race.hasOwnProperty('ascended') ? global.race.ascended : false,
+        };
+        global.city = {
+            calendar: {
+                day: 0,
+                year: 0,
+                weather: 2,
+                temp: 1,
+                moon: 0,
+                wind: 0,
+                orbit: global.city.calendar.orbit
+            },
+            biome: global.city.biome,
+            ptrait: global.city.ptrait,
+            geology: global.city.geology
+        };
+        global.tech = { theology: 1 };
+        clearStates();
+        global.new = true;
+        Math.seed = Math.rand(0,10000);
+        global.seed = Math.seed;
+
+        if (global.race.universe === 'antimatter') {
+            global.race['weak_mastery'] = 1;
+        }
+        else {
+            global.race['no_plasmid'] = 1;
+        }
+
+        let genes = ['crispr','trade','craft'];
+        for (let i=0; i<genes.length; i++){
+            global.race[`no_${genes[i]}`] = 1;                    
+        }
+
+        global.race['start_cataclysm'] = 1;
+        global.race['cataclysm'] = 1;
+        save.setItem('evolved',LZString.compressToUTF16(JSON.stringify(global)));
+        window.location.reload();
+    }
 }
 
 function big_bang(){
@@ -15316,4 +16089,11 @@ function big_bang(){
 
     save.setItem('evolved',LZString.compressToUTF16(JSON.stringify(global)));
     window.location.reload();
+}
+
+export function start_cataclysm(){
+    if (global.race['start_cataclysm']){
+        delete global.race['start_cataclysm'];
+        sentience();
+    }
 }

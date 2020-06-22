@@ -3,6 +3,37 @@ import { clearElement } from './../functions.js';
 
 const changeList = [
     {
+        version: `0.9.1`,
+        date: `6/21/2020`,
+        changes: [
+            `Fixed Dyson Net.`
+        ]
+    },
+    {
+        version: `0.9.0`,
+        date: `6/21/2020`,
+        changes: [
+            `Added Scenarios Section to Evolution Challenges.`,
+            `Added Cataclysm Scenario for those who value science over caution.`,
+            `Genetic Dead End is now classified as a Scenario.`,
+            `Plant genus redesign. Photosynth trait replaced with Sappy.`,
+            `Added 3rd race option for Plant genus: Pinguicula.`,
+            `Dyson Net now provides partial power as it is constructed.`,
+            `Added Orichalcum upgrade for Dyson Sphere.`,
+            `Added Xeno Tourism upgrade.`,
+            `Added Fertility Clinic upgrade for Hospitals.`,
+            `Added OTB, Online Gambling, & Bolognium Vault upgrade for Casinos.`,
+            `Added Scrooge achievement.`,
+            `Added Soul Link upgrade for Soul Forge/Soul Attractors.`,
+            `Reduced Bolognium cost of Freighters & Corvette Ships.`,
+            `Increased rating of Corvette Ships to 30.`,
+            `Piracy will no longer start until after you construct the Embassy.`,
+            `Reduced power requirement of Soul Forge and Soul Attractor.`,
+            `Gun Emplacements and Soul Attractors are now more potent.`,
+            `Reduced requirement of Demon Slayer feat to 666 Million demon kills.`
+        ]
+    },
+    {
         version: `0.8.17`,
         date: `5/30/2020`,
         changes: [

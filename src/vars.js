@@ -429,7 +429,7 @@ if (convertVersion(global['version']) < 8017){
     }
 }
 
-global['version'] = '0.8.17';
+global['version'] = '0.9.1';
 delete global['beta'];
 
 if (global.civic['cement_worker'] && global.civic.cement_worker.impact === 0.25){
@@ -440,6 +440,7 @@ if (!global['settings']){
     global['settings'] = {
         civTabs: 0,
         showEvolve: true,
+        showCiv: false,
         showCity: false,
         showIndustry: false,
         showResearch: false,
@@ -458,6 +459,10 @@ if (!global['settings']){
         locale: 'en-US',
         icon: 'star'
     };
+}
+
+if (!global.settings.hasOwnProperty('showCiv')){
+    global.settings['showCiv'] = global.settings['showCity'];
 }
 
 if (!global.settings['icon']){
@@ -690,6 +695,9 @@ if (!global.stats['mad']){
 }
 if (!global.stats['bioseed']){
     global.stats['bioseed'] = 0;
+}
+if (!global.stats['cataclysm']){
+    global.stats['cataclysm'] = 0;
 }
 if (!global.stats['blackhole']){
     global.stats['blackhole'] = 0;
@@ -1397,6 +1405,7 @@ export function clearStates(){
     global.stats.dkills = 0;
     
     global.settings.showEvolve = true;
+    global.settings.showCiv = false;
     global.settings.showCity = false;
     global.settings.showIndustry = false;
     global.settings.showResearch = false;

@@ -36,7 +36,7 @@ export const genus_traits = {
         high_metabolism: 1
     },
     plant: {
-        photosynth: 1,
+        sappy: 1,
         asymmetrical: 1
     },
     fungi: {
@@ -184,6 +184,12 @@ export const traits = {
         type: 'genus',
         val: 3,
         vars: [40,20,10]
+    },
+    sappy: { // Stone is replaced with Amber.
+        name: loc('trait_sappy_name'),
+        desc: loc('trait_sappy',[loc('resource_Amber_name')]),
+        type: 'genus',
+        val: 4,
     },
     asymmetrical: { // Trade selling prices are slightly worse then normal
         name: loc('trait_asymmetrical_name'),
@@ -574,6 +580,20 @@ export const traits = {
         type: 'major',
         val: -4,
         vars: [12]
+    },
+    fragrant: { // Reduced Hunting effectiveness
+        name: loc('trait_fragrant_name'),
+        desc: loc('trait_fragrant'),
+        type: 'major',
+        val: -3,
+        vars: [20]
+    },
+    sticky: { // Food req lowered, Incrsa
+        name: loc('trait_sticky_name'),
+        desc: loc('trait_sticky'),
+        type: 'major',
+        val: 3,
+        vars: [20,15]
     },
     infectious: { // Attacking has a chance to infect other creatures and grow your population
         name: loc('trait_infectious_name'),
@@ -1363,14 +1383,14 @@ export const races = {
         },
         fanaticism: 'hyper'
     },
-    /*pinguicula: {
+    pinguicula: {
         name: loc('race_pinguicula'),
         desc: loc('race_pinguicula_desc'),
         type: 'plant',
         home: loc('race_pinguicula_home'),
         entity: loc('race_pinguicula_entity'),
         traits: {
-            devourer: 1,
+            fragrant: 1,
             sticky: 1
         },
         solar: {
@@ -1380,8 +1400,8 @@ export const races = {
             gas_moon: loc('race_pinguicula_solar_gas_moon'),
             dwarf: loc('race_pinguicula_solar_dwarf'),
         },
-        fanaticism: 'none'
-    },*/
+        fanaticism: 'sticky'
+    },
     sporgar: {
         name: loc('race_sporgar'),
         desc: loc('race_sporgar_desc'),

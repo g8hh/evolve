@@ -2,7 +2,7 @@ import { global, p_on } from './vars.js';
 import { loc } from './locale.js';
 import { races } from './races.js';
 import { govTitle } from './civics.js';
-import { housingLabel } from './actions.js';
+import { housingLabel, drawTech } from './actions.js';
 import { unlockAchieve } from './achieve.js';
 
 export const events = {
@@ -104,7 +104,7 @@ export const events = {
             notech: 'world_control'
         },
         condition(){
-            return global.civic.foreign.gov0.hstl > 60 || global.civic.foreign.gov1.hstl > 60 || global.civic.foreign.gov2.hstl > 60 ? true : false;
+            return !global.race['cataclysm'] && (global.civic.foreign.gov0.hstl > 60 || global.civic.foreign.gov1.hstl > 60 || global.civic.foreign.gov2.hstl > 60) ? true : false;
         },
         effect: function(){
             let army = (global.civic.garrison.workers - (global.civic.garrison.wounded / 2)) * global.tech.military;
@@ -208,6 +208,20 @@ export const events = {
             else {
                 return loc('event_terrorist2',[wounded,killed]);
             }
+        }
+    },
+    quake: {
+        reqs: {
+            tech: 'wsc',
+            notech: 'quaked'
+        },
+        condition(){
+            return global.city.ptrait === 'unstable' ? true : false;
+        },
+        effect: function(){
+            global.tech['quaked'] = 1;
+            drawTech();
+            return loc('event_quake',[global.race['cataclysm'] ? races[global.race.species].solar.red : races[global.race.species].home]);
         }
     },
     doom: {

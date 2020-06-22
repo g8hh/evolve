@@ -71,7 +71,7 @@ export const job_desc = {
     },
     miner: function(){
         if (global.tech['mining'] >= 3){
-            return loc('job_miner_desc2');
+            return global.race['sappy'] && global.tech['alumina'] ? loc('job_miner_desc2_amber') : loc('job_miner_desc2');
         }
         else {
             return loc('job_miner_desc1');
@@ -93,7 +93,7 @@ export const job_desc = {
         let cement_multiplier = racialTrait(global.civic.cement_worker.workers,'factory');
         let gain = global.civic.cement_worker.impact * impact * cement_multiplier;
         gain = +(gain).toFixed(2);
-        return loc('job_cement_worker_desc',[gain]);
+        return global.race['sappy'] ? loc('job_cement_worker_amber_desc',[gain]) : loc('job_cement_worker_desc',[gain]);
     },
     banker: function(){
         let interest = global.civic.banker.impact * 100;

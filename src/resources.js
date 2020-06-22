@@ -149,7 +149,7 @@ export function craftingRatio(res,auto){
         }
     }
     if (global.space['fabrication']){
-        multiplier += red_on['fabrication'] * global.civic.colonist.workers * 0.02;
+        multiplier += red_on['fabrication'] * global.civic.colonist.workers * (global.race['cataclysm'] ? 0.05 : 0.02);
     }
     if (res === 'Mythril' && p_on['stellar_forge']){
         multiplier += p_on['stellar_forge'] * 0.05;
@@ -295,6 +295,14 @@ function loadResource(name,max,rate,tradable,stackable,color){
     }
     else {
         global['resource'][name].name = name === global.race.species ? races[global.race.species].name : (name === 'Money' ? '$' : loc(`resource_${name}_name`));
+    }
+
+    if (global.race['sappy']){
+        switch(name){
+            case 'Stone':
+                global['resource'][name].name = loc('resource_Amber_name');
+                break;
+        }
     }
 
     if (global.race['soul_eater']){
@@ -1359,7 +1367,7 @@ function drawModal(name,color){
         }
     });
     
-    if (global.city['warehouse'] && global.city['warehouse'].count > 0){
+    if ((global.city['warehouse'] && global.city['warehouse'].count > 0) || global.race['cataclysm']){
         let containers = $('<div id="modalContainers" class="crates divide"></div>');
         body.append(containers);
         
@@ -1570,6 +1578,9 @@ function initEjector(){
 
 function loadEjector(name,color){
     if (atomic_mass[name] && global.interstellar['mass_ejector']){
+        if (name === 'Elerium' || name === 'Infernite'){
+            color = 'caution';
+        }
         let ejector = $(`<div id="eject${name}" class="market-item" v-show="r.display"><h3 class="res has-text-${color}">${global.resource[name].name}</h3></div>`);
         $('#resEjector').append(ejector);
 

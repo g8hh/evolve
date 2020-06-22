@@ -77,6 +77,11 @@ export const achievements = {
         desc: loc("achieve_paradise_desc"),
         flair: loc("achieve_paradise_flair")
     },
+    scrooge: {
+        name: loc("achieve_scrooge_name"),
+        desc: loc("achieve_scrooge_desc"),
+        flair: loc("achieve_scrooge_flair")
+    },
     madagascar_tree: {
         name: loc("achieve_madagascar_tree_name"),
         desc: loc("achieve_madagascar_tree_desc"),
@@ -271,6 +276,26 @@ export const achievements = {
         name: loc("achieve_dissipated_name"),
         desc: loc("achieve_dissipated_desc"),
         flair: loc("achieve_dissipated_flair")
+    },
+    shaken: {
+        name: loc("achieve_shaken_name"),
+        desc: loc("achieve_shaken_desc"),
+        flair: loc("achieve_shaken_flair")
+    },
+    iron_will: {
+        name: loc("achieve_iron_will_name"),
+        desc: loc("achieve_iron_will_desc"),
+        flair: loc("achieve_iron_will_flair")
+    },
+    failed_history: {
+        name: loc("achieve_failed_history_name"),
+        desc: loc("achieve_failed_history_desc"),
+        flair: loc("achieve_failed_history_flair")
+    },
+    blacken_the_sun: {
+        name: loc("achieve_blacken_the_sun_name"),
+        desc: loc("achieve_blacken_the_sun_desc"),
+        flair: loc("achieve_blacken_the_sun_flair")
     },
     genus_humanoid: {
         name: loc("achieve_genus_humanoid_name"),
@@ -517,11 +542,11 @@ export const achievements = {
         desc: loc("achieve_extinct_cacti_desc"),
         flair: loc("achieve_extinct_cacti_flair")
     },
-    /*extinct_pinguicula: {
+    extinct_pinguicula: {
         name: loc("achieve_extinct_pinguicula_name"),
         desc: loc("achieve_extinct_pinguicula_desc"),
         flair: loc("achieve_extinct_pinguicula_flair")
-    },*/
+    },
     extinct_sporgar: {
         name: loc("achieve_extinct_sporgar_name"),
         desc: loc("achieve_extinct_sporgar_desc"),
@@ -1114,6 +1139,10 @@ export function checkAchievements(){
         }
     }
 
+    if (global.resource.hasOwnProperty('Money') && global.resource.Money.amount >= 800000000){
+        unlockAchieve('scrooge');
+    }
+
     const date = new Date();
     let easter = getEaster();
     if (date.getDate() === 13 && date.getDay() === 5 && global.resource[global.race.species].amount >= 1){
@@ -1194,7 +1223,7 @@ export function checkAchievements(){
         }
     }
 
-    if (global.stats.dkills >= 1000000000){
+    if (global.stats.dkills >= 666000000){
         unlockFeat('demon_slayer');
     }
 
@@ -1577,6 +1606,28 @@ export function drawPerks(){
         perks.append(`<div><span class="has-text-warning">${loc("achieve_perks_technophobe5",[global.stats.achieve.technophobe.l])}</span></div>`);
     }
 
+    if (global.stats.achieve['iron_will'] && global.stats.achieve['iron_will'].l >= 1){
+        unlocked++;
+        perks.append(`<div><span class="has-text-warning">${loc("achieve_perks_iron_will1",[0.15])}</span></div>`);
+        if (global.stats.achieve.iron_will.l >= 2){
+            perks.append(`<div><span class="has-text-warning">${loc("achieve_perks_iron_will2",[10])}</span></div>`);
+        }
+        if (global.stats.achieve.iron_will.l >= 3){
+            perks.append(`<div><span class="has-text-warning">${loc("achieve_perks_iron_will3",[6])}</span></div>`);
+        }
+        if (global.stats.achieve.iron_will.l >= 4){
+            perks.append(`<div><span class="has-text-warning">${loc("achieve_perks_iron_will4",[1])}</span></div>`);
+        }
+        if (global.stats.achieve.iron_will.l >= 5){
+            perks.append(`<div><span class="has-text-warning">${loc("achieve_perks_iron_will5")}</span></div>`);
+        }
+    }
+
+    if (global.stats.achieve['failed_history'] && global.stats.achieve['failed_history'].l >= 5){
+        unlocked++;
+        perks.append(`<div><span class="has-text-warning">${loc("failed_history",[1])}</span></div>`);
+    }
+
     if (unlocked > 0){
         perks.prepend(`<div class="cstat"><span class="has-text-success">${loc("achieve_perks")}</span></div>`);
     }
@@ -1610,6 +1661,9 @@ export function drawStats(){
     }
     if (global.stats.bioseed > 0){
         stats.append(`<div><span class="has-text-warning">${loc("achieve_stats_bioseed_resets")}</span> {{ bioseed }}</div>`);
+    }
+    if (global.stats.cataclysm > 0){
+        stats.append(`<div><span class="has-text-warning">${loc("achieve_stats_cataclysm_resets")}</span> {{ cataclysm }}</div>`);
     }
     if (global.stats.blackhole > 0){
         stats.append(`<div><span class="has-text-warning">${loc("achieve_stats_blackhole_resets")}</span> {{ blackhole }}</div>`);

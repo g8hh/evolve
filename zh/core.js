@@ -92,7 +92,6 @@ var cnItems = {
     'Scientist': '科学家',
     'Crispr': '基因编辑技术',
     'Space': '太空',
-    'A.R.P.A.': '高级研究',
     'Export Game': '导出存档',
     'Evolve by': '进化 作者:',
     'External Links': '外部链接',

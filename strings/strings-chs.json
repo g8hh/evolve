@@ -1671,7 +1671,7 @@
   "tech_soul_absorption": "灵魂吸取",
   "tech_soul_absorption_effect": "增加从灵魂中吸取的能量，减少锻造每颗灵魂宝石需求的灵魂数量。",
   "tech_soul_link": "灵魂连接",
-  "tech_soul_link_effect": "连接灵魂引渡器和灵魂锻炉，减少锻造灵魂之石的灵魂数量需求。",
+  "tech_soul_link_effect": "连接灵魂引渡器和灵魂锻炉，每激活一座灵魂引渡器，锻造灵魂之石的灵魂数量需求 -3% 。",
   "tech_gun_emplacement_effect": "设计自动炮台图纸，用于防卫灵魂锻炉。",
   "tech_advanced_emplacement": "先进的自动炮台",
   "tech_advanced_emplacement_effect": "用新技术对自动炮台进行升级，提升其效率。",

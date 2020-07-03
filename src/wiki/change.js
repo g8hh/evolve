@@ -3,6 +3,22 @@ import { clearElement } from './../functions.js';
 
 const changeList = [
     {
+        version: `0.9.3`,
+        date: `7/1/2020`,
+        changes: [
+            `Increased base number of Plasmids earned in Cataclysm mode.`
+        ]
+    },
+    {
+        version: `0.9.2`,
+        date: `6/30/2020`,
+        changes: [
+            `Added Restore Backup option, restores game to just before your last prestige reset.`,
+            `Extended Recombination CRISPR line.`,
+            `When gaining a random minor trait from Fanaticism, you will now gain 5 ranks of it.`
+        ]
+    },
+    {
         version: `0.9.1`,
         date: `6/21/2020`,
         changes: [

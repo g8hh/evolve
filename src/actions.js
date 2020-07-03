@@ -15276,8 +15276,12 @@ function sentience(){
         global.race[trait] = trait === 'mastery' ? global.genes.minor[trait] : global.genes.minor[trait] * 2;
     });
 
-    if (global.genes['evolve'] && global.genes['evolve'] >= 2){
-        randomMinorTrait();
+    if (global.genes['evolve'] && global.genes['evolve'] >= 2){        
+        for (let i=1; i<8; i++){
+            if (global.genes['evolve'] >= i+1){
+                randomMinorTrait(i);
+            }
+        }
     }
 
     let civ0name = genCivName();
@@ -15617,7 +15621,7 @@ function fanaticism(god){
     switch (races[god].fanaticism){
         case 'carnivore':
             if (global.race['herbivore']){
-                randomMinorTrait();
+                randomMinorTrait(5);
                 arpa('Genetics');
             }
             else {
@@ -15629,7 +15633,7 @@ function fanaticism(god){
             break;
         case 'smart':
             if (global.race['dumb']){
-                randomMinorTrait();
+                randomMinorTrait(5);
                 arpa('Genetics');
             }
             else {
@@ -15643,7 +15647,7 @@ function fanaticism(god){
             }
             break;
         case 'none':
-            randomMinorTrait();
+            randomMinorTrait(5);
             arpa('Genetics')
             break;
         default:
@@ -15654,7 +15658,7 @@ function fanaticism(god){
 
 function fanaticTrait(trait){
     if (global.race[trait]){
-        randomMinorTrait();
+        randomMinorTrait(5);
         arpa('Genetics');
     }
     else {
@@ -15738,6 +15742,7 @@ export function bank_vault(){
 }
 
 function bioseed(){
+    save.setItem('evolveBak',LZString.compressToUTF16(JSON.stringify(global)));
     global.lastMsg = false;
 
     let god = global.race.species;
@@ -15879,6 +15884,7 @@ function cataclysm_end(){
         if (webWorker.w){
             webWorker.w.terminate();
         }
+        save.setItem('evolveBak',LZString.compressToUTF16(JSON.stringify(global)));
 
         global.lastMsg = false;
 
@@ -15975,12 +15981,13 @@ function cataclysm_end(){
 
         global.race['start_cataclysm'] = 1;
         global.race['cataclysm'] = 1;
-        save.setItem('evolved',LZString.compressToUTF16(JSON.stringify(global)));
+        save.setItem('evolved',LZString.compressToUTF16(JSON.stringify(global)));        
         window.location.reload();
     }
 }
 
 function big_bang(){
+    save.setItem('evolveBak',LZString.compressToUTF16(JSON.stringify(global)));
     global.lastMsg = false;
 
     unlockAchieve(`extinct_${global.race.species}`);

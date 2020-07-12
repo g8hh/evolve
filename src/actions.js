@@ -8382,7 +8382,8 @@ export const actions = {
                 if (payCosts($(this)[0].cost)){
                     if (global.race['terrifying']){
                         global.tech['gambling'] = 1;
-                        global.city['casino'] = { count: 0 };
+                        global.city['casino'] = { count: 0, on: 0 };
+                        global.space['spc_casino'] = { count: 0, on: 0 };
                     }
                     return true;
                 }

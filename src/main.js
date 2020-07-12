@@ -5388,7 +5388,7 @@ function midLoop(){
         }
         if (global.tech['railway']){
             let routes = 0;
-            if (global.race['catacylsm']){
+            if (global.race['cataclysm']){
                 routes = global.space['gps'] ? Math.floor(global.space.gps.count / 3) : 0;
             }
             else {
@@ -6430,7 +6430,7 @@ function longLoop(){
             setWeather();
         }
 
-        if (!global.race['catacylsm']){
+        if (!global.race['cataclysm']){
             let deterioration = Math.floor(50000000 / (1 + global.race.mutation)) - global.stats.days;
             if (global.race.deterioration === 0 && deterioration < 40000000){
                 global.race.deterioration = 1;
@@ -6579,7 +6579,7 @@ function longLoop(){
             messageQueue(loc(tech_source,[loc('tech_shields')]),'info');
             global.tech.high_tech = 14;
             global.settings.space.neutron = true;
-                    global.settings.space.blackhole = true;
+            global.settings.space.blackhole = true;
             drawTech();
             drawCity();
         }
@@ -6587,6 +6587,24 @@ function longLoop(){
             messageQueue(loc(tech_source,[loc('tech_ai_core')]),'info');
             global.tech.high_tech = 15;
             global.interstellar['citadel'] = { count: 0, on: 0 };
+            drawTech();
+            drawCity();
+        }
+        if (global.resource.Knowledge.max >= 2250000 && global.tech['ai_core'] && global.tech.ai_core === 2){
+            messageQueue(loc(tech_source,[loc('tech_graphene_processing')]),'info');
+            global.tech.ai_core = 3;
+            drawTech();
+        }
+        if (global.resource.Knowledge.max >= 8075000 && global.tech['science'] && global.tech.science >= 18 && !global.tech['nanoweave']){
+            messageQueue(loc(tech_source,[loc('tech_nanoweave')]),'info');
+            global.tech['nanoweave'] = 1;
+            global.resource.Nanoweave.display = true;
+            drawTech();
+        }
+        if (global.resource.Knowledge.max >= 11590000 && global.tech['high_tech'] && global.tech.high_tech === 16 && global.tech['chthonian'] && global.tech['chthonian'] >= 3){
+            messageQueue(loc(tech_source,[loc('tech_orichalcum_analysis')]),'info');
+            messageQueue(loc('tech_orichalcum_analysis_result'),'info');
+            global.tech.high_tech = 17;
             drawTech();
             drawCity();
         }

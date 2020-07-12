@@ -459,7 +459,7 @@ const spaceProjects = {
                     let pop = global.tech.mars >= 6 ? 0.1 : 0.05;
                     gain += pop * red_on['biodome'];
                 }
-                gain = +(gain).toFixed(1);
+                gain = +(gain).toFixed(2);
                 let safe = ``;
                 if (global.race['cataclysm']){
                     let vault = spatialReasoning(global.tech.home_safe >= 2 ? (global.tech.home_safe >= 3 ? '100000' : '50000') : '25000');
@@ -879,7 +879,7 @@ const spaceProjects = {
             effect(){
                 let oil = +fuel_adjust(2).toFixed(2);
                 let soldiers = global.tech.marines >= 2 ? 4 : 2;
-                let food = global.race['catacylsm'] ? `` : `<div class="has-text-caution">${loc('space_red_space_barracks_effect3',[global.resource.Food.name])}</div>`;
+                let food = global.race['cataclysm'] ? `` : `<div class="has-text-caution">${loc('space_red_space_barracks_effect3',[global.resource.Food.name])}</div>`;
                 return `<div>${loc('plus_max_soldiers',[soldiers])}</div><div class="has-text-caution">${loc('space_red_space_barracks_effect2',[oil])}</div>${food}`;
             },
             powered(){ return powerCostMod(1); },
@@ -890,6 +890,9 @@ const spaceProjects = {
                     return true;
                 }
                 return false;
+            },
+            flair(){
+                return ``;
             }
         },
     },
@@ -951,7 +954,7 @@ const spaceProjects = {
                 if (global.race['forge']){
                     power -= traits.forge.vars[0];
                 }
-                if (global.stats.achieve['failed_history'] && global.stats.achieve.failed_history.l >= 5){ power--; }
+                if (global.stats.achieve['failed_history'] && global.stats.achieve.failed_history.l >= 5){ power -= 2; }
                 return powerModifier(power);
             },
             action(){

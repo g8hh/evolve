@@ -3,6 +3,27 @@ import { clearElement } from './../functions.js';
 
 const changeList = [
     {
+        version: `0.9.8`,
+        date: `7/18/2020`,
+        changes: [
+            `Czech translation by Mousesama`,
+            `The slaves have staged a sucessful hunger strike to demand better living conditions, as a result slave pens can now only hold 4 slaves each.`,
+            `Autocracy and Frenzy no longer block Immoral races from gaining a Warmonger bonus.`,
+            `Geology traits now display under planet information.`,
+            `Popovers added to building and research queues.`
+        ]
+    },
+    {
+        version: `0.9.7`,
+        date: `7/13/2020`,
+        changes: [
+            `Seasons no longer exist in Cataclysm mode.`,
+            `It is no longer Sunny in Cataclysm mode.`,
+            `Parasites are no longer unable to grow population in Cataclysm mode, but they do take a growth penalty.`,
+            `Base Sawmill effect is now seperated from lumberjack in production breakdown.`
+        ]
+    },
+    {
         version: `0.9.6`,
         date: `7/10/2020`,
         changes: [

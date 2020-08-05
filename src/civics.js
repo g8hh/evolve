@@ -2,7 +2,7 @@ import { global, poppers, clearStates, save, keyMultiplier, sizeApproximation } 
 import { loc } from './locale.js';
 import { calcPrestige, clearElement, vBind, modRes, messageQueue, genCivName, darkEffect, easterEgg } from './functions.js';
 import { unlockAchieve, unlockFeat, checkAchievements } from './achieve.js';
-import { races, racialTrait, traits } from './races.js';
+import { races, racialTrait, traits, planetTraits } from './races.js';
 import { loadIndustry } from './industry.js';
 import { drawTech } from  './actions.js';
 
@@ -258,6 +258,9 @@ function drawGovModal(){
     $('#govModal button').on('mouseover',function(){
         let govType = $(this).data('gov');
         let effectType = global.tech['unify'] && global.tech['unify'] >= 2 && govType === 'federation' ? 'federation_alt' : govType;
+        if (effectType === 'theocracy' && global.genes['ancients'] && global.genes['ancients'] >= 2 && global.civic.priest.display){
+            effectType = 'theocracy_alt';
+        }
         var popper = $(`<div id="popGov" class="popper has-background-light has-text-dark"><div>${loc(`govern_${govType}_desc`)}</div><div class="has-text-advanced">${government_desc[effectType]}</div></div>`);
         $('#main').append(popper);
         popper.show();
@@ -689,7 +692,7 @@ function taxRates(govern){
                 }
                 if (global.race['noble']){
                     global.civic.taxes.tax_rate += inc;
-                    if (global.civic.taxes.tax_rate > global.civic.govern.type === 'oligarchy' ? 40 : 20){
+                    if (global.civic.taxes.tax_rate > (global.civic.govern.type === 'oligarchy' ? 40 : 20)){
                         global.civic.taxes.tax_rate = global.civic.govern.type === 'oligarchy' ? 40 : 20;
                     }
                 }
@@ -1128,7 +1131,7 @@ function war_campaign(gov){
         let deathCap = Math.floor(global.civic.garrison.raid / (5 - global.civic.garrison.tactic));
         deathCap += wounded;
         if (global.city.ptrait === 'rage'){
-            deathCap++;
+            deathCap += planetTraits.rage.vars[2];
         }
         if (deathCap < 1){
             deathCap = 1;
@@ -1417,7 +1420,7 @@ function war_campaign(gov){
 
 
         if (global.race['slaver'] && global.city['slave_pen']){
-            let max = global.city.slave_pen.count * 5;
+            let max = global.city.slave_pen.count * 4;
             if (max > global.city.slave_pen.slaves){
                 let slaves = Math.floor(Math.seededRandom(0,global.civic.garrison.tactic + 2));
                 if (slaves + global.city.slave_pen.slaves > max){
@@ -1486,7 +1489,7 @@ function war_campaign(gov){
             deathCap = Math.floor(deathCap / 2);
         }
         if (global.city.ptrait === 'rage'){
-            deathCap++;
+            deathCap += planetTraits.rage.vars[2];
         }
         if (deathCap < 1){
             deathCap = 1;
@@ -1650,7 +1653,7 @@ export function armyRating(val,type,wound){
             army *= 1 + (global.city.temple.count * 0.01);
         }
         if (global.city.ptrait === 'rage'){
-            army *= 1.05;
+            army *= planetTraits.rage.vars[0];
         }
         if (global.race['parasite']){
             if (val === 1){
@@ -1678,7 +1681,7 @@ export function armyRating(val,type,wound){
             army *= 1 - (traits.fragrant.vars[0] / 100);
         }
         if (global.city.ptrait === 'rage'){
-            army *= 1.02;
+            army *= planetTraits.rage.vars[1];
         }
         if (global.race['cunning']){
             army *= 1 + (global.race['cunning'] / 20);

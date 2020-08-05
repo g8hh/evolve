@@ -3,6 +3,46 @@ import { clearElement } from './../functions.js';
 
 const changeList = [
     {
+        version: `0.9.12`,
+        date: `8/3/2020`,
+        changes: [
+            `Added Crossed the Finish Line feat for Ascending with Cataclysm.`,
+            `Adjusted many post World Collider Cataclysm things that referenced none existent planetary structures.`,
+            `Added a fix for Stabilize Blackhole being stuck in an untriggerable state.`,
+            `Upgrading achievements will now send a notification.`
+        ]
+    },
+    {
+        version: `0.9.11`,
+        date: `8/1/2020`,
+        changes: [
+            `Fixed a bug that caused Factories to charge the wrong amount of Polymer for producing Synthetic Furs.`
+        ]
+    },
+    {
+        version: `0.9.10`,
+        date: `7/30/2020`,
+        changes: [
+            `Expanded list of potential enemy city names.`,
+            `Added Synthetic Fur option to Factories.`,
+            `Restoring a backup after a Cataclysm will now allow you to Cataclysm again.`,
+            `Fixed Lumber penalty on Desert worlds.`,
+            `Many minor bug fixes.`
+        ]
+    },
+    {
+        version: `0.9.9`,
+        date: `7/21/2020`,
+        changes: [
+            `Added Devotion upgrade to ancients CRISPR line between Faith and Acolyte. The total cost is the same, it's just spread out more.`,
+            `Players with Ancients 4 are granted Ancients 5 automatically, those with Ancients 3 are refunded 300 Plasmids.`,
+            `Added Enhanced Muscle Fiber CRISPR upgrade.`,
+            `High tax morale penalty under Oligarchy is now reduced.`,
+            `Fixed bugs with Blackhole reset and restoring backups.`,
+            `Fixed bug with adjusting taxes as a Noble race that would set it to the max.`
+        ]
+    },
+    {
         version: `0.9.8`,
         date: `7/18/2020`,
         changes: [

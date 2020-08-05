@@ -487,10 +487,10 @@ export const achievements = {
         desc: loc("achieve_extinct_gnome_desc"),
         flair: loc("achieve_extinct_gnome_flair")
     },
-    extinct_orge: {
-        name: loc("achieve_extinct_orge_name"),
-        desc: loc("achieve_extinct_orge_desc"),
-        flair: loc("achieve_extinct_orge_flair")
+    extinct_ogre: {
+        name: loc("achieve_extinct_ogre_name"),
+        desc: loc("achieve_extinct_ogre_desc"),
+        flair: loc("achieve_extinct_ogre_flair")
     },
     extinct_cyclops: {
         name: loc("achieve_extinct_cyclops_name"),
@@ -695,6 +695,11 @@ export const feats = {
         desc: loc("feat_garbage_pie_desc"),
         flair: loc("feat_garbage_pie_flair")
     },
+    finish_line: {
+        name: loc("feat_finish_line_name"),
+        desc: loc("feat_finish_line_desc"),
+        flair: loc("feat_finish_line_flair")
+    },
     blank_slate: {
         name: loc("feat_blank_slate_name"),
         desc: loc("feat_blank_slate_desc"),
@@ -817,7 +822,7 @@ export const feats = {
                 break;
         }
     }
-    
+
     let lvl = 0;
     let ulvl = 0;
     Object.keys(achievements).forEach(function (achievement){
@@ -853,14 +858,16 @@ export function unlockAchieve(achievement,small,rank){
     if (typeof rank === "undefined" || rank > a_level){
         rank = a_level;
     }
+    let upgrade = true;
     if (typeof global.stats.achieve[achievement] === "undefined"){
         global.stats.achieve[achievement] = { l: 0 };
+        upgrade = false;
     }
     if ((global.race.universe === 'micro' && small === true) || (global.race.universe !== 'micro' && small !== true)){
         if (global.stats.achieve[achievement] && global.stats.achieve[achievement].l < rank){
             global.settings.showAchieve = true;
             global.stats.achieve[achievement].l = rank;
-            messageQueue(loc('achieve_unlock_achieve', [achievements[achievement].name] ),'special');
+            messageQueue(loc(upgrade ? 'achieve_unlock_achieve_upgrade' : 'achieve_unlock_achieve', [achievements[achievement].name] ),'special');
             redraw = true;
             unlock = true;
         }
@@ -869,26 +876,42 @@ export function unlockAchieve(achievement,small,rank){
         switch (global.race.universe){
             case 'antimatter':
                 if (!global.stats.achieve[achievement]['a'] || (global.stats.achieve[achievement]['a'] && global.stats.achieve[achievement].a < rank)){
+                    let i_upgrade = global.stats.achieve[achievement]['a'] ? true : false;
                     global.stats.achieve[achievement]['a'] = rank;
                     redraw = true;
+                    if (!unlock){
+                        messageQueue(loc(i_upgrade ? 'achieve_unlock_achieve_icon_upgrade' : 'achieve_unlock_achieve_icon', [achievements[achievement].name] ),'special');
+                    }
                 }
                 break;
             case 'heavy':
                 if (!global.stats.achieve[achievement]['h'] || (global.stats.achieve[achievement]['h'] && global.stats.achieve[achievement].h < rank)){
+                    let i_upgrade = global.stats.achieve[achievement]['h'] ? true : false;
                     global.stats.achieve[achievement]['h'] = rank;
                     redraw = true;
+                    if (!unlock){
+                        messageQueue(loc(i_upgrade ? 'achieve_unlock_achieve_icon_upgrade' : 'achieve_unlock_achieve_icon', [achievements[achievement].name] ),'special');
+                    }
                 }
                 break;
             case 'evil':
                 if (!global.stats.achieve[achievement]['e'] || (global.stats.achieve[achievement]['e'] && global.stats.achieve[achievement].e < rank)){
+                    let i_upgrade = global.stats.achieve[achievement]['e'] ? true : false;
                     global.stats.achieve[achievement]['e'] = rank;
                     redraw = true;
+                    if (!unlock){
+                        messageQueue(loc(i_upgrade ? 'achieve_unlock_achieve_icon_upgrade' : 'achieve_unlock_achieve_icon', [achievements[achievement].name] ),'special');
+                    }
                 }
                 break;
             case 'micro':
                 if (!global.stats.achieve[achievement]['m'] || (global.stats.achieve[achievement]['m'] && global.stats.achieve[achievement].m < rank)){
+                    let i_upgrade = global.stats.achieve[achievement]['m'] ? true : false;
                     global.stats.achieve[achievement]['m'] = rank;
                     redraw = true;
+                    if (!unlock){
+                        messageQueue(loc(i_upgrade ? 'achieve_unlock_achieve_icon_upgrade' : 'achieve_unlock_achieve_icon', [achievements[achievement].name] ),'special');
+                    }
                 }
                 break;
         }
@@ -1013,7 +1036,7 @@ export function drawAchieve(args){
     }
 
     achieve.prepend(`<div class="has-text-warning">${loc("achieve_draw_achieve_earned",[earned,total])}</div>`);
-    
+
     vBind({
         el: '#achievePanel',
         methods: {
@@ -1061,7 +1084,7 @@ export function drawAchieve(args){
 
             popper.show();
             poppers['topbarPlanet'] = new Popper($('#topBar .planetWrap .flair'),popper);
-        
+
         });
 
         $('#topBar .planetWrap .flair').on('mouseout',function(){
@@ -1195,7 +1218,7 @@ export function checkAchievements(){
             else {
                 unlockFeat('egghunt');
             }
-    
+
         }
     }
     else if (date.getMonth() === 9 && date.getDate() === 31){
@@ -1296,7 +1319,7 @@ function checkBigAchievement(frag, name, num, level){
         checkBigAchievementUniverse(frag, name, num, level);
     }
 }
-                
+
 function checkBigAchievementUniverse(frag, name, num, level){
     let proceed = false;
     switch (global.race.universe) {
@@ -1363,14 +1386,14 @@ function checkBigAchievementUniverse(frag, name, num, level){
 export function drawPerks(){
     clearElement($('#perksPanel'));
     let perks = $('#perksPanel');
-    
+
     let unlocked = 0;
     if (global.stats.achieve['blackhole'] && global.stats.achieve['blackhole'].l >= 1){
         unlocked++;
         let bonus = global.stats.achieve.blackhole.l * 5;
         perks.append(`<div><span class="has-text-warning">${loc("achieve_perks_blackhole",[bonus])}</span></div>`);
     }
-    
+
     if (global.stats.achieve['creator'] && global.stats.achieve['creator'].l >= 1){
         unlocked++;
         let bonus = 1 + (global.stats.achieve['creator'].l * 0.5);
@@ -1391,7 +1414,7 @@ export function drawPerks(){
         let bonus = global.stats.achieve['explorer'].l;
         perks.append(`<div><span class="has-text-warning">${loc("achieve_perks_explorer",[bonus])}</span></div>`);
     }
-    
+
     if (global.stats.achieve['miners_dream'] && global.stats.achieve['miners_dream'].l >= 1){
         unlocked++;
         let numGeo = global.stats.achieve['miners_dream'] ? global.stats.achieve['miners_dream'].l >= 4 ? global.stats.achieve['miners_dream'].l * 2 - 3 : global.stats.achieve['miners_dream'].l : 0;
@@ -1526,29 +1549,29 @@ export function drawPerks(){
         unlocked++;
         perks.append(`<div><span class="has-text-warning">${loc("arpa_perks_ancients")}</span></div>`);
         if (global.genes['ancients'] >= 2){
-            perks.append(`<div><span class="has-text-warning">${global.genes['ancients'] >= 3 ? loc("arpa_perks_ancients3") : loc("arpa_perks_ancients2")}</span></div>`);
-            if (global.genes['ancients'] >= 4) {
-                perks.append(`<div><span class="has-text-warning">${loc("arpa_perks_ancients4")}</span></div>`);
+            perks.append(`<div><span class="has-text-warning">${global.genes['ancients'] >= 4 ? loc("arpa_perks_ancients3") : loc("arpa_perks_ancients2")}</span></div>`);
+            if (global.genes['ancients'] >= 3) {
+                perks.append(`<div><span class="has-text-warning">${loc("arpa_perks_ancients4",[global.genes['ancients'] >= 5 ? 25 : 50])}</span></div>`);
             }
         }
     }
-    
+
     if (global.genes['trader']){
         unlocked++;
         perks.append(`<div><span class="has-text-warning">${loc("arpa_genepool_negotiator_desc")}</span></div>`);
     }
-    
-    if (global.genes['transcendence']){ 
-        unlocked++; 
-        perks.append(`<div><span class="has-text-warning">${loc("arpa_genepool_transcendence_desc")}</span></div>`); 
+
+    if (global.genes['transcendence']){
+        unlocked++;
+        perks.append(`<div><span class="has-text-warning">${loc("arpa_genepool_transcendence_desc")}</span></div>`);
     }
 
-    if (global.genes['queue']){ 
-        unlocked++; 
-        perks.append(`<div><span class="has-text-warning">${loc("arpa_genepool_geographer_desc")}</span></div>`); 
+    if (global.genes['queue']){
+        unlocked++;
+        perks.append(`<div><span class="has-text-warning">${loc("arpa_genepool_geographer_desc")}</span></div>`);
         if (global.genes['queue'] >= 2) {
-            perks.append(`<div><span class="has-text-warning">${loc("arpa_genepool_architect_desc")}</span></div>`); 
-        } 
+            perks.append(`<div><span class="has-text-warning">${loc("arpa_genepool_architect_desc")}</span></div>`);
+        }
     }
 
     if (global.stats.feat['journeyman']){
@@ -1556,10 +1579,10 @@ export function drawPerks(){
         if (global.stats.feat['journeyman'] > 1){
             let rqueue = global.stats.feat['journeyman'] >= 3 ? (global.stats.feat['journeyman'] >= 5 ? 3 : 2) : 1;
             let queue = global.stats.feat['journeyman'] >= 4 ? 2 : 1;
-            perks.append(`<div><span class="has-text-warning">${loc("achieve_perks_journeyman2",[rqueue,queue])}</span></div>`); 
+            perks.append(`<div><span class="has-text-warning">${loc("achieve_perks_journeyman2",[rqueue,queue])}</span></div>`);
         }
         else {
-            perks.append(`<div><span class="has-text-warning">${loc("achieve_perks_journeyman1",[1])}</span></div>`); 
+            perks.append(`<div><span class="has-text-warning">${loc("achieve_perks_journeyman1",[1])}</span></div>`);
         }
     }
 
@@ -1567,32 +1590,32 @@ export function drawPerks(){
         unlocked++;
         let rna = global.stats.feat['novice'] / 2;
         let dna = global.stats.feat['novice'] / 4;
-        perks.append(`<div><span class="has-text-warning">${loc("achieve_perks_novice",[rna,dna])}</span></div>`); 
+        perks.append(`<div><span class="has-text-warning">${loc("achieve_perks_novice",[rna,dna])}</span></div>`);
     }
-    
+
     if (global.genes['plasma']) {
         unlocked++;
         let plasmid_cap = global.genes['plasma'] >= 2 ? 5 : 3;
-        perks.append(`<div><span class="has-text-warning">${loc('arpa_genepool_mitosis_desc',[plasmid_cap])}</span></div>`); 
+        perks.append(`<div><span class="has-text-warning">${loc('arpa_genepool_mitosis_desc',[plasmid_cap])}</span></div>`);
     }
 
-    if (global.genes['mutation']){ 
+    if (global.genes['mutation']){
         unlocked++;
-        perks.append(`<div><span class="has-text-warning">${global.genes['mutation'] === 1 ? loc("arpa_perks_mutation1") : loc("arpa_perks_mutation2")}</span></div>`); 
+        perks.append(`<div><span class="has-text-warning">${global.genes['mutation'] === 1 ? loc("arpa_perks_mutation1") : loc("arpa_perks_mutation2")}</span></div>`);
         if (global.genes['mutation'] >= 3){
-            perks.append(`<div><span class="has-text-warning">${loc("arpa_perks_mutation3")}</span></div>`); 
-        } 
+            perks.append(`<div><span class="has-text-warning">${loc("arpa_perks_mutation3")}</span></div>`);
+        }
     }
 
-    if (global.genes['bleed']){ 
-        unlocked++; 
-        perks.append(`<div><span class="has-text-warning">${loc("arpa_genepool_bleeding_effect_desc",[2.5])}</span></div>`); 
+    if (global.genes['bleed']){
+        unlocked++;
+        perks.append(`<div><span class="has-text-warning">${loc("arpa_genepool_bleeding_effect_desc",[2.5])}</span></div>`);
         if (global.genes['bleed'] >= 2){
-            perks.append(`<div><span class="has-text-warning">${loc("arpa_genepool_synchronicity_desc",[25])}</span></div>`); 
+            perks.append(`<div><span class="has-text-warning">${loc("arpa_genepool_synchronicity_desc",[25])}</span></div>`);
             if (global.genes['bleed'] >= 3){
-                perks.append(`<div><span class="has-text-warning">${loc("arpa_genepool_astral_awareness_desc")}</span></div>`); 
-            } 
-        } 
+                perks.append(`<div><span class="has-text-warning">${loc("arpa_genepool_astral_awareness_desc")}</span></div>`);
+            }
+        }
     }
 
     if (global.stats.achieve['technophobe'] && global.stats.achieve['technophobe'].l >= 1){
@@ -1654,7 +1677,7 @@ export function drawPerks(){
 export function drawStats(){
     clearElement($('#statsPanel'));
     let stats = $('#statsPanel');
-    
+
     stats.append(`<div><span class="has-text-success">${loc("achieve_stats_overall")}</span></div>`);
     stats.append(`<div><span class="has-text-warning">${loc("achieve_stats_plasmid_earned")}</span> {{ plasmid }}</div>`);
     if (global.stats.antiplasmid > 0){
@@ -1701,7 +1724,7 @@ export function drawStats(){
     if (global.stats.dkills > 0){
         stats.append(`<div><span class="has-text-warning">${loc("achieve_stats_demons_kills")}</span> {{ dkills }}</div>`);
     }
-    
+
     vBind({
         el: '#statsPanel',
         data: global.stats,

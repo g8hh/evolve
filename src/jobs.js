@@ -1,7 +1,7 @@
 import { global, keyMultiplier, poppers } from './vars.js';
 import { clearElement, easterEgg } from './functions.js';
 import { loc } from './locale.js';
-import { racialTrait, races, traits } from './races.js';
+import { racialTrait, races, traits, biomes, planetTraits } from './races.js';
 import { craftingRatio, craftCost } from './resources.js';
 
 export const job_desc = {
@@ -30,9 +30,9 @@ export const job_desc = {
         else {
             let multiplier = (global.tech['axe'] && global.tech['axe'] > 0 ? (global.tech['axe'] - 1) * 0.35 : 0) + 1;
             multiplier *= racialTrait(global.civic.lumberjack.workers,'lumberjack');
-            let impact = global.city.biome === 'forest' ? (global.civic.lumberjack.impact * 1.15) : global.civic.lumberjack.impact;
+            let impact = global.city.biome === 'forest' ? (global.civic.lumberjack.impact * biomes.forest.vars[0]) : global.civic.lumberjack.impact;
             if (global.city.biome === 'desert'){
-                impact *= 0.75;
+                impact *= biomes.desert.vars[2];
             }
             let gain = +(impact * multiplier).toFixed(1);
             let desc = loc('job_lumberjack_desc',[gain,global.resource.Lumber.name]);
@@ -46,13 +46,13 @@ export const job_desc = {
         let multiplier = (global.tech['hammer'] && global.tech['hammer'] > 0 ? global.tech['hammer'] * 0.4 : 0) + 1;
         multiplier *= racialTrait(global.civic.quarry_worker.workers,'miner');
         if (global.city.biome === 'desert'){
-            multiplier *= 1.2;
+            multiplier *= biomes.desert.vars[0];
         }
         if (global.tech['explosives'] && global.tech['explosives'] >= 2){
             multiplier *= global.tech['explosives'] >= 3 ? 1.75 : 1.5;
         }
         let gain = +(global.civic.quarry_worker.impact * multiplier).toFixed(1);
-        let desc = loc('job_quarry_worker_desc',[gain,global.resource.Stone.name]);
+        let desc = global.resource.Aluminium.display ? loc('job_quarry_worker_desc2',[gain, global.resource.Stone.name,global.resource.Aluminium.name]) : loc('job_quarry_worker_desc1',[gain,global.resource.Stone.name]);
         if (global.civic.d_job === 'quarry_worker'){
             desc = desc + ' ' + loc('job_default',[loc('job_quarry_worker')]);
         }
@@ -380,10 +380,10 @@ export function farmerValue(farm){
         farming += global.tech['agriculture'] >= 2 ? 1.15 : 0.65;
     }
     farming *= (global.tech['hoe'] && global.tech['hoe'] > 0 ? global.tech['hoe'] * (1/3) : 0) + 1;
-    farming *= global.city.biome === 'grassland' ? 1.2 : 1;
-    farming *= global.city.biome === 'volcanic' ? 0.9 : 1;
-    farming *= global.city.biome === 'hellscape' ? 0.25 : 1;
-    farming *= global.city.ptrait === 'trashed' ? 0.75 : 1;
+    farming *= global.city.biome === 'grassland' ? biomes.grassland.vars[0] : 1;
+    farming *= global.city.biome === 'volcanic' ? biomes.volcanic.vars[0] : 1;
+    farming *= global.city.biome === 'hellscape' ? biomes.hellscape.vars[0] : 1;
+    farming *= global.city.ptrait === 'trashed' ? planetTraits.trashed.vars[0] : 1;
     farming *= racialTrait(global.civic.farmer.workers,'farmer');
     farming *= global.tech['agriculture'] >= 7 ? 1.1 : 1;
     farming *= global.race['low_light'] ? (1 - traits.low_light.vars[0] / 100) : 1;

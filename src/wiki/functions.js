@@ -1,4 +1,4 @@
-import { global, poppers, sizeApproximation } from './../vars.js';
+import { global, sizeApproximation } from './../vars.js';
 import { loc } from './../locale.js';
 import { clearElement, adjustCosts } from './../functions.js';
 import { actions } from './../actions.js';
@@ -64,24 +64,6 @@ export function infoBoxBuilder(parent,args){
     
     parent.append(info);    
     return info;
-}
-
-export function popover(id,content,is_wide){
-    $('#'+id).on('mouseover',function(){
-        let wide = is_wide ? ' wide' : '';
-        var popper = $(`<div id="pop${id}" class="popper${wide} has-background-light has-text-dark pop-desc"></div>`);
-        $(`#main`).append(popper);
-        popper.append(content);
-        popper.show();
-        poppers[id] = new Popper($('#'+id),popper);
-    });
-    $('#'+id).on('mouseout',function(){
-        $(`#pop${id}`).hide();
-        if (poppers[id]){
-            poppers[id].destroy();
-        }
-        clearElement($(`#pop${id}`),true);
-    });
 }
 
 export function actionDesc(info, c_action, extended){
@@ -169,4 +151,37 @@ export function actionDesc(info, c_action, extended){
             stats.append(cost);
         }
     }
+}
+
+export function bindScroll(elm, target){
+    elm.click(function(){
+        window.location.hash = `#${target}`;
+        document.getElementById(target).scrollIntoView({
+            block: 'start',
+            behavior: 'smooth'
+        });
+    });
+}
+
+export function sideMenu(action,arg1,arg2,arg3){
+    if (action === 'create'){
+        let content = arg1 ? (typeof arg1 === 'string' ? $(`#${arg1}`) : arg1) : $(`#content`);
+        clearElement(content);
+        content.addClass('flex');
+        let mainContent = $(`<div id="mainContent"></div>`);
+        let sideContent = $(`<div id="sideContent" class="sticky"></div>`);
+        let sideMenu = $(`<ul></ul>`);
+        content.append(mainContent);
+        content.append(sideContent);
+        sideContent.append(sideMenu);
+        return mainContent;
+    }
+    else {
+        let anchor = $(`<a href="#${arg1}-${arg2}">${arg3}</a>`);
+        let li = $(`<li></li>`);
+        li.append(anchor);
+        $(`#sideContent ul`).append(li);
+        bindScroll(anchor, arg2);
+    }
+    
 }

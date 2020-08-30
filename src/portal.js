@@ -1,5 +1,5 @@
-import { global, poppers, keyMultiplier, p_on } from './vars.js';
-import { vBind, clearElement, powerCostMod, spaceCostMultiplier, messageQueue } from './functions.js';
+import { global, keyMultiplier, p_on } from './vars.js';
+import { vBind, clearElement, popover, powerCostMod, spaceCostMultiplier, messageQueue } from './functions.js';
 import { traits } from './races.js';
 import { armyRating } from './civics.js';
 import { payCosts, setAction } from './actions.js';
@@ -290,7 +290,7 @@ const fortressModules = {
             cost: {
                 Money(){ return 10000000; },
                 HellArmy(){
-                    return Math.round(650 / armyRating(1,'army'));
+                    return Math.round(650 / armyRating(1,'hellArmy'));
                 },
                 Cement(){ return 10000000; },
                 Adamantite(){ return 1250000; },
@@ -415,7 +415,7 @@ const fortressModules = {
 };
 
 function soulForgeSoldiers(){
-    let soldiers = Math.round(650 / armyRating(1,'army'));
+    let soldiers = Math.round(650 / armyRating(1,'hellArmy'));
     if (p_on['gun_emplacement']){
         soldiers -= p_on['gun_emplacement'] * (global.tech.hell_gun >= 2 ? 2 : 1);
         if (soldiers < 0){
@@ -441,7 +441,6 @@ export function renderFortress(){
         let show = region.replace("prtl_","");
         if (global.settings.portal[`${show}`]){
             let name = typeof fortressModules[region].info.name === 'string' ? fortressModules[region].info.name : fortressModules[region].info.name();
-            let desc = typeof fortressModules[region].info.desc === 'string' ? fortressModules[region].info.desc : fortressModules[region].info.desc();
             
             if (fortressModules[region].info['support']){
                 let support = fortressModules[region].info['support'];
@@ -454,22 +453,15 @@ export function renderFortress(){
             else {
                 parent.append(`<div id="${region}" class="space"><div><h3 class="name has-text-warning">${name}</h3></div></div>`);
             }
-            
-            $(`#${region} h3.name`).on('mouseover',function(){
-                var popper = $(`<div id="pop${region}" class="popper has-background-light has-text-dark"></div>`);
-                $('#main').append(popper);
-                
-                popper.append($(`<div>${desc}</div>`));
-                popper.show();
-                poppers[region] = new Popper($(`#${region} h3.name`),popper);
-            });
-            $(`#${region} h3.name`).on('mouseout',function(){
-                $(`#pop${region}`).hide();
-                if (poppers[region]){
-                    poppers[region].destroy();
+
+            popover(region, function(){
+                    return typeof fortressModules[region].info.desc === 'string' ? fortressModules[region].info.desc : fortressModules[region].info.desc();
+                },
+                {
+                    elm: `#${region} h3.name`,
+                    classes: `has-background-light has-text-dark`
                 }
-                clearElement($(`#pop${region}`),true);
-            });
+            );
 
             if (region === 'prtl_fortress'){
                 buildFortress(parent,true);
@@ -783,7 +775,7 @@ function fortressDefenseRating(v){
         army += global.tech['hdroid'] ? droids * 2 : droids;
     }
     let turret = global.tech['turret'] ? (global.tech['turret'] >= 2 ? 70 : 50) : 35;
-    return Math.round(armyRating(army,'army',wounded)) + (p_on['turret'] ? p_on['turret'] * turret : 0);
+    return Math.round(armyRating(army,'hellArmy',wounded)) + (p_on['turret'] ? p_on['turret'] * turret : 0);
 }
 
 function casualties(demons,pat_armor,ambush){
@@ -901,7 +893,7 @@ export function bloodwar(){
                 pat_size += global.tech['hdroid'] ? 2 : 1;
                 terminators--;
             }
-            let pat_rating = Math.round(armyRating(pat_size,'army',hurt));
+            let pat_rating = Math.round(armyRating(pat_size,'hellArmy',hurt));
 
             let demons = Math.rand(Math.floor(global.portal.fortress.threat / 50), Math.floor(global.portal.fortress.threat / 10));
 

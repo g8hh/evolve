@@ -453,7 +453,7 @@ if (convertVersion(global['version']) < 9009){
 
 if (convertVersion(global['version']) < 9010){
     ['species', 'gods', 'old_gods'].forEach(field => {
-      if (global.race[field] === 'orge') { global.race[field] = 'ogre'; } // prior to 0.9.10 this was misspelled in the codebase
+        if (global.race[field] === 'orge') { global.race[field] = 'ogre'; } // prior to 0.9.10 this was misspelled in the codebase
     })
     if (global.stats.hasOwnProperty('achieve') && global.stats.achieve.hasOwnProperty('extinct_orge')){
         global.stats.achieve['extinct_ogre'] = global.stats.achieve['extinct_orge'];
@@ -468,7 +468,20 @@ if (convertVersion(global['version']) < 9010){
     }
 }
 
-global['version'] = '0.9.12';
+if (convertVersion(global['version']) < 9014){
+    ['seraph', 'unicorn', 'custom'].forEach(field => {
+        if (global.race.species === field) {
+            if ((field === 'custom' && global.hasOwnProperty('custom') && global.custom.race0.genus === 'angelic') || field !== 'custom'){
+                global.race['holy'] = 1;
+            }
+        }
+    });
+    if (global.hasOwnProperty('arpa') && global.arpa.hasOwnProperty('sequence')){
+        global.arpa.sequence['labs'] = 0;
+    }
+}
+
+global['version'] = '0.9.18';
 delete global['beta'];
 
 if (global.civic['cement_worker'] && global.civic.cement_worker.impact === 0.25){

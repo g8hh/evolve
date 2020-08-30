@@ -1,6 +1,6 @@
 import { global, poppers, clearStates, save, keyMultiplier, sizeApproximation } from './vars.js';
 import { loc } from './locale.js';
-import { calcPrestige, clearElement, vBind, modRes, messageQueue, genCivName, darkEffect, easterEgg } from './functions.js';
+import { calcPrestige, clearElement, popover, vBind, modRes, messageQueue, genCivName, darkEffect, easterEgg } from './functions.js';
 import { unlockAchieve, unlockFeat, checkAchievements } from './achieve.js';
 import { races, racialTrait, traits, planetTraits } from './races.js';
 import { loadIndustry } from './industry.js';
@@ -152,21 +152,17 @@ function government(govern){
         }
     });
 
-    $('#govLabel').on('mouseover',function(){
-        let effect_type = global.tech['unify'] && global.tech['unify'] >= 2 && global.civic.govern.type === 'federation' ? 'federation_alt' : global.civic.govern.type;
-        if (effect_type === 'theocracy' && global.genes['ancients'] && global.genes['ancients'] >= 2 && global.civic.priest.display){
-            effect_type = 'theocracy_alt';
+    popover('govLabel', function(){
+            let effect_type = global.tech['unify'] && global.tech['unify'] >= 2 && global.civic.govern.type === 'federation' ? 'federation_alt' : global.civic.govern.type;
+            if (effect_type === 'theocracy' && global.genes['ancients'] && global.genes['ancients'] >= 2 && global.civic.priest.display){
+                effect_type = 'theocracy_alt';
+            }
+            return $(`<div>${loc(`govern_${global.civic.govern.type}_desc`)}</div><div class="has-text-advanced">${government_desc[effect_type]}</div>`);
+        },
+        {
+            classes: `has-background-light has-text-dark`
         }
-        let popper = $(`<div id="popGov" class="popper has-background-light has-text-dark"><div>${loc(`govern_${global.civic.govern.type}_desc`)}</div><div class="has-text-advanced">${government_desc[effect_type]}</div></div>`);
-        $('#main').append(popper);
-        popper.show();
-        poppers['govPop'] = new Popper($('#govLabel'),popper);
-    });
-    $('#govLabel').on('mouseout',function(){
-        $('#popGov').hide();
-        poppers['govPop'].destroy();
-        clearElement($(`#popGov`),true);
-    });
+    );
 }
 
 function drawGovModal(){
@@ -241,37 +237,34 @@ function drawGovModal(){
                     global.civic.govern.rev = time + global.civic.govern.fr;
                     vBind({el: '#govModal'},'destroy');
                     $('.modal-background').click();
-                    $('#popGov').hide();
-                    poppers['govPop'].destroy();
-                    clearElement($(`#popGov`),true);
+                    $('#popGovPop').hide();
+                    poppers['govGovPop'].destroy();
+                    clearElement($(`#popGovPop`),true);
 
                     setTimeout(function(){
-                        $('#popGov').hide();
-                        poppers['govPop'].destroy();
-                        clearElement($(`#popGov`),true);
+                        $('#popGovPop').hide();
+                        poppers['govGovPop'].destroy();
+                        clearElement($(`#popGovPop`),true);
                     },250);
                 }
             }
         }
     });
 
-    $('#govModal button').on('mouseover',function(){
-        let govType = $(this).data('gov');
-        let effectType = global.tech['unify'] && global.tech['unify'] >= 2 && govType === 'federation' ? 'federation_alt' : govType;
-        if (effectType === 'theocracy' && global.genes['ancients'] && global.genes['ancients'] >= 2 && global.civic.priest.display){
-            effectType = 'theocracy_alt';
+    popover('GovPop', function(obj){
+            let govType = $(obj.this).data('gov');
+            let effectType = global.tech['unify'] && global.tech['unify'] >= 2 && govType === 'federation' ? 'federation_alt' : govType;
+            if (effectType === 'theocracy' && global.genes['ancients'] && global.genes['ancients'] >= 2 && global.civic.priest.display){
+                effectType = 'theocracy_alt';
+            }
+            return $(`<div>${loc(`govern_${govType}_desc`)}</div><div class="has-text-advanced">${government_desc[effectType]}</div>`);
+        },
+        {
+            elm: `#govModal button`,
+            self: true,
+            classes: `has-background-light has-text-dark`
         }
-        var popper = $(`<div id="popGov" class="popper has-background-light has-text-dark"><div>${loc(`govern_${govType}_desc`)}</div><div class="has-text-advanced">${government_desc[effectType]}</div></div>`);
-        $('#main').append(popper);
-        popper.show();
-        poppers['govPop'] = new Popper(this,popper);
-        window.pop = poppers['govPop'];
-    });
-    $('#govModal button').on('mouseout',function(){
-        $('#popGov').hide();
-        poppers['govPop'].destroy();
-        clearElement($(`#popGov`),true);
-    });
+    );
 }
 
 export function foreignGov(){
@@ -519,14 +512,14 @@ function drawEspModal(gov){
                     global.civic.foreign[`gov${g}`].act = 'influence';
                     vBind({el: '#espModal'},'destroy');
                     $('.modal-background').click();
-                    $('#popGov').hide();
-                    poppers['govPop'].destroy();
-                    clearElement($(`#popGov`),true);
+                    $('#popGovLabel').hide();
+                    poppers['GovLabel'].destroy();
+                    $('#popGovLabel').remove();
 
                     setTimeout(function(){
-                        $('#popGov').hide();
-                        poppers['govPop'].destroy();
-                        clearElement($(`#popGov`),true);
+                        $('#popGovLabel').hide();
+                        poppers['GovLabel'].destroy();
+                        $('#popGovLabel').remove();
                     },250);
                 }
             },
@@ -538,13 +531,14 @@ function drawEspModal(gov){
                     vBind({el: '#espModal'},'destroy');
                     $('.modal-background').click();
                     $('#popGov').hide();
-                    poppers['govPop'].destroy();
-                    clearElement($(`#popGov`),true);
+                    $('#popGovLabel').hide();
+                    poppers['GovLabel'].destroy();
+                    $('#popGovLabel').remove();
 
                     setTimeout(function(){
-                        $('#popGov').hide();
-                        poppers['govPop'].destroy();
-                        clearElement($(`#popGov`),true);
+                        $('#popGovLabel').hide();
+                        poppers['GovLabel'].destroy();
+                        $('#popGovLabel').remove();
                     },250);
                 }
             },
@@ -555,14 +549,14 @@ function drawEspModal(gov){
                     global.civic.foreign[`gov${g}`].act = 'incite';
                     vBind({el: '#espModal'},'destroy');
                     $('.modal-background').click();
-                    $('#popGov').hide();
-                    poppers['govPop'].destroy();
-                    clearElement($(`#popGov`),true);
+                    $('#popGovLabel').hide();
+                    poppers['GovLabel'].destroy();
+                    $('#popGovLabel').remove();
 
                     setTimeout(function(){
-                        $('#popGov').hide();
-                        poppers['govPop'].destroy();
-                        clearElement($(`#popGov`),true);
+                        $('#popGovLabel').hide();
+                        poppers['GovLabel'].destroy();
+                        $('#popGovLabel').remove();
                     },250);
                 }
             },
@@ -574,14 +568,14 @@ function drawEspModal(gov){
                         global.civic.foreign[`gov${g}`].act = 'annex';
                         vBind({el: '#espModal'},'destroy');
                         $('.modal-background').click();
-                        $('#popGov').hide();
-                        poppers['govPop'].destroy();
-                        $('#popGov').remove();
+                        $('#popGovLabel').hide();
+                        poppers['GovLabel'].destroy();
+                        $('#popGovLabel').remove();
 
                         setTimeout(function(){
-                            $('#popGov').hide();
-                            poppers['govPop'].destroy();
-                            $('#popGov').remove();
+                            $('#popGovLabel').hide();
+                            poppers['GovLabel'].destroy();
+                            $('#popGovLabel').remove();
                         },250);
                     }
                 }
@@ -596,14 +590,14 @@ function drawEspModal(gov){
                         global.civic.foreign[`gov${g}`].act = 'purchase';
                         vBind({el: '#espModal'},'destroy');
                         $('.modal-background').click();
-                        $('#popGov').hide();
-                        poppers['govPop'].destroy();
-                        $('#popGov').remove();
+                        $('#popGovLabel').hide();
+                        poppers['GovLabel'].destroy();
+                        $('#popGovLabel').remove();
 
                         setTimeout(function(){
-                            $('#popGov').hide();
-                            poppers['govPop'].destroy();
-                            $('#popGov').remove();
+                            $('#popGovLabel').hide();
+                            poppers['GovLabel'].destroy();
+                            $('#popGovLabel').remove();
                         },250);
                     }
                 }
@@ -611,47 +605,42 @@ function drawEspModal(gov){
         }
     });
 
-    $('#espModal button').on('mouseover',function(){
-        let esp = $(this).data('esp');
-        let desc = '';
-        if (esp === 'purchase'){
-            let price = govPrice(gov);
-            desc = loc(`civics_spy_${esp}_desc`,[govTitle(gov),price])
-        }
-        else if (esp === 'annex'){
-            if (global.city.morale.current >= (200 + global.civic.foreign[`gov${gov}`].hstl - global.civic.foreign[`gov${gov}`].unrest)){
-                desc = loc(`civics_spy_${esp}_desc`,[govTitle(gov)]);
+    popover('GovLabel', function(obj){
+            let esp = $(obj.this).data('esp');
+            let desc = '';
+            if (esp === 'purchase'){
+                let price = govPrice(gov);
+                desc = loc(`civics_spy_${esp}_desc`,[govTitle(gov),price])
+            }
+            else if (esp === 'annex'){
+                if (global.city.morale.current >= (200 + global.civic.foreign[`gov${gov}`].hstl - global.civic.foreign[`gov${gov}`].unrest)){
+                    desc = loc(`civics_spy_${esp}_desc`,[govTitle(gov)]);
+                }
+                else {
+                    let morale = 200 + global.civic.foreign[`gov${gov}`].hstl - global.civic.foreign[`gov${gov}`].unrest
+                    desc = loc(`civics_spy_${esp}_goal`,[govTitle(gov),morale]);
+                }
             }
             else {
-                let morale = 200 + global.civic.foreign[`gov${gov}`].hstl - global.civic.foreign[`gov${gov}`].unrest
-                desc = loc(`civics_spy_${esp}_goal`,[govTitle(gov),morale]);
+                desc = loc(`civics_spy_${esp}_desc`,[govTitle(gov)]);
             }
+            
+            let warn = '';
+            if (
+                (esp === 'influence' && global.civic.foreign[`gov${gov}`].hstl === 0) || 
+                (esp === 'sabotage' && global.civic.foreign[`gov${gov}`].spy >= 2 && global.civic.foreign[`gov${gov}`].mil === 50) || 
+                (esp === 'incite' && global.civic.foreign[`gov${gov}`].spy >= 4 && global.civic.foreign[`gov${gov}`].unrest === 100)
+            ){
+                warn = `<div class="has-text-danger">${loc(`civics_spy_warning`)}</div>`;
+            }
+            return $(`${warn}<div>${desc}</div>`);
+        },
+        {
+            elm: `#espModal button`,
+            self: true,
+            classes: `has-background-light has-text-dark`
         }
-        else {
-            desc = loc(`civics_spy_${esp}_desc`,[govTitle(gov)]);
-        }
-        
-        let warn = '';
-        if (
-            (esp === 'influence' && global.civic.foreign[`gov${gov}`].hstl === 0) || 
-            (esp === 'sabotage' && global.civic.foreign[`gov${gov}`].spy >= 2 && global.civic.foreign[`gov${gov}`].mil === 50) || 
-            (esp === 'incite' && global.civic.foreign[`gov${gov}`].spy >= 4 && global.civic.foreign[`gov${gov}`].unrest === 100)
-        ){
-            warn = `<div class="has-text-danger">${loc(`civics_spy_warning`)}</div>`;
-        }
-
-        var popper = $(`<div id="popGov" class="popper has-background-light has-text-dark">${warn}<div>${desc}</div></div>`);
-
-        $('#main').append(popper);
-        popper.show();
-        poppers['govPop'] = new Popper(this,popper);
-        window.pop = poppers['govPop'];
-    });
-    $('#espModal button').on('mouseout',function(){
-        $('#popGov').hide();
-        poppers['govPop'].destroy();
-        clearElement($(`#popGov`),true);
-    });
+    );
 }
 
 function taxRates(govern){
@@ -728,17 +717,13 @@ function taxRates(govern){
         }
     });
     
-    $('#taxRateLabel').on('mouseover',function(){
-            var popper = $(`<div id="popTaxRate" class="popper has-background-light has-text-dark">${loc('civics_tax_rates_desc')}</div>`);
-            $('#main').append(popper);
-            popper.show();
-            poppers['popTaxRate'] = new Popper($('#taxRateLabel'),popper);
-        });
-    $('#taxRateLabel').on('mouseout',function(){
-            $('#popTaxRate').hide();
-            poppers['popTaxRate'].destroy();
-            clearElement($(`#popTaxRate`),true);
-        });
+    popover('taxRateLabel', function(){
+            return loc('civics_tax_rates_desc');
+        },
+        {
+            classes: `has-background-light has-text-dark`
+        }
+    );
 }
 
 export function buildGarrison(garrison,full){
@@ -1621,7 +1606,7 @@ export function armyRating(val,type,wound){
 
     let weapon_tech = global.tech['military'] && global.tech.military >= 5 ? global.tech.military - 1 : global.tech.military;
     let army = global.tech['military'] ? (val - (wounded / 2)) * weapon_tech : (val - (wounded / 2));
-    if (type === 'army'){
+    if (type === 'army' || type === 'hellArmy'){
         if (global.race['puny']){
             army *= 0.9;
         }
@@ -1651,6 +1636,9 @@ export function armyRating(val,type,wound){
         }
         if (global.tech['fanaticism'] && global.tech['fanaticism'] >= 4){
             army *= 1 + (global.city.temple.count * 0.01);
+        }
+        if (global.race['holy'] && type === 'hellArmy'){
+            army *= 1 - (traits.holy.vars[0] / 100);
         }
         if (global.city.ptrait === 'rage'){
             army *= planetTraits.rage.vars[0];

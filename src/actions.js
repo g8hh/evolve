@@ -1,6 +1,6 @@
 import { global, save, poppers, webWorker, keyMultiplier, clearStates, keyMap, srSpeak, sizeApproximation, p_on, moon_on, gal_on, quantum_level } from './vars.js';
 import { loc } from './locale.js';
-import { timeCheck, timeFormat, vBind, clearElement, costMultiplier, genCivName, powerModifier, powerCostMod, calcPrestige, adjustCosts, modRes, messageQueue, buildQueue, format_emblem, calc_mastery, calcGenomeScore, getEaster, easterEgg } from './functions.js';
+import { timeCheck, timeFormat, vBind, popover, clearElement, costMultiplier, genCivName, powerModifier, powerCostMod, calcPrestige, adjustCosts, modRes, messageQueue, buildQueue, format_emblem, calc_mastery, calcGenomeScore, getEaster, easterEgg } from './functions.js';
 import { unlockAchieve, unlockFeat, drawAchieve, checkAchievements } from './achieve.js';
 import { races, traits, genus_traits, randomMinorTrait, cleanAddTrait, biomes, planetTraits } from './races.js';
 import { defineResources, loadMarket, galacticTrade, spatialReasoning, resource_values, atomic_mass } from './resources.js';
@@ -2723,16 +2723,16 @@ export const actions = {
                             if (global.tech['sacrifice']){
                                 switch (global.tech['sacrifice']){
                                     case 1:
-                                        low = 900;
-                                        high = 1800;
+                                        low = 600;
+                                        high = 1500;
                                         break;
                                     case 2:
                                         low = 1800;
                                         high = 3600;
                                         break;
                                     case 3:
-                                        low = 3600;
-                                        high = 7200;
+                                        low = 5400;
+                                        high = 16200;
                                         break;
                                 }
                             }
@@ -4692,7 +4692,7 @@ export const actions = {
             },
             cost: {
                 Food(){ return global.race['evil'] ? 0 : 10; },
-                Lumber(){ return global.race['evil'] ? 10 : 0; },
+                Lumber(){ return global.race['evil'] ? 10 : 0; }
             },
             action(){
                 if (payCosts($(this)[0].cost)){
@@ -4718,7 +4718,7 @@ export const actions = {
                 return global.race.species === 'wendigo' ? true : false;
             },
             cost: {
-                Lumber(){ return 10; },
+                Lumber(){ return 10; }
             },
             action(){
                 if (payCosts($(this)[0].cost)){
@@ -7286,6 +7286,7 @@ export const actions = {
             title: loc('tech_wharf'),
             desc: loc('tech_wharf_desc'),
             category: 'market',
+            era: 'industrialized',
             reqs: { trade: 1, high_tech: 3, oil: 1 },
             not_trait: ['thalassophobia'],
             grant: ['wharf',1],
@@ -8187,6 +8188,9 @@ export const actions = {
                     let tech = $(this)[0].grant[0];
                     global.tech[tech] = $(this)[0].grant[1];
                     global.settings.arpa.genetics = true;
+                    if (global.race['cataclysm']){
+                        global.arpa.sequence.on = false;
+                    }
                     arpa('Genetics');
                     return true;
                 }
@@ -10072,7 +10076,7 @@ export const actions = {
             title: loc('tech_ancient_infusion'),
             desc: loc('tech_ancient_infusion'),
             category: 'sacrifice',
-            era: 'globalized',
+            era: 'early_space',
             reqs: { sacrifice: 2, theology: 4 },
             grant: ['sacrifice',3],
             trait: ['cannibalize'],
@@ -10710,6 +10714,7 @@ export const actions = {
             effect: loc('tech_mad_effect'),
             action(){
                 if (payCosts($(this)[0].cost)){
+                    messageQueue(loc('tech_mad_info'),'info');
                     global.civic.mad.display = true;
                     return true;
                 }
@@ -11492,7 +11497,7 @@ export const actions = {
             }
         },
         exotic_lab: {
-            id: 'tech-energy_lab',
+            id: 'tech-exotic_lab',
             title: loc('tech_exotic_lab'),
             desc: loc('tech_exotic_lab_desc'),
             category: 'science',
@@ -12160,7 +12165,7 @@ export const actions = {
             desc: loc('tech_genesis'),
             category: 'special',
             era: 'deep_space',
-            reqs: { genesis: 1 },
+            reqs: { high_tech: 10, genesis: 1 },
             grant: ['genesis',2],
             cost: {
                 Knowledge(){ return 350000; }
@@ -12571,7 +12576,7 @@ export const actions = {
             action(){
                 if (payCosts($(this)[0].cost)){
                     global.interstellar.stellar_engine.mass += (atomic_mass.Neutronium * 20000 / 10000000000);
-                    global.interstellar.stellar_engine.mass += global.interstellar.stellar_engine.exotic * 25;
+                    global.interstellar.stellar_engine.mass += global.interstellar.stellar_engine.exotic * 40;
                     global.interstellar.stellar_engine.exotic = 0;
                     delete global.tech['whitehole'];
                     return true;
@@ -12656,7 +12661,7 @@ export const actions = {
             }
         },
         fortifications: {
-            id: 'tech-fort',
+            id: 'tech-fortifications',
             title: loc('tech_fort'),
             desc: loc('tech_fort_desc'),
             category: 'hell_dimension',
@@ -13964,10 +13969,15 @@ export function drawCity(){
 export function drawTech(){
     let techs = {};
     let old_techs = {};
-    let new_techs = [];
+    let new_techs = {};
     let tech_categories = [];
     let old_categories = [];
     let all_categories = [];
+
+    ['primitive','civilized','discovery','industrialized','globalized','early_space','deep_space','interstellar','intergalactic'].forEach(function (era){
+        new_techs[era] = [];
+    });
+
     Object.keys(actions.tech).forEach(function (tech_name){
         removeAction(actions.tech[tech_name].id);
 
@@ -14006,23 +14016,33 @@ export function drawTech(){
                 techs[category] = [];
             }
 
-            new_techs.push(tech_name);
+            if (!new_techs.hasOwnProperty(c_action.era)){
+                new_techs[c_action.era] = [];
+            }
+
+            new_techs[c_action.era].push(tech_name);
         }
     });
 
-	new_techs.sort(function(a, b) {
-		if(actions.tech[a].cost.Knowledge == undefined){
-			return -1;
-		}
-		if(actions.tech[b].cost.Knowledge == undefined){
-			return 1;
-		}
-		return actions.tech[a].cost.Knowledge() > actions.tech[b].cost.Knowledge() ? 1 : -1;
-	});
-    new_techs.forEach(function(tech_name) {
-        addAction('tech', tech_name);
-    });
+    clearElement($(`#tech`));
+    Object.keys(new_techs).forEach(function (era){
+        if (new_techs[era].length > 0){
+            $(`#tech`).append(`<div><h3 class="name has-text-warning">${loc(`tech_era_${era}`)}</h3></div>`);
 
+            new_techs[era].sort(function(a, b){
+                if(actions.tech[a].cost.Knowledge == undefined){
+                    return -1;
+                }
+                if(actions.tech[b].cost.Knowledge == undefined){
+                    return 1;
+                }
+                return actions.tech[a].cost.Knowledge() > actions.tech[b].cost.Knowledge() ? 1 : -1;
+            });
+            new_techs[era].forEach(function(tech_name){
+                addAction('tech', tech_name);
+            });
+        }
+    });
 
     all_categories.forEach(function(category){
         clearElement($(`#tech-dist-${category}`),true);
@@ -14384,23 +14404,17 @@ export function setAction(c_action,action,type,old){
             }
         }
     });
-    let pop_target = action === 'starDock' ? 'body .modal' : '#main';
-    $('#'+id).on('mouseover',function(){
-            let wide = c_action['wide'] ? ' wide' : '';
-            var popper = $(`<div id="pop${id}" class="popper${wide} has-background-light has-text-dark pop-desc"></div>`);
-            $(pop_target).append(popper);
-            actionDesc(popper,c_action,global[action][type],old);
-            popper.show();
-            poppers[id] = new Popper($('#'+id),popper);
-        });
-    $('#'+id).on('mouseout',function(){
-            $(`#pop${id}`).hide();
+
+    popover(id,function(){ return undefined; },{
+        in: function(obj){
+            actionDesc(obj.popper,c_action,global[action][type],old);
+        },
+        out: function(){
             vBind({el: `#popTimer`},'destroy');
-            if (poppers[id]){
-                poppers[id].destroy();
-            }
-            clearElement($(`#pop${id}`),true);
-        });
+        },
+        attach: action === 'starDock' ? 'body .modal' : '#main',
+        wide: c_action['wide']
+    });
 }
 
 export function setPlanet(hell){
@@ -14556,67 +14570,58 @@ export function setPlanet(hell){
         addAction('evolution','rna');
     });
 
-    $('#'+id).on('mouseover',function(){
-            var popper = $(`<div id="pop${id}" class="popper has-background-light has-text-dark"></div>`);
-            $('#main').append(popper);
+    popover(id,function(obj){
+        obj.popper.append($(`<div>${loc('set_planet',[title,biomes[biome].label,orbit])}</div>`));
+        obj.popper.append($(`<div>${biomes[biome].desc}</div>`));
+        if (trait !== 'none'){
+            obj.popper.append($(`<div>${planetTraits[trait].desc}</div>`));
+        }
 
-            popper.append($(`<div>${loc('set_planet',[title,biomes[biome].label,orbit])}</div>`));
-            popper.append($(`<div>${biomes[biome].desc}</div>`));
-            if (trait !== 'none'){
-                popper.append($(`<div>${planetTraits[trait].desc}</div>`));
-            }
-
-            let good = $('<div></div>');
-            let bad = $('<div></div>');
-            let goodCnt = 0;
-            let badCnt = 0;
-            let numShow = global.stats.achieve['miners_dream'] ? global.stats.achieve['miners_dream'].l >= 4 ? global.stats.achieve['miners_dream'].l * 2 - 3 : global.stats.achieve['miners_dream'].l : 0;
-            for (let key in geology){
-                if (key !== 0){
-                    if (geology[key] > 0) {
-                        goodCnt++;
-                        if (goodCnt === 1) {
-                            good.append($(`<div>${loc('set_planet_extra_rich')}</div>`));
-                        }
-                        let res_val = `<div class="has-text-advanced">${loc(`resource_${key}_name`)}`;
-                        if (numShow > 0) {
-                            res_val += `: <span class="has-text-success">+${Math.round((geology[key] + 1) * 100 - 100)}%</span>`;
-                            numShow--;
-                        }
-                        res_val += `</div>`;
-                        good.append(res_val);
+        let good = $('<div></div>');
+        let bad = $('<div></div>');
+        let goodCnt = 0;
+        let badCnt = 0;
+        let numShow = global.stats.achieve['miners_dream'] ? global.stats.achieve['miners_dream'].l >= 4 ? global.stats.achieve['miners_dream'].l * 2 - 3 : global.stats.achieve['miners_dream'].l : 0;
+        for (let key in geology){
+            if (key !== 0){
+                if (geology[key] > 0) {
+                    goodCnt++;
+                    if (goodCnt === 1) {
+                        good.append($(`<div>${loc('set_planet_extra_rich')}</div>`));
                     }
-                    else if (geology[key] < 0){
-                        badCnt++;
-                        if (badCnt === 1) {
-                            bad.append($(`<div>${loc('set_planet_extra_poor')}</div>`));
-                        }
-                        let res_val = `<div class="has-text-caution">${loc(`resource_${key}_name`)}`;
-                        if (numShow > 0) {
-                            res_val += `: <span class="has-text-danger">${Math.round((geology[key] + 1) * 100 - 100)}%</span>`;
-                            numShow--;
-                        }
-                        res_val += `</div>`;
-                        bad.append(res_val);
+                    let res_val = `<div class="has-text-advanced">${loc(`resource_${key}_name`)}`;
+                    if (numShow > 0) {
+                        res_val += `: <span class="has-text-success">+${Math.round((geology[key] + 1) * 100 - 100)}%</span>`;
+                        numShow--;
                     }
+                    res_val += `</div>`;
+                    good.append(res_val);
+                }
+                else if (geology[key] < 0){
+                    badCnt++;
+                    if (badCnt === 1) {
+                        bad.append($(`<div>${loc('set_planet_extra_poor')}</div>`));
+                    }
+                    let res_val = `<div class="has-text-caution">${loc(`resource_${key}_name`)}`;
+                    if (numShow > 0) {
+                        res_val += `: <span class="has-text-danger">${Math.round((geology[key] + 1) * 100 - 100)}%</span>`;
+                        numShow--;
+                    }
+                    res_val += `</div>`;
+                    bad.append(res_val);
                 }
             }
-            if (badCnt > 0){
-                good.append(bad);
-            }
-            if (goodCnt > 0 || badCnt > 0) {
-                popper.append(good);
-            }
-            popper.show();
-            poppers[id] = new Popper($('#'+id),popper);
-        });
-    $('#'+id).on('mouseout',function(){
-            $(`#pop${id}`).hide();
-            if (poppers[id]){
-                poppers[id].destroy();
-            }
-            clearElement($(`#pop${id}`),true);
-        });
+        }
+        if (badCnt > 0){
+            good.append(bad);
+        }
+        if (goodCnt > 0 || badCnt > 0) {
+            obj.popper.append(good);
+        }
+        return undefined;
+    },{
+        classes: `has-background-light has-text-dark`
+    });
     return biome === 'eden' ? 'hellscape' : biome;
 }
 
@@ -14798,6 +14803,9 @@ export function actionDesc(parent,c_action,obj,old){
         parent.addClass('flair');
     }
     if (!old && !checkAffordable(c_action) && checkAffordable(c_action,true)){
+        if (typeof obj === 'string' && obj === 'notimer'){
+            return;
+        }
         if (obj && obj['time']){
             parent.append($(`<div id="popTimer" class="flair has-text-advanced">{{ time | timer }}</div>`));
             vBind({
@@ -15782,7 +15790,6 @@ export function resDragQueue(){
 
 function attachQueuePopovers(){
     for (let i=0; i<global.r_queue.queue.length; i++){
-        let pop_target = '#main';
         let id = `rq${global.r_queue.queue[i].id}`;
         cleanTechPopOver(id);
 
@@ -15790,16 +15797,14 @@ function attachQueuePopovers(){
         let segments = global.r_queue.queue[i].id.split("-");
         c_action = actions[segments[0]][segments[1]];
 
-        $('#'+id).on('mouseover',function(){
-            let wide = c_action['wide'] ? ' wide' : '';
-            var popper = $(`<div id="pop${id}" class="popper${wide} has-background-light has-text-dark pop-desc"></div>`);
-            $(pop_target).append(popper);
-            actionDesc(popper,c_action,global[segments[0]][segments[1]],false);
-            popper.show();
-            poppers[id] = new Popper($('#'+id),popper);
-        });
-        $('#'+id).on('mouseout',function(){
-            cleanTechPopOver(id);
+        popover(id,function(){ return undefined; },{
+            in: function(obj){
+                actionDesc(obj.popper,c_action,global[segments[0]][segments[1]],false);
+            },
+            out: function(){
+                cleanTechPopOver(id);
+            },
+            wide: c_action['wide']
         });
     }
 

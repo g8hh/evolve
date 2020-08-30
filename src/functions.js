@@ -160,22 +160,45 @@ export function mainVue(){
     });
 }
 
-export function popover(id,content,is_wide){
-    $('#'+id).on('mouseover',function(){
-        let wide = is_wide ? ' wide' : '';
-        var popper = $(`<div id="pop${id}" class="popper${wide} has-background-light has-text-dark pop-desc"></div>`);
-        $(`#main`).append(popper);
-        popper.append(content);
-        popper.show();
-        poppers[id] = new Popper($('#'+id),popper);
-    });
-    $('#'+id).on('mouseout',function(){
-        $(`#pop${id}`).hide();
-        if (poppers[id]){
-            poppers[id].destroy();
-        }
-        clearElement($(`#pop${id}`),true);
-    });
+export function popover(id,content,opts){
+    if (!opts){ opts = {}; }
+    if (!opts.hasOwnProperty('elm')){ opts['elm'] = '#'+id; }
+    if (!opts.hasOwnProperty('bind')){ opts['bind'] = true; }
+    if (!opts.hasOwnProperty('unbind')){ opts['unbind'] = true; }
+    if (opts['bind']){
+        $(opts.elm).on('mouseover',function(){
+            let wide = opts['wide'] ? ' wide' : '';
+            let classes = opts['classes'] ? opts['classes'] : `has-background-light has-text-dark pop-desc`;
+            var popper = $(`<div id="pop${id}" class="popper${wide} ${classes}"></div>`);
+            if (opts['attach']){
+                $(opts['attach']).append(popper);
+            }
+            else {
+                $(`#main`).append(popper);
+            }
+            if (content){
+                popper.append(typeof content === 'function' ? content({ this: this, popper: popper }) : content);
+            }
+            popper.show();
+            poppers[id] = new Popper(opts['self'] ? this : $(opts.elm),popper);
+            if (opts.hasOwnProperty('in') && typeof opts['in'] === 'function'){
+                opts['in']({ this: this, popper: popper });
+            }
+        });
+    }
+    if (opts['unbind']){
+        $(opts.elm).on('mouseout',function(){
+            $(`#pop${id}`).hide();
+            if (poppers[id]){
+                poppers[id].destroy();
+                delete poppers[id];
+            }
+            clearElement($(`#pop${id}`),true);
+            if (opts.hasOwnProperty('out') && typeof opts['out'] === 'function'){
+                opts['out']({ this: this, popper: $(`#pop${id}`)});
+            }
+        });
+    }
 }
 
 window.exportGame = function exportGame(){
@@ -324,6 +347,7 @@ function attachQueuePopovers(){
             if (pop_lock !== id){
                 cleanBuildPopOver(pop_lock);
                 let wide = segments[0].substring(0,4) !== 'arpa' && c_action['wide'] ? ' wide' : '';
+
                 var popper = $(`<div id="pop${id}" class="popper${wide} has-background-light has-text-dark pop-desc"></div>`);
                 $(pop_target).append(popper);
                 if (segments[0].substring(0,4) === 'arpa'){
@@ -597,37 +621,40 @@ export function timeCheck(c_action,track,detailed){
     }
 }
 
-export function arpaSegmentTimeCheck(project, remain, track){
+// This function returns the time to complete all remaining Arpa segments.
+// Note: remain is a fraction between 0 and 1 representing the fraction of
+// remaining arpa segments to be completed
+export function arpaTimeCheck(project, remain, track){
     let costs = arpaAdjustCosts(project.cost);
-    let time = 0;
+    let allRemainingSegmentsTime = 0;
     Object.keys(costs).forEach(function (res){
-        let testCost = Number(costs[res]()) / 100;
-        if (testCost > 0){
+        let allRemainingSegmentsCost = Number(costs[res]()) * remain;
+        if (allRemainingSegmentsCost > 0){
             let res_have = Number(global.resource[res].amount);
 
             if (track){
                 res_have += global.resource[res].diff * track.t;
                 if (track.r[res]){
-                    res_have -= Number(track.r[res]) * remain;
-                    track.r[res] += Number(track.r[res]) * remain;
+                    res_have -= Number(track.r[res]);
+                    track.r[res] += allRemainingSegmentsCost;
                 }
                 else {
-                    track.r[res] = Number(track.r[res]) * remain;
+                    track.r[res] = allRemainingSegmentsCost;
                 }
                 if (global.resource[res].max >= 0 && res_have > global.resource[res].max){
                     res_have = global.resource[res].max;
                 }
             }
 
-            if (testCost > res_have){
+            if (allRemainingSegmentsCost > res_have){
                 if (global.resource[res].diff > 0){
-                    let r_time = (testCost - res_have) / global.resource[res].diff;
-                    if (r_time > time){
-                        time = r_time;
+                    let r_time = (allRemainingSegmentsCost - res_have) / global.resource[res].diff;
+                    if (r_time > allRemainingSegmentsTime){
+                        allRemainingSegmentsTime = r_time;
                     }
                 }
                 else {
-                    time = -9999999;
+                    allRemainingSegmentsTime = -9999999;
                 }
             }
         }
@@ -639,9 +666,9 @@ export function arpaSegmentTimeCheck(project, remain, track){
         else {
             track.id[project.id]++;
         }
-        track.t += time;
+        track.t += allRemainingSegmentsTime;
     }
-    return time;
+    return allRemainingSegmentsTime
 }
 
 export function clearElement(elm,remove){
@@ -1341,6 +1368,37 @@ export function calcGenomeScore(genome){
         genes -= gene_cost;
     }
     return genes;
+}
+
+
+export function deepClone(obj){
+    //in case of premitives
+    if(obj===null || typeof obj !== "object"){
+        return obj;
+    }
+
+    //date objects should be
+    if(obj instanceof Date){
+        return new Date(obj.getTime());
+    }
+
+    //handle Array
+    if(Array.isArray(obj)){
+        var clonedArr = [];
+        obj.forEach(function(element){
+            clonedArr.push(deepClone(element))
+        });
+        return clonedArr;
+    }
+
+    //lastly, handle objects
+    let clonedObj = new obj.constructor();
+    for(var prop in obj){
+        if(obj.hasOwnProperty(prop)){
+            clonedObj[prop] = deepClone(obj[prop]);
+        }
+    } 
+    return clonedObj;
 }
 
 export function getEaster(){

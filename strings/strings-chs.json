@@ -4552,7 +4552,7 @@
   "wiki_tech_advanced_emplacement2": "每个自动炮台将灵魂锻炉所需的士兵数从减少1变为减少2。",
   "wiki_tech_req_tech": "需要前置研究：",
   "wiki_tech_req_other": "需要前置条件：",
-  "wiki_tech_req_arpa": "建造$1级%0",
+  "wiki_tech_req_arpa": "建造%1级%0",
   "wiki_tech_req_or": "%0/%1",
   "wiki_tech_req_mission": "完成%0",
   "wiki_tech_req_building": "建造一个%0",

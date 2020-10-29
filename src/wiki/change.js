@@ -3,6 +3,39 @@ import { clearElement } from './../functions.js';
 
 const changeList = [
     {
+        version: `0.9.22`,
+        date: `10/28/2020`,
+        changes: [
+            `Halloween cosmetic effects will now run for the duration of the Trick or Treat event instead of just on Halloween.`,
+            `Ents, Dryads, and Salamanders can now find all the Ghosts.`,
+            `A certain Ghost is now easier to obtain in Cataclysm.`,
+            `Accessibility improvements for the event.`
+        ]
+    },
+    {
+        version: `0.9.21`,
+        date: `10/27/2020`,
+        changes: [
+            `Trick or Treat Event, runs from 10/28 - 11/4.`,
+        ]
+    },
+    {
+        version: `0.9.20`,
+        date: `10/16/2020`,
+        changes: [
+            `Fixed bug with the holy trait that improperly applied its bonus.`,
+        ]
+    },
+    {
+        version: `0.9.19`,
+        date: `9/1/2020`,
+        changes: [
+            `Swarm Control AI now provides a base increase of +2 before unlocking Quantum Computing.`,
+            `Fixed bugs with manual crafting popover.`,
+            `Fixed bug that stopped DNA & RNA generation during evolution if the Cataclysm scenerio was toggled on.`
+        ]
+    },
+    {
         version: `0.9.18`,
         date: `8/28/2020`,
         changes: [

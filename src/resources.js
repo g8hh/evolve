@@ -1,5 +1,5 @@
 import { global, keyMultiplier, poppers, breakdown, sizeApproximation, p_on, red_on, achieve_level } from './vars.js';
-import { vBind, clearElement, modRes, calc_mastery, easterEgg, popover, harmonyEffect, darkEffect } from './functions.js';
+import { vBind, clearElement, modRes, calc_mastery, easterEgg, getHalloween, trickOrTreat, popover, harmonyEffect, darkEffect } from './functions.js';
 import { races, traits } from './races.js';
 import { loc } from './locale.js';
 
@@ -327,8 +327,8 @@ function loadResource(name,max,rate,tradable,stackable,color){
         }
     }
 
-    const date = new Date();
-    if (date.getMonth() === 9 && date.getDate() === 31){
+    let hallowed = getHalloween();
+    if (hallowed.active){
         switch(name){
             case 'Food':
                 global['resource'][name].name = loc('resource_Candy_name');
@@ -380,6 +380,7 @@ function loadResource(name,max,rate,tradable,stackable,color){
         res_container.append($('<span></span>'));
     }
     
+    let infopops = false;
     if (rate !== 0 || (max === -1 && rate === 0 && global.race['no_craft'])){
         res_container.append($(`<span id="inc${name}" class="diff" :aria-label="resRate('${name}')">{{ diff | diffSize }} /s</span>`));
     }
@@ -389,9 +390,10 @@ function loadResource(name,max,rate,tradable,stackable,color){
 
         let inc = [1,5];
         for (let i=0; i<inc.length; i++){
-            craft.append($(`<span id="inc${name}${inc[i]}" @mouseover="hover('${name}',${inc[i]})" @mouseout="unhover('${name}',${inc[i]})"><a @click="craft('${name}',${inc[i]})" aria-label="craft ${inc[i]} ${name}">+<span class="craft" data-val="${inc[i]}">${inc[i]}</span></a></span>`));
+            craft.append($(`<span id="inc${name}${inc[i]}"><a @click="craft('${name}',${inc[i]})" aria-label="craft ${inc[i]} ${name}">+<span class="craft" data-val="${inc[i]}">${inc[i]}</span></a></span>`));
         }
-        craft.append($(`<span id="inc${name}A" @mouseover="hover('${name}','A')" @mouseout="unhover('${name}','A')"><a @click="craft('${name}','A')" aria-label="craft max ${name}">+<span class="craft" data-val="${'A'}">A</span></a></span>`));
+        craft.append($(`<span id="inc${name}A"><a @click="craft('${name}','A')" aria-label="craft max ${name}">+<span class="craft" data-val="${'A'}">A</span></a></span>`));
+        infopops = true;
     }
     else {
         res_container.append($(`<span></span>`));
@@ -510,16 +512,55 @@ function loadResource(name,max,rate,tradable,stackable,color){
                 
                 popper.show();
                 popover(`inc${res}${vol}`,popper);
-            },
-            unhover(res,vol){
-                $(`#popRes${res}${vol}`).hide();
-                poppers[`r${res}${vol}`].destroy();
-                clearElement($(`#popRes${res}${vol}`),true);
             }
         }
     });
 
     breakdownPopover(`cnt${name}`,name,'c');
+
+    if (infopops){
+        let inc = [1,5,'A'];
+        for (let i=0; i<inc.length; i++){
+            popover(`inc${name}${inc[i]}`,function(){
+                let popper = $(`<div></div>`);
+                let res = name;
+                let vol = inc[i];
+                let bonus = (craftingRatio(res) * 100).toFixed(0);
+                popper.append($(`<div class="has-text-info">${loc('manual_crafting_hover_bonus',[bonus,global.resource[res].name])}</div>`));
+                
+                let craft_costs = craftCost();
+                let crafts = $(`<div><span class="has-text-success">${loc('manual_crafting_hover_craft')} </span></div>`);
+                let num_crafted = 0;
+                if (typeof vol !== 'number'){
+                    num_crafted = global.resource[craft_costs[res][0].r].amount / craft_costs[res][0].a;
+                    if (craft_costs[res].length > 1){
+                        for (let i=1; i<craft_costs[res].length; i++){
+                            let curr_max = global.resource[craft_costs[res][i].r].amount / craft_costs[res][i].a;
+                            if (curr_max < num_crafted){
+                                num_crafted = curr_max;
+                            }
+                        }
+                    }
+                    crafts.append($(`<span class="has-text-advanced">${sizeApproximation((bonus / 100) * num_crafted,1)} ${global.resource[res].name}</span>`));
+                }
+                else {
+                    num_crafted = keyMultiplier() * vol;
+                    let total_crafted = sizeApproximation((bonus / 100) * num_crafted,1);
+                    crafts.append($(`<span class="has-text-advanced"><span class="craft" data-val="${(sizeApproximation((bonus / 100) * vol))}">${total_crafted}</span> ${global.resource[res].name}</span>`));
+                }
+                let costs = $(`<div><span class="has-text-danger">${loc('manual_crafting_hover_use')} </span></div>`);
+                for (let i=0; i<craft_costs[res].length; i++){
+                    costs.append($(`<span class="craft-elm has-text-caution">${sizeApproximation(num_crafted * craft_costs[res][i].a,1)} ${global.resource[craft_costs[res][i].r].name}</span>`));
+                    if (i + 1 < craft_costs[res].length){
+                        costs.append($(`<span>, </span>`));
+                    }
+                }
+                popper.append(crafts);
+                popper.append(costs);
+                return popper;
+            });
+        }
+    }
 
     if (stackable){
         popover(`con${name}`,function(){
@@ -678,7 +719,7 @@ function marketItem(mount,market_item,name,color,full){
         let trade = $(`<span class="trade" v-show="m.active"><span class="has-text-warning">${loc('resource_market_routes')}</span></span>`);
         market_item.append(trade);
         trade.append($(`<b-tooltip :label="aSell('${name}')" position="is-bottom" size="is-small" multilined animated><span role="button" aria-label="export ${name}" class="sub has-text-danger" @click="autoSell('${name}')"><span>-</span></span></b-tooltip>`));
-        trade.append($(`<span class="current">{{ r.trade | trade }}</span>`));
+        trade.append($(`<span class="current" v-html="$options.filters.trade(r.trade)"></span>`));
         trade.append($(`<b-tooltip :label="aBuy('${name}')" position="is-bottom" size="is-small" multilined animated><span role="button" aria-label="import ${name}" class="add has-text-success" @click="autoBuy('${name}')"><span>+</span></span></b-tooltip>`));
         trade.append($(`<span role="button" class="zero has-text-advanced" @click="zero('${name}')">${loc('cancel_routes')}</span>`));
         tradeRouteColor(name);
@@ -816,6 +857,12 @@ function marketItem(mount,market_item,name,color,full){
                 return sizeApproximation(value * global.city.market.qty / divide,0);
             },
             trade(val){
+                if (name === 'Stone' && (val === 31 || val === -31)){
+                    let trick = trickOrTreat(3,12);
+                    if (trick.length > 0){
+                        return trick;
+                    }
+                }
                 if (val < 0){
                     val = 0 - val;
                     return `-${val}`;
@@ -1030,7 +1077,7 @@ function containerItem(mount,market_item,name,color){
         market_item.append(container);
 
         container.append($(`<span role="button" aria-label="remove ${name} ${loc('resource_Containers_name')}" class="sub has-text-danger" @click="subCon('${name}')"><span>&laquo;</span></span>`));
-        container.append($(`<span class="current">{{ containers }}</span>`));
+        container.append($(`<span class="current" v-html="$options.filters.trick(containers)"></span>`));
         container.append($(`<span role="button" aria-label="add ${name} ${loc('resource_Containers_name')}" class="add has-text-success" @click="addCon('${name}')"><span>&raquo;</span></span>`));
     }
 
@@ -1049,6 +1096,17 @@ function containerItem(mount,market_item,name,color){
             },
             subCon(res){
                 unassignContainer(res);
+            }
+        },
+        filters: {
+            trick(v){
+                if (name === 'Stone' && global.resource[name].crates === 10 && global.resource[name].containers === 31){
+                    let trick = trickOrTreat(10,13);
+                    if (trick.length > 0){
+                        return trick;
+                    }
+                }
+                return v;
             }
         }
     });
@@ -1314,6 +1372,13 @@ function drawModal(name,color){
         let egg = easterEgg(7,10);
         if (egg.length > 0){
             $('#modalBoxTitle').prepend(egg);
+        }
+    }
+
+    if (name === 'Stone'){
+        let trick = trickOrTreat(1,12);
+        if (trick.length > 0){
+            $('#modalBoxTitle').prepend(trick);
         }
     }
     

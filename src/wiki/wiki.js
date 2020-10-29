@@ -10,6 +10,7 @@ import { renderTechPage } from './tech.js';
 import { renderAchievePage } from './achieve.js';
 import { gamePlayPage } from './gameplay.js';
 import { prestigePage } from './prestige.js';
+import { arpaPage } from './arpa.js';
 import { changeLog } from './change.js';
 
 $('body').empty();
@@ -35,7 +36,7 @@ function initPage(){
             key: 'gameplay',
             submenu: [
                 { key: 'basics' },
-                { key: 'mechanics' },
+                //{ key: 'mechanics' },
                 { key: 'resets' },
                 { key: 'planets' },
                 { key: 'universes' },
@@ -80,6 +81,14 @@ function initPage(){
                 { key: 'deep_space' },
                 { key: 'interstellar' },
                 { key: 'intergalactic' }
+            ]
+        },
+        {
+            key: 'arpa',
+            submenu: [
+                { key: 'projects' },
+                //{ key: 'genetics' },
+                { key: 'crispr' }
             ]
         },
         {
@@ -176,6 +185,11 @@ function menuDispatch(main,sub,frag){
             setWindowHash(main,sub,frag);
             break;
 
+        case 'arpa':
+            arpaPage(sub);
+            setWindowHash(main,sub,frag);
+            break;
+
         case 'achievements':
             switch (sub){
                 case 'tracker':
@@ -215,7 +229,7 @@ function buiildMenu(items,set,parent){
     for (let i=0; i<items.length; i++){
 
         if (items[i].hasOwnProperty('submenu')){
-            let active = (!hash && set && i === 0) || (hash && hash.length > 1 && hash[1] === items[i].key) ? ` :active="true"` : '';
+            let active = (!hash && set && i === 0) || (hash && hash.length > 1 && hash[1] === items[i].key) ? ` :active="true" expanded` : '';
             menu = menu + `<b-menu-item${active}><template slot="label" slot-scope="props">${loc(`wiki_menu_${items[i].key}`)}</template>`;
             menu = menu + buiildMenu(items[i].submenu,false,items[i].key);
             menu = menu + `</b-menu-item>`;
@@ -239,4 +253,12 @@ function mainPage(){
     content.append(`<div class="paragraph has-text-danger">${loc(`wiki_main_spoiler`)}</div>`);
     content.append(`<div class="paragraph">${loc(`wiki_main_blurb`)}</div>`);
     content.append(`<div class="paragraph has-text-caution">${loc(`wiki_main_construction`)}</div>`);
+    content.append(`<div class="paragraph">${loc(`wiki_resources`)}</div>`);
+    
+    let list = $(`<ul class="paragraph"></ul>`);
+    content.append(list);
+
+    list.append(`<li><a href="https://wooledge.org/~greg/evolve/guide.html" target="_blank">${loc(`wiki_resources_begin_guide`)}</a> ${loc(`wiki_resources_by`,['GreyCat'])}</li>`);
+    list.append(`<li><a href="https://karsen777.github.io/" target="_blank">${loc(`wiki_resources_tracker`)}</a> ${loc(`wiki_resources_by`,['Karsen777'])}</li>`);
+    list.append(`<li><a href="https://zarakon.github.io/EvolveHellSim/" target="_blank">${loc(`wiki_resources_hell_sim`)}</a> ${loc(`wiki_resources_by`,['Jotun'])}</li>`);
 }

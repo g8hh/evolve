@@ -2519,7 +2519,7 @@
   "arpa_projects_railway_desc": "建造一条新铁路扩展贸易",
   "arpa_projects_railway_effect1": "贸易盈利 +%1%，每条铁路增加 %0 条贸易路线（该贸易路线与货场数量挂钩，每 %2 个货场增加 %3 条）",
   "arpa_projects_railway_cataclysm1": "贸易盈利 +%1%，每条铁路增加 %0 条贸易路线（该贸易路线与货场数量挂钩，每 %2 颗GPS卫星增加 %3 条）",
-  "arpa_projects_roid_eject_title": "%0变轨。",
+  "arpa_projects_roid_eject_title": "%0变轨",
   "arpa_projects_roid_eject_desc": "把一个%0扔进黑洞。",
   "arpa_projects_roid_eject_desc2": "把一个%0扔进黑洞。",
   "arpa_projects_roid_eject_effect1": "黑洞质量增加了。",

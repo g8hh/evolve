@@ -4533,7 +4533,7 @@
   "portal_mech_boss_homunculus": "人造人霍尔蒙克斯",
   "portal_mech_assembly": "机甲装配",
   "portal_mech_cost": "物资供给",
-  "portal_mech_soul": "%消耗",
+  "portal_mech_soul": "%0消耗",
   "portal_mech_space": "空间需求",
   "portal_mech_size": "尺寸",
   "portal_mech_type": "移动",

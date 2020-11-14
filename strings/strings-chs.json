@@ -1154,7 +1154,7 @@
   "tech_magic_tomes_desc": "创造魔法典籍",
   "tech_magic_tomes_effect": "法师们会把自己对魔法的研究心得写入典籍，每位法师提升图书馆知识上限 12%",
   "tech_adjunct_professor": "兼职教授",
-  "tech_adjunct_professor_effect": "每激活一座%0，每位教授会额外提升%的效率1%",
+  "tech_adjunct_professor_effect": "每激活一座%0，每位教授会额外提升%1的效率1%",
   "tech_tesla_coil": "特斯拉线圈",
   "tech_tesla_coil_desc": "特斯拉线圈",
   "tech_tesla_coil_effect": "用特斯拉线圈升级%0，通电时知识上限基础值由 2000 提升到 2500 ",

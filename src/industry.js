@@ -1,6 +1,7 @@
 import { global, keyMultiplier, sizeApproximation, p_on } from './vars.js';
 import { loc } from './locale.js';
-import { vBind, popover, easterEgg, trickOrTreat } from './functions.js';
+import { vBind, popover, clearElement, powerGrid, easterEgg, trickOrTreat } from './functions.js';
+import { actions } from './actions.js';
 
 export function loadIndustry(industry,parent,bind){
     switch (industry){
@@ -997,4 +998,107 @@ function colorRange(num,max,invert){
     else {
         return '';
     }
+}
+
+export function setPowerGrid(){
+    clearElement($('#powerGrid'));
+
+    $('#powerGrid').append(`<div class="powerGridHeader has-text-caution">${loc('power_grid_header')}</div>`);
+
+    let grid = $(`<div class="powerGrid"></div>`);
+    $('#powerGrid').append(grid);
+
+    let idx = 0;
+    for (let i=0; i<global.power.length; i++){
+        let struct = global.power[i];
+
+        let parts = struct.split(":");
+        let space = parts[0].substr(0,4) === 'spc_' ? 'space' : (parts[0].substr(0,5) === 'prtl_' ? 'portal' : (parts[0].substr(0,4) === 'gxy_' ? 'galaxy' : 'interstellar'));
+        let region = parts[0] === 'city' ? parts[0] : space;
+        let c_action = parts[0] === 'city' ? actions.city[parts[1]] : actions[space][parts[0]][parts[1]];
+        
+        let title = typeof c_action.title === 'function' ? c_action.title() : c_action.title;
+        let extra = ``;
+        switch (parts[1]){
+            case 'factory':
+                extra = ` (${loc(`tab_city5`)})`;
+                break;
+            case 'red_factory':
+                extra = ` (${loc(`tab_space`)})`;
+                break;
+            case 'casino':
+                extra = ` (${loc(`tab_city5`)})`;
+                break;
+            case 'spc_casino':
+                extra = ` (${loc(`tab_space`)})`;
+                break;
+        }
+
+        if (global[region][parts[1]]){
+            idx++;
+            let circuit = $(`<div id="pg${c_action.id}" class="circuit" data-idx="${i}"></div>`);
+            circuit.append(`<span>${idx}</span> <span class="struct has-text-warning">${title}${extra}</span> <span role="button" class="sub" @click="higher" aria-label="Raise Power Priority"><span>&laquo;</span></span> <span role="button" class="add" @click="lower" aria-label="Lower Power Priority"><span>&raquo;</span></span>`);
+            grid.append(circuit);
+
+            vBind({
+                el: `#pg${c_action.id}`,
+                data: {},
+                methods: {
+                    higher(){
+                        let oIdx = $(`#pg${c_action.id}`).attr(`data-idx`);
+                        let nIdx = $(`#pg${c_action.id}`).prevAll(`.circuit:not(".inactive")`).attr(`data-idx`);
+                        if (nIdx >= 0){
+                            let order = global.power;
+                            order.splice(nIdx, 0, order.splice(oIdx, 1)[0]);
+                            global.power = order;
+                            setPowerGrid();
+                        }
+                    },
+                    lower(){
+                        let oIdx = $(`#pg${c_action.id}`).attr(`data-idx`);
+                        let nIdx = $(`#pg${c_action.id}`).nextAll(`.circuit:not(".inactive")`).attr(`data-idx`);
+                        if (nIdx < global.power.length){
+                            let order = global.power;
+                            order.splice(nIdx, 0, order.splice(oIdx, 1)[0]);
+                            global.power = order;
+                            setPowerGrid();
+                        }
+                    }
+                }
+            });
+        }
+        else {
+            let circuit = $(`<div id="pg${c_action.id}" class="circuit inactive" data-idx="${i}"></div>`);
+            circuit.append(`<span class="has-text-warning">${title}${extra}</span>`);
+            grid.append(circuit);
+        }
+    };
+
+    dragPowerGrid();
+
+    let reset = $(`<div id="powerGridReset" class="resetPowerGrid"><button class="button" @click="resetGrid">${loc('power_grid_reset')}</button></div>`);
+    $('#powerGrid').append(reset);
+
+    vBind({
+        el: `#powerGridReset`,
+        data: {},
+        methods: {
+            resetGrid(){
+                powerGrid(true);
+                setPowerGrid();
+            }
+        }
+    });
+}
+
+function dragPowerGrid(){
+    let el = $('#powerGrid .powerGrid')[0];
+    Sortable.create(el,{
+        onEnd(e){
+            let order = global.power;
+            order.splice(e.newDraggableIndex, 0, order.splice(e.oldDraggableIndex, 1)[0]);
+            global.power = order;
+            setPowerGrid();
+        }
+    });
 }

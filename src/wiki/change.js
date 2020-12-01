@@ -3,6 +3,40 @@ import { clearElement } from './../functions.js';
 
 const changeList = [
     {
+        version: `1.0.9`,
+        date: `11/29/2020`,
+        changes: [
+            `Perks separated on to a separate tab under Stats.`,
+            `Added Perks section to Wiki.`
+        ]
+    },
+    {
+        version: `1.0.8`,
+        date: `11/28/2020`,
+        changes: [
+            `Base Neutronium cost of Inferno Reactor lowered to 3,750,000.`,
+            `Fixed Valdi genus traits after evolution.`,
+            `Prepared rank 2 now correctly applies when building mechs.`,
+            `Power Grid is now more strict in checking what is available.`,
+            `Fixed bug that sometimes caused crafting to use a wrong Mastery value.`
+        ]
+    },
+    {
+        version: `1.0.7`,
+        date: `11/25/2020`,
+        changes: [
+            `Fixed a bug where Technocracy prevented Alien 2 & Chthonian invasions from working.`
+        ]
+    },
+    {
+        version: `1.0.6`,
+        date: `11/24/2020`,
+        changes: [
+            `Fixed Mechlab quick switch button.`,
+            `Titan class mech power increased by 12.5%.`
+        ]
+    },
+    {
         version: `1.0.5`,
         date: `11/22/2020`,
         changes: [

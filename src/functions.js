@@ -1128,7 +1128,7 @@ function technoAdjust(costs, wiki){
             if (res === 'Knowledge'){
                 newCosts[res] = function(){ return Math.round(costs[res](wiki) * 0.92); }
             }
-            else if (res === 'Money' || res === 'Structs'){
+            else if (res === 'Money' || res === 'Structs' || res === 'Custom'){
                 newCosts[res] = function(){ return costs[res](wiki); }
             }
             else {
@@ -1761,4 +1761,37 @@ export function getHalloween(){
     }
 
     return halloween;
+}
+
+export function shrineBonusActive() {
+	return (global.race['magnificent'] && global.city.hasOwnProperty('shrine') && global.city.shrine.count > 0);
+}
+
+export function getShrineBonus(type) {
+	let shrine_bonus = {
+		mult: 1,
+		add: 0
+	};
+	
+	if (shrineBonusActive()){
+		switch(type){
+			case 'metal':
+				shrine_bonus.mult += +(global.city.shrine.metal / 100);
+				break;
+			case 'tax':
+				shrine_bonus.mult += +(global.city.shrine.tax / 100);
+				break;
+			case 'know':
+                shrine_bonus.add += +(global.city.shrine.know * 400);
+                shrine_bonus.mult += +(global.city.shrine.know * 3 / 100);
+				break;
+			case 'morale':
+				shrine_bonus.add += global.city.shrine.morale;
+				break;
+			default:
+				break;
+		}
+	}
+	
+	return shrine_bonus;
 }

@@ -676,7 +676,7 @@ const fortressModules = {
             reqs: { inferno_power: 1 },
             cost: {
                 Money(offset){ return spaceCostMultiplier('inferno_power', offset, 275000000, 1.16, 'portal'); },
-                Neutronium(offset){ return spaceCostMultiplier('inferno_power', offset, 5000000, 1.18, 'portal'); },
+                Neutronium(offset){ return spaceCostMultiplier('inferno_power', offset, 3750000, 1.18, 'portal'); },
                 Stanene(offset){ return spaceCostMultiplier('inferno_power', offset, 12000000, 1.18, 'portal'); },
                 Bolognium(offset){ return spaceCostMultiplier('inferno_power', offset, 8000000, 1.18, 'portal'); },
             },
@@ -1495,7 +1495,7 @@ const fortressModules = {
             special: true,
             sAction(){
                 global.settings.civTabs = 2;
-                global.settings.govTabs = 3;
+                global.settings.govTabs = 4;
             },
             effect(){
                 let bay = global.portal.hasOwnProperty('mechbay') ? global.portal.mechbay.bay : 0;
@@ -3113,17 +3113,17 @@ export function drawMechLab(){
                             break;
                         case 'medium':
                             cost = 180000;
-                            size = 5;
+                            size = global.blood['prepared'] && global.blood.prepared >= 2 ? 4 : 5;
                             soul = 2;
                             break;
                         case 'large':
                             cost = 375000;
-                            size = 10;
+                            size = global.blood['prepared'] && global.blood.prepared >= 2 ? 8 : 10;
                             soul = 5;
                             break;
                         case 'titan':
                             cost = 750000;
-                            size = 25;
+                            size = global.blood['prepared'] && global.blood.prepared >= 2 ? 20 : 25;
                             soul = 10;
                             break;
                     }
@@ -3436,7 +3436,7 @@ export function mechRating(mech,boss){
             rating = 0.01;
             break;
         case 'titan':
-            rating = 0.02;
+            rating = 0.0225;
             break;
     }
 

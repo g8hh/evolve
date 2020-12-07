@@ -1517,6 +1517,11 @@ const fortressModules = {
                     return true;
                 }
                 return false;
+            },
+            postPower(){
+                let bays = (spire_on['mechbay'] || 0);
+                global.portal.mechbay.max = bays * 25;
+                drawMechs();
             }
         },
         spire: {
@@ -3108,22 +3113,22 @@ export function drawMechLab(){
                     switch (global.portal.mechbay.blueprint.size){
                         case 'small':
                             cost = global.blood['prepared'] && global.blood.prepared >= 2 ? 50000 : 75000;
-                            size = 2;
+                            size = mechSize('small');
                             soul = 1;
                             break;
                         case 'medium':
                             cost = 180000;
-                            size = global.blood['prepared'] && global.blood.prepared >= 2 ? 4 : 5;
+                            size = mechSize('medium');
                             soul = 2;
                             break;
                         case 'large':
                             cost = 375000;
-                            size = global.blood['prepared'] && global.blood.prepared >= 2 ? 8 : 10;
+                            size = mechSize('large');
                             soul = 5;
                             break;
                         case 'titan':
                             cost = 750000;
-                            size = global.blood['prepared'] && global.blood.prepared >= 2 ? 20 : 25;
+                            size = mechSize('titan');
                             soul = 10;
                             break;
                     }
@@ -3226,16 +3231,7 @@ export function drawMechLab(){
             },
             filters: {
                 bay(s){
-                    switch (s){
-                        case 'small':
-                            return 2;
-                        case 'medium':
-                            return global.blood['prepared'] && global.blood.prepared >= 2 ? 4 : 5;
-                        case 'large':
-                            return global.blood['prepared'] && global.blood.prepared >= 2 ? 8 : 10;
-                        case 'titan':
-                            return global.blood['prepared'] && global.blood.prepared >= 2 ? 20 : 25;
-                    }
+                    mechSize(s);
                 },
                 price(s){
                     switch (s){
@@ -3311,18 +3307,22 @@ export function drawMechLab(){
             }
         });
 
-        let mechs = $(`<div id="mechList"></div>`);
+        let mechs = $(`<div id="mechList" class="sticky mechList"></div>`);
         lab.append(mechs);
         drawMechs();
     }
 }
 
 function drawMechs(){
+    clearMechDrag();
     clearElement($('#mechList'));
     let list = $('#mechList');
+    let used = 0;
     for (let i=0; i<global.portal.mechbay.mechs.length; i++){
         let mech = global.portal.mechbay.mechs[i];
-        let desc = $(`<div><a @click="scrap(${i})">${loc(`portal_mech_scrap`)}</a> | <span>${loc(`portal_mech`)} #${i+1}</span>: <span class="has-text-caution">${loc(`portal_mech_size_${mech.size}`)} ${loc(`portal_mech_chassis_${mech.chassis}`)}</span></div>`);
+        used += mechSize(mech.size);
+        let inactive = used > global.portal.mechbay.max ? true : false;
+        let desc = $(`<div${inactive ? ` class="inactive-row"` : ``}><a${inactive ? ` class="has-text-danger"` : ``} @click="scrap(${i})">${loc(`portal_mech_scrap`)}</a> | <span>${loc(`portal_mech`)} #${i+1}</span>: <span class="has-text-caution">${loc(`portal_mech_size_${mech.size}`)} ${loc(`portal_mech_chassis_${mech.chassis}`)}</span></div>`);
         mech.hardpoint.forEach(function(hp){
             desc.append(` | <span class="has-text-danger">${loc(`portal_mech_weapon_${hp}`)}</span>`);
         });
@@ -3337,26 +3337,67 @@ function drawMechs(){
         data: global.portal.mechbay.mechs,
         methods: {
             scrap(id){
-                switch (global.portal.mechbay.mechs[id].size){
-                    case 'small':
-                        global.portal.purifier.supply += 25000;
-                        break;
-                    case 'medium':
-                        global.portal.purifier.supply += 60000;
-                        break;
-                    case 'large':
-                        global.portal.purifier.supply += 125000;
-                        break;
-                    case 'titan':
-                        global.portal.purifier.supply += 250000;
-                        break;
+                if (global.portal.mechbay.mechs[id]){
+                    switch (global.portal.mechbay.mechs[id].size){
+                        case 'small':
+                            global.portal.purifier.supply += 25000;
+                            break;
+                        case 'medium':
+                            global.portal.purifier.supply += 60000;
+                            break;
+                        case 'large':
+                            global.portal.purifier.supply += 125000;
+                            break;
+                        case 'titan':
+                            global.portal.purifier.supply += 250000;
+                            break;
+                    }
+                    if (global.portal.purifier.supply > global.portal.purifier.sup_max){
+                        global.portal.purifier.supply = global.portal.purifier.sup_max;
+                    }
+                    global.portal.mechbay.mechs.splice(id,1);
+                    drawMechs();
                 }
-                if (global.portal.purifier.supply > global.portal.purifier.sup_max){
-                    global.portal.purifier.supply = global.portal.purifier.sup_max;
-                }
-                global.portal.mechbay.mechs.splice(id,1);
-                drawMechs();
             }
+        }
+    });
+
+    dragMechList();
+}
+
+export function mechSize(s){
+    switch (s){
+        case 'small':
+            return 2;
+        case 'medium':
+            return global.blood['prepared'] && global.blood.prepared >= 2 ? 4 : 5;
+        case 'large':
+            return global.blood['prepared'] && global.blood.prepared >= 2 ? 8 : 10;
+        case 'titan':
+            return global.blood['prepared'] && global.blood.prepared >= 2 ? 20 : 25;
+        case 'default':
+            return 25;
+    }
+}
+
+function clearMechDrag(){
+    let el = $('#mechList')[0];
+    if (el){
+        let sort = Sortable.get(el);
+        if (sort){
+            sort.destroy();
+        }
+    }
+}
+
+function dragMechList(){
+    let el = $('#mechList')[0];
+    Sortable.create(el,{
+        onEnd(e){
+            let order = global.portal.mechbay.mechs;
+            order.splice(e.newDraggableIndex, 0, order.splice(e.oldDraggableIndex, 1)[0]);
+            global.portal.mechbay.mechs = order;
+            drawMechs();
         }
     });
 }
@@ -3822,6 +3863,12 @@ export function descension(){
     if (global.race.species === 'junker'){
         unlockFeat('the_misery');
     }
+    if (!global.race['modified'] && global.race['junker'] && global.race.species === 'junker'){
+        unlockFeat(`garbage_pie`);
+    }
+    if (global.race['cataclysm']){
+        unlockFeat(`finish_line`);
+    }
 
     let artifacts = 0;
     switch (global.race.universe){
@@ -3882,6 +3929,7 @@ export function descension(){
         seeded: false,
         seed: Math.floor(Math.seededRandom(10000)),
         corruption: 5,
+        ascended: global.race.hasOwnProperty('ascended') ? global.race.ascended : false,
     };
 
     global.city = {

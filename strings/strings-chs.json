@@ -1208,7 +1208,7 @@
   "tech_steel_vault_effect": "用重型钢门和墙壁加固银行金库，增加资金的存储容量。",
   "tech_eebonds": "EE系列债券",
   "tech_eebonds_effect": "创建新的EE系列储蓄债券，其到期价值要高得多。每位市民都会增加600资金上限。",
-  "tech_swiss_bank": "TRANS:%0 Banking",
+  "tech_swiss_bank": "%0银行",
   "tech_swiss_banking_effect": "通过新的培训，银行家将学会如何创造性地存钱。每个银行家增加5%的银行金库容量。",
   "tech_safety_deposit": "保险箱",
   "tech_safety_deposit_effect": "银行将提供保险箱，每位市民都会提升银行容量25$。",

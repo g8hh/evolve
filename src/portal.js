@@ -638,7 +638,8 @@ const fortressModules = {
             effect(){
                 let sup = hellSupression('ruins');
                 let craft = +(75 * sup.supress).toFixed(1);
-                return `<div>${loc('portal_hell_forge_effect',[1])}</div><div>${loc('interstellar_stellar_forge_effect3',[3])}</div><div>${loc('interstellar_stellar_forge_effect',[craft])}</div><div class="has-text-caution">${loc('minus_power',[$(this)[0].powered()])}</div>`;
+                let reactor = global.tech['inferno_power'] ? `<div>${loc('portal_hell_forge_effect2',[10,loc(`portal_inferno_power_title`)])}</div>` : ``;
+                return `<div>${loc('portal_hell_forge_effect',[1])}</div>${reactor}<div>${loc('interstellar_stellar_forge_effect3',[3])}</div><div>${loc('interstellar_stellar_forge_effect',[craft])}</div><div class="has-text-caution">${loc('minus_power',[$(this)[0].powered()])}</div>`;
             },
             action(){
                 if (payCosts($(this)[0].cost)){
@@ -680,7 +681,13 @@ const fortressModules = {
                 Stanene(offset){ return spaceCostMultiplier('inferno_power', offset, 12000000, 1.18, 'portal'); },
                 Bolognium(offset){ return spaceCostMultiplier('inferno_power', offset, 8000000, 1.18, 'portal'); },
             },
-            powered(){ return powerModifier(-50); },
+            powered(){
+                let power = 20;
+                if (p_on.hasOwnProperty('hell_forge')){
+                    power += p_on['hell_forge'] * 10; 
+                }
+                return powerModifier(-(power));
+            },
             fuel: {
                 Infernite: 5,
                 Coal: 100,
@@ -1913,24 +1920,32 @@ function buildFortress(parent,full){
                 }
             },
             hire(){
-                let cost = Math.round((1.24 ** global.civic.garrison.workers) * 75) - 50;
-                if (cost > 25000){
-                    cost = 25000;
-                }
-                if (global.civic.garrison.m_use > 0){
-                    cost *= 1.1 ** global.civic.garrison.m_use;
-                }
-                if (global.race['brute']){
-                    cost = cost / 2;
-                }
-                cost = Math.round(cost);
-                if (global.civic['garrison'].workers < global.civic['garrison'].max && global.resource.Money.amount >= cost){
-                    global.resource.Money.amount -= cost;
-                    global.civic['garrison'].workers++;
-                    global.civic.garrison.m_use++;
-                    global.portal.fortress.garrison++;
-                    global.portal.fortress['assigned'] = global.portal.fortress.garrison;
-                    vBind({el: `#garrison`},'update');
+                let repeats = keyMultiplier();
+                let canBuy = true;
+                while (canBuy && repeats > 0){
+                    let cost = Math.round((1.24 ** global.civic.garrison.workers) * 75) - 50;
+                    if (cost > 25000){
+                        cost = 25000;
+                    }
+                    if (global.civic.garrison.m_use > 0){
+                        cost *= 1.1 ** global.civic.garrison.m_use;
+                    }
+                    if (global.race['brute']){
+                        cost = cost / 2;
+                    }
+                    cost = Math.round(cost);
+                    if (global.civic['garrison'].workers < global.civic['garrison'].max && global.resource.Money.amount >= cost){
+                        global.resource.Money.amount -= cost;
+                        global.civic['garrison'].workers++;
+                        global.civic.garrison.m_use++;
+                        global.portal.fortress.garrison++;
+                        global.portal.fortress['assigned'] = global.portal.fortress.garrison;
+                        vBind({el: `#garrison`},'update');
+                    }
+                    else {
+                        canBuy = false;
+                    }
+                    repeats--;
                 }
             },
             hireLabel(){
@@ -3231,7 +3246,7 @@ export function drawMechLab(){
             },
             filters: {
                 bay(s){
-                    mechSize(s);
+                    return mechSize(s);
                 },
                 price(s){
                     switch (s){
@@ -3490,9 +3505,8 @@ export function mechRating(mech,boss){
         }
 
         let affix = universeAffix();
-        if (global.stats.spire.hasOwnProperty(affix) && global.stats.spire[affix].hasOwnProperty('lord')){
-            global.stats.spire[affix].lord;
-            rating /= 100 + (global.stats.spire[affix].lord * 25);
+        if (global.stats.spire.hasOwnProperty(affix) && global.stats.spire[affix].hasOwnProperty('dlstr')){
+            rating /= 100 + (global.stats.spire[affix].dlstr * 25);
         }
         else {
             rating /= 100;
@@ -3879,6 +3893,13 @@ export function descension(){
             artifacts = alevel();
             break;
     }
+
+    [50,100].forEach(function(x){
+        if (global.portal.spire.count > x){
+            artifacts++;
+        }
+    });
+
     global.resource.Artifact.amount += artifacts;
     global.resource.Artifact.display = true;
 
@@ -3889,6 +3910,18 @@ export function descension(){
         }
         else {
             global.stats.spire[affix]['lord'] = 1;
+        }
+
+        if (global.tech['dl_reset']){
+            global.stats.spire[affix]['dlstr'] = 0;
+        }
+        else { 
+            if (global.stats.spire[affix].hasOwnProperty('dlstr')){
+                global.stats.spire[affix].dlstr++;
+            }
+            else {
+                global.stats.spire[affix]['dlstr'] = 1;
+            }
         }
     }
 

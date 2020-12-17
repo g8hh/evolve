@@ -1,8 +1,8 @@
 import { global, save } from './vars.js';
 import { loc } from './locale.js';
 import { vBind, clearElement, calcPrestige, messageQueue } from './functions.js';
-import { unlockAchieve, alevel } from './achieve.js';
-import { payCosts, housingLabel, wardenLabel, drawTech, fanaticism, big_bang, cataclysm_end } from './actions.js';
+import { unlockAchieve, alevel, universeAffix } from './achieve.js';
+import { payCosts, housingLabel, wardenLabel, updateQueueNames, drawTech, fanaticism, big_bang, cataclysm_end } from './actions.js';
 import { descension } from './portal.js';
 import { races } from './races.js';
 import { defineResources, loadMarket, resource_values, atomic_mass } from './resources.js';
@@ -1730,6 +1730,9 @@ const techs = {
                 return true;
             }
             return false;
+        },
+        post(){
+            updateQueueNames(false, ['city-shed']);
         }
     },
     warehouse: {
@@ -1750,6 +1753,9 @@ const techs = {
                 return true;
             }
             return false;
+        },
+        post(){
+            updateQueueNames(false, ['city-shed']);
         }
     },
     cameras: {
@@ -2151,6 +2157,7 @@ const techs = {
         desc: loc('tech_urban_planning'),
         category: 'queues',
         era: 'civilized',
+        wiki: global.race['terrifying'] ? true : false,
         reqs: { banking: 2 },
         grant: ['queue',1],
         trait: ['terrifying'],
@@ -2172,6 +2179,7 @@ const techs = {
         desc: loc('tech_urban_planning'),
         category: 'queues',
         era: 'civilized',
+        wiki: global.race['terrifying'] ? false : true,
         reqs: { banking: 2, currency: 2 },
         grant: ['queue',1],
         not_trait: ['terrifying'],
@@ -4292,6 +4300,11 @@ const techs = {
                     artifacts = alevel();
                     break;
             }
+            [50,100].forEach(function(x){
+                if (global.portal.hasOwnProperty('spire') && global.portal.spire.count > x){
+                    artifacts++;
+                }
+            });
             return `<div>${loc('tech_demonic_infusion_effect')}</div><div class="has-text-special">${loc('tech_demonic_infusion_effect2',[artifacts])}</div>`;
         },
         action(){
@@ -6590,6 +6603,7 @@ const techs = {
                 let tech = $(this)[0].grant[0];
                 global.tech[tech] = $(this)[0].grant[1];
                 vBind({el: `#fort`},'update');
+                updateQueueNames(false, ['portal-turret']);
                 return true;
             }
             return false;
@@ -6613,6 +6627,7 @@ const techs = {
                 let tech = $(this)[0].grant[0];
                 global.tech[tech] = $(this)[0].grant[1];
                 vBind({el: `#fort`},'update');
+                updateQueueNames(false, ['portal-turret']);
                 return true;
             }
             return false;
@@ -7132,6 +7147,7 @@ const techs = {
             if (payCosts($(this)[0].cost)){
                 global.tech['ancient_deify'] = 1;
                 fanaticism(global.race.old_gods);
+                arpa('Genetics');
                 return true;
             }
             return false;
@@ -9875,6 +9891,45 @@ const techs = {
             clearElement($('#resources'));
             defineResources();
         }
+    },
+    dark_bomb: {
+        id: 'tech-dark_bomb',
+        title: loc('tech_dark_bomb'),
+        desc: loc('tech_dark_bomb'),
+        category: 'hell_dimension',
+        era: 'dimensional',
+        reqs: {},
+        reqs: { hell_spire: 10, b_stone: 2, waygate: 2, sphinx_bribe: 1 },
+        condition(){
+            let affix = universeAffix();
+            if (global.stats.spire.hasOwnProperty(affix) && global.stats.spire[affix].hasOwnProperty('dlstr') && global.stats.spire[affix].dlstr > 0){
+                return true;
+            }
+            return false;
+        },
+        grant: ['dl_reset',1],
+        cost: {
+            Knowledge(){ return 65000000; },
+            Soul_Gem(){ return 5000; },
+            Blood_Stone(){ return 10; },
+            Dark(){ return 1; },
+            Supply(){ return 1000000; }
+        },
+        effect(){
+            return loc('tech_dark_bomb_effect');
+        },
+        action(){
+            if (payCosts($(this)[0].cost)){
+                global.portal.waygate.progress = 100;
+                global.portal.waygate.on = 0;
+                global.tech['waygate'] = 3;
+                global.resource.Demonic_Essence.display = true;
+                global.resource.Demonic_Essence.amount = 1;
+                return true;
+            }
+            return false;
+        },
+        flair(){ return loc('tech_dark_bomb_flair'); }
     },
     bribe_sphinx: {
         id: 'tech-bribe_sphinx',

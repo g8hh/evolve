@@ -33,6 +33,7 @@ export function mainVue(){
             },
             lChange(locale){
                 global.settings.locale = locale;
+                global.queue.rename = true;
                 save.setItem('evolved',LZString.compressToUTF16(JSON.stringify(global)));
                 if (webWorker.w){
                     webWorker.w.terminate();
@@ -337,6 +338,7 @@ export function buildQueue(){
                     }
                     else {
                         global.queue.queue.splice(index,1);
+                        buildQueue();
                     }
                 },
                 setID(index){
@@ -1682,7 +1684,10 @@ export function vacuumCollapse(){
             global.stats.plasmid += new_plasmid;
         }
         global.stats.phage += new_phage;
+        global.stats.dark = +(global.stats.dark + new_dark).toFixed(3);
         global.stats.universes++;
+
+        let corruption = global.race.hasOwnProperty('corruption') && global.race.corruption > 1 ? global.race.corruption - 1 : 0;
         global['race'] = {
             species : 'protoplasm',
             gods: god,
@@ -1698,6 +1703,9 @@ export function vacuumCollapse(){
             seed: Math.floor(Math.seededRandom(10000)),
             ascended: false,
         };
+        if (corruption > 0){
+            global.race['corruption'] = corruption;
+        }
         global.city = {
             calendar: {
                 day: 0,

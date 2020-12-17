@@ -3,6 +3,36 @@ import { clearElement } from './../functions.js';
 
 const changeList = [
     {
+        version: `1.0.16`,
+        date: `12/16/2020`,
+        changes: [
+            `Dark Bomb: Kill and Reset the Demon Lord's accumulated strength using the new Dark Bomb.`,
+            `Bonus Artifacts can now be earned during Demonic Infusion if Spire floor 50 or 100 are cleared.`,
+            `Renamed the tech upgrade Purify to Enhanced Air Filters in order to prevent confusion with the Blood Infusion Purify.`
+        ]
+    },
+    {
+        version: `1.0.15`,
+        date: `12/12/2020`,
+        changes: [
+            `Redesigned Inferno Reactor, output is now tied to Infernal Forge.`,
+            `Steel can once again be discovered by Ambush attacks.`,
+            `Power Grid is now shown in Cataclysm.`,
+            `Cataclysm reset no longer incorrectly grants Rapid Mutation or Ancient Ruins.`,
+            `Many minor bug fixes.`
+        ]
+    },
+    {
+        version: `1.0.14`,
+        date: `12/8/2020`,
+        changes: [
+            `Vacuum Collapse no longer removes all charges of Corrupted bonus.`,
+            `Vacuum Collapse now correctly increases Dark Energy earned on the stats page.`,
+            `Lumber Ritual is no longer displayed to Evil races.`,
+            `Multiplier keys now work when hiring mercenaries.`
+        ]
+    },
+    {
         version: `1.0.13`,
         date: `12/4/2020`,
         changes: [

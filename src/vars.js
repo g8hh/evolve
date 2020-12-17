@@ -496,7 +496,7 @@ if (convertVersion(global['version']) < 9014){
     }
 }
 
-if (convertVersion(global['version']) < 10000){
+if (convertVersion(global['version']) < 100000){
     delete global.city['lumber'];
     delete global.city['stone'];
     
@@ -586,7 +586,43 @@ if (convertVersion(global['version']) < 100013){
     }
 }
 
-global['version'] = '1.0.13';
+if (convertVersion(global['version']) < 100014){
+    if (global.race['Dark']){
+        global.stats['dark'] = global.race['Dark'].count;
+    }
+    if (global.race['casting'] && global.race['evil']){
+        global.race.casting.total -= global.race.casting.lumberjack;
+        global.race.casting.lumberjack = 0;
+    }
+    if (global['queue'] && global['queue']['queue']){
+        for (let i=0; i<global.queue.queue.length; i++){
+            if (global.queue.queue[i].type === 'arpa'){
+                global.queue.queue[i].type = global.queue.queue[i].action;
+                global.queue.queue[i].action = 'arpa';
+            }
+        }
+    }
+}
+
+if (convertVersion(global['version']) < 100015){
+    if (global.race['cataclysm']){
+        global.settings.showPowerGrid = true;
+    }
+}
+
+if (convertVersion(global['version']) < 100016){
+    ['l','a','e','h','m','mg'].forEach(function(affix){
+        if (global.stats.hasOwnProperty('spire') && global.stats.spire.hasOwnProperty(affix) && global.stats.spire[affix].hasOwnProperty('lord')){
+            global.stats.spire[affix]['dlstr'] = global.stats.spire[affix].lord;
+        }
+    });
+
+    if (global.hasOwnProperty('special') && global.special.hasOwnProperty('gift') && global.special.gift){
+        global.special.gift = { g2019: true };
+    }
+}
+
+global['version'] = '1.0.16';
 delete global['beta'];
 
 if (!global.hasOwnProperty('power')){
@@ -759,6 +795,10 @@ if (!global['r_queue']){
         display: false,
         queue: [],
     };
+}
+
+if (!global['queue']['rename']){
+    global.queue['rename'] = false;
 }
 
 if (!global['space']){
@@ -988,8 +1028,8 @@ if (!global.settings['affix']){
 if (!global['special']){
     global['special'] = {};
 }
-if (!global.special.hasOwnProperty('gift')){
-    global.special['gift'] = false;
+if (!global.special['gift']){
+    global.special['gift'] = {};
 }
 if (!global.special.hasOwnProperty('egg')){
     global.special['egg'] = {
@@ -1115,6 +1155,21 @@ if (!global.race['evil'] && global.race['immoral']){
     const date = new Date();
     if (global.race.species === 'elven' && date.getMonth() === 11 && date.getDate() >= 17){
         global.race['slaver'] = 1;
+    }
+
+    
+}
+
+{
+    if (global.hasOwnProperty('special') && global.special.hasOwnProperty('gift')){
+        const sdate = new Date(global.stats.start);
+        const cdate = new Date();
+        Object.keys(global.special.gift).forEach(function(gy){
+            let year = Number(gy.substring(1,5));
+            if ((year < sdate.getFullYear()) || (cdate.getFullYear() < year) || (cdate.getFullYear() === year && cdate.getMonth() !== 11)){
+                delete global.special.gift[gy];
+            }
+        });
     }
 }
 
@@ -1550,7 +1605,7 @@ window.soft_reset = function reset(){
     if (global.race['rapid_mutation'] && global.race['rapid_mutation'] > 0){
         replace['rapid_mutation'] = global.race['rapid_mutation'];
     }
-    if (global.race['ancient_ruins'] && global.race['rapid_mutation'] > 0){
+    if (global.race['ancient_ruins'] && global.race['ancient_ruins'] > 0){
         replace['ancient_ruins'] = global.race['ancient_ruins'];
     }
     if (global.race['bigbang']){

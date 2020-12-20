@@ -94,6 +94,13 @@ export function mainVue(){
             },
             remove(index){
                 global.r_queue.queue.splice(index,1);
+            },
+            font(f){
+                global.settings.font = f;
+                $(`html`).removeClass('standard');
+                $(`html`).removeClass('large_log');
+                $(`html`).removeClass('large_all');
+                $('html').addClass(f);
             }
         },
         filters: {
@@ -146,6 +153,16 @@ export function mainVue(){
                         return loc('tab_new_sr_res');
                     default:
                         return loc(lbl);
+                }
+            },
+            notation(n){
+                switch (n){
+                    case 'si':
+                        return loc(`metric`);
+                    case 'sci':
+                        return loc(`scientific`);
+                    case 'sln':
+                        return loc(`sln`);
                 }
             }
         }
@@ -288,11 +305,19 @@ export function powerGrid(type,reset){
     });
 }
 
-export function messageQueue(msg,color){
+export function messageQueue(msg,color,dnr){
     color = color || 'warning';
     var new_message = $('<p class="has-text-'+color+'">'+msg+'</p>');
     $('#msgQueue').prepend(new_message);
-    global.lastMsg = { m: msg, c: color };
+    if (!dnr){
+        if (!global.lastMsg){
+            global.lastMsg = [];
+        }
+        global.lastMsg.unshift({ m: msg, c: color });
+        if (global.lastMsg.length > 3){
+            global.lastMsg = global.lastMsg.slice(0,3);
+        }
+    }
     if ($('#msgQueue').children().length > 30){
         $('#msgQueue').children().last().remove();
     }

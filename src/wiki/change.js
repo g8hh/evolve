@@ -3,6 +3,17 @@ import { clearElement } from './../functions.js';
 
 const changeList = [
     {
+        version: `1.0.17`,
+        date: `12/19/2020`,
+        changes: [
+            `Larger font size modes.`,
+            `Added descriptions for city sectors.`,
+            `Last 3 event messages will now be preserved on reload.`,
+            `Fixed Evolution bugs with Unbound Infusion active.`,
+            `Improved timer accuracy of stacked queue items when No Queue Order is used.`
+        ]
+    },
+    {
         version: `1.0.16`,
         date: `12/16/2020`,
         changes: [

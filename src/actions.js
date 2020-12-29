@@ -2466,7 +2466,6 @@ export const actions = {
                 return false;
             },
             count(){
-                const date = new Date();
                 let gift_count = 0;
                 if (global['special'] && global.special['gift']){
                     Object.keys(global.special.gift).forEach(function(g){
@@ -2517,22 +2516,28 @@ export const actions = {
     
                             let plasmid = 100 + resets + mad;
                             let phage = bioseed + cataclysm;
-    
                             let gift = [];
+
+                            if (global.stats.died + global.stats.tdied > 0){
+                                let dead = global.stats.died + global.stats.tdied;
+                                global.resource.Coal.amount += dead;
+                                gift.push(`${dead.toLocaleString()} ${loc(`resource_Coal_name`)}`);
+                            }
+
                             if (global.race.universe === 'antimatter'){
                                 global.race.Plasmid.anti += plasmid;
                                 global.stats.antiplasmid += plasmid;
-                                gift.push(`${plasmid} ${loc(`resource_AntiPlasmid_plural_name`)}`);
+                                gift.push(`${plasmid.toLocaleString()} ${loc(`resource_AntiPlasmid_plural_name`)}`);
                             }
                             else {
                                 global.race.Plasmid.count += plasmid;
                                 global.stats.plasmid += plasmid;
-                                gift.push(`${plasmid} ${loc(`resource_Plasmid_plural_name`)}`);
+                                gift.push(`${plasmid.toLocaleString()} ${loc(`resource_Plasmid_plural_name`)}`);
                             }
                             if (phage > 0){
                                 global.race.Phage.count += phage;
                                 global.stats.phage += phage;
-                                gift.push(`${phage} ${loc(`resource_Phage_name`)}`);
+                                gift.push(`${phage.toLocaleString()} ${loc(`resource_Phage_name`)}`);
                             }
     
                             if (global.stats.hasOwnProperty('achieve')){
@@ -4511,6 +4516,9 @@ export const actions = {
                 if (global.race['nearsighted']){
                     gain *= 1 - (traits.nearsighted.vars[0] / 100);
                 }
+                if (global.race['studious']){
+                    gain *= 1 + (traits.studious.vars[1] / 100);
+                }
                 if (global.tech['science'] && global.tech['science'] >= 8){
                     gain *= 1.4;
                 }
@@ -6077,14 +6085,15 @@ function srDesc(c_action,old){
             }
             else if (res !== 'Morale' && res !== 'Army' && res !== 'Bool'){
                 let res_cost = costs[res]();
+                let f_res = res === 'Species' ? global.race.species : res;
                 if (res_cost > 0){
-                    let label = res === 'Money' ? '$' : global.resource[res].name+': ';
+                    let label = f_res === 'Money' ? '$' : global.resource[f_res].name+': ';
                     label = label.replace("_", " ");
 
                     let display_cost = sizeApproximation(res_cost,1);
                     desc = desc + `${label}${display_cost}. `;
-                    if (global.resource[res].amount < res_cost){
-                        desc = desc + `${loc('insufficient')} ${global.resource[res].name}. `;
+                    if (global.resource[f_res].amount < res_cost){
+                        desc = desc + `${loc('insufficient')} ${global.resource[f_res].name}. `;
                     }
                 }
             }
@@ -6197,15 +6206,16 @@ export function actionDesc(parent,c_action,obj,old){
                         cost.append($(`<div class="${color}" data-${res}="${res_cost}">Fortress Troops: ${res_cost}</div>`));
                     }
                     else {
-                        let label = res === 'Money' ? '$' : global.resource[res].name+': ';
+                        let f_res = res === 'Species' ? global.race.species : res;
+                        let label = f_res === 'Money' ? '$' : global.resource[f_res].name+': ';
                         label = label.replace("_", " ");
                         let color = 'has-text-dark';
-                        if (global.resource[res].amount < res_cost){
-                            color = tc.r === res ? 'has-text-danger' : 'has-text-alert';
+                        if (global.resource[f_res].amount < res_cost){
+                            color = tc.r === f_res ? 'has-text-danger' : 'has-text-alert';
                         }
                         let display_cost = sizeApproximation(res_cost,1);
                         empty = false;
-                        cost.append($(`<div class="${color}" data-${res}="${res_cost}">${label}${display_cost}</div>`));
+                        cost.append($(`<div class="${color}" data-${f_res}="${res_cost}">${label}${display_cost}</div>`));
                     }
                 }
             }
@@ -6286,8 +6296,9 @@ export function payCosts(costs){
             }
             else if (res !== 'Morale' && res !== 'Army' && res !== 'HellArmy' && res !== 'Structs' && res !== 'Bool' && res !== 'Custom'){
                 let cost = costs[res]();
-                global['resource'][res].amount -= cost;
-                if (res === 'Knowledge'){
+                let f_res = res === 'Species' ? global.race.species : res;
+                global['resource'][f_res].amount -= cost;
+                if (f_res === 'Knowledge'){
                     global.stats.know += cost;
                 }
             }
@@ -6365,7 +6376,8 @@ function checkMaxCosts(costs){
         }
         else {
             var testCost = Number(costs[res]()) || 0;
-            if (global.resource[res].max >= 0 && testCost > Number(global.resource[res].max) && Number(global.resource[res].max) !== -1){
+            let f_res = res === 'Species' ? global.race.species : res;
+            if (global.resource[f_res].max >= 0 && testCost > Number(global.resource[f_res].max) && Number(global.resource[f_res].max) !== -1){
                 test = false;
                 return;
             }
@@ -6434,8 +6446,9 @@ export function checkCosts(costs){
         }
         else {
             var testCost = Number(costs[res]()) || 0;
-            let fail_max = global.resource[res].max >= 0 && testCost > global.resource[res].max ? true : false;
-            if (testCost > Number(global.resource[res].amount) + global.resource[res].diff || fail_max){
+            let f_res = res === 'Species' ? global.race.species : res;
+            let fail_max = global.resource[f_res].max >= 0 && testCost > global.resource[f_res].max ? true : false;
+            if (testCost > Number(global.resource[f_res].amount) + global.resource[f_res].diff || fail_max){
                 test = false;
                 return;
             }

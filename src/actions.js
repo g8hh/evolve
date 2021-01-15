@@ -1,16 +1,17 @@
 import { global, save, poppers, webWorker, keyMultiplier, clearStates, keyMap, srSpeak, sizeApproximation, p_on, moon_on, gal_on, quantum_level } from './vars.js';
 import { loc } from './locale.js';
 import { timeCheck, timeFormat, vBind, popover, clearElement, costMultiplier, darkEffect, genCivName, powerModifier, powerCostMod, calcPrestige, adjustCosts, modRes, messageQueue, buildQueue, format_emblem, calc_mastery, calcGenomeScore, getShrineBonus, getEaster, easterEgg, getHalloween, trickOrTreat } from './functions.js';
-import { unlockAchieve, unlockFeat, drawAchieve, checkAchievements } from './achieve.js';
+import { unlockAchieve, unlockFeat, challengeIcon, checkAchievements } from './achieve.js';
 import { races, traits, genus_traits, randomMinorTrait, cleanAddTrait, biomes, planetTraits, setJType } from './races.js';
 import { defineResources, galacticTrade, spatialReasoning } from './resources.js';
-import { loadFoundry } from './jobs.js';
+import { loadFoundry, defineJobs } from './jobs.js';
 import { loadIndustry } from './industry.js';
-import { defineIndustry, defineGarrison, buildGarrison, foreignGov, armyRating } from './civics.js';
+import { defineGovernment, defineIndustry, defineGarrison, buildGarrison, commisionGarrison, foreignGov, armyRating } from './civics.js';
 import { spaceTech, interstellarTech, galaxyTech, universe_affixes, renderSpace, piracy } from './space.js';
 import { renderFortress, fortressTech } from './portal.js';
 import { arpa, gainGene, gainBlood } from './arpa.js';
 import { techList } from './tech.js';
+import { loadTab } from './index.js';
 
 export const actions = {
     evolution: {
@@ -2159,7 +2160,7 @@ export const actions = {
                         global.race['no_plasmid'] = 1;
                         $(`#${$(this)[0].id}`).addClass('hl');
                     }
-                    drawAchieve();
+                    challengeIcon();
                 }
                 return false;
             },
@@ -2188,7 +2189,7 @@ export const actions = {
                         $(`#${$(this)[0].id}`).addClass('hl');
                     }
                     calc_mastery(true);
-                    drawAchieve();
+                    challengeIcon();
                 }
                 return false;
             },
@@ -2216,7 +2217,7 @@ export const actions = {
                         global.race['no_trade'] = 1;
                         $(`#${$(this)[0].id}`).addClass('hl');
                     }
-                    drawAchieve();
+                    challengeIcon();
                 }
                 return false;
             },
@@ -2244,7 +2245,7 @@ export const actions = {
                         global.race['no_craft'] = 1;
                         $(`#${$(this)[0].id}`).addClass('hl');
                     }
-                    drawAchieve();
+                    challengeIcon();
                 }
                 return false;
             },
@@ -2273,9 +2274,9 @@ export const actions = {
                             global.race['no_crispr'] = 1;
                             $(`#${$(this)[0].id}`).addClass('hl');
                         }
-                        drawAchieve();
+                        challengeIcon();
                     }
-                    drawAchieve();
+                    challengeIcon();
                 }
                 return false;
             },
@@ -2300,7 +2301,7 @@ export const actions = {
                             global.race['joyless'] = 1;
                             $(`#${$(this)[0].id}`).addClass('hl');
                         }
-                        drawAchieve();
+                        challengeIcon();
                     }
                 }
                 return false;
@@ -2328,7 +2329,7 @@ export const actions = {
                             global.race['steelen'] = 1;
                             $(`#${$(this)[0].id}`).addClass('hl');
                         }
-                        drawAchieve();
+                        challengeIcon();
                     }
                 }
                 return false;
@@ -2356,7 +2357,7 @@ export const actions = {
                             global.race['decay'] = 1;
                             $(`#${$(this)[0].id}`).addClass('hl');
                         }
-                        drawAchieve();
+                        challengeIcon();
                     }
                 }
                 return false;
@@ -2384,7 +2385,7 @@ export const actions = {
                             global.race['emfield'] = 1;
                             $(`#${$(this)[0].id}`).addClass('hl');
                         }
-                        drawAchieve();
+                        challengeIcon();
                     }
                 }
                 return false;
@@ -5132,7 +5133,7 @@ function setScenario(scenario){
             }
         }
     }
-    drawAchieve();
+    challengeIcon();
 }
 
 export function storageMultipler(){
@@ -5288,6 +5289,9 @@ export function gainTech(action){
 }
 
 export function drawCity(){
+    if (!global.settings.tabLoad && (global.settings.civTabs !== 1 || global.settings.spaceTabs !== 0)){
+        return;
+    }
     let city_buildings = {};
     Object.keys(actions.city).forEach(function (city_name) {
         removeAction(actions.city[city_name].id);
@@ -5348,6 +5352,9 @@ export function drawCity(){
 }
 
 export function drawTech(){
+    if (!global.settings.tabLoad && global.settings.civTabs !== 3){
+        return;
+    }
     let techs = {};
     let old_techs = {};
     let new_techs = {};
@@ -6932,6 +6939,10 @@ function sentience(){
         cataclysm();
     }
 
+    defineJobs(true);
+    commisionGarrison();
+    defineGovernment();
+
     if (global.race['slow'] || global.race['hyper'] || global.race.species === 'junker'){
         save.setItem('evolved',LZString.compressToUTF16(JSON.stringify(global)));
         if (webWorker.w){
@@ -6941,10 +6952,15 @@ function sentience(){
     }
 
     calc_mastery(true);
-    drawCity();
-    defineGarrison();
-    buildGarrison($('#c_garrison'),false);
-    foreignGov();
+    if (global.settings.tabLoad){
+        drawCity();
+        defineGarrison();
+        buildGarrison($('#c_garrison'),false);
+        foreignGov();
+    }
+    else {
+        loadTab('mTabCivil');
+    }
 }
 
 function cataclysm(){
@@ -7270,6 +7286,9 @@ function fanaticTrait(trait){
 }
 
 export function resQueue(){
+    if (!global.settings.tabLoad && global.settings.civTabs !== 3){
+        return;
+    }
     clearResDrag();
     clearElement($('#resQueue'));
 
@@ -7305,7 +7324,7 @@ export function resQueue(){
     }
 }
 
-function clearResDrag(){
+export function clearResDrag(){
     let el = $('#resQueue .buildList')[0];
     if (el){
         let sort = Sortable.get(el);

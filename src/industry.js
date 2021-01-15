@@ -1021,6 +1021,9 @@ export function gridEnabled(c_action,region,p0,p1){
 }
 
 export function setPowerGrid(){
+    if (!global.settings.tabLoad && (global.settings.civTabs !== 2 && global.settings.govTabs !== 2)){
+        return;
+    }
     let grids = gridDefs();
     clearGrids(grids);
 
@@ -1184,7 +1187,8 @@ export function gridDefs(){
     };
 }
 
-function clearGrids(grids){
+export function clearGrids(grids){
+    grids = grids || gridDefs();
     Object.keys(grids).forEach(function(grid_type){
         let el = $(`#grid${grid_type}`)[0];
         if (el){

@@ -3,6 +3,15 @@ import { clearElement } from './../functions.js';
 
 const changeList = [
     {
+        version: `1.0.21`,
+        date: `1/10/2021`,
+        changes: [
+            `Gain upto 8 hours of accelerated time when game is stopped/closed.`,
+            `Optimized tab content loading for performance.`,
+            `Pause game feature.`,
+        ]
+    },
+    {
         version: `1.0.20`,
         date: `12/29/2020`,
         changes: [

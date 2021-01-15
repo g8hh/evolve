@@ -1650,6 +1650,9 @@ export function fortressTech(){
 }
 
 export function renderFortress(){
+    if (!global.settings.tabLoad && (global.settings.civTabs !== 1 || global.settings.spaceTabs !== 4)){
+        return;
+    }
     let parent = $('#portal');
     clearElement(parent);
     parent.append($(`<h2 class="is-sr-only">${loc('tab_portal')}</h2>`));
@@ -3029,7 +3032,10 @@ export const monsters = {
     }
 };
 
-export function drawMechLab(){    
+export function drawMechLab(){
+    if (!global.settings.tabLoad && (global.settings.civTabs !== 2 || global.settings.govTabs !== 4)){
+        return;
+    }
     clearElement($('#mechLab'));
     if (global.portal.hasOwnProperty('mechbay') && global.settings.showMechLab){
         let lab = $(`#mechLab`);

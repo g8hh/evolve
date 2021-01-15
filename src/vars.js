@@ -500,7 +500,7 @@ if (convertVersion(global['version']) < 9014){
 if (convertVersion(global['version']) < 100000){
     delete global.city['lumber'];
     delete global.city['stone'];
-    
+
     global.stats['dark'] = 0;
     if (global.race['Dark']){
         global.stats['dark'] = global.race['Dark'].count;
@@ -637,7 +637,7 @@ global['version'] = '1.0.21';
 delete global['beta'];
 
 if (!global.hasOwnProperty('power')){
-    global['power'] = [];       
+    global['power'] = [];
 }
 
 if (!global.hasOwnProperty('support')){
@@ -681,7 +681,7 @@ if (!global['settings']){
         font: 'standard',
         cLabels: true,
         theme: 'night',
-        locale: 'en-US',
+        locale: 'zh-CN',
         icon: 'star'
     };
 }
@@ -882,7 +882,7 @@ if (!global.settings['statsTabs']){
     global.settings['statsTabs'] = 0;
 }
 if (!global.settings['locale']){
-    global.settings['locale'] = 'en-us';
+    global.settings['locale'] = 'zh-cn';
 }
 if (typeof global.settings.pause === 'undefined'){
     global.settings['pause'] = false;

@@ -34,15 +34,15 @@ export function loc(key, variables) {
 }
 
 function getString(locale) {
-    $.ajaxSetup({ async: false, cache: false });
+    $.ajaxSetup({ async: false, cache: false  });
 
     let defaultString;
-    $.getJSON("strings/strings.json", (data) => { defaultString = data; });
+    $.getJSON("strings/strings.zh-CN.json", (data) => { defaultString = data; });
 
-    if (/*locale != "en-US"*/ true){
+    if (locale != "en-US"){
         let localeString;
         try {
-            $.getJSON(`strings/strings-chs.json`, (data) => { localeString = data; })
+            $.getJSON(`strings/strings.${locale}.json`, (data) => { localeString = data; })
         }
         catch (e) {
             console.error(e,e.stack);
@@ -54,19 +54,19 @@ function getString(locale) {
         }
 
         if(defaultString.length != defSize){
-            console.error(`string-chs.json has extra keys.`);
+            console.error(`string.${locale}.json has extra keys.`);
         }
     }
 
-    $.ajaxSetup({ async: true, cache: true });
+    $.ajaxSetup({ async: true, cache: true  });
     strings = defaultString;
 }
 
 export const locales = {
+    'zh-CN': '简体中文 (CN)',
     'en-US': 'English (US)',
     'es-ES': 'Spanish (ESP)',
     'pt-BR': 'Português (BR)',
-    'zh-CN': '简体中文',
     'ko-KR': '한국어',
     'cs-CZ': 'Čeština',
     'im-PL': 'Igpay-Atinlay'

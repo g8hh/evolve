@@ -1,4 +1,4 @@
-import { global } from './vars.js';
+import {global} from './vars.js';
 
 let strings;
 getString(global.settings.locale);
@@ -11,10 +11,10 @@ export function loc(key, variables) {
         return key;
     }
     if (variables) {
-        if(variables instanceof Array) {
-            for (let i = 0; i < variables.length; i++){
+        if (variables instanceof Array) {
+            for (let i = 0; i < variables.length; i++) {
                 let re = new RegExp(`%${i}(?!\\d)`, "g");
-                if(!re.exec(string)){
+                if (!re.exec(string)) {
                     console.error(`"%${i}" was not found in the string "${key}" to be replace by "${variables[i]}"`);
                     continue;
                 }
@@ -22,11 +22,11 @@ export function loc(key, variables) {
             }
             let re = new RegExp("%\\d+(?!\\d)", 'g');
             const results = string.match(re);
-            if(results){
+            if (results) {
                 console.error(`${results} was found in the string, but there is no variables to make the replacement`);
             }
         }
-        else{
+        else {
             console.error('"variables" need be a instance of "Array"');
         }
     }
@@ -34,18 +34,22 @@ export function loc(key, variables) {
 }
 
 function getString(locale) {
-    $.ajaxSetup({ async: false, cache: false  });
+    $.ajaxSetup({async: false, cache: false});
 
     let defaultString;
-    $.getJSON("strings/strings.zh-CN.json", (data) => { defaultString = data; });
+    $.getJSON("strings/strings.zh-CN.json", (data) => {
+        defaultString = data;
+    });
 
-    if (locale != "en-US"){
+    if (locale != "en-US") {
         let localeString;
         try {
-            $.getJSON(`strings/strings.${locale}.json`, (data) => { localeString = data; })
+            $.getJSON(`strings/strings.${locale}.json`, (data) => {
+                localeString = data;
+            })
         }
         catch (e) {
-            console.error(e,e.stack);
+            console.error(e, e.stack);
         }
         const defSize = defaultString.length;
 
@@ -53,12 +57,31 @@ function getString(locale) {
             Object.assign(defaultString, localeString);
         }
 
-        if(defaultString.length != defSize){
+        if (defaultString.length != defSize) {
+            console.error(`string.${locale}.json has extra keys.`);
+        }
+    } else {
+        let localeString;
+        try {
+            $.getJSON(`strings/strings.json`, (data) => {
+                localeString = data;
+            })
+        }
+        catch (e) {
+            console.error(e, e.stack);
+        }
+        const defSize = defaultString.length;
+
+        if (localeString) {
+            Object.assign(defaultString, localeString);
+        }
+
+        if (defaultString.length != defSize) {
             console.error(`string.${locale}.json has extra keys.`);
         }
     }
 
-    $.ajaxSetup({ async: true, cache: true  });
+    $.ajaxSetup({async: true, cache: true});
     strings = defaultString;
 }
 

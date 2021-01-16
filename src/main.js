@@ -663,8 +663,9 @@ function fastLoop(){
     }
     if (global.race['untapped']){
         if (global.race['untapped'] > 0){
-            breakdown.p['Global'][loc('trait_untapped_bd')] = `${global.race.untapped / 2}%`;
-            global_multiplier *= 1 + (global.race.untapped / 200);
+            let untapped = +(global.race.untapped / (global.race.untapped + 20) / 10 + 0.00024).toFixed(4);
+            breakdown.p['Global'][loc('trait_untapped_bd')] = `${global.race.untapped * 100}%`;
+            global_multiplier *= 1 + (untapped);
         }
     }
     if (global.race['rainbow'] && global.race['rainbow'] > 1){
@@ -827,6 +828,7 @@ function fastLoop(){
         Food: {},
         Lumber: {},
         Stone: {},
+        Chrysotile: {},
         Crystal: {},
         Furs: {},
         Copper: {},
@@ -3038,8 +3040,8 @@ function fastLoop(){
                     global.city.factory.Polymer--;
                 }
 
-                let oilIncrement = global.race['kindling_kindred'] ? (assembly ? f_rate.Polymer.oil_kk[global.tech['factory']] : f_rate.Polymer.oil_kk[0]) : (assembly ? f_rate.Polymer.oil[global.tech['factory']] : f_rate.Polymer.oil[0]);
-                let lumberIncrement = global.race['kindling_kindred'] ? 0 : (assembly ? f_rate.Polymer.lumber[global.tech['factory']] : f_rate.Polymer.lumber[0]);
+                let oilIncrement = global.race['kindling_kindred'] || global.race['smoldering'] ? (assembly ? f_rate.Polymer.oil_kk[global.tech['factory']] : f_rate.Polymer.oil_kk[0]) : (assembly ? f_rate.Polymer.oil[global.tech['factory']] : f_rate.Polymer.oil[0]);
+                let lumberIncrement = global.race['kindling_kindred'] || global.race['smoldering'] ? 0 : (assembly ? f_rate.Polymer.lumber[global.tech['factory']] : f_rate.Polymer.lumber[0]);
                 let oil_cost = global.city.factory.Polymer * oilIncrement;
                 let lumber_cost = global.city.factory.Polymer * lumberIncrement;
                 let workDone = global.city.factory.Polymer;
@@ -3337,10 +3339,10 @@ function fastLoop(){
                 global.city.smelter.Oil = global.city.smelter.cap;
             }
 
-            if (global.race['kindling_kindred'] && !global.race['evil']){
+            if ((global.race['kindling_kindred'] || global.race['smoldering']) && !global.race['evil']){
                 global.city.smelter.Wood = 0;
             }
-            let coal_fuel = global.race['kindling_kindred'] ? 0.15 : 0.25;
+            let coal_fuel = global.race['kindling_kindred'] || global.race['smoldering'] ? 0.15 : 0.25;
 
             let total_fuel = 0;
             ['Wood', 'Coal', 'Oil', 'Star', 'Inferno'].forEach(function(fuel){
@@ -3572,7 +3574,7 @@ function fastLoop(){
 
         // Graphene
         if (global.interstellar['g_factory'] && global.interstellar['g_factory'].count > 0){
-            if (global.race['kindling_kindred']){
+            if (global.race['kindling_kindred'] || global.race['smoldering']){
                 global.interstellar.g_factory.Lumber = 0;
             }
 
@@ -3721,7 +3723,7 @@ function fastLoop(){
         // Lumber
         { //block scope
             if (global.race['cataclysm']){
-                if (global.tech['mars'] && red_on['biodome'] && !global.race['kindling_kindred']){
+                if (global.tech['mars'] && red_on['biodome'] && !global.race['kindling_kindred'] && !global.race['smoldering']){
                     let lumber_bd = {};
                     let lumber = red_on['biodome'] * 1.5 * global.civic.colonist.workers * zigguratBonus();
 
@@ -3850,6 +3852,13 @@ function fastLoop(){
                 stone_base *= global.tech['explosives'] >= 3 ? 1.75 : 1.5;
             }
 
+            let asbestos_base = 0;
+            if (global.race['smoldering']){
+                asbestos_base = stone_base;
+                stone_base *= (100 - global.city.rock_quarry.asbestos) / 100;
+                asbestos_base *= global.city.rock_quarry.asbestos / 100;
+            }
+
             let power_mult = 1;
             let rock_quarry = 1;
             if (global.city['rock_quarry']){
@@ -3860,21 +3869,34 @@ function fastLoop(){
             }
 
             let stone_bd = {};
+            let chrysotile_bd = {};
             stone_bd[loc('workers')] = stone_base + 'v';
             if (stone_base > 0){
                 stone_bd[`ᄂ${loc('city_rock_quarry')}`] = ((rock_quarry - 1) * 100) + '%';
                 stone_bd[`ᄂ${loc('power')}`] = ((power_mult - 1) * 100) + '%';
+                if (global.race['smoldering']){
+                    chrysotile_bd[loc('workers')] = asbestos_base + 'v';
+                    chrysotile_bd[`ᄂ${loc('city_rock_quarry')}`] = ((rock_quarry - 1) * 100) + '%';
+                    chrysotile_bd[`ᄂ${loc('power')}`] = ((power_mult - 1) * 100) + '%';
+                }
             }
 
             if (global.race['discharge'] && global.race['discharge'] > 0 && p_on['rock_quarry'] > 0){
                 power_mult = (power_mult - 1) * 0.5 + 1;
                 stone_bd[`ᄂ${loc('evo_challenge_discharge')}`] = '-50%';
+                if (global.race['smoldering']){
+                    chrysotile_bd[`ᄂ${loc('evo_challenge_discharge')}`] = '-50%';
+                }
             }
 
             if (global.race['cataclysm']){
                 if (global.tech['mars'] && red_on['red_mine']){
                     stone_base = red_on['red_mine'] * 0.75 * global.civic.colonist.workers * zigguratBonus();
                     stone_bd[loc('space_red_mine_title')] = stone_base + 'v';
+                    if (global.race['smoldering']){
+                        asbestos_base = red_on['red_mine'] * 1.25 * global.civic.colonist.workers * zigguratBonus();
+                        chrysotile_bd[loc('space_red_mine_title')] = asbestos_base + 'v';
+                    }
                 }
                 power_mult = 1;
                 rock_quarry = 1;
@@ -3886,6 +3908,15 @@ function fastLoop(){
             stone_bd[loc('hunger')] = ((hunger - 1) * 100) + '%';
             breakdown.p['Stone'] = stone_bd;
             modRes('Stone', delta * time_multiplier);
+
+            if (global.race['smoldering']){
+                let a_delta = asbestos_base * power_mult * rock_quarry;
+                a_delta *= hunger * global_multiplier;
+                
+                chrysotile_bd[loc('hunger')] = ((hunger - 1) * 100) + '%';
+                breakdown.p['Chrysotile'] = chrysotile_bd;
+                modRes('Chrysotile', a_delta * time_multiplier);
+            }
 
             // Aluminium
             if ((global.city['metal_refinery'] && global.city['metal_refinery'].count > 0) || global.race['cataclysm']){
@@ -4991,6 +5022,7 @@ function midLoop(){
             Containers: 0,
             Lumber: 200,
             Stone: 200,
+            Chrysotile: 200,
             Crystal: 10,
             Furs: 100,
             Copper: 100,
@@ -5047,6 +5079,7 @@ function midLoop(){
             caps['Knowledge'] += 100000;
             caps['Lumber'] += 100000;
             caps['Stone'] += 100000;
+            caps['Chrysotile'] += 100000;
             caps['Furs'] += 100000;
             caps['Aluminium'] += 100000;
             caps['Steel'] += 100000;
@@ -5068,6 +5101,7 @@ function midLoop(){
         var bd_Food = { Base: caps['Food']+'v' };
         var bd_Lumber = { Base: caps['Lumber']+'v' };
         var bd_Stone = { Base: caps['Stone']+'v' };
+        var bd_Chrysotile = { Base: caps['Chrysotile']+'v' };
         var bd_Crystal = { Base: caps['Crystal']+'v' };
         var bd_Furs = { Base: caps['Furs']+'v' };
         var bd_Copper = { Base: caps['Copper']+'v' };
@@ -5169,6 +5203,11 @@ function midLoop(){
             if (global.stats.achieve['blackhole']){ gain = Math.round(gain * (1 + (global.stats.achieve.blackhole.l * 0.05))) };
             caps['Stone'] += gain;
             bd_Stone[loc('city_rock_quarry')] = gain+'v';
+
+            if (global.race['smoldering']){
+                caps['Chrysotile'] += gain;
+                bd_Chrysotile[loc('city_rock_quarry')] = gain+'v';
+            }
         }
         if (global.city['lumber_yard']){
             let gain = (global.city['lumber_yard'].count * spatialReasoning(100));
@@ -5362,6 +5401,12 @@ function midLoop(){
             caps['Stone'] += gain;
             bd_Stone[label] = gain+'v';
 
+            if (global.resource.Chrysotile.display){
+                gain = (global.city['shed'].count * (spatialReasoning(300 * multiplier)));
+                caps['Chrysotile'] += gain;
+                bd_Chrysotile[label] = gain+'v';
+            }
+
             if (global.resource.Crystal.display){
                 gain = (global.city['shed'].count * (spatialReasoning(8 * multiplier)));
                 caps['Crystal'] += gain;
@@ -5404,6 +5449,12 @@ function midLoop(){
             gain = (global.interstellar['warehouse'].count * (spatialReasoning(750 * multiplier)));
             caps['Stone'] += gain;
             bd_Stone[label] = gain+'v';
+
+            if (global.resource.Chrysotile.display){
+                gain = (global.interstellar['warehouse'].count * (spatialReasoning(750 * multiplier)));
+                caps['Chrysotile'] += gain;
+                bd_Chrysotile[label] = gain+'v';
+            }
 
             gain = (global.interstellar['warehouse'].count * (spatialReasoning(425 * multiplier)));
             caps['Furs'] += gain;
@@ -5566,10 +5617,16 @@ function midLoop(){
                 caps['Coal'] += gain;
                 bd_Coal[loc('space_red_garage_title')] = gain+'v';
 
-                if (!global.race['kindling_kindred']){
+                if (!global.race['kindling_kindred'] && !global.race['smoldering']){
                     gain = (global.space.garage.count * (spatialReasoning(7500 * multiplier)));
                     caps['Lumber'] += gain;
                     bd_Lumber[loc('space_red_garage_title')] = gain+'v';
+                }
+
+                if (global.race['smoldering']){
+                    gain = (global.space.garage.count * (spatialReasoning(7500 * multiplier)));
+                    caps['Chrysotile'] += gain;
+                    bd_Chrysotile[loc('space_red_garage_title')] = gain+'v';
                 }
 
                 gain = (global.space.garage.count * (spatialReasoning(7500 * multiplier)));
@@ -6208,6 +6265,7 @@ function midLoop(){
             Food: bd_Food,
             Lumber: bd_Lumber,
             Stone: bd_Stone,
+            Chrysotile: bd_Chrysotile,
             Crystal: bd_Crystal,
             Furs: bd_Furs,
             Copper: bd_Copper,
@@ -6579,7 +6637,7 @@ function midLoop(){
 
         if (global.city['foundry']){
             let fworkers = global.civic.craftsman.workers;
-            if (global.race['kindling_kindred'] && global.city.foundry['Plywood'] > 0){
+            if ((global.race['kindling_kindred'] || global.race['smoldering']) && global.city.foundry['Plywood'] > 0){
                 global.civic.craftsman.workers -= global.city.foundry['Plywood'];
                 global.city.foundry.crafting -= global.city.foundry['Plywood'];
                 global.city.foundry['Plywood'] = 0;
@@ -6594,7 +6652,7 @@ function midLoop(){
             });
         }
 
-        if (global.tech['foundry'] === 3 && global.race['kindling_kindred']){
+        if (global.tech['foundry'] === 3 && (global.race['kindling_kindred'] || global.race['smoldering'])){
             global.tech['foundry'] = 4;
         }
 
@@ -6603,13 +6661,13 @@ function midLoop(){
             global.civic.farmer.max = 0;
         }
 
-        if (global.race['kindling_kindred']){
+        if (global.race['kindling_kindred'] || global.race['smoldering']){
             global.civic.lumberjack.workers = 0;
             global.resource.Lumber.crates = 0;
             global.resource.Lumber.containers = 0;
             global.resource.Lumber.trade = 0;
         }
-        if (global.race['kindling_kindred'] && global.city['foundry'] && global.city.foundry['Plywood']){
+        if ((global.race['kindling_kindred'] || global.race['smoldering']) && global.city['foundry'] && global.city.foundry['Plywood']){
             global.city.foundry['Plywood'] = 0;
         }
 

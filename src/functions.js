@@ -1098,6 +1098,7 @@ export function adjustCosts(costs, wiki){
     }
     costs = technoAdjust(costs, wiki);
     costs = kindlingAdjust(costs, wiki);
+    costs = smolderAdjust(costs, wiki);
     costs = scienceAdjust(costs);
     costs = rebarAdjust(costs, wiki);
     return craftAdjust(costs, wiki);
@@ -1143,6 +1144,32 @@ function scienceAdjust(costs){
                 newCosts[res] = function(){ return costs[res](); }
             }
         });
+        return newCosts;
+    }
+    return costs;
+}
+
+function smolderAdjust(costs, wiki){
+    if (global.race['smoldering']){
+        let newCosts = {};
+        Object.keys(costs).forEach(function (res){
+            if (res === 'Lumber' || res === 'Plywood'){
+                let adjustRate = res === 'Plywood' ? 2 : 1;
+                newCosts['Chrysotile'] = function(){ return Math.round(costs[res](wiki) * adjustRate) || 0; }
+            }
+            else if (res === 'Structs' || res === 'Chrysotile'){
+                newCosts[res] = function(){ return costs[res](wiki); }
+            }
+            else {
+                newCosts[res] = function(){ return Math.round(costs[res](wiki) * 0.9); }
+            }
+        });
+        if (!newCosts.hasOwnProperty('Chrysotile') && costs.hasOwnProperty('Money') && global.tech['primitive'] && global.tech.primitive >= 3){
+            newCosts['Chrysotile'] = function(){
+                let money = costs['Money'](wiki) || 0;
+                return money > 0 ? Math.round(money / 30) : 0;
+            }
+        }
         return newCosts;
     }
     return costs;

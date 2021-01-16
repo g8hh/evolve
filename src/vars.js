@@ -679,7 +679,7 @@ if (convertVersion(global['version']) < 100023){
 }
 
 global['version'] = '1.0.23';
-delete global['beta'];
+global['beta'] = 2;
 
 if (!global.hasOwnProperty('power')){
     global['power'] = [];
@@ -725,7 +725,7 @@ if (!global['settings']){
         disableReset: false,
         font: 'standard',
         cLabels: true,
-        theme: 'night',
+        theme: 'dark',
         locale: 'zh-CN',
         icon: 'star'
     };

@@ -1,10 +1,10 @@
 import { global, save, webWorker, intervals, keyMap, resizeGame, breakdown, sizeApproximation, keyMultiplier, p_on, moon_on, red_on, belt_on, int_on, gal_on, spire_on, set_qlevel, quantum_level } from './vars.js';
 import { loc } from './locale.js';
 import { unlockAchieve, checkAchievements, drawAchieve, alevel, universeAffix, challengeIcon } from './achieve.js';
-import { gameLoop, vBind, popover, clearElement, deepClone, timeCheck, arpaTimeCheck, timeFormat, powerModifier, modRes, messageQueue, calc_mastery, calcPillar, darkEffect, buildQueue, cleanBuildPopOver, vacuumCollapse, shrineBonusActive, getShrineBonus, getEaster, easterEgg, easterEggBind, getHalloween, trickOrTreatBind } from './functions.js';
+import { gameLoop, vBind, popover, clearElement, deepClone, timeCheck, arpaTimeCheck, timeFormat, powerModifier, modRes, messageQueue, calc_mastery, calcPillar, darkEffect, buildQueue, cleanBuildPopOver, vacuumCollapse, shrineBonusActive, getShrineBonus, getEaster, easterEgg, easterEggBind, getHalloween, trickOrTreatBind, powerGrid } from './functions.js';
 import { races, traits, racialTrait, randomMinorTrait, biomes, planetTraits } from './races.js';
-import { defineResources, resource_values, spatialReasoning, craftCost, plasmidBonus, tradeRatio, craftingRatio, crateValue, containerValue, tradeSellPrice, tradeBuyPrice, atomic_mass, supplyValue, galaxyOffers } from './resources.js';
-import { job_desc, loadFoundry, farmerValue } from './jobs.js';
+import { defineResources, resource_values, spatialReasoning, craftCost, plasmidBonus, faithBonus, tradeRatio, craftingRatio, crateValue, containerValue, tradeSellPrice, tradeBuyPrice, atomic_mass, supplyValue, galaxyOffers } from './resources.js';
+import { defineJobs, job_desc, loadFoundry, farmerValue } from './jobs.js';
 import { f_rate, manaCost, setPowerGrid, gridEnabled, gridDefs } from './industry.js';
 import { defineIndustry, checkControlling, garrisonSize, armyRating, govTitle } from './civics.js';
 import { actions, updateDesc, challengeGeneHeader, challengeActionHeader, scenarioActionHeader, checkTechRequirements, addAction, storageMultipler, checkAffordable, drawCity, drawTech, gainTech, removeAction, evoProgress, housingLabel, updateQueueNames, wardenLabel, setPlanet, resQueue, bank_vault, start_cataclysm, cleanTechPopOver } from './actions.js';
@@ -14,6 +14,27 @@ import { arpa, buildArpa } from './arpa.js';
 import { events } from './events.js';
 import { index, mainVue, initTabs, loadTab } from './index.js';
 import { getTopChange } from './wiki/change.js';
+
+{
+    $(document).ready(function() {
+        if (!window.matchMedia)
+            return;
+    
+        var current = $('head > link[rel="icon"][media]');
+        $.each(current, function(i, icon) {
+            var match = window.matchMedia(icon.media);
+            function swap() {
+                if (match.matches) {
+                    current.remove();
+                    current = $(icon).appendTo('head');
+                }
+            }
+            match.addListener(swap);
+            swap();
+        });
+    });
+}
+
 
 if (global.settings.expose){
     enableScript();
@@ -117,9 +138,14 @@ if (global.portal['hell_forge']){
     p_on['hell_forge'] = global.portal.hell_forge.on;
 }
 
+defineJobs(true);
 defineResources();
 initTabs();
 buildQueue();
+
+Object.keys(gridDefs()).forEach(function(gridtype){
+    powerGrid(gridtype);
+});
 
 resizeGame();
 
@@ -629,25 +655,7 @@ function fastLoop(){
     }
     if (global.race['no_plasmid'] || global.race.universe === 'antimatter'){
         if ((global.race['cataclysm'] && global.space['ziggurat'] && global.space.ziggurat.count) || (global.city['temple'] && global.city['temple'].count)){
-            let temple_bonus = global.tech['anthropology'] && global.tech['anthropology'] >= 1 ? 0.016 : 0.01;
-            if (global.tech['fanaticism'] && global.tech['fanaticism'] >= 2){
-                temple_bonus += global.civic.professor.workers * (global.race.universe === 'antimatter' ? 0.0002 : 0.0004);
-            }
-            if (global.genes['ancients'] && global.genes['ancients'] >= 2 && global.civic.priest.display){
-                let priest_bonus = global.genes['ancients'] >= 5 ? 0.00015 : (global.genes['ancients'] >= 3 ? 0.000125 : 0.0001);
-                temple_bonus += priest_bonus * global.civic.priest.workers;
-            }
-            if (global.race.universe === 'antimatter'){
-                temple_bonus /= 2;
-            }
-            if (global.race['spiritual']){
-                temple_bonus *= 1 + (traits.spiritual.vars[0] / 100);
-            }
-            if (global.civic.govern.type === 'theocracy'){
-                temple_bonus *= 1.12;
-            }
-
-            let faith = (global.race['cataclysm'] ? global.space.ziggurat.count : global.city.temple.count) * temple_bonus ;
+            let faith = faithBonus();
             breakdown.p['Global'][loc('faith')] = (faith * 100) + '%';
             global_multiplier *= (1 + faith);
         }
@@ -664,7 +672,7 @@ function fastLoop(){
     if (global.race['untapped']){
         if (global.race['untapped'] > 0){
             let untapped = +(global.race.untapped / (global.race.untapped + 20) / 10 + 0.00024).toFixed(4);
-            breakdown.p['Global'][loc('trait_untapped_bd')] = `${global.race.untapped * 100}%`;
+            breakdown.p['Global'][loc('trait_untapped_bd')] = `${untapped * 100}%`;
             global_multiplier *= 1 + (untapped);
         }
     }
@@ -3853,7 +3861,7 @@ function fastLoop(){
             }
 
             let asbestos_base = 0;
-            if (global.race['smoldering']){
+            if (global.race['smoldering'] && global.resource.Chrysotile.display && global.city['rock_quarry']){
                 asbestos_base = stone_base;
                 stone_base *= (100 - global.city.rock_quarry.asbestos) / 100;
                 asbestos_base *= global.city.rock_quarry.asbestos / 100;
@@ -3874,7 +3882,7 @@ function fastLoop(){
             if (stone_base > 0){
                 stone_bd[`ᄂ${loc('city_rock_quarry')}`] = ((rock_quarry - 1) * 100) + '%';
                 stone_bd[`ᄂ${loc('power')}`] = ((power_mult - 1) * 100) + '%';
-                if (global.race['smoldering']){
+                if (global.race['smoldering'] && global.resource.Chrysotile.display){
                     chrysotile_bd[loc('workers')] = asbestos_base + 'v';
                     chrysotile_bd[`ᄂ${loc('city_rock_quarry')}`] = ((rock_quarry - 1) * 100) + '%';
                     chrysotile_bd[`ᄂ${loc('power')}`] = ((power_mult - 1) * 100) + '%';
@@ -3884,7 +3892,7 @@ function fastLoop(){
             if (global.race['discharge'] && global.race['discharge'] > 0 && p_on['rock_quarry'] > 0){
                 power_mult = (power_mult - 1) * 0.5 + 1;
                 stone_bd[`ᄂ${loc('evo_challenge_discharge')}`] = '-50%';
-                if (global.race['smoldering']){
+                if (global.race['smoldering'] && global.resource.Chrysotile.display){
                     chrysotile_bd[`ᄂ${loc('evo_challenge_discharge')}`] = '-50%';
                 }
             }
@@ -3893,7 +3901,7 @@ function fastLoop(){
                 if (global.tech['mars'] && red_on['red_mine']){
                     stone_base = red_on['red_mine'] * 0.75 * global.civic.colonist.workers * zigguratBonus();
                     stone_bd[loc('space_red_mine_title')] = stone_base + 'v';
-                    if (global.race['smoldering']){
+                    if (global.race['smoldering'] && global.resource.Chrysotile.display){
                         asbestos_base = red_on['red_mine'] * 1.25 * global.civic.colonist.workers * zigguratBonus();
                         chrysotile_bd[loc('space_red_mine_title')] = asbestos_base + 'v';
                     }
@@ -3909,7 +3917,7 @@ function fastLoop(){
             breakdown.p['Stone'] = stone_bd;
             modRes('Stone', delta * time_multiplier);
 
-            if (global.race['smoldering']){
+            if (global.race['smoldering'] && global.resource.Chrysotile.display){
                 let a_delta = asbestos_base * power_mult * rock_quarry;
                 a_delta *= hunger * global_multiplier;
                 
@@ -5204,7 +5212,7 @@ function midLoop(){
             caps['Stone'] += gain;
             bd_Stone[loc('city_rock_quarry')] = gain+'v';
 
-            if (global.race['smoldering']){
+            if (global.race['smoldering'] && global.resource.Chrysotile.display){
                 caps['Chrysotile'] += gain;
                 bd_Chrysotile[loc('city_rock_quarry')] = gain+'v';
             }
@@ -5623,7 +5631,7 @@ function midLoop(){
                     bd_Lumber[loc('space_red_garage_title')] = gain+'v';
                 }
 
-                if (global.race['smoldering']){
+                if (global.race['smoldering'] && global.resource.Chrysotile.display){
                     gain = (global.space.garage.count * (spatialReasoning(7500 * multiplier)));
                     caps['Chrysotile'] += gain;
                     bd_Chrysotile[loc('space_red_garage_title')] = gain+'v';

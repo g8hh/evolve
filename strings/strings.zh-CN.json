@@ -5039,7 +5039,7 @@
   "wiki_trait_effect_low_light": "农场及农民产量减少 %0% 。",
   "wiki_trait_effect_elusive": "间谍永远不会被抓获，地狱维度巡逻队被攻击的概率减少。",
   "wiki_trait_effect_iron_allergy": "铁产量 -%0% 。",
-  "wiki_trait_effect_smoldering": "春天无士气加成，夏天士气 +5%，连续炎热天气会叠加产量加成效果，前100天，每天 +%1%，100天以后，每天 +%2% 。TRANS:Lumber is not available, additional resource Chrysotile is harvested by Quarry Workers. Most resource costs are reduced by 10%.",
+  "wiki_trait_effect_smoldering": "春天无士气加成，夏天士气 +5%，连续炎热天气会叠加产量加成效果，前100天，每天 +%1%，100天以后，每天 +%2% 。无法获取木材，额外增加温石棉资源，由石工采集。大部分资源成本减少10%。",
   "wiki_trait_effect_cold_intolerance": "连续寒冷天气会叠加产量下降效果，每天 -%0% 。",
   "wiki_trait_effect_chilled": "春天无士气加成，冬天士气 +%0%，连续寒冷天气会叠加产量加成效果，前100天，每天 +%1%，100天以后，每天 +%2% 。",
   "wiki_trait_effect_heat_intolerance": "连续炎热天气会叠加产量下降效果，每天 -%0% 。",

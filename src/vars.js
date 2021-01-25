@@ -678,7 +678,14 @@ if (convertVersion(global['version']) < 100023){
     }
 }
 
-global['version'] = '1.0.24';
+if (convertVersion(global['version']) < 100025){
+    if (global.race['casting'] && global.race['smoldering']){
+        global.race.casting.total -= global.race.casting.lumberjack;
+        global.race.casting.lumberjack = 0;
+    }
+}
+
+global['version'] = '1.0.25';
 delete global['beta'];
 
 if (!global.hasOwnProperty('power')){

@@ -4000,7 +4000,7 @@
   "space_red_mine_effect": "每行星居民提升%1产量 +%0",
   "space_red_mine_desc_bd": "%0 矿工",
   "space_red_fabrication_title": "行星铸造厂",
-  "space_red_fabrication_desc": "铸造厂（行星）",
+  "space_red_fabrication_desc": "行星铸造厂",
   "space_red_fabrication_effect1": "工匠人数上限 +1",
   "space_red_fabrication_effect2": "每行星居民提升工匠产量 +%0%",
   "space_red_factory_title": "行星工厂",

@@ -188,7 +188,6 @@ export const actions = {
             },
             effect: loc('evo_phagocytosis_effect'),
             action(){
-                console.log('phagocytosis triggered');
                 if (payCosts($(this)[0].cost)){
                     global.evolution['phagocytosis'].count++;
                     removeAction(actions.evolution.phagocytosis.id);
@@ -1412,6 +1411,7 @@ export const actions = {
                     removeAction(actions.evolution.sentience.id);
                     global.race.species = 'human';
                     sentience();
+                    return true;
                 }
                 return false;
             },
@@ -1438,6 +1438,7 @@ export const actions = {
                     removeAction(actions.evolution.sentience.id);
                     global.race.species = 'orc';
                     sentience();
+                    return true;
                 }
                 return false;
             },
@@ -1464,6 +1465,7 @@ export const actions = {
                     removeAction(actions.evolution.sentience.id);
                     global.race.species = 'elven';
                     sentience();
+                    return true;
                 }
                 return false;
             },
@@ -1490,6 +1492,7 @@ export const actions = {
                     removeAction(actions.evolution.sentience.id);
                     global.race.species = 'troll';
                     sentience();
+                    return true;
                 }
                 return false;
             },
@@ -1516,6 +1519,7 @@ export const actions = {
                     removeAction(actions.evolution.sentience.id);
                     global.race.species = 'ogre';
                     sentience();
+                    return true;
                 }
                 return false;
             },
@@ -1542,6 +1546,7 @@ export const actions = {
                     removeAction(actions.evolution.sentience.id);
                     global.race.species = 'cyclops';
                     sentience();
+                    return true;
                 }
                 return false;
             },
@@ -1568,6 +1573,7 @@ export const actions = {
                     removeAction(actions.evolution.sentience.id);
                     global.race.species = 'kobold';
                     sentience();
+                    return true;
                 }
                 return false;
             },
@@ -1594,6 +1600,7 @@ export const actions = {
                     removeAction(actions.evolution.sentience.id);
                     global.race.species = 'goblin';
                     sentience();
+                    return true;
                 }
                 return false;
             },
@@ -1620,6 +1627,7 @@ export const actions = {
                     removeAction(actions.evolution.sentience.id);
                     global.race.species = 'gnome';
                     sentience();
+                    return true;
                 }
                 return false;
             },
@@ -1646,6 +1654,7 @@ export const actions = {
                     removeAction(actions.evolution.sentience.id);
                     global.race.species = 'cath';
                     sentience();
+                    return true;
                 }
                 return false;
             },
@@ -1672,6 +1681,7 @@ export const actions = {
                     removeAction(actions.evolution.sentience.id);
                     global.race.species = 'wolven';
                     sentience();
+                    return true;
                 }
                 return false;
             },
@@ -1698,6 +1708,7 @@ export const actions = {
                     removeAction(actions.evolution.sentience.id);
                     global.race.species = 'centaur';
                     sentience();
+                    return true;
                 }
                 return false;
             },
@@ -1724,6 +1735,7 @@ export const actions = {
                     removeAction(actions.evolution.sentience.id);
                     global.race.species = 'tortoisan';
                     sentience();
+                    return true;
                 }
                 return false;
             },
@@ -1750,6 +1762,7 @@ export const actions = {
                     removeAction(actions.evolution.sentience.id);
                     global.race.species = 'gecko';
                     sentience();
+                    return true;
                 }
                 return false;
             },
@@ -1776,6 +1789,7 @@ export const actions = {
                     removeAction(actions.evolution.sentience.id);
                     global.race.species = 'slitheryn';
                     sentience();
+                    return true;
                 }
                 return false;
             },
@@ -1802,6 +1816,7 @@ export const actions = {
                     removeAction(actions.evolution.sentience.id);
                     global.race.species = 'arraak';
                     sentience();
+                    return true;
                 }
                 return false;
             },
@@ -1828,6 +1843,7 @@ export const actions = {
                     removeAction(actions.evolution.sentience.id);
                     global.race.species = 'pterodacti';
                     sentience();
+                    return true;
                 }
                 return false;
             },
@@ -1854,6 +1870,7 @@ export const actions = {
                     removeAction(actions.evolution.sentience.id);
                     global.race.species = 'dracnid';
                     sentience();
+                    return true;
                 }
                 return false;
             },
@@ -1880,6 +1897,7 @@ export const actions = {
                     removeAction(actions.evolution.sentience.id);
                     global.race.species = 'sporgar';
                     sentience();
+                    return true;
                 }
                 return false;
             },
@@ -1906,6 +1924,7 @@ export const actions = {
                     removeAction(actions.evolution.sentience.id);
                     global.race.species = 'shroomi';
                     sentience();
+                    return true;
                 }
                 return false;
             },
@@ -1932,6 +1951,7 @@ export const actions = {
                     removeAction(actions.evolution.sentience.id);
                     global.race.species = 'moldling';
                     sentience();
+                    return true;
                 }
                 return false;
             },
@@ -1958,6 +1978,7 @@ export const actions = {
                     removeAction(actions.evolution.sentience.id);
                     global.race.species = 'mantis';
                     sentience();
+                    return true;
                 }
                 return false;
             },
@@ -1984,6 +2005,7 @@ export const actions = {
                     removeAction(actions.evolution.sentience.id);
                     global.race.species = 'scorpid';
                     sentience();
+                    return true;
                 }
                 return false;
             },
@@ -2010,6 +2032,7 @@ export const actions = {
                     removeAction(actions.evolution.sentience.id);
                     global.race.species = 'antid';
                     sentience();
+                    return true;
                 }
                 return false;
             },
@@ -2036,6 +2059,7 @@ export const actions = {
                     removeAction(actions.evolution.sentience.id);
                     global.race.species = 'entish';
                     sentience();
+                    return true;
                 }
                 return false;
             },
@@ -2062,6 +2086,7 @@ export const actions = {
                     removeAction(actions.evolution.sentience.id);
                     global.race.species = 'cacti';
                     sentience();
+                    return true;
                 }
                 return false;
             },
@@ -2088,6 +2113,7 @@ export const actions = {
                     removeAction(actions.evolution.sentience.id);
                     global.race.species = 'pinguicula';
                     sentience();
+                    return true;
                 }
                 return false;
             },
@@ -2114,6 +2140,7 @@ export const actions = {
                     removeAction(actions.evolution.sentience.id);
                     global.race.species = 'sharkin';
                     sentience();
+                    return true;
                 }
                 return false;
             },
@@ -2140,6 +2167,7 @@ export const actions = {
                     removeAction(actions.evolution.sentience.id);
                     global.race.species = 'octigoran';
                     sentience();
+                    return true;
                 }
                 return false;
             },
@@ -2166,6 +2194,7 @@ export const actions = {
                     removeAction(actions.evolution.sentience.id);
                     global.race.species = 'dryad';
                     sentience();
+                    return true;
                 }
                 return false;
             },
@@ -2192,6 +2221,7 @@ export const actions = {
                     removeAction(actions.evolution.sentience.id);
                     global.race.species = 'satyr';
                     sentience();
+                    return true;
                 }
                 return false;
             },
@@ -2218,6 +2248,7 @@ export const actions = {
                     removeAction(actions.evolution.sentience.id);
                     global.race.species = 'phoenix';
                     sentience();
+                    return true;
                 }
                 return false;
             },
@@ -2244,6 +2275,7 @@ export const actions = {
                     removeAction(actions.evolution.sentience.id);
                     global.race.species = 'salamander';
                     sentience();
+                    return true;
                 }
                 return false;
             },
@@ -2270,6 +2302,7 @@ export const actions = {
                     removeAction(actions.evolution.sentience.id);
                     global.race.species = 'yeti';
                     sentience();
+                    return true;
                 }
                 return false;
             },
@@ -2296,6 +2329,7 @@ export const actions = {
                     removeAction(actions.evolution.sentience.id);
                     global.race.species = 'wendigo';
                     sentience();
+                    return true;
                 }
                 return false;
             },
@@ -2322,6 +2356,7 @@ export const actions = {
                     removeAction(actions.evolution.sentience.id);
                     global.race.species = 'tuskin';
                     sentience();
+                    return true;
                 }
                 return false;
             },
@@ -2348,6 +2383,7 @@ export const actions = {
                     removeAction(actions.evolution.sentience.id);
                     global.race.species = 'kamel';
                     sentience();
+                    return true;
                 }
                 return false;
             },
@@ -2374,6 +2410,7 @@ export const actions = {
                     removeAction(actions.evolution.sentience.id);
                     global.race.species = 'balorg';
                     sentience();
+                    return true;
                 }
                 return false;
             },
@@ -2400,6 +2437,7 @@ export const actions = {
                     removeAction(actions.evolution.sentience.id);
                     global.race.species = 'imp';
                     sentience();
+                    return true;
                 }
                 return false;
             },
@@ -2426,6 +2464,7 @@ export const actions = {
                     removeAction(actions.evolution.sentience.id);
                     global.race.species = 'seraph';
                     sentience();
+                    return true;
                 }
                 return false;
             },
@@ -2452,6 +2491,7 @@ export const actions = {
                     removeAction(actions.evolution.sentience.id);
                     global.race.species = 'unicorn';
                     sentience();
+                    return true;
                 }
                 return false;
             },
@@ -2478,6 +2518,7 @@ export const actions = {
                     removeAction(actions.evolution.sentience.id);
                     global.race.species = 'custom';
                     sentience();
+                    return true;
                 }
                 return false;
             },
@@ -7426,6 +7467,34 @@ function sentience(){
             global.resource.Soul_Gem.amount = gems;
         }
     }
+
+    if (global.race.species === 'tortoisan'){
+        let color = Math.floor(Math.seededRandom(100));
+        if (color === 99){
+            global.race['shell_color'] = 'rainbow';
+        }
+        else if (color >= 97 && color <= 98){
+            global.race['shell_color'] = 'white';
+        }
+        else if (color >= 93 && color <= 96){
+            global.race['shell_color'] = 'red';
+        }
+        else if (color >= 89 && color <= 92){
+            global.race['shell_color'] = 'orange';
+        }
+        else if (color >= 85 && color <= 88){
+            global.race['shell_color'] = 'yellow';
+        }
+        else if (color >= 75 && color <= 84){
+            global.race['shell_color'] = 'purple';
+        }
+        else if (color >= 65 && color <= 74){
+            global.race['shell_color'] = 'blue';
+        }
+        else {
+            global.race['shell_color'] = 'green';
+        }
+    }
     
     calcPillar(true);
 
@@ -7451,6 +7520,10 @@ function sentience(){
 
     if (global.race['cataclysm']){
         cataclysm();
+    }
+
+    if (global.queue.hasOwnProperty('queue')){
+        global.queue.queue = [];
     }
 
     if (global.race['slow'] || global.race['hyper'] || global.race.species === 'junker'){

@@ -6054,7 +6054,7 @@ function midLoop(){
                 casinos += global.space.spc_casino.count;
             }
             let casino_capacity = global.tech['gambling'] >= 3 ? 60000 : 40000;
-            if (global.tech['gambling'] >= 4){
+            if (global.tech['gambling'] >= 5){
                 casino_capacity += global.tech['gambling'] >= 6 ? 240000 : 60000;
             }
             let vault = casinos * spatialReasoning(casino_capacity);
@@ -6244,11 +6244,6 @@ function midLoop(){
         }
         if (global.galaxy['super_freighter']){
             breakdown.gt_route[loc('galaxy_super_freighter')] = gal_on['super_freighter'] * 5;
-        }
-        if (global.city['wharf']){
-            let r_count = global.city.wharf.count * (global.race['nomadic'] || global.race['xenophobic'] ? 1 : 2);
-            global.city.market.mtrade += r_count;
-            breakdown.t_route[loc('city_wharf')] = r_count;
         }
         if (global.galaxy['bolognium_ship']){
             lCaps['crew'] += global.galaxy.bolognium_ship.on * actions.galaxy.gxy_gateway.bolognium_ship.ship.civ;
@@ -7142,19 +7137,28 @@ function midLoop(){
 
     resourceAlt();
 
-    Object.keys(global.resource).forEach(function (res){
-        $(`[data-${res}]`).each(function (i,v){
-            let fail_max = global.resource[res].max >= 0 && $(this).attr(`data-${res}`) > global.resource[res].max ? true : false;
-            if (global.resource[res].amount + global.resource[res].diff < $(this).attr(`data-${res}`) || fail_max){
-                if ($(this).hasClass('has-text-dark')){
-                    $(this).removeClass('has-text-dark');
-                    $(this).addClass('has-text-danger');
+    $(`.costList`).each(function (){
+        $(this).children().each(function (){
+            let elm = $(this);
+            this.className.split(/\s+/).forEach(function(cls){
+                if (cls.startsWith(`res-`)){
+                    let res = cls.split(`-`)[1];
+                    if (global.resource.hasOwnProperty(res)){
+                        let res_val = elm.attr(`data-${res}`);
+                        let fail_max = global.resource[res].max >= 0 && res_val > global.resource[res].max ? true : false;
+                        if (global.resource[res].amount + global.resource[res].diff < res_val || fail_max){
+                            if (elm.hasClass('has-text-dark')){
+                                elm.removeClass('has-text-dark');
+                                elm.addClass('has-text-danger');
+                            }
+                        }
+                        else if (elm.hasClass('has-text-danger') || elm.hasClass('has-text-alert')){
+                            elm.removeClass('has-text-danger');
+                            elm.addClass('has-text-dark');
+                        }
+                    }
                 }
-            }
-            else if ($(this).hasClass('has-text-danger') || $(this).hasClass('has-text-alert')){
-                $(this).removeClass('has-text-danger');
-                $(this).addClass('has-text-dark');
-            }
+            });
         });
     });
 

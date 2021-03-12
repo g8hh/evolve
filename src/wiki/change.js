@@ -3,6 +3,16 @@ import { clearElement } from './../functions.js';
 
 const changeList = [
     {
+        version: `1.0.30`,
+        date: `3/4/2021`,
+        changes: [
+            `Wharves once again now grant the correct number of trade routes.`,
+            `Fixed errors with Casino vault size.`,
+            `Sacrificed Citizens stat for Mantis players.`,
+            `Factory production can be assigned without first removing it from Alloy production.`
+        ]
+    },
+    {
         version: `1.0.29`,
         date: `2/25/2021`,
         changes: [

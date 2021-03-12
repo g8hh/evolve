@@ -772,10 +772,12 @@ export function timeFormat(time){
                     formatted = `${days}d ${r}h`;
                 }
                 else {
+                    r = ('0' + r).slice(-2);
                     formatted = `${hours}h ${r}m`;
                 }
             }
             else {
+                secs = ('0' + secs).slice(-2);
                 formatted = `${mins}m ${secs}s`;
             }
         }
@@ -923,7 +925,7 @@ export function masteryType(universe,detailed){
         }
         return detailed ? { g: m_mastery, u: u_mastery, m: m_mastery + u_mastery } : m_mastery + u_mastery;
     }
-    return 0;
+    return detailed ? { g: 0, u: 0, m:0 } : 0;
 }
 
 export const calcPillar = (function(){
@@ -1591,6 +1593,20 @@ export function calcGenomeScore(genome){
     return genes;
 }
 
+export function updateResetStats(){
+    global.stats.reset++;
+    global.stats.tdays += global.stats.days;
+    global.stats.days = 0;
+    global.stats.tknow += global.stats.know;
+    global.stats.know = 0;
+    global.stats.tstarved += global.stats.starved;
+    global.stats.starved = 0;
+    global.stats.tdied += global.stats.died;
+    global.stats.died = 0;
+    global.stats.tsac += global.stats.sac;
+    global.stats.sac = 0;
+}
+
 export function vacuumCollapse(){
     if (global.tech.syphon >= 80 && global.race.universe === 'magic'){
         global.tech.syphon = 79;
@@ -1636,16 +1652,9 @@ export function vacuumCollapse(){
         checkAchievements();
 
         phage += new_phage;
-        global.stats.reset++;
         global.stats.blackhole++;
-        global.stats.tdays += global.stats.days;
-        global.stats.days = 0;
-        global.stats.tknow += global.stats.know;
-        global.stats.know = 0;
-        global.stats.tstarved += global.stats.starved;
-        global.stats.starved = 0;
-        global.stats.tdied += global.stats.died;
-        global.stats.died = 0;
+        updateResetStats();
+        
         if (global.race.universe === 'antimatter'){
             antiplasmid += new_plasmid;
             global.stats.antiplasmid += new_plasmid;

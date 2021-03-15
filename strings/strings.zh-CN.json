@@ -2064,7 +2064,7 @@
   "modal_graphene_produce": "每秒消耗 %0 %1 生产 %2",
   "modal_pylon_casting": "锻造仪式",
   "modal_pylon_casting_cost": "法力 -%0/s",
-  "modal_pylon_casting_label": "%0仪式提升了%0效率，当前法力消耗为 %1，下一级法力消耗额外增加 %2。",
+  "modal_pylon_casting_label": "%0仪式提升了%0效率，当前法力消耗为 %1，效果为%3%，下一级法力消耗额外增加 %2。",
   "modal_pylon_casting_label_crafting": "锻造仪式提升了锻造效率，当前法力消耗为 %0 ，锻造物产量 +%1%，工匠效率 +%2%。下一级法力消耗额外增加 %3。",
   "modal_pylon_spell_farmer": "农业",
   "modal_pylon_spell_miner": "矿业",

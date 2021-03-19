@@ -3,7 +3,17 @@ import { clearElement } from './../functions.js';
 
 const changeList = [
     {
-        version: `1.0.30`,
+        version: `1.0.32`,
+        date: `3/19/2021`,
+        changes: [
+            `Unemployment Rework.`,
+            `Fixed reactivity of some tooltips.`,
+            `Fixed cut off tooltips on settings tab.`,
+            `Xeno Tourism now requires 10 Monuments and Tourism.`
+        ]
+    },
+    {
+        version: `1.0.31`,
         date: `3/15/2021`,
         changes: [
             `Alien 1 system is now named after their homeworld.`,

@@ -3,6 +3,14 @@ import { clearElement } from './../functions.js';
 
 const changeList = [
     {
+        version: `1.0.33`,
+        date: `3/20/2021`,
+        changes: [
+            `Enhanced threat assessment for Spire.`,
+            `Added a Save as File option for exporting game state.`
+        ]
+    },
+    {
         version: `1.0.32`,
         date: `3/19/2021`,
         changes: [

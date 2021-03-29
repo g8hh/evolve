@@ -1,6 +1,6 @@
 import { save, global, webWorker, clearStates, poppers, keyMultiplier, sizeApproximation, p_on, moon_on, red_on, belt_on, int_on, gal_on, quantum_level } from './vars.js';
 import { vBind, messageQueue, clearElement, popover, flib, powerModifier, powerCostMod, calcPrestige, spaceCostMultiplier, darkEffect, updateResetStats, calcGenomeScore, randomKey } from './functions.js';
-import { unlockAchieve, checkAchievements, unlockFeat } from './achieve.js';
+import { unlockAchieve, checkAchievements, unlockFeat, universeAffix } from './achieve.js';
 import { races, traits, genus_traits, planetTraits } from './races.js';
 import { spatialReasoning, defineResources } from './resources.js';
 import { loadFoundry } from './jobs.js';
@@ -1740,6 +1740,13 @@ const spaceProjects = {
                         global.space['world_controller'] = { count: 1, on: 0 };
                         drawTech();
                         renderSpace();
+                        if (global.race['banana']){
+                            let affix = universeAffix();
+                            global.stats.banana.b2[affix] = true;
+                            if (affix !== 'm' && affix !== 'l'){
+                                global.stats.banana.b2.l = true;
+                            }
+                        }
                         var id = $(this)[0].id;
                         $(`#pop${id}`).hide();
                         if (poppers[id]){
@@ -3673,14 +3680,14 @@ const galaxyProjects = {
             effect(){
                 let helium = +int_fuel_adjust($(this)[0].ship.helium).toFixed(2);
                 let sensors = global.tech.science >= 17 ? `<div>${loc('galaxy_scout_ship_effect2',[25])}</div>` : '';
-                return `<div class="has-text-advanced">${loc('galaxy_ship_rating',[$(this)[0].ship.rating])}</div><div>${loc('galaxy_scout_ship_effect')}</div>${sensors}<div class="has-text-caution">${loc('galaxy_starbase_civ_crew',[$(this)[0].ship.civ])}</div><div class="has-text-caution">${loc('galaxy_starbase_mil_crew',[$(this)[0].ship.mil])}</div><div class="has-text-caution">${loc('galaxy_gateway_used_support',[-($(this)[0].support())])}</div><div class="has-text-caution">${loc('spend',[helium,global.resource.Helium_3.name])}</div>`;
+                return `<div class="has-text-advanced">${loc('galaxy_ship_rating',[$(this)[0].ship.rating()])}</div><div>${loc('galaxy_scout_ship_effect')}</div>${sensors}<div class="has-text-caution">${loc('galaxy_starbase_civ_crew',[$(this)[0].ship.civ])}</div><div class="has-text-caution">${loc('galaxy_starbase_mil_crew',[$(this)[0].ship.mil])}</div><div class="has-text-caution">${loc('galaxy_gateway_used_support',[-($(this)[0].support())])}</div><div class="has-text-caution">${loc('spend',[helium,global.resource.Helium_3.name])}</div>`;
             },
             support(){ return -1; },
             ship: {
                 civ: 1,
                 mil: 1,
                 helium: 6,
-                rating: 10
+                rating(){ return global.race['banana'] ? 7 : 10; }
             },
             powered(){ return powerCostMod(1); },
             action(){
@@ -3711,14 +3718,14 @@ const galaxyProjects = {
             },
             effect(){
                 let helium = +int_fuel_adjust($(this)[0].ship.helium).toFixed(2);
-                return `<div class="has-text-advanced">${loc('galaxy_ship_rating',[$(this)[0].ship.rating])}</div><div class="has-text-caution">${loc('galaxy_starbase_civ_crew',[$(this)[0].ship.civ])}</div><div class="has-text-caution">${loc('galaxy_starbase_mil_crew',[$(this)[0].ship.mil])}</div><div class="has-text-caution">${loc('galaxy_gateway_used_support',[-($(this)[0].support())])}</div><div class="has-text-caution">${loc('spend',[helium,global.resource.Helium_3.name])}</div>`;
+                return `<div class="has-text-advanced">${loc('galaxy_ship_rating',[$(this)[0].ship.rating()])}</div><div class="has-text-caution">${loc('galaxy_starbase_civ_crew',[$(this)[0].ship.civ])}</div><div class="has-text-caution">${loc('galaxy_starbase_mil_crew',[$(this)[0].ship.mil])}</div><div class="has-text-caution">${loc('galaxy_gateway_used_support',[-($(this)[0].support())])}</div><div class="has-text-caution">${loc('spend',[helium,global.resource.Helium_3.name])}</div>`;
             },
             support(){ return -1; },
             ship: {
                 civ: 2,
                 mil: 3,
                 helium: 10,
-                rating: 30
+                rating(){ return global.race['banana'] ? 21 : 30; }
             },
             powered(){ return powerCostMod(1); },
             action(){
@@ -3749,14 +3756,14 @@ const galaxyProjects = {
             },
             effect(){
                 let helium = +int_fuel_adjust($(this)[0].ship.helium).toFixed(2);
-                return `<div class="has-text-advanced">${loc('galaxy_ship_rating',[$(this)[0].ship.rating])}</div><div class="has-text-caution">${loc('galaxy_starbase_civ_crew',[$(this)[0].ship.civ])}</div><div class="has-text-caution">${loc('galaxy_starbase_mil_crew',[$(this)[0].ship.mil])}</div><div class="has-text-caution">${loc('galaxy_gateway_used_support',[-($(this)[0].support())])}</div><div class="has-text-caution">${loc('spend',[helium,global.resource.Helium_3.name])}</div>`;
+                return `<div class="has-text-advanced">${loc('galaxy_ship_rating',[$(this)[0].ship.rating()])}</div><div class="has-text-caution">${loc('galaxy_starbase_civ_crew',[$(this)[0].ship.civ])}</div><div class="has-text-caution">${loc('galaxy_starbase_mil_crew',[$(this)[0].ship.mil])}</div><div class="has-text-caution">${loc('galaxy_gateway_used_support',[-($(this)[0].support())])}</div><div class="has-text-caution">${loc('spend',[helium,global.resource.Helium_3.name])}</div>`;
             },
             support(){ return -2; },
             ship: {
                 civ: 3,
                 mil: 5,
                 helium: 25,
-                rating: 80
+                rating(){ return global.race['banana'] ? 56 : 80; }
             },
             powered(){ return powerCostMod(1); },
             action(){
@@ -3789,14 +3796,14 @@ const galaxyProjects = {
             },
             effect(){
                 let deuterium = +int_fuel_adjust($(this)[0].ship.deuterium).toFixed(2);
-                return `<div class="has-text-advanced">${loc('galaxy_ship_rating',[$(this)[0].ship.rating])}</div><div class="has-text-caution">${loc('galaxy_starbase_civ_crew',[$(this)[0].ship.civ])}</div><div class="has-text-caution">${loc('galaxy_starbase_mil_crew',[$(this)[0].ship.mil])}</div><div class="has-text-caution">${loc('galaxy_gateway_used_support',[-($(this)[0].support())])}</div><div class="has-text-caution">${loc('spend',[deuterium,global.resource.Deuterium.name])}</div>`;
+                return `<div class="has-text-advanced">${loc('galaxy_ship_rating',[$(this)[0].ship.rating()])}</div><div class="has-text-caution">${loc('galaxy_starbase_civ_crew',[$(this)[0].ship.civ])}</div><div class="has-text-caution">${loc('galaxy_starbase_mil_crew',[$(this)[0].ship.mil])}</div><div class="has-text-caution">${loc('galaxy_gateway_used_support',[-($(this)[0].support())])}</div><div class="has-text-caution">${loc('spend',[deuterium,global.resource.Deuterium.name])}</div>`;
             },
             support(){ return -3; },
             ship: {
                 civ: 6,
                 mil: 10,
                 deuterium: 25,
-                rating: 250
+                rating(){ return global.race['banana'] ? 175 : 250; }
             },
             powered(){ return powerCostMod(1); },
             action(){
@@ -3829,14 +3836,14 @@ const galaxyProjects = {
             },
             effect(){
                 let deuterium = +int_fuel_adjust($(this)[0].ship.deuterium).toFixed(2);
-                return `<div class="has-text-advanced">${loc('galaxy_ship_rating',[$(this)[0].ship.rating])}</div><div class="has-text-caution">${loc('galaxy_starbase_civ_crew',[$(this)[0].ship.civ])}</div><div class="has-text-caution">${loc('galaxy_starbase_mil_crew',[$(this)[0].ship.mil])}</div><div class="has-text-caution">${loc('galaxy_gateway_used_support',[-($(this)[0].support())])}</div><div class="has-text-caution">${loc('spend',[deuterium,global.resource.Deuterium.name])}</div>`;
+                return `<div class="has-text-advanced">${loc('galaxy_ship_rating',[$(this)[0].ship.rating()])}</div><div class="has-text-caution">${loc('galaxy_starbase_civ_crew',[$(this)[0].ship.civ])}</div><div class="has-text-caution">${loc('galaxy_starbase_mil_crew',[$(this)[0].ship.mil])}</div><div class="has-text-caution">${loc('galaxy_gateway_used_support',[-($(this)[0].support())])}</div><div class="has-text-caution">${loc('spend',[deuterium,global.resource.Deuterium.name])}</div>`;
             },
             support(){ return -5; },
             ship: {
                 civ: 10,
                 mil: 20,
                 deuterium: 80,
-                rating: 1800
+                rating(){ return global.race['banana'] ? 1260 : 1800; }
             },
             powered(){ return powerCostMod(1); },
             action(){
@@ -4409,7 +4416,7 @@ const galaxyProjects = {
                     if (global.galaxy.hasOwnProperty('defense') && global.galaxy.defense.hasOwnProperty('gxy_alien2')){
                         let total = 0;
                         Object.keys(global.galaxy.defense.gxy_alien2).forEach(function(ship){
-                            total += galaxyProjects.gxy_gateway[ship].ship.rating * global.galaxy.defense.gxy_alien2[ship];
+                            total += galaxyProjects.gxy_gateway[ship].ship.rating() * global.galaxy.defense.gxy_alien2[ship];
                         });
                         return {
                             label: loc(`galaxy_fleet_rating`,[`<span${total < 400 ? ` class="has-text-danger"` : ''}>400</span>`]),
@@ -4426,7 +4433,7 @@ const galaxyProjects = {
                 let total = 0;
                 if (global.galaxy.hasOwnProperty('defense') && global.galaxy.defense.hasOwnProperty('gxy_alien2')){
                     Object.keys(global.galaxy.defense.gxy_alien2).forEach(function(ship){
-                        total += galaxyProjects.gxy_gateway[ship].ship.rating * global.galaxy.defense.gxy_alien2[ship];
+                        total += galaxyProjects.gxy_gateway[ship].ship.rating() * global.galaxy.defense.gxy_alien2[ship];
                     });
                 }
                 let odds = total >= 650 ? `<span class="has-text-success">${loc(`galaxy_piracy_low`)}</span>` : `<span class="has-text-warning">${loc(`galaxy_piracy_avg`)}</span>`;
@@ -4436,7 +4443,7 @@ const galaxyProjects = {
                 if (payCosts($(this)[0].cost)){
                     let total = 0;
                     Object.keys(global.galaxy.defense.gxy_alien2).forEach(function(ship){
-                        total += galaxyProjects.gxy_gateway[ship].ship.rating * global.galaxy.defense.gxy_alien2[ship];
+                        total += galaxyProjects.gxy_gateway[ship].ship.rating() * global.galaxy.defense.gxy_alien2[ship];
                     });
                     if (total >= 400){
                         messageQueue(loc('galaxy_alien2_mission_result2',[races[global.galaxy.alien2.id].home]),'info');
@@ -4446,7 +4453,7 @@ const galaxyProjects = {
                             Object.keys(global.galaxy.defense.gxy_alien2).forEach(function(ship){
                                 for (let i=0; i<global.galaxy.defense.gxy_alien2[ship]; i++){
                                     if (wreck > 0){
-                                        wreck -= galaxyProjects.gxy_gateway[ship].ship.rating;
+                                        wreck -= galaxyProjects.gxy_gateway[ship].ship.rating();
                                         loss.push(ship);
                                     }
                                 }
@@ -4524,13 +4531,13 @@ const galaxyProjects = {
                 let adamantite = +(0.23 * zigguratBonus()).toFixed(3);
                 let iridium = +(0.65 * zigguratBonus()).toFixed(3);
                 let helium = +int_fuel_adjust($(this)[0].ship.helium).toFixed(2);
-                return `<div class="has-text-advanced">${loc('galaxy_ship_rating',[$(this)[0].ship.rating])}</div><div>${loc('gain',[bolognium,loc('resource_Bolognium_name')])}</div><div>${loc('gain',[adamantite,loc('resource_Adamantite_name')])}</div><div>${loc('gain',[iridium,loc('resource_Iridium_name')])}</div><div class="has-text-caution">${loc('galaxy_alien2_support',[$(this)[0].support(),races[global.galaxy.hasOwnProperty('alien2') ? global.galaxy.alien2.id : global.race.species].solar.red])}</div><div class="has-text-caution">${loc('galaxy_starbase_civ_crew',[$(this)[0].ship.civ])}</div><div class="has-text-caution">${loc('galaxy_starbase_mil_crew',[$(this)[0].ship.mil])}</div><div class="has-text-caution">${loc('spend',[helium,global.resource.Helium_3.name])}</div>`;
+                return `<div class="has-text-advanced">${loc('galaxy_ship_rating',[$(this)[0].ship.rating()])}</div><div>${loc('gain',[bolognium,loc('resource_Bolognium_name')])}</div><div>${loc('gain',[adamantite,loc('resource_Adamantite_name')])}</div><div>${loc('gain',[iridium,loc('resource_Iridium_name')])}</div><div class="has-text-caution">${loc('galaxy_alien2_support',[$(this)[0].support(),races[global.galaxy.hasOwnProperty('alien2') ? global.galaxy.alien2.id : global.race.species].solar.red])}</div><div class="has-text-caution">${loc('galaxy_starbase_civ_crew',[$(this)[0].ship.civ])}</div><div class="has-text-caution">${loc('galaxy_starbase_mil_crew',[$(this)[0].ship.mil])}</div><div class="has-text-caution">${loc('spend',[helium,global.resource.Helium_3.name])}</div>`;
             },
             ship: {
                 civ: 2,
                 mil: 1,
                 helium: 10,
-                rating: 5
+                rating(){ return global.race['banana'] ? 4 : 5; }
             },
             support(){ return -1; },
             powered(){ return powerCostMod(1); },
@@ -4635,7 +4642,7 @@ const galaxyProjects = {
                     if (global.galaxy.hasOwnProperty('defense') && global.galaxy.defense.hasOwnProperty('gxy_chthonian')){
                         let total = 0;
                         Object.keys(global.galaxy.defense.gxy_chthonian).forEach(function(ship){
-                            total += galaxyProjects.gxy_gateway[ship].ship.rating * global.galaxy.defense.gxy_chthonian[ship];
+                            total += galaxyProjects.gxy_gateway[ship].ship.rating() * global.galaxy.defense.gxy_chthonian[ship];
                         });
                         return {
                             label: loc(`galaxy_fleet_rating`,[`<span${total < 1250 ? ` class="has-text-danger"` : ``}>1250</span>`]),
@@ -4652,7 +4659,7 @@ const galaxyProjects = {
                 let total = 0;
                 if (global.galaxy.hasOwnProperty('defense') && global.galaxy.defense.hasOwnProperty('gxy_chthonian')){
                     Object.keys(global.galaxy.defense.gxy_chthonian).forEach(function(ship){
-                        total += galaxyProjects.gxy_gateway[ship].ship.rating * global.galaxy.defense.gxy_chthonian[ship];
+                        total += galaxyProjects.gxy_gateway[ship].ship.rating() * global.galaxy.defense.gxy_chthonian[ship];
                     });
                 }
                 let odds = total >= 4500 ? `<span class="has-text-success">${loc(`galaxy_piracy_low`)}</span>` : (total >= 2500 ? `<span class="has-text-warning">${loc(`galaxy_piracy_avg`)}</span>` : `<span class="has-text-danger">${loc(`galaxy_piracy_high`)}</span>`);
@@ -4663,7 +4670,7 @@ const galaxyProjects = {
 
                     let total = 0;
                     Object.keys(global.galaxy.defense.gxy_chthonian).forEach(function(ship){
-                        total += galaxyProjects.gxy_gateway[ship].ship.rating * global.galaxy.defense.gxy_chthonian[ship];
+                        total += galaxyProjects.gxy_gateway[ship].ship.rating() * global.galaxy.defense.gxy_chthonian[ship];
                     });
 
                     if (total >= 1250){
@@ -4678,7 +4685,7 @@ const galaxyProjects = {
                         Object.keys(global.galaxy.defense.gxy_chthonian).forEach(function(ship){
                             for (let i=0; i<global.galaxy.defense.gxy_chthonian[ship]; i++){
                                 if (wreck > 0){
-                                    wreck -= galaxyProjects.gxy_gateway[ship].ship.rating;
+                                    wreck -= galaxyProjects.gxy_gateway[ship].ship.rating();
                                     loss.push(ship);
                                 }
                             }
@@ -4718,13 +4725,13 @@ const galaxyProjects = {
             },
             effect(){
                 let helium = +int_fuel_adjust($(this)[0].ship.helium).toFixed(2);
-                return `<div class="has-text-advanced">${loc('galaxy_defense_platform_effect',[$(this)[0].ship.rating])}</div><div class="has-text-caution">${loc('galaxy_starbase_mil_crew',[$(this)[0].ship.mil])}</div><div class="has-text-caution">${loc('spend',[helium,global.resource.Helium_3.name])}</div>`;
+                return `<div class="has-text-advanced">${loc('galaxy_defense_platform_effect',[$(this)[0].ship.rating()])}</div><div class="has-text-caution">${loc('galaxy_starbase_mil_crew',[$(this)[0].ship.mil])}</div><div class="has-text-caution">${loc('spend',[helium,global.resource.Helium_3.name])}</div>`;
             },
             ship: {
                 civ: 0,
                 mil: 1,
                 helium: 8,
-                rating: 50
+                rating(){ return global.race['banana'] ? 35 : 50; }
             },
             powered(){ return powerCostMod(1); },
             action(){
@@ -4792,13 +4799,13 @@ const galaxyProjects = {
                 let vitreloy = +(pirate * zigguratBonus() * 0.05).toFixed(3);
                 let polymer = +(pirate * zigguratBonus() * 2.3).toFixed(3);
                 let neutronium = +(pirate * zigguratBonus() * 0.8).toFixed(3);
-                return `<div class="has-text-advanced">${loc('galaxy_ship_rating',[$(this)[0].ship.rating])}</div><div>${loc('galaxy_raider_effect')}</div><div>${loc('gain',[deuterium,loc('resource_Deuterium_name')])}</div><div>${loc('gain',[vitreloy,loc('resource_Vitreloy_name')])}</div><div>${loc('gain',[polymer,loc('resource_Polymer_name')])}</div><div>${loc('gain',[neutronium,loc('resource_Neutronium_name')])}</div><div class="has-text-caution">${loc('galaxy_starbase_mil_crew',[$(this)[0].ship.mil])}</div><div class="has-text-caution">${loc('spend',[helium,global.resource.Helium_3.name])}</div>`;
+                return `<div class="has-text-advanced">${loc('galaxy_ship_rating',[$(this)[0].ship.rating()])}</div><div>${loc('galaxy_raider_effect')}</div><div>${loc('gain',[deuterium,loc('resource_Deuterium_name')])}</div><div>${loc('gain',[vitreloy,loc('resource_Vitreloy_name')])}</div><div>${loc('gain',[polymer,loc('resource_Polymer_name')])}</div><div>${loc('gain',[neutronium,loc('resource_Neutronium_name')])}</div><div class="has-text-caution">${loc('galaxy_starbase_mil_crew',[$(this)[0].ship.mil])}</div><div class="has-text-caution">${loc('spend',[helium,global.resource.Helium_3.name])}</div>`;
             },
             ship: {
                 civ: 0,
                 mil: 2,
                 helium: 18,
-                rating: 12
+                rating(){ return global.race['banana'] ? 9 : 12; }
             },
             powered(){ return powerCostMod(1); },
             action(){
@@ -4828,7 +4835,7 @@ export function piracy(region,rating,raw){
                 global.galaxy.defense[region][ships[i]] = 0;
             }
             let count = global.galaxy.defense[region][ships[i]];
-            armada += count * galaxyProjects.gxy_gateway[ships[i]].ship.rating;
+            armada += count * galaxyProjects.gxy_gateway[ships[i]].ship.rating();
         }
         
         let pirate = 0;
@@ -4869,16 +4876,16 @@ export function piracy(region,rating,raw){
         if (region === 'gxy_alien2' && p_on['foothold']){
             armada += p_on['foothold'] * 50;
             if (gal_on['armed_miner']){
-                armada += gal_on['armed_miner'] * 5;
+                armada += gal_on['armed_miner'] * galaxyProjects.gxy_alien2.armed_miner.ship.rating();
             }
         }
 
         if (region === 'gxy_chthonian'){
             if (gal_on['minelayer']){
-                armada += gal_on['minelayer'] * 50;
+                armada += gal_on['minelayer'] * galaxyProjects.gxy_chthonian.minelayer.ship.rating();
             }
             if (gal_on['raider']){
-                armada += gal_on['raider'] * 12;
+                armada += gal_on['raider'] * galaxyProjects.gxy_chthonian.raider.ship.rating();
             }
         }
 

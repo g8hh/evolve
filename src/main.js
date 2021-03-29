@@ -1,6 +1,6 @@
 import { global, save, webWorker, intervals, keyMap, resizeGame, breakdown, sizeApproximation, keyMultiplier, p_on, moon_on, red_on, belt_on, int_on, gal_on, spire_on, set_qlevel, quantum_level } from './vars.js';
 import { loc } from './locale.js';
-import { unlockAchieve, checkAchievements, drawAchieve, alevel, universeAffix, challengeIcon } from './achieve.js';
+import { unlockAchieve, checkAchievements, drawAchieve, alevel, universeAffix, challengeIcon, unlockFeat } from './achieve.js';
 import { gameLoop, vBind, popover, flib, clearElement, timeCheck, arpaTimeCheck, timeFormat, powerModifier, modRes, messageQueue, calc_mastery, calcPillar, darkEffect, buildQueue, cleanBuildPopOver, vacuumCollapse, shrineBonusActive, getShrineBonus, eventActive, easterEgg, easterEggBind, trickOrTreatBind, powerGrid } from './functions.js';
 import { races, traits, racialTrait, randomMinorTrait, biomes, planetTraits } from './races.js';
 import { defineResources, resource_values, spatialReasoning, craftCost, plasmidBonus, faithBonus, tradeRatio, craftingRatio, crateValue, containerValue, tradeSellPrice, tradeBuyPrice, atomic_mass, supplyValue, galaxyOffers } from './resources.js';
@@ -463,6 +463,9 @@ popover('topBarPlanet',
             if (global.race['emfield']){
                 challenges = challenges + `<div>${loc('evo_challenge_emfield_desc')}</div>`;
             }
+            if (global.race['banana']){
+                challenges = challenges + `<div>${loc('evo_challenge_banana_desc')}</div>`;
+            }
 
             if (global.race['cataclysm']){
                 if (calc_mastery() >= 50 && global.race.universe !== 'antimatter'){
@@ -594,7 +597,7 @@ if (global.race.species === 'protoplasm'){
         }
 
         scenarioActionHeader();
-        var challenge_actions = ['junker','cataclysm'];
+        var challenge_actions = ['junker','cataclysm','banana'];
         for (var i = 0; i < challenge_actions.length; i++){
             if (global.evolution[challenge_actions[i]] && global.evolution[challenge_actions[i]].count == 0){
                 addAction('evolution',challenge_actions[i]);
@@ -819,11 +822,6 @@ function fastLoop(){
             breakdown.p['Global'][loc('unsuited')] = `-${20}%`;
             global_multiplier *= 0.8;
         }
-    }
-
-    if (global.civic.govern['protest'] && global.civic.govern.protest > 0){
-        breakdown.p['Global'][loc('event_protest')] = `-${30}%`;
-        global_multiplier *= 0.7;
     }
 
     if (global.race['hibernator'] && global.city.calendar.season === 3){
@@ -1088,7 +1086,7 @@ function fastLoop(){
         breakdown.p.consume.Money[loc('trade')] = 0;
 
         // trade routes
-        if (global.tech['trade']){
+        if (global.tech['trade'] || (global.race['banana'] && global.tech['primitive'] && global.tech.primitive >= 3)){
             let used_trade = 0;
             Object.keys(global.resource).forEach(function (res){
                 if (global.resource[res].trade > 0){
@@ -2225,7 +2223,7 @@ function fastLoop(){
         }
         moraleCap = global.tech['monuments'] ? mBaseCap + (global.tech['monuments'] * 2) : mBaseCap;
 
-        if (global.civic.taxes.tax_rate < 20){
+        if (global.civic.taxes.tax_rate < 20 && !global.race['banana']){
             moraleCap += 10 - Math.floor(global.civic.taxes.tax_rate / 2);
         }
 
@@ -4682,6 +4680,9 @@ function fastLoop(){
             if (global.civic.govern.type === 'socialist'){
                 income_base *= 0.8;
             }
+            if (global.race['banana']){
+                income_base *= 0.05;
+            }
 
             let temple_mult = 1;
             if (global.tech['anthropology'] && global.tech['anthropology'] >= 4){
@@ -4747,16 +4748,19 @@ function fastLoop(){
             let tourism = 0;
             let amp = global.tech['monument'] && global.tech.monument >= 3 && p_on['s_gate'] ? 3 : 1;
             if (global.city['amphitheatre']){
-                tourism += global.city['tourist_center'].on * global.city['amphitheatre'].count * amp;
+                tourism += global.city['tourist_center'].on * global.city.amphitheatre.count * amp;
             }
             if (global.city['casino']){
-                tourism += global.city['tourist_center'].on * global.city['casino'].count * 5 * amp;
+                tourism += global.city['tourist_center'].on * global.city.casino.count * 5 * amp;
             }
             if (global.space['spc_casino']){
-                tourism += global.city['tourist_center'].on * global.space['spc_casino'].count * 5 * amp;
+                tourism += global.city['tourist_center'].on * global.space.spc_casino.count * 5 * amp;
             }
             if (global.tech['monuments']){
                 tourism += global.city['tourist_center'].on * global.tech['monuments'] * 2 * amp;
+            }
+            if (global.city['trade'] && global.stats.achieve['banana'] && global.stats.achieve.banana.l >= 4){
+                tourism += global.city['tourist_center'].on * global.city.trade.count * 3 * amp;
             }
             if (global.civic.govern.type === 'corpocracy'){
                 tourism *= 2;
@@ -4952,7 +4956,7 @@ function fastLoop(){
 
     let easter = eventActive('easter');
     if (easter.active){
-        for (i=1; i<13; i++){
+        for (i=1; i<=15; i++){
             if ($(`#egg${i}`).length > 0 && !$(`#egg${i}`).hasClass('binded')){
                 easterEggBind(i);
                 $(`#egg${i}`).addClass('binded');
@@ -4962,7 +4966,7 @@ function fastLoop(){
 
     let halloween = eventActive('halloween');
     if (halloween.active){
-        for (i=1; i<13; i++){
+        for (i=1; i<=15; i++){
             if ($(`#trick${i}`).length > 0 && !$(`#trick${i}`).hasClass('binded')){
                 trickOrTreatBind(i);
                 $(`#trick${i}`).addClass('binded');
@@ -6167,12 +6171,17 @@ function midLoop(){
             bd_Knowledge[loc('galaxy_scavenger')] = gain+'v';
         }
         breakdown['t_route'] = {};
+        global.city.market.mtrade = 0;
+        if (global.race['banana']){
+            global.city.market.mtrade++;
+            breakdown.t_route[loc('base')] = 1;
+        }
         if (global.city['trade']){
             let routes = global.race['nomadic'] || global.race['xenophobic'] ? global.tech.trade : global.tech.trade + 1;
             if (global.tech['trade'] && global.tech['trade'] >= 3){
                 routes--;
             }
-            global.city.market.mtrade = routes * global.city.trade.count;
+            global.city.market.mtrade += routes * global.city.trade.count;
             breakdown.t_route[loc('city_trade')] = routes * global.city.trade.count;
             if (global.tech['fanaticism'] && global.tech['fanaticism'] >= 3){
                 let r_count = global.race['cataclysm'] ? global.space.ziggurat.count : global.city.temple.count;
@@ -6202,6 +6211,9 @@ function midLoop(){
             }
             else {
                 routes = global.city['storage_yard'] ? Math.floor(global.city.storage_yard.count / 6) : 0;
+            }
+            if (global.stats.achieve['banana'] && global.stats.achieve.banana.l >= 2){
+                routes++;
             }
             global.city.market.mtrade += global.tech['railway'] * routes;
             breakdown.t_route[loc('arpa_projects_railway_title')] = global.tech['railway'] * routes;
@@ -6479,6 +6491,34 @@ function midLoop(){
                             }
                             break;
                     }
+                }
+            }
+        }
+
+        if (global.race['banana']){
+            let exporting = false;
+            let importing = 0;
+            Object.keys(global.resource).forEach(function(res){
+                if (global.resource[res].hasOwnProperty('trade') && global.resource[res].trade < 0){
+                    if (exporting){
+                        global.resource[res].trade = 0;
+                    }
+                    else {
+                        exporting = res;
+                    }
+                }
+                if (global.resource[res].hasOwnProperty('trade') && global.resource[res].trade > 0){
+                    importing += global.resource[res].trade;
+                }
+            });
+            if (global.resource[exporting] && global.resource[exporting].trade <= -500){
+                let affix = universeAffix();
+                global.stats.banana.b4[affix] = true;
+                if (affix !== 'm' && affix !== 'l'){
+                    global.stats.banana.b4.l = true;
+                }
+                if (importing >= 500){
+                    unlockFeat('banana');
                 }
             }
         }

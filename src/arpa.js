@@ -1,5 +1,5 @@
 import { global, poppers, keyMultiplier, sizeApproximation, srSpeak } from './vars.js';
-import { clearElement, popover, flib, timeFormat, vBind, messageQueue, adjustCosts, removeFromQueue, buildQueue, calcPrestige, calc_mastery, darkEffect } from './functions.js';
+import { clearElement, popover, flib, timeFormat, vBind, messageQueue, adjustCosts, removeFromQueue, buildQueue, calcPrestige, calc_mastery, darkEffect, easterEgg } from './functions.js';
 import { actions, updateQueueNames, drawTech, drawCity, addAction, removeAction, wardenLabel, checkCosts } from './actions.js';
 import { races, traits, cleanAddTrait, cleanRemoveTrait } from './races.js';
 import { renderSpace } from './space.js';
@@ -157,7 +157,11 @@ export const arpaProjects = {
             }
             else {
                 let routes = global.city['storage_yard'] ? Math.floor(global.city.storage_yard.count / 6) : 0;
-                return loc('arpa_projects_railway_effect1',[routes,2,6,1]);
+                let profit = global.stats.achieve['banana'] && global.stats.achieve.banana.l >= 1 ? 3 : 2;
+                if (global.stats.achieve['banana'] && global.stats.achieve.banana.l >= 2){
+                    routes++;
+                }
+                return loc('arpa_projects_railway_effect1',[routes,profit,6,1]);
             }
         },
         cost: {
@@ -1532,8 +1536,33 @@ function physics(){
     });
 }
 
+export function clearGeneticsDrag(){
+    let el = $('#geneticMinor')[0];
+    if (el){
+        let sort = Sortable.get(el);
+        if (sort){
+            sort.destroy();
+        }
+    }
+}
+
+function dragGeneticsList(){
+    let el = $('#geneticMinor')[0];
+    if (el){
+        Sortable.create(el,{
+            onEnd(e){
+                let order = global.settings.mtorder;
+                order.splice(e.newDraggableIndex, 0, order.splice(e.oldDraggableIndex, 1)[0]);
+                global.settings.mtorder = order;
+                genetics();
+            }
+        });
+    }
+}
+
 function genetics(){
     let parent = $('#arpaGenetics');
+    clearGeneticsDrag();
     clearElement(parent);
     if (!global.settings.arpa.genetics){
         return false;
@@ -1565,7 +1594,7 @@ function genetics(){
         }
 
         let label = global.tech.genetics > 2 ? loc('arpa_gene_mutation') : loc('arpa_sequence_genome');
-        let sequence = $(`<div><span class="seqlbl has-text-warning">${label}</span> - ${loc('arpa_to_complete')} {{ time | timer }}</div>`);
+        let sequence = $(`<div><span class="seqlbl has-text-warning">${label}</span> - ${loc('arpa_to_complete')} <span v-html="$options.filters.timer(time)"></span></div>`);
         genome.append(sequence);
         let progress = $(`<progress class="progress" :value="progress" max="${global.arpa.sequence.max}">{{ progress }}%</progress>`);
         genome.append(progress);
@@ -1667,6 +1696,10 @@ function genetics(){
                         }
                     }
                     else {
+                        let egg = easterEgg(14,12);
+                        if (egg.length > 0){
+                            return egg;
+                        }
                         return loc('time_never');
                     }
                 }
@@ -1691,27 +1724,40 @@ function genetics(){
         let breakdown = $('<div id="geneticBreakdown" class="geneticTraits"></div>');
         $('#arpaGenetics').append(breakdown);
 
-        let minor = false;
-        let minor_list = [];
+        let minorList = $('<div id="geneticMinor"></div>');
+        breakdown.append(minorList);
+
         if (global.tech['decay'] && global.tech['decay'] >= 2){
-            minor = true;
-            bindTrait(breakdown,'fortify');
-            minor_list.push('fortify');
+            if (!global.settings.mtorder.includes('fortify')){
+                global.settings.mtorder.push('fortify');
+            }
         }
 
         Object.keys(global.race).forEach(function (trait){
             if (traits[trait] && traits[trait].type === 'minor'){
-                minor = true;
-                bindTrait(breakdown,trait);
-                minor_list.push(trait);
+                if (!global.settings.mtorder.includes(trait)){
+                    global.settings.mtorder.push(trait);
+                }
             }
         });
 
         if (global.genes['challenge'] && global.genes['challenge'] >= 5){
-            minor = true;
-            bindTrait(breakdown,'mastery');
-            minor_list.push('mastery');
+            if (!global.settings.mtorder.includes('mastery')){
+                global.settings.mtorder.push('mastery');
+            }
         }
+
+        let minor = false;
+        let minor_list = [];
+        global.settings.mtorder.forEach(function(trait){
+            if ((traits[trait] && traits[trait].type === 'minor') || trait === 'mastery' || trait === 'fortify'){
+                if (trait !== 'fortify' || (global.tech['decay'] && global.tech['decay'] >= 2)){
+                    minor = true;
+                    bindTrait(minorList,trait);
+                    minor_list.push(trait);
+                }
+            }
+        });
 
         breakdown.append(`<div class="trait major has-text-success">${loc('arpa_race_genetic_traids',[flib('name')])}</div>`)
         
@@ -2018,6 +2064,8 @@ function genetics(){
                 classes: `has-background-light has-text-dark`
             });
         });
+
+        dragGeneticsList();
     }
 }
 

@@ -243,6 +243,16 @@ function achieveDesc(achievement,showFlair,universe){
             wide: true
         });
     }
+    else if (achievement === 'banana'){
+        let checklist = `<div class="list">`;
+        checklist = checklist + `<div class="has-text-${global.stats.banana.b1.l ? `success` : `danger`}">${loc(`wiki_achieve_banana1`)}</div>`;
+        checklist = checklist + `<div class="has-text-${global.stats.banana.b2.l ? `success` : `danger`}">${loc(`wiki_achieve_banana2`)}</div>`;
+        checklist = checklist + `<div class="has-text-${global.stats.banana.b3.l ? `success` : `danger`}">${loc(`wiki_achieve_banana3`)}</div>`;
+        checklist = checklist + `<div class="has-text-${global.stats.banana.b4.l ? `success` : `danger`}">${loc(`wiki_achieve_banana4`,[500])}</div>`;
+        checklist = checklist + `<div class="has-text-${global.stats.banana.b5.l ? `success` : `danger`}">${loc(`wiki_achieve_banana5`,[50])}</div>`;
+        checklist = checklist + `</div>`;
+        popover(`a-${achievement}`,$(`<div class="has-text-label">${achievements[achievement].desc}</div><div>${loc(`wiki_achieve_${achievement}`)}</div>${checklist}${flair}`));
+    }
     else if (achievement.includes('extinct_') && achievement.substring(8) !== 'custom'){
         let race = achievement.substring(8);
         popover(`a-${achievement}`,$(`<div class="has-text-label">${achievements[achievement].desc}</div><div>${loc('wiki_achieve_extinct_race',[loc(`race_${race}`)])}</div>${flair}`));
@@ -267,7 +277,7 @@ function featDesc(feat,showFlair){
         const date = new Date();
         let year = date.getFullYear();
         let eggs = `<div class="has-text-warning">${loc('wiki_feat_egghunt_found')}</div><div class="flexed">`;
-        for (let i=1; i<13; i++){
+        for (let i=1; i<=15; i++){
             let egg = global.special.egg[year][`egg${i}`] ? 'has-text-success' : 'has-text-danger';
             eggs = eggs + `<span class="${egg}">${loc('wiki_feat_egghunt_num',[i])}</span>`
         }

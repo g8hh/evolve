@@ -8,8 +8,8 @@ import { setPowerGrid, gridDefs, clearGrids } from './industry.js';
 import { defineGovernment, defineIndustry, defineGarrison, buildGarrison, commisionGarrison, foreignGov } from './civics.js';
 import { drawCity, drawTech, resQueue, clearResDrag } from './actions.js';
 import { renderSpace } from './space.js';
-import { renderFortress, buildFortress, drawMechLab } from './portal.js';
-import { arpa } from './arpa.js';
+import { renderFortress, buildFortress, drawMechLab, clearMechDrag } from './portal.js';
+import { arpa, clearGeneticsDrag } from './arpa.js';
 
 export function mainVue(){
     vBind({
@@ -202,6 +202,8 @@ export function loadTab(tab){
     if (!global.settings.tabLoad){
         clearResDrag();
         clearGrids();
+        clearMechDrag();
+        clearGeneticsDrag();
         clearElement($(`#mTabCivil`));
         clearElement($(`#mTabCivic`));
         clearElement($(`#mTabResearch`));
@@ -332,6 +334,7 @@ export function loadTab(tab){
                         swapTab(tab){
                             if (!global.settings.tabLoad){
                                 clearGrids();
+                                clearMechDrag();
                                 clearElement($(`#civic`));
                                 clearElement($(`#industry`));
                                 clearElement($(`#powerGrid`));
@@ -800,6 +803,7 @@ export function index(){
         {i: 'martini',      f: 'utopia',        r: 2 },
         {i: 'lightbulb',    f: 'energetic',     r: 2 },
         {i: 'trash',        f: 'garbage_pie',   r: 2 },
+        {i: 'banana',       f: 'banana',        r: 2 },
         {i: 'turtle',       f: 'finish_line',   r: 2 },
         {i: 'heart',        f: 'valentine',     r: 1 },
         {i: 'clover',       f: 'leprechaun',    r: 1 },
@@ -820,10 +824,10 @@ export function index(){
         }
     }
 
-    let egg = easterEgg(9,14);
+    let egg9 = easterEgg(9,14);
     let hideEgg = '';
-    if (egg.length > 0){
-        hideEgg = `<b-dropdown-item>${egg}</b-dropdown-item>`;
+    if (egg9.length > 0){
+        hideEgg = `<b-dropdown-item>${egg9}</b-dropdown-item>`;
     }
 
     let trick = trickOrTreat(11,12);
@@ -966,13 +970,15 @@ export function index(){
     // Right Column
     columns.append(`<div id="queueColumn" class="queueCol column"></div>`);
 
+
+    let egg15 = easterEgg(15,8);
     // Bottom Bar
 
     $('body').append(`
         <div class="promoBar">
             <span class="left">
                 <h1>
-                    <span class="has-text-warning">Evolve</span>
+                    <span class="has-text-warning">${egg15.length > 0 ? `Ev${egg15}lve` : `Evolve`}</span>
                     by
                     <span class="has-text-success">Demagorddon</span>
                 </h1>

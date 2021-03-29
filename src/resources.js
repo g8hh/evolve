@@ -967,6 +967,34 @@ function loadSpecialResource(name,color) {
     });
 }
 
+function exportRouteEnabled(route){
+    let routeCap = global.tech.currency >= 6 ? -1000000 : (global.tech.currency >= 4 ? -100 : -25);
+    if (global.race['banana']){
+        let exporting = false;
+        Object.keys(global.resource).forEach(function(res){
+            if (global.resource[res].hasOwnProperty('trade') && global.resource[res].trade < 0){
+                exporting = res;
+            }
+        });
+        if (exporting && exporting !== route){
+            return false;
+        }
+        routeCap = global.tech.currency >= 6 ? -1000000 : (global.tech.currency >= 4 ? -25 : -10);
+    }
+    if (global.resource[route].trade <= routeCap){
+        return false;
+    }
+    return true;
+}
+
+function importRouteEnabled(route){
+    let routeCap = global.tech.currency >= 6 ? 1000000 : (global.tech.currency >= 4 ? 100 : 25);
+    if (global.resource[route].trade >= routeCap){
+        return false;
+    }
+    return true;
+}
+
 export function marketItem(mount,market_item,name,color,full){
     if (!global.settings.tabLoad && (global.settings.civTabs !== 4 || global.settings.marketTabs !== 0)){
         return;
@@ -984,7 +1012,7 @@ export function marketItem(mount,market_item,name,color,full){
         market_item.append($(`<span role="button" class="order" @click="sell('${name}')">\${{ r.value | sell }}</span>`));
     }
 
-    if (full){
+    if (full && ((global.race['banana'] && name === 'Food') || global.tech['trade'])){
         let trade = $(`<span class="trade" v-show="m.active"><span class="has-text-warning">${loc('resource_market_routes')}</span></span>`);
         market_item.append(trade);
         trade.append($(`<b-tooltip :label="aSell('${name}')" position="is-bottom" size="is-small" multilined animated><span role="button" aria-label="export ${name}" class="sub has-text-danger" @click="autoSell('${name}')"><span>-</span></span></b-tooltip>`));
@@ -1083,7 +1111,7 @@ export function marketItem(mount,market_item,name,color,full){
                 let keyMult = keyMultiplier();
                 for (let i=0; i<keyMult; i++){
                     if (global.resource[res].trade >= 0){
-                        if (global.city.market.trade < global.city.market.mtrade){
+                        if (importRouteEnabled(res) && global.city.market.trade < global.city.market.mtrade){
                             global.city.market.trade++;
                             global.resource[res].trade++;
                         }
@@ -1102,7 +1130,7 @@ export function marketItem(mount,market_item,name,color,full){
                 let keyMult = keyMultiplier();
                 for (let i=0; i<keyMult; i++){
                     if (global.resource[res].trade <= 0){
-                        if (global.city.market.trade < global.city.market.mtrade){
+                        if (exportRouteEnabled(res) && global.city.market.trade < global.city.market.mtrade){
                             global.city.market.trade++;
                             global.resource[res].trade--;
                         }
@@ -1118,7 +1146,7 @@ export function marketItem(mount,market_item,name,color,full){
                 tradeRouteColor(res);
             },
             zero(res){
-                global.city.market.trade += global.resource[res].trade;
+                global.city.market.trade -= Math.abs(global.resource[res].trade);
                 global.resource[res].trade = 0;
                 tradeRouteColor(res);
             }
@@ -1239,9 +1267,11 @@ export function galacticTrade(modal){
             trade.append($(`<b-tooltip :label="desc('${unassign}')" position="is-bottom" size="is-small" multilined animated><span role="button" aria-label="${unassign}" class="sub has-text-danger" @click="less('${i}')"><span>-</span></span></b-tooltip>`));
             trade.append($(`<span class="current">{{ g.f${i} }}</span>`));
             trade.append($(`<b-tooltip :label="desc('${assign}')" position="is-bottom" size="is-small" multilined animated><span role="button" aria-label="${assign}" class="add has-text-success" @click="more('${i}')"><span>+</span></span></b-tooltip>`));
+            trade.append($(`<span role="button" class="zero has-text-advanced" @click="zero('${i}')">${loc('cancel_routes')}</span>`));
         }
 
-        let totals = $(`<div id="galacticTradeTotal" class="market-item trade-offer"><span class="tradeTotal"><span class="has-text-caution">${loc('resource_market_galactic_trade_routes')}</span> {{ g.cur }} / {{ g.max }}</span></div>`);
+        let totals = $(`<div class="market-item trade-offer"><div id="galacticTradeTotal"><span class="tradeTotal"><span class="has-text-caution">${loc('resource_market_galactic_trade_routes')}</span> {{ g.cur }} / {{ g.max }}</span></div></div>`);
+        totals.append($(`<span role="button" class="zero has-text-advanced" @click="zero()">${loc('cancel_all_routes')}</span>`));
         galaxyTrade.append(totals);
     }
 
@@ -1256,8 +1286,10 @@ export function galacticTrade(modal){
                 let keyMutipler = keyMultiplier();
                 if (global.galaxy.trade[`f${idx}`] >= keyMutipler){
                     global.galaxy.trade[`f${idx}`] -= keyMutipler;
+                    global.galaxy.trade.cur -= keyMutipler;
                 }
                 else {
+                    global.galaxy.trade.cur -= global.galaxy.trade[`f${idx}`];
                     global.galaxy.trade[`f${idx}`] = 0;
                 }
             },
@@ -1268,6 +1300,19 @@ export function galacticTrade(modal){
                         keyMutipler = global.galaxy.trade.max - global.galaxy.trade.cur;
                     }
                     global.galaxy.trade[`f${idx}`] += keyMutipler;
+                    global.galaxy.trade.cur += keyMutipler;
+                }
+            },
+            zero(idx){
+                if (idx){
+                    global.galaxy.trade.cur -= global.galaxy.trade[`f${idx}`];
+                    global.galaxy.trade[`f${idx}`] = 0;
+                }
+                else {
+                    for (let i=0; i<galaxyOffers.length; i++){
+                        global.galaxy.trade.cur -= global.galaxy.trade[`f${i}`];
+                        global.galaxy.trade[`f${i}`] = 0;
+                    }
                 }
             },
             desc(s){
@@ -1392,7 +1437,7 @@ export function containerItem(mount,market_item,name,color){
         market_item.append(crate);
 
         crate.append($(`<span role="button" aria-label="remove ${name} ${loc('resource_Crates_name')}" class="sub has-text-danger" @click="subCrate('${name}')"><span>&laquo;</span></span>`));
-        crate.append($(`<span class="current">{{ crates }}</span>`));
+        crate.append($(`<span class="current" v-html="$options.filters.cCnt(crates,'${name}')"></span>`));
         crate.append($(`<span role="button" aria-label="add ${name} ${loc('resource_Crates_name')}" class="add has-text-success" @click="addCrate('${name}')"><span>&raquo;</span></span>`));
     }
 
@@ -1431,6 +1476,15 @@ export function containerItem(mount,market_item,name,color){
                     }
                 }
                 return v;
+            },
+            cCnt(ct,res){
+                if (res === 'Food'){
+                    let egg = easterEgg(13,10);
+                    if (ct === 10 && egg.length > 0){
+                        return '1'+egg;
+                    }
+                }
+                return ct;
             }
         }
     });
@@ -1455,7 +1509,8 @@ export function tradeSellPrice(res){
         price = price * (1 + (global.space['gps'].count * 0.01));
     }
     if (global.tech['railway']){
-        price = price * (1 + (global.tech['railway'] * 0.02));
+        let boost = global.stats.achieve['banana'] && global.stats.achieve.banana.l >= 1 ? 0.03 : 0.02;
+        price = price * (1 + (global.tech['railway'] * boost));
     }
     price = +(price).toFixed(1);
     return price;
@@ -1477,7 +1532,8 @@ export function tradeBuyPrice(res){
         price = price * (0.99 ** global.space['gps'].count);
     }
     if (global.tech['railway']){
-        price = price * (0.98 ** global.tech['railway']);
+        let boost = global.stats.achieve['banana'] && global.stats.achieve.banana.l >= 1 ? 0.97 : 0.98;
+        price = price * (boost ** global.tech['railway']);
     }
     price = +(price).toFixed(1);
     return price;
@@ -1610,6 +1666,7 @@ function breakdownPopover(id,name,type){
         let bd = $(`<div class="resBreakdown"><div class="has-text-info">{{ res.name | namespace }}</div></div>`);
         let table = $(`<div class="parent"></div>`);
         bd.append(table);
+        let prevCol = false;
         
         if (breakdown[type][name]){
             let col1 = $(`<div></div>`);
@@ -1622,6 +1679,7 @@ function breakdownPopover(id,name,type){
                         let raw = breakdown[type][t][mod];
                         let val = parseFloat(raw.slice(0,-1));
                         if (val != 0 && !isNaN(val)){
+                            prevCol = true;
                             let type = val > 0 ? 'success' : 'danger';
                             let label = mod.replace("_"," ");
                             label = mod.replace(/\+.+$/,"");
@@ -1633,7 +1691,7 @@ function breakdownPopover(id,name,type){
         }
 
         if (breakdown[type].consume && breakdown[type].consume[name]){
-            let col2 = $(`<div class="col"></div>`);
+            let col2 = $(`<div class="${prevCol ? 'col' : ''}"></div>`);
             let count = 0;
             Object.keys(breakdown[type].consume[name]).forEach(function (mod){                
                 let val = breakdown[type].consume[name][mod];
@@ -1744,14 +1802,26 @@ function loadRouteCounter(){
     }
 
     let no_market = global.race['no_trade'] ? ' nt' : '';
-    var market_item = $(`<div id="tradeTotal" v-show="active" class="market-item"><span class="tradeTotal${no_market}"><span class="has-text-caution">${loc('resource_market_trade_routes')}</span> {{ trade }} / {{ mtrade }}</span></div>`);
+    var market_item = $(`<div id="tradeTotal" v-show="active" class="market-item"><div id="tradeTotalPopover"><span class="tradeTotal${no_market}"><span class="has-text-caution">${loc('resource_market_trade_routes')}</span> {{ trade }} / {{ mtrade }}</span></div></div>`);
+    market_item.append($(`<span role="button" class="zero has-text-advanced" @click="zero()">${loc('cancel_all_routes')}</span>`));
     $('#market').append(market_item);
     vBind({
         el: '#tradeTotal',
-        data: global.city.market
+        data: global.city.market,
+        methods: {
+            zero(){
+                Object.keys(global.resource).forEach(function(res){
+                    if (global.resource[res]['trade']){
+                        global.city.market.trade -= Math.abs(global.resource[res].trade);
+                        global.resource[res].trade = 0;
+                        tradeRouteColor(res);
+                    }
+                });
+            }
+        }
     });
 
-    popover(`tradeTotal`,function(){
+    popover(`tradeTotalPopover`,function(){
         let bd = $(`<div class="resBreakdown"></div>`);
         if (breakdown.hasOwnProperty('t_route')){
             Object.keys(breakdown.t_route).forEach(function(k){
@@ -1763,7 +1833,7 @@ function loadRouteCounter(){
         bd.append(`<div class="modal_bd ${global.city.market.mtrade > 0 ? 'sum' : ''}"><span class="has-text-caution">${loc('resource_market_trade_routes')}</span> <span>${global.city.market.mtrade}</span></div>`);
         return bd;
     },{
-        elm: `#tradeTotal > span`
+        elm: `#tradeTotalPopover > span`
     });
 }
 
@@ -1986,6 +2056,9 @@ export function crateValue(){
     }
     if (global.race['pack_rat']){
         create_value *= 1 + (traits.pack_rat.vars[0] / 100);
+    }
+    if (global.stats.achieve['banana'] && global.stats.achieve.banana.l >= 3){
+        create_value *= 1.1;
     }
     create_value *= global.stats.achieve['blackhole'] ? 1 + (global.stats.achieve.blackhole.l * 0.05) : 1;
     return Math.round(spatialReasoning(create_value));

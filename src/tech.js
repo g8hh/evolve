@@ -108,6 +108,13 @@ const techs = {
                     global.settings.showCivic = true;
                     global.city['garrison'] = { count: 0, on: 0 };
                 }
+                if (global.race['banana']){
+                    global.settings.showResources = true;
+                    global.settings.showMarket = true;
+                    global.resource.Money.display = true;
+                    global.city.market.active = true;
+                    global.tech['currency'] = 2;
+                }
                 return true;
             }
             return false;
@@ -659,7 +666,7 @@ const techs = {
         id: 'tech-wind_plant',
         title: loc('tech_windmill'),
         desc: loc('tech_windmill'),
-        category: 'agriculture',
+        category: 'power_generation',
         era: 'globalized',
         reqs: { high_tech: 4 },
         condition(){ return (global.tech['hunting'] && global.tech['hunting'] >= 2) || global.race['detritivore'] || global.race['soul_eater'] ? true : false; },
@@ -791,6 +798,7 @@ const techs = {
         desc: loc('tech_master_craftsman'),
         category: 'crafting',
         era: 'discovery',
+        wiki: global.race['evil'] ? true : false,
         reqs: { foundry: 3 },
         grant: ['foundry',5],
         trait: ['evil'],
@@ -811,6 +819,7 @@ const techs = {
         desc: loc('tech_master_craftsman'),
         category: 'crafting',
         era: 'discovery',
+        wiki: global.race['evil'] ? false : true,
         reqs: { foundry: 4 },
         grant: ['foundry',5],
         not_trait: ['evil'],
@@ -2582,7 +2591,7 @@ const techs = {
         not_trait: ['terrifying'],
         grant: ['currency',2],
         cost: {
-            Knowledge(){ return 1800; }
+            Knowledge(){ return global.race['banana'] ? 300 : 1800; }
         },
         effect: loc('tech_market_effect'),
         action(){
@@ -2693,7 +2702,7 @@ const techs = {
         reqs: { currency: 2, military: 1 },
         grant: ['trade',1],
         cost: {
-            Knowledge(){ return 4500; }
+            Knowledge(){ return global.race['banana'] ? 1200 : 4500; }
         },
         effect: loc('tech_trade_effect'),
         action(){
@@ -3695,10 +3704,10 @@ const techs = {
                 let tech = $(this)[0].grant[0];
                 global.tech[tech] = $(this)[0].grant[1];
                 global.settings.arpa.genetics = true;
+                arpa('Genetics');
                 if (global.race['cataclysm']){
                     global.arpa.sequence.on = false;
                 }
-                arpa('Genetics');
                 return true;
             }
             return false;
@@ -8180,6 +8189,7 @@ const techs = {
                     global.civic.foreign[`gov${i}`].sab = 0;
                     global.civic.foreign[`gov${i}`].act = 'none';
                 }
+                delete global.race['banana'];
                 return true;
             }
             return false;
@@ -8648,6 +8658,13 @@ const techs = {
                 global.interstellar.stellar_engine.mass += global.interstellar.stellar_engine.exotic * 40;
                 global.interstellar.stellar_engine.exotic = 0;
                 delete global.tech['whitehole'];
+                if (global.race['banana']){
+                    let affix = universeAffix();
+                    global.stats.banana.b3[affix] = true;
+                    if (affix !== 'm' && affix !== 'l'){
+                        global.stats.banana.b3.l = true;
+                    }
+                }
                 return true;
             }
             return false;

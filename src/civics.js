@@ -1,7 +1,7 @@
 import { global, poppers, clearStates, save, keyMultiplier, sizeApproximation } from './vars.js';
 import { loc } from './locale.js';
 import { calcPrestige, clearElement, popover, vBind, modRes, messageQueue, genCivName, darkEffect, eventActive, easterEgg, trickOrTreat } from './functions.js';
-import { unlockAchieve, unlockFeat, checkAchievements } from './achieve.js';
+import { unlockAchieve, unlockFeat, checkAchievements, universeAffix } from './achieve.js';
 import { races, racialTrait, traits, planetTraits } from './races.js';
 import { loadIndustry } from './industry.js';
 import { drawTech } from  './actions.js';
@@ -1028,7 +1028,7 @@ export function buildGarrison(garrison,full){
                                             if (global.race['brute']){
                                                 cost *= 1 - (traits.brute.vars[0] / 100);
                                             }
-                                            cost = Math.round(cost);
+                                            cost = Math.round(cost).toLocaleString();
                                             return loc('civics_garrison_hire_mercenary_cost',[cost]);
                                         }
                                     case 'defenseRating':
@@ -1127,6 +1127,9 @@ function battleAssessment(gov){
             break;
     }
     enemy *= global.civic.foreign[`gov${gov}`].mil / 100;
+    if (global.race['banana']){
+        enemy *= 2;
+    }
 
     if (eventActive('fool',2021)){
         enemy /= 1.25;
@@ -1195,6 +1198,9 @@ function war_campaign(gov){
             break;
     }
     enemy = Math.floor(enemy * global.civic.foreign[`gov${gov}`].mil / 100);
+    if (global.race['banana']){
+        enemy *= 2;
+    }
     if (global.race['mistrustful']){
         global.civic.foreign[`gov${gov}`].hstl++;
     }
@@ -1500,6 +1506,13 @@ function war_campaign(gov){
             if (drawTechs){
                 drawTech();
             }
+            if (global.race['banana']){
+                let affix = universeAffix();
+                global.stats.banana.b1[affix] = true;
+                if (affix !== 'm' && affix !== 'l'){
+                    global.stats.banana.b1.l = true;
+                }
+            }
         }
     }
     else {
@@ -1636,6 +1649,10 @@ function lootModify(val,gov){
             break;
     }
 
+    if (global.race['banana']){
+        loot *= 0.5;
+    }
+
     return Math.floor(loot * global.civic.foreign[`gov${gov}`].eco / 100);
 }
 
@@ -1687,6 +1704,9 @@ export function armyRating(val,type,wound){
         }
         if (global.race['holy'] && type === 'hellArmy'){
             army *= 1 + (traits.holy.vars[0] / 100);
+        }
+        if (global.race['banana'] && type === 'hellArmy'){
+            army *= 0.8;
         }
         if (global.city.ptrait === 'rage'){
             army *= planetTraits.rage.vars[0];

@@ -44,7 +44,7 @@ const achieve_list = {
         'vigilante','squished','double_density','cross','macro','marble','heavyweight','whitehole','heavy','canceled',
         'eviltwin','microbang','pw_apocalypse','fullmetal','pass'
     ],
-    challenge: ['joyless','steelen','dissipated','technophobe','iron_will','failed_history'],    
+    challenge: ['joyless','steelen','dissipated','technophobe','iron_will','failed_history','banana'],    
 };
 
 const flairData = {
@@ -120,6 +120,11 @@ export const feats = {
         name: loc("feat_steelem_name"),
         desc: loc("feat_steelem_desc"),
         flair: loc("feat_steelem_flair")
+    },
+    banana: {
+        name: loc("feat_banana_name"),
+        desc: loc("feat_banana_desc",[500,500]),
+        flair: loc("feat_banana_flair")
     },
     rocky_road: {
         name: loc("feat_rocky_road_name"),
@@ -578,6 +583,33 @@ export function checkAchievements(){
         }
     }
 
+    if (global.race['banana']){
+        let affix = universeAffix();
+        if (global.tech.hasOwnProperty('monuments') && global.tech.monuments >= 50){
+            global.stats.banana.b5[affix] = true;
+            if (affix !== 'm' && affix !== 'l'){
+                global.stats.banana.b5.l = true;
+            }
+        }
+
+        let slist = 0;
+        let ulist = 0;
+        ['b1','b2','b3','b4','b5'].forEach(function(b){
+            if (global.stats.banana[b].l){
+                slist++;
+            }
+            if (affix !== 'l' && global.stats.banana[b][affix]){
+                ulist++;
+            }
+        });
+        if (slist > 0){
+            unlockAchieve('banana',false,slist);
+        }
+        if (ulist > 0 && affix !== 'l'){
+            unlockAchieve('banana',false,ulist,affix);
+        }
+    }
+
     const date = new Date();
     let easter = getEaster();
     let halloween = getHalloween();
@@ -617,14 +649,14 @@ export function checkAchievements(){
             unlockFeat('easter');
         }
 
-        let checkAll = true;
-        for (let i=1; i<13; i++){
+        let eggs = 0;
+        for (let i=1; i<=15; i++){
             if (!global.special.egg[`egg${i}`]){
-                checkAll = false;
+                eggs++;
             }
         }
 
-        if (checkAll){
+        if (eggs >= 12){
             if (global.race.universe === 'micro'){
                 unlockFeat('egghunt',true);
             }
@@ -838,7 +870,7 @@ export const perkList = {
                 if (universe === 'standard'){
                     desc += `<span class="row"><span class="has-text-caution">${universe_types[universe].name}</span>: <span>${loc('perks_mastery_general',[`<span class="has-text-advanced">${+(mastery.g).toFixed(2)}%</span>`])}</span></span>`;
                 }
-                else {
+                else if (global.stats.achieve['whitehole']){
                     desc += `<span class="row"><span class="has-text-caution">${universe_types[universe].name}</span>: <span>${loc('perks_mastery_general',[`<span class="has-text-advanced">${+(mastery.g).toFixed(2)}%</span>`])}, ${loc('perks_mastery_universe',[`<span class="has-text-advanced">${+(mastery.u).toFixed(2)}%</span>`])}</span></span>`;
                 }
             });
@@ -1068,6 +1100,60 @@ export const perkList = {
         notes: [
             loc(`wiki_perks_achievement_note`,[`<span class="has-text-caution">${loc(`achieve_dissipated_name`)}</span>`]),
             loc(`wiki_perks_achievement_note_scale`,[`<span class="has-text-caution">${loc(`achieve_dissipated_name`)}</span>`])
+        ]
+    },
+    banana: {
+        name: loc(`achieve_banana_name`),
+        group: [
+            {
+                desc(){
+                    return loc("achieve_perks_banana1",[50]);
+                },
+                active(){
+                    return global.stats.achieve['banana'] && global.stats.achieve.banana.l >= 1 ? true : false;
+                }
+            },
+            {
+                desc(){
+                    return loc("achieve_perks_banana2",[1]);
+                },
+                active(){
+                    return global.stats.achieve['banana'] && global.stats.achieve.banana.l >= 2 ? true : false;
+                }
+            },
+            {
+                desc(){
+                    return loc("achieve_perks_banana3",[10]);
+                },
+                active(){
+                    return global.stats.achieve['banana'] && global.stats.achieve.banana.l >= 3 ? true : false;
+                }
+            },
+            {
+                desc(){
+                    return loc("achieve_perks_banana4",[3]);
+                },
+                active(){
+                    return global.stats.achieve['banana'] && global.stats.achieve.banana.l >= 4 ? true : false;
+                }
+            },
+            {
+                desc(){
+                    return loc("achieve_perks_banana5",[0.01]);
+                },
+                active(){
+                    return global.stats.achieve['banana'] && global.stats.achieve.banana.l >= 5 ? true : false;
+                }
+            }
+        ],
+        notes: [
+            loc(`wiki_perks_achievement_note`,[`<span class="has-text-caution">${loc(`achieve_banana_name`)}</span>`]),
+            loc(`wiki_perks_achievement_note_task`,[`<span class="has-text-caution">${loc(`achieve_banana_name`)}</span>`]),
+            loc(`wiki_perks_achievement_note_task_num`,[1,`<span class="has-text-${global.stats.banana.b1.l ? `success` : `danger`}">${loc(`wiki_achieve_banana1`)}</span>`]),
+            loc(`wiki_perks_achievement_note_task_num`,[2,`<span class="has-text-${global.stats.banana.b2.l ? `success` : `danger`}">${loc(`wiki_achieve_banana2`)}</span>`]),
+            loc(`wiki_perks_achievement_note_task_num`,[3,`<span class="has-text-${global.stats.banana.b3.l ? `success` : `danger`}">${loc(`wiki_achieve_banana3`)}</span>`]),
+            loc(`wiki_perks_achievement_note_task_num`,[4,`<span class="has-text-${global.stats.banana.b4.l ? `success` : `danger`}">${loc(`wiki_achieve_banana4`,[500])}</span>`]),
+            loc(`wiki_perks_achievement_note_task_num`,[5,`<span class="has-text-${global.stats.banana.b5.l ? `success` : `danger`}">${loc(`wiki_achieve_banana5`,[50])}</span>`])
         ]
     },
     anarchist: {

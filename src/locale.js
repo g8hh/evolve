@@ -79,5 +79,6 @@ export const locales = {
     'pt-BR': 'Português (BR)',
     'ko-KR': '한국어',
     'cs-CZ': 'Čeština',
+    'ru-RU': 'Русский',
     'im-PL': 'Igpay-Atinlay'
 };

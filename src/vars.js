@@ -731,7 +731,15 @@ if (convertVersion(global['version']) < 100035){
     }
 }
 
-global['version'] = '1.0.35';
+if (convertVersion(global['version']) < 100040){
+    const dt = new Date();
+    if (dt.getFullYear() === 2021 && dt.getMonth() === 3 && dt.getDate() <= 14 && global.race.hasOwnProperty('species') && global.race.species === 'wolven'){
+        console.log('true');
+        global.race['hrt'] = 'wolven';
+    }
+}
+
+global['version'] = '1.0.40';
 delete global['beta'];
 
 if (!global.hasOwnProperty('power')){
@@ -748,7 +756,7 @@ if (!global.hasOwnProperty('support')){
         gateway: [],
         alien2: [],
         lake: [],
-        spire: [],
+        spire: []
     };
 }
 
@@ -1654,6 +1662,10 @@ export function srSpeak(text, priority) {
 
 // executes a soft reset
 window.soft_reset = function reset(){
+    try {
+        gtag('event', 'reset', { 'end': 'soft'});
+    } catch (err){}
+
     let replace = {
         species : 'protoplasm',
         Plasmid: { count: global.race.Plasmid.count },
@@ -1868,6 +1880,8 @@ export function clearStates(){
     global.settings.pause = false;
     global.arpa = {};
 
+    delete global.race['hrt'];
+
     if (global.genes['queue']){
         global.tech['queue'] = 1;
         global.queue.display = true;
@@ -1876,6 +1890,9 @@ export function clearStates(){
 
 // executes a hard reset
 window.reset = function reset(){
+    try {
+        gtag('event', 'reset', { 'end': 'hard'});
+    } catch (err){}
     localStorage.removeItem('evolved');
     global = null;
     if (webWorker.w){

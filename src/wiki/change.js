@@ -3,6 +3,42 @@ import { clearElement } from './../functions.js';
 
 const changeList = [
     {
+        version: `1.0.40`,
+        date: `4/11/2021`,
+        changes: [
+            `Special event race reskins will now persist after event ends until reset.`,
+            `Added a warning to Unification tech if playing Banana Republic scenario.`
+        ]
+    },
+    {
+        version: `1.0.39`,
+        date: `4/9/2021`,
+        changes: [
+            `Added challenge win conditions to planet description popover.`
+        ]
+    },
+    {
+        version: `1.0.38`,
+        date: `4/4/2021`,
+        changes: [
+            `Fixed a bug that prevented some races from acquiring Egg #3.`
+        ]
+    },
+    {
+        version: `1.0.37`,
+        date: `4/3/2021`,
+        changes: [
+            `Fixed a bug with unlocking the Egg Hunt feat.`
+        ]
+    },
+    {
+        version: `1.0.36`,
+        date: `4/1/2021`,
+        changes: [
+            `Fool Feat will automatically upgrade to current challenge level for eligible players.`
+        ]
+    },
+    {
         version: `1.0.35`,
         date: `3/31/2021`,
         changes: [

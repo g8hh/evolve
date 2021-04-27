@@ -3,6 +3,7 @@
 // @namespace    http://tampermonkey.net/
 // @version      3.3.1.48
 // @description  try to take over the world!
+// @downloadURL  https://gitee.com/likexia/Evolve/raw/master/scripts/evolve.js
 // @author       Fafnir
 // @author       TMVictor
 // @author       Vollch

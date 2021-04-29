@@ -1235,7 +1235,7 @@ const spaceProjects = {
         },
         gas_storage: {
             id: 'space-gas_storage',
-            title(){ return loc('space_gas_storage_title',[races[global.race.species].solar.gas]); },
+            title(){ return loc('space_gas_storage_title'); },
             desc(){
                 return `<div>${loc('space_gas_storage_desc')}<div>`;
             },

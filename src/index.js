@@ -10,12 +10,14 @@ import { drawCity, drawTech, resQueue, clearResDrag } from './actions.js';
 import { renderSpace } from './space.js';
 import { renderFortress, buildFortress, drawMechLab, clearMechDrag } from './portal.js';
 import { arpa, clearGeneticsDrag } from './arpa.js';
+import { playFabStats } from './playfab.js';
 
 export function mainVue(){
     vBind({
         el: '#mainColumn div:first-child',
         data: {
-            s: global.settings
+            s: global.settings,
+            playFabStats: playFabStats
         },
         methods: {
             swapTab(tab){
@@ -977,6 +979,53 @@ export function index(){
             <button class="button" @click="saveExport">{{ 'export' | label }}</button>
             <button class="button" @click="saveExportFile">{{ 'export_file' | label }}</button>
             <button class="button right" @click="restoreGame"><span class="settings9" aria-label="${loc('settings9')}">{{ 'restore' | label }}</span></button>
+        </div>
+        <div class="online-save">
+            <b-collapse :open="s.onlineSave">
+            <b-switch v-model="s.onlineSave" slot="trigger">启用云存档(PlayFab)</b-switch>
+                <div class="content">
+                    <div class="login-content">
+                    <b-tabs>
+                        <b-tab-item label="登录">
+                            <div class="login-form">
+                                <div class="error" id="playfab-error"></div>
+                                <b-field label="用户名">
+                                    <b-input id="playfab-username"></b-input>
+                                </b-field>
+                                <b-field label="密码">
+                                    <b-input id="playfab-password" type="password"></b-input>
+                                </b-field>
+                                <button class="button" :disabled="false" @click="loginPlayFab()">登录</button>
+                            </div>
+                        </b-tab-item>
+                        <b-tab-item label="注册">
+                            <div class="login-form">
+                                <div class="error" id="playfab-reg-error"></div>
+                                <b-field label="用户名">
+                                    <b-input id="playfab-reg-username"></b-input>
+                                </b-field>
+                                <b-field label="密码">
+                                    <b-input id="playfab-reg-password" type="password"></b-input>
+                                </b-field>
+                                <b-field label="确认密码">
+                                    <b-input id="playfab-reg-confirm-password" type="password"></b-input>
+                                </b-field>
+                                <button class="button" :disabled="false" @click="registerPlayFabUser()">注册账号</button>
+                            </div>
+                        </b-tab-item>
+                    </b-tabs>
+                    </div>
+                    <div class="login-tips">
+                        <p id="login-tip">
+                            登录状态: {{ playFabStats.loginStat }} <br>
+                            上次保存时间: {{ playFabStats.lastSaveTime | dateFormat}} <br>
+                            云端存档时间: {{ playFabStats.playFabSaveTime | dateFormat}} <br>
+                            <button class="button" :disabled="false" @click="importFromPlayFab()">从云端导入存档(注意提前备份本地存档)</button>
+                            <button class="button" :disabled="false" @click="syncNow()">立即备份到云端</button>
+                        </p>
+                    </div>
+                </div>
+            </b-collapse>
         </div>
         <div class="reset">
             <b-collapse :open="false">

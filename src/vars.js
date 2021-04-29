@@ -784,6 +784,7 @@ if (!global['settings']){
         showAchieve: false,
         animated: true,
         disableReset: false,
+        onlineSave: false,
         font: 'standard',
         cLabels: true,
         theme: 'dark',

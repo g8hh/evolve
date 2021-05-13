@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Evolve
 // @namespace    http://tampermonkey.net/
-// @version      3.3.1.50
+// @version      3.3.1.52
 // @description  try to take over the world!
 // @downloadURL  https://gitee.com/likexia/Evolve/raw/master/scripts/evolve.js
 // @author       Fafnir
@@ -28,7 +28,6 @@
 //   Order in which buildings receive power depends on order in buildings settings, you can drag and drop them to adjust priorities.
 //     Filtering works with names, some settings, and resoruce cost. E.g. you can filter for "build==on", "power==off", "weight<100", "soul gem>0", "iron>=1G" and such.
 //     By default Ascension Trigger placed where it can be activated as soon as possible without killing soldiers or population, and reducing prestige rewards. But it still can hurt production badly. If you're planning to ascend at very first opportunity(i.e. not planning to go for pillar or such), you may enable auto powering it. Otherwise you may want to delay with it till the moment when you'll be ready. (Or you can just move it where it will be less impacting on production, but that also means it'll take longer to get enough power)
-//   Auto Craft doesn't works well past MAD, you may have issues making it craft expensive resource like mythril, consider enabling Auto Craftsmen even if you're playing with manual craft
 //   Evolution Queue can change any script settings, not only those which you have after adding new task, you can append any variables and their values manually, if you're capable to read code, and can find internal names and acceptable values of those variables. Settings applied at the moment when new evolution starts. (Or right before reset in case of Cataclysm)
 //     Unavailable tasks in evolution queue will be ignored, so you can queue something like salamander and balorg, one after another, and configure script to pick either volcano or hellscape after bioseed. And, assuming you'll get either of these planets, it'll go for one of those two races. (You can configure more options to pick from, if you want)
 //   Auto Smelter does adjust rate of Inferno fuel and Oil for best cost and efficiency, but only when Inferno directly above oil.
@@ -831,7 +830,6 @@
                 return false
             }
 
-            //this.updateResourceRequirements();
             this.resourceRequirements.forEach(requirement =>
                 requirement.resource.currentQuantity -= requirement.quantity
             );
@@ -1129,7 +1127,6 @@
                 amount = Math.floor(maxAffordable);
             }
 
-            //this.updateResourceRequirements();
             this.resourceRequirements.forEach(requirement =>
                 requirement.resource.currentQuantity -= requirement.quantity * amount
             );
@@ -1192,7 +1189,6 @@
                 return false
             }
 
-            //this.updateResourceRequirements();
             this.resourceRequirements.forEach(requirement =>
                 requirement.resource.currentQuantity -= requirement.quantity
             );
@@ -2024,6 +2020,16 @@
           () => 0 // Should always be on top, processing locked building may lead to issues
       ],[
           () => true,
+          (building) => state.queuedTargets.includes(building),
+          () => "Queued building, processing...",
+          () => 0
+      ],[
+          () => true,
+          (building) => state.triggerTargets.includes(building),
+          () => "Active trigger, processing...",
+          () => 0
+      ],[
+          () => true,
           (building) => !building.autoBuildEnabled,
           () => "AutoBuild disabled",
           () => 0
@@ -2285,7 +2291,7 @@
           () => "Need more knowledge",
           () => settings.buildingWeightingNeedfulKnowledge
       ],[
-          () => buildings.BlackholeMassEjector.isUnlocked(),
+          () => buildings.BlackholeMassEjector.count > 0,
           (building) => building === buildings.BlackholeMassEjector && building.count * 1000 - game.global.interstellar.mass_ejector.total > 100,
           () => "Still have some unused ejectors",
           () => settings.buildingWeightingUnusedEjectors
@@ -3933,8 +3939,12 @@
         priorityList: [],
         statePriorityList: [],
 
-        updateResourceRequirements() {
-            this.priorityList.forEach(building => building.updateResourceRequirements());
+        updateBuildings() {
+            for (let i = 0; i < this.priorityList.length; i++){
+                let building = this.priorityList[i];
+                building.updateResourceRequirements();
+                building.extraDescription = "";
+            }
         },
 
         updateWeighting() {
@@ -3944,20 +3954,6 @@
             // Iterate over buildings
             for (let i = 0; i < this.priorityList.length; i++){
                 let building = this.priorityList[i];
-
-                if (state.queuedTargets.includes(building)) {
-                    building.weighting = 0;
-                    building.extraDescription = "Queued building, processing...<br>";
-                    continue;
-                }
-                if (state.triggerTargets.includes(building)) {
-                    building.weighting = 0;
-                    building.extraDescription = "Active trigger, processing...<br>";
-                    continue;
-                }
-
-                // Reset old weighting and note
-                building.extraDescription = "";
                 building.weighting = building._weighting;
 
                 // Apply weighting rules
@@ -3975,7 +3971,9 @@
                       }
                     }
                 }
-                building.extraDescription = "AutoBuild weighting: " + getNiceNumber(building.weighting) + "<br>" + building.extraDescription;
+                if (building.weighting > 0) {
+                    building.extraDescription = "AutoBuild weighting: " + getNiceNumber(building.weighting) + "<br>" + building.extraDescription;
+                }
             }
         },
 
@@ -4007,54 +4005,51 @@
     var ProjectManager = {
         priorityList: [],
 
-        updateResourceRequirements() {
-            this.priorityList.forEach(project => project.updateResourceRequirements());
+        updateProjects() {
+            for (let i = 0; i < this.priorityList.length; i++){
+                let project = this.priorityList[i];
+                project.updateResourceRequirements();
+                project.extraDescription = "";
+            }
         },
 
         updateWeighting() {
             // Iterate over projects
             for (let i = 0; i < this.priorityList.length; i++){
                 let project = this.priorityList[i];
+                project.weighting = project._weighting;
 
                 if (!project.isUnlocked()) {
                     project.weighting = 0;
                     project.extraDescription = "Locked<br>";
-                    continue;
                 }
-
+                if (!project.autoBuildEnabled || !settings.autoARPA) {
+                    project.weighting = 0;
+                    project.extraDescription = "AutoBuild disabled<br>";
+                }
+                if (project.count >= project.autoMax) {
+                    project.weighting = 0;
+                    project.extraDescription = "Maximum amount reached<br>";
+                }
+                if (settings.prestigeMADIgnoreArpa && !haveTech("mad") && !game.global.race['cataclysm']) {
+                    project.weighting = 0;
+                    project.extraDescription = "Projects ignored PreMAD<br>";
+                }
                 if (state.queuedTargets.includes(project)) {
                     project.weighting = 0;
                     project.extraDescription = "Queued project, processing...<br>";
-                    continue;
                 }
                 if (state.triggerTargets.includes(project)) {
                     project.weighting = 0;
                     project.extraDescription = "Active trigger, processing...<br>";
-                    continue;
-                }
-
-                project.weighting = project._weighting;
-                project.extraDescription = "";
-
-                if (!project.autoBuildEnabled || !settings.autoARPA) {
-                    project.weighting = 0;
-                    project.extraDescription += "AutoBuild disabled<br>";
-                }
-
-                if (project.count >= project.autoMax) {
-                    project.weighting = 0;
-                    project.extraDescription += "Maximum amount reached<br>";
-                }
-
-                if (settings.prestigeMADIgnoreArpa && !haveTech("mad") && !game.global.race['cataclysm']) {
-                    project.weighting = 0;
-                    project.extraDescription += "Projects ignored PreMAD<br>";
                 }
 
                 if (settings.arpaScaleWeighting) {
                     project.weighting /= 1 - (0.01 * project.progress);
                 }
-                project.extraDescription = "AutoARPA weighting: " + getNiceNumber(project.weighting) + " (1%)<br>" + project.extraDescription;
+                if (project.weighting > 0) {
+                    project.extraDescription = "AutoARPA weighting: " + getNiceNumber(project.weighting) + " (1%)<br>" + project.extraDescription;
+                }
             }
         },
 
@@ -4537,6 +4532,7 @@
         settings.prestigeMADIgnoreArpa = true;
         settings.prestigeMADWait = true;
         settings.prestigeMADPopulation = 1;
+        settings.prestigeWaitAT = true;
         settings.prestigeBioseedConstruct = true;
         settings.prestigeEnabledBarracks = 100;
         settings.prestigeBioseedProbes = 3;
@@ -4547,6 +4543,8 @@
         settings.prestigeWhiteholeEjectExcess = false;
         settings.prestigeWhiteholeDecayRate = 0.2;
         settings.prestigeWhiteholeEjectAllCount = 100;
+        settings.prestigeAscensionSkipCustom = false;
+        settings.prestigeAscensionPillar = true;
         settings.prestigeDemonicFloor = 100;
         settings.prestigeDemonicBomb = false;
     }
@@ -5032,7 +5030,7 @@
         }
 
         projects.LaunchFacility._weighting = 100;
-        projects.SuperCollider._weighting = 5;
+        projects.SuperCollider._weighting = 3;
         projects.Railway._weighting = 0.01;
         projects.StockExchange._weighting = 0.5;
         projects.ManaSyphon._autoMax = 79;
@@ -5376,6 +5374,7 @@
         addSetting("prestigeMADIgnoreArpa", true);
         addSetting("prestigeMADWait", true);
         addSetting("prestigeMADPopulation", 1);
+        addSetting("prestigeWaitAT", true);
         addSetting("prestigeBioseedConstruct", true);
         addSetting("prestigeEnabledBarracks", 100);
         addSetting("prestigeBioseedProbes", 3);
@@ -5386,6 +5385,8 @@
         addSetting("prestigeWhiteholeEjectExcess", false);
         addSetting("prestigeWhiteholeDecayRate", 0.2);
         addSetting("prestigeWhiteholeEjectAllCount", 100);
+        addSetting("prestigeAscensionSkipCustom", false);
+        addSetting("prestigeAscensionPillar", true);
         addSetting("prestigeDemonicFloor", 100);
         addSetting("prestigeDemonicBomb", false);
 
@@ -6124,8 +6125,12 @@
         if (m.isMercenaryUnlocked()) {
             let mercenaryCost = m.getMercenaryCost();
             let mercenariesHired = 0;
-            while (m.currentSoldiers < m.maxSoldiers - settings.foreignHireMercDeadSoldiers && resources.Money.spareQuantity >= mercenaryCost && ((resources.Money.currentQuantity - mercenaryCost > resources.Money.maxQuantity * settings.foreignHireMercMoneyStoragePercent / 100) || (mercenaryCost < state.moneyMedian * settings.foreignHireMercCostLowerThanIncome))) {
-                m.hireMercenary();
+            let mercenaryMax = m.maxSoldiers - settings.foreignHireMercDeadSoldiers;
+            let minMoney = Math.max(resources.Money.maxQuantity * settings.foreignHireMercMoneyStoragePercent / 100, (settings.storageAssignExtra ? resources.Money.storageRequired / 1.03 : resources.Money.storageRequired));
+            let maxCost = state.moneyMedian * settings.foreignHireMercCostLowerThanIncome;
+            while (m.currentSoldiers < mercenaryMax && resources.Money.currentQuantity >= mercenaryCost &&
+                  (resources.Money.currentQuantity - mercenaryCost > minMoney || mercenaryCost < maxCost) &&
+                m.hireMercenary()) {
                 mercenariesHired++;
                 mercenaryCost = m.getMercenaryCost();
             }
@@ -6172,7 +6177,7 @@
 
         // Check if we want and can unify, unless we're already about to occupy something
         if (requiredTactic !== 4 && subdued >= 2 && haveTech("unify")){
-            if (settings.foreignOccupyLast && getAdvantage(bestAttackRating, 4, attackIndex) >= settings.foreignMinAdvantage) {
+            if (settings.foreignOccupyLast && getAdvantage(bestAttackRating, 4, attackIndex) > 0) {
                 // Occupy last force
                 requiredTactic = 4;
             }
@@ -7375,6 +7380,9 @@
     }
 
     function autoPrestige() {
+        if (settings.prestigeWaitAT && game.global.settings.at > 0) {
+            return;
+        }
         switch (settings.prestigeType) {
             case 'mad':
                 let madVue = getVueById("mad");
@@ -7424,7 +7432,10 @@
                 }
                 return;
             case 'ascension':
-                // TODO: It'll need more options before allowing script to press reset. Infusing pillars before reset, and something for custom race.
+                if (isAscensionPrestigeAvailable()) {
+                    state.goal = "Reset";
+                    buildings.SiriusAscend.click();
+                }
                 return;
             case 'demonic':
                 if (isDemonicPrestigeAvailable()) {
@@ -7447,8 +7458,12 @@
         return getBlackholeMass() >= settings.prestigeWhiteholeMinMass && (techIds["tech-exotic_infusion"].isUnlocked() || techIds["tech-infusion_check"].isUnlocked() || techIds["tech-infusion_confirm"].isUnlocked());
     }
 
+    function isAscensionPrestigeAvailable() {
+        return settings.prestigeAscensionSkipCustom && buildings.SiriusAscend.isUnlocked() && (game.global.race.universe === 'micro' || (settings.prestigeAscensionPillar && game.global.pillars[game.global.race.species] >= game.alevel()));
+    }
+
     function isDemonicPrestigeAvailable() {
-        return buildings.PortalSpire.count > settings.prestigeDemonicFloor && resources.Demonic_Essence.currentQuantity > 0 && techIds["tech-demonic_infusion"].isUnlocked();
+        return buildings.PortalSpire.count > settings.prestigeDemonicFloor && haveTech("waygate", 3) && techIds["tech-demonic_infusion"].isUnlocked();
     }
 
     function getBlackholeMass() {
@@ -8207,21 +8222,25 @@
         if (settings.buildingManageSpire && resources.Spire_Support.rateOfChange > 0) {
             let spireSupport = Math.floor(resources.Spire_Support.rateOfChange);
             let puri = buildings.PortalPurifier;
+            let mech = buildings.PortalMechBay;
             let port = buildings.PortalPort;
             let camp = buildings.PortalBaseCamp;
-            let mech = buildings.PortalMechBay;
-            let nextPuriCost = settings.autoBuild && puri.autoBuildEnabled && puri.count < puri.autoMax ? resourceCost(puri, resources.Supply) : Number.MAX_SAFE_INTEGER;
-            let nextMechCost = settings.autoBuild && mech.autoBuildEnabled && mech.count < mech.autoMax ? resourceCost(mech, resources.Supply) : Number.MAX_SAFE_INTEGER;
+            let puriBuildable = settings.autoBuild && puri.autoBuildEnabled && puri.count < puri.autoMax && resources.Money.maxQuantity >= resourceCost(puri, resources.Money);
+            let mechBuildable = settings.autoBuild && mech.autoBuildEnabled && mech.count < mech.autoMax && resources.Money.maxQuantity >= resourceCost(mech, resources.Money);
             let portBuildable = settings.autoBuild && port.autoBuildEnabled && port.count < port.autoMax && resources.Money.maxQuantity >= resourceCost(port, resources.Money);
             let campBuildable = settings.autoBuild && camp.autoBuildEnabled && camp.count < camp.autoMax && resources.Money.maxQuantity >= resourceCost(camp, resources.Money);
+            let nextPuriCost = puriBuildable && mechBuildable ? resourceCost(puri, resources.Supply) : Number.MAX_SAFE_INTEGER; // We don't need purifiers if mech bay already maxed
+            let nextMechCost = mechBuildable ? resourceCost(mech, resources.Supply) : Number.MAX_SAFE_INTEGER;
+            let maxPorts = portBuildable ? port.autoMax : port.count;
+            let maxCamps = campBuildable ? camp.autoMax : camp.count;
 
-            let [bestSupplies, bestPort, bestBase] = getBestSupplyRatio(spireSupport, port.count, portBuildable, camp.count, campBuildable);
+            let [bestSupplies, bestPort, bestBase] = getBestSupplyRatio(spireSupport, maxPorts, maxCamps);
             puri.extraDescription = `Supported Supplies: ${Math.floor(bestSupplies)}<br>${puri.extraDescription}`;
 
             let canBuild = bestSupplies >= nextPuriCost || bestSupplies >= nextMechCost;
 
             for (let targetMech = Math.min(mech.count, spireSupport); targetMech >= 0; targetMech--) {
-                let [targetSupplies, targetPort, targetCamp] = getBestSupplyRatio(spireSupport - targetMech, port.count, portBuildable, camp.count, campBuildable);
+                let [targetSupplies, targetPort, targetCamp] = getBestSupplyRatio(spireSupport - targetMech, maxPorts, maxCamps);
                 if (!canBuild || targetSupplies >= nextPuriCost || targetSupplies >= nextMechCost || targetPort > port.count || targetCamp > camp.count) {
                     mech.tryAdjustState(targetMech - mech.stateOnCount);
                     port.tryAdjustState(targetPort - port.stateOnCount);
@@ -8245,21 +8264,18 @@
         }
     }
 
-    function getBestSupplyRatio(support, currentPorts, portBuildable, currentCamps, campBuildable) {
+    function getBestSupplyRatio(support, maxPorts, maxCamps) {
         let bestSupplies = 0;
         let bestPort = support;
         let bestBaseCamp = 0;
         for (let i = 0; i < support; i++) {
-            let checkPort = portBuildable ? support - i : Math.min(support - i, currentPorts);
-            let checkCamp = campBuildable ? i : Math.min(i, currentCamps);
-
-            let maxSupplies = checkPort * (1 + checkCamp * 0.4);
+            let maxSupplies = Math.min(support - i, maxPorts) * (1 + Math.min(i, maxCamps) * 0.4);
             if (maxSupplies <= bestSupplies) {
                 break;
             }
             bestSupplies = maxSupplies;
-            bestPort = checkPort;
-            bestBaseCamp = checkCamp;
+            bestPort = Math.min(support - i, maxPorts);
+            bestBaseCamp = Math.min(i, maxCamps);
         }
         return [bestSupplies * 10000 + 100, bestPort, bestBaseCamp];
     }
@@ -9413,8 +9429,8 @@
 
         updateScriptData(); // Sync exposed data with script variables
 
-        BuildingManager.updateResourceRequirements(); // Set obj.resourceRequirements
-        ProjectManager.updateResourceRequirements(); // Set obj.resourceRequirements
+        BuildingManager.updateBuildings(); // Set obj.resourceRequirements
+        ProjectManager.updateProjects(); // Set obj.resourceRequirements
         calculateRequiredStorages(); // Set res.storageRequired, uses obj.resourceRequirements
         updatePriorityTargets();  // Set queuedTargets and triggerTargets, modifies res.storageRequired
         prioritizeDemandedResources(); // Set res.requestedQuantity, uses queuedTargets and triggerTargets
@@ -9582,6 +9598,16 @@
     }
 
     function automate() {
+        if (state.goal === "GameOverMan") { return; }
+
+        // Game doesn't expose anything during custom creation, let's check it separately
+        let createCustom = document.querySelector("#celestialLab .create button");
+        if (createCustom && settings.prestigeType === "ascension" && settings.prestigeAscensionSkipCustom) {
+            state.goal = "GameOverMan";
+            createCustom.click();
+            return;
+        }
+
         // Exposed global it's a deepcopy of real game state, and it's not guaranteed to be actual
         // So, to ensure we won't process same state of game twice - we're storing global, and will wait for *new* one
         // Game ticks faster than script, so normally it's not an issue. But maybe game will be on pause, or debug mode was disabled, or lag badly - better be sure
@@ -9601,8 +9627,6 @@
         // The user has turned off the master toggle. Stop taking any actions on behalf of the player.
         // We've still updated the UI etc. above; just not performing any actions.
         if (!settings.masterScriptToggle) { return; }
-
-        if (state.goal === "GameOverMan"){ return; }
 
         if (state.goal === "Evolution") {
             if (settings.autoEvolution) {
@@ -9813,6 +9837,7 @@
               height: 100%; /* Full height */
               background-color: rgb(0,0,0); /* Fallback color */
               background-color: rgba(10,10,10,.86); /* Blackish w/ opacity */
+              overflow-y: auto; /* Allow scrollbar */
             }
 
             /* Modal Content/Box */
@@ -9827,7 +9852,7 @@
                 padding: 0px;
                 //width: 80%;
                 width: 900px;
-                max-height: 90%;
+                //max-height: 90%;
                 border-radius: .5rem;
                 text-align: center;
             }
@@ -10283,6 +10308,8 @@
                 confirmationText = "把刻度盘拨到11已经就绪，选择此项后可能会立刻进行大灾变重置。您确定要这么做吗？";
             } else if (this.value === "whitehole" && isWhiteholePrestigeAvailable()) {
                 confirmationText = "奇异灌输已经可以研究了，选择此项后可能会立刻进行黑洞重置。您确定要这么做吗？";
+            } else if (this.value === "ascension" && isAscensionPrestigeAvailable()) {
+                confirmationText = "飞升装置已经建造并供能，不会对自建种族进行任何操作。选择此项后可能会立刻进行飞升重置。您确定要这么做吗？";
             } else if (this.value === "demonic" && isDemonicPrestigeAvailable()) {
                 confirmationText = "已经到达了设定的楼层，且已击杀恶魔领主，选择此项后可能会立刻进行恶魔灌注。您确定要这么做吗？";
             }
@@ -10298,6 +10325,7 @@
             settings.prestigeType = this.value;
             updateSettingsFromState();
         });
+        addStandardSectionSettingsToggle2(secondaryPrefix, currentNode, "prestigeWaitAT", "Use all Accelerated Time", "Delay reset until all accelerated time will be used");
         addStandardSectionSettingsToggle2(secondaryPrefix, currentNode, "prestigeBioseedConstruct", "Ignore useless buildings", "Space Dock, Bioseeder Ship and Probes will be constructed only when Bioseed prestige enabled. World Collider won't be constructed during Bioseed. Jump Ship won't be constructed during Whitehole. Stellar Engine won't be constucted during Vacuum Collapse.");
         addStandardSectionSettingsNumber2(secondaryPrefix, currentNode, "prestigeEnabledBarracks", "Barracks after unification", "Percent of barracks to keep enabled after unification, disabling some of them can reduce stress. All barracks will be enabled back when Bioseeder Ship will be at 90%, or after building World Collider");
 
@@ -10320,6 +10348,11 @@
         addStandardSectionSettingsToggle2(secondaryPrefix, currentNode, "prestigeWhiteholeEjectExcess", "Eject excess resources", "Eject resources above amount required for buildings, normally only resources with full storages will be ejected, until 'Eject everything' option is activated.");
         addStandardSectionSettingsNumber2(secondaryPrefix, currentNode, "prestigeWhiteholeDecayRate", "(Decay Challenge) Eject rate", "Set amount of ejected resources up to this percent of decay rate, only useful during Decay Challenge");
         addStandardSectionSettingsNumber2(secondaryPrefix, currentNode, "prestigeWhiteholeEjectAllCount", "Eject everything once X mass ejectors constructed", "Once we've constructed X mass ejectors the eject as much of everything as possible");
+
+        // Ascension
+        addStandardSectionHeader1(currentNode, "Ascension");
+        addStandardSectionSettingsToggle2(secondaryPrefix, currentNode, "prestigeAscensionSkipCustom", "Skip Custom Race", "Perform reset without making any changes to custom. This option is required, script won't ascend automatically without it enabled.");
+        addStandardSectionSettingsToggle2(secondaryPrefix, currentNode, "prestigeAscensionPillar", "Wait for Pillar", "Wait for Pillar before ascending, unless it was done earlier");
 
         // Demonic Infusion
         addStandardSectionHeader1(currentNode, "Demonic Infusion");

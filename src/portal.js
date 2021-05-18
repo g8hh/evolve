@@ -512,7 +512,7 @@ const fortressModules = {
             },
             no_queue(){ return global.queue.queue.some(item => item.id === $(this)[0].id) ? true : false; },
             q_once: true,
-            effect(){ return !global.portal.hasOwnProperty('vault') || global.portal.vault.count < 1 ? loc('portal_vault_effect',[100]) : loc('portal_vault_effect2'); },
+            effect(){ return !global.portal.hasOwnProperty('vault') || global.portal.vault.count < 1 ? loc('portal_vault_effect',[global.race['smoldering'] ? 90 : 100]) : loc('portal_vault_effect2'); },
             action(){
                 if (global.portal.vault.count < 2 && payCosts($(this)[0].cost)){
                     incrementStruct('vault','portal');
@@ -1157,11 +1157,11 @@ const fortressModules = {
             support(){ return -1; },
             cost: {
                 Money(offset){ return spaceCostMultiplier('transport', offset, 300000000, 1.22, 'portal'); },
-                Oil(offset){ return spaceCostMultiplier('bireme', offset, 180000, 1.22, 'portal'); },
-                Alloy(offset){ return spaceCostMultiplier('bireme', offset, 18000000, 1.22, 'portal'); },
-                Graphene(offset){ return spaceCostMultiplier('bireme', offset, 12500000, 1.22, 'portal'); },
-                Soul_Gem(offset){ return spaceCostMultiplier('bireme', offset, 5, 1.22, 'portal'); },
-                Scarletite(offset){ return spaceCostMultiplier('bireme', offset, 250000, 1.22, 'portal'); },
+                Oil(offset){ return spaceCostMultiplier('transport', offset, 180000, 1.22, 'portal'); },
+                Alloy(offset){ return spaceCostMultiplier('transport', offset, 18000000, 1.22, 'portal'); },
+                Graphene(offset){ return spaceCostMultiplier('transport', offset, 12500000, 1.22, 'portal'); },
+                Soul_Gem(offset){ return spaceCostMultiplier('transport', offset, 5, 1.22, 'portal'); },
+                Scarletite(offset){ return spaceCostMultiplier('transport', offset, 250000, 1.22, 'portal'); },
             },
             effect(){
                 let rating = global.blood['spire'] && global.blood.spire >= 2 ? 0.8 : 0.85;
@@ -1559,18 +1559,26 @@ const fortressModules = {
                 let resist = `???`;
                 if (global.stats['spire']){
                     let resists = bossResists(boss);
-                    Object.keys(global.stats.spire).forEach(function(uni){
-                        if (weak === '???' && global.stats.spire.hasOwnProperty(uni) && global.stats.spire[uni].hasOwnProperty(global.portal.spire.boss) && global.stats.spire[uni][global.portal.spire.boss] > 0){
-                            weak = loc(`portal_mech_weapon_${resists.w}`);
-                        }
-                        if (resist === '???' && global.stats.spire.hasOwnProperty(uni) && global.stats.spire[uni].hasOwnProperty(global.portal.spire.boss) && global.stats.spire[uni][global.portal.spire.boss] >= 5){
-                            resist = loc(`portal_mech_weapon_${resists.r}`);
-                        }
-                    });
+                    let level = $(this)[0].mscan();
+                    if (level > 0){
+                        weak = loc(`portal_mech_weapon_${resists.w}`);
+                    }
+                    if (level >= 5){
+                        resist = loc(`portal_mech_weapon_${resists.r}`);
+                    }
                 }
                 let rightSide = `<div>${threat}<div>${loc('portal_spire_mob_weak',[`<span class="has-text-warning">${weak}</span>`])}</div><div>${loc('portal_spire_mob_resist',[`<span class="has-text-warning">${resist}</span>`])}</div></div>`;
 
                 return `<div class="split"><div>${leftSide}</div><div>${rightSide}</div></div>`;
+            },
+            mscan(){
+                let level = 0;
+                Object.keys(global.stats.spire).forEach(function(uni){
+                    if (global.stats.spire.hasOwnProperty(uni) && global.stats.spire[uni].hasOwnProperty(global.portal.spire.boss) && global.stats.spire[uni][global.portal.spire.boss] > level){
+                        level = global.stats.spire[uni][global.portal.spire.boss];
+                    }
+                });
+                return level;
             },
             wide: true,
             action(){
@@ -2468,7 +2476,7 @@ export function bloodwar(){
         }
     }
 
-    if (global.tech['gate_turret']){
+    if (global.tech['hell_gate'] && global.tech['hell_gate'] >= 3){
         if (forgeOperating && p_on['gate_turret']){
             let gunKills = 0;
             let min = global.tech.hell_gun >= 2 ? 65 : 40;

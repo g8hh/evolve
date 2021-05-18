@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Evolve
 // @namespace    http://tampermonkey.net/
-// @version      3.3.1.54
+// @version      3.3.1.55
 // @description  try to take over the world!
 // @downloadURL  https://gitee.com/likexia/Evolve/raw/master/scripts/evolve.js
 // @author       Fafnir
@@ -6629,7 +6629,7 @@
                 log("autoJobs", "job " + job._originalId + " currentBreakpoint " + currentBreakpoint + " availableEmployees " + availableEmployees);
 
                 if (job === jobs.SpaceMiner) {
-                    state.maxSpaceMiners = Math.max(state.maxSpaceMiners, Math.min(availableEmployees, job.breakpoints[i] === "-1" ? Number.MAX_SAFE_INTEGER : job.breakpoints[i]));
+                    state.maxSpaceMiners = Math.max(state.maxSpaceMiners, Math.min(availableEmployees, job.breakpoints[i] < 0 ? Number.MAX_SAFE_INTEGER : job.breakpoints[i]));
                     let minersNeeded = buildings.BeltEleriumShip.stateOnCount * 2 + buildings.BeltIridiumShip.stateOnCount + buildings.BeltIronShip.stateOnCount;
                     jobsToAssign = Math.min(jobsToAssign, minersNeeded);
                 }
@@ -6812,18 +6812,21 @@
             maxTaxRate += 20;
         }
 
-        if (!game.global.race['banana']) {
-            maxMorale += 10 - Math.floor(minTaxRate / 2);
-        }
-
         if (resources.Money.storageRatio < 0.98) {
             minTaxRate = Math.max(minTaxRate, settings.generalMinimumTaxRate);
-            maxMorale = Math.min(maxMorale, settings.generalMaximumMorale);
         }
 
         let optimalTax = Math.round((maxTaxRate - minTaxRate) * Math.max(0, 0.9 - resources.Money.storageRatio)) + minTaxRate;
         if (resources.Money.isDemanded()) {
             optimalTax = maxTaxRate;
+        }
+
+        if (!game.global.race['banana'] && optimalTax < 20) {
+            maxMorale += 10 - Math.floor(minTaxRate / 2);
+        }
+
+        if (resources.Money.storageRatio < 0.98) {
+            maxMorale = Math.min(maxMorale, settings.generalMaximumMorale);
         }
 
         if (currentTaxRate < maxTaxRate && currentMorale > settings.generalMinimumMorale + 1 &&
@@ -6837,6 +6840,7 @@
             resetMultiplier();
             taxVue.sub();
         }
+
     }
 
     function autoPylon() {
@@ -7634,7 +7638,7 @@
             let trade = poly.galaxyOffers[i];
             let buyResource = resources[trade.buy.res];
             if (buyResource.galaxyMarketWeighting > 0) {
-                let priority = buyResource.requestedQuantity > 0 ? Number.MAX_SAFE_INTEGER : buyResource.galaxyMarketPriority;
+                let priority = buyResource.isDemanded() ? Number.MAX_SAFE_INTEGER : buyResource.galaxyMarketPriority;
                 priorityGroups[priority] = priorityGroups[priority] ?? [];
                 priorityGroups[priority].push(trade);
             }
@@ -8659,7 +8663,7 @@
 
         // Drop minimum income, if we have something on demand, but can't trade with our income
         if (resourcesToTrade.length > 0) {
-            if (minimumAllowedMoneyPerSecond > resources.Money.rateOfChange && resources.Money.requestedQuantity <= 0){
+            if (minimumAllowedMoneyPerSecond > resources.Money.rateOfChange && !resources.Money.isDemanded()){
                 minimumAllowedMoneyPerSecond = 0;
             }
         }
@@ -9298,7 +9302,7 @@
         // Prioritize material for craftables
         for (let id in resources) {
             let resource = resources[id];
-            if (resource.requestedQuantity > 0) {
+            if (resource.isDemanded()) {
                 // Only craftables stores their cost in resourceRequirements, no need for additional checks
                 for (let i = 0; i < resource.resourceRequirements.length; i++) {
                     let material = resource.resourceRequirements[i].resource;

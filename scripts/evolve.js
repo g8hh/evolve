@@ -9818,7 +9818,7 @@
         initialiseState();
         initialiseRaces();
         initialiseScript();
-        setInterval(automate, 300);
+        setInterval(automate, 1000);
     }
 
     function addScriptStyle() {

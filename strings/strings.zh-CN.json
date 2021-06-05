@@ -4219,7 +4219,7 @@
   "gov_trait_pious": "TRANS:Pious",
   "gov_trait_pious_desc": "TRANS:Drawing in the devout could be good for your spirit.",
   "gov_trait_pious_bd": "TRANS:Tithe",
-  "gov_trait_pious_effect": "	什一税导致税收-%0%，每个寺庙使旅游中心收入+$%1。",
+  "gov_trait_pious_effect": "什一税导致税收-%0%，每个寺庙使旅游中心收入+$%1。",
   "gov_trait_pragmatist": "TRANS:Pragmatist",
   "gov_trait_pragmatist_desc": "TRANS:A pragmatic outlook could help get more done.",
   "gov_trait_pragmatist_effect": "建筑队列上限增加%0%，知识成本+%1%。",

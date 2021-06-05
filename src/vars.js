@@ -757,7 +757,27 @@ if (convertVersion(global['version']) < 100041){
     };
 }
 
-global['version'] = '1.0.43';
+if (convertVersion(global['version']) < 101000){
+    if (global.race['jtype'] && global.race['jtype'] === 'animal'){
+        global.race['jtype'] = 'omnivore';
+    }
+    if (global.hasOwnProperty('custom') && global.custom.hasOwnProperty('race0') && global.custom.race0.hasOwnProperty('genus') && global.custom.race0.genus === 'animal'){
+        global.custom.race0.genus = 'omnivore';
+    }
+    if (global.portal.hasOwnProperty('mechbay')){
+        for (let i=0; i<global.portal.mechbay.mechs.length; i++){
+            if (!global.portal.mechbay.mechs[i].hasOwnProperty('infernal')){
+                global.portal.mechbay.mechs[i]['infernal'] = false;
+            }
+        }
+    }
+    if (global.hasOwnProperty('stats') && global.stats.hasOwnProperty('achieve') && global.stats.achieve.hasOwnProperty('genus_animal')){
+        global.stats.achieve['genus_carnivore'] = global.stats.achieve.genus_animal;
+        delete global.stats.achieve.genus_animal;
+    }
+}
+
+global['version'] = '1.1.0';
 delete global['beta'];
 
 if (!global.hasOwnProperty('power')){
@@ -838,6 +858,9 @@ if (!global.settings['showStorage']){
 
 if (!global.settings['showAlchemy']){
     global.settings['showAlchemy'] = false;
+}
+if (!global.settings['showGovernor']){
+    global.settings['showGovernor'] = false;
 }
 
 if (!global.settings['space']){
@@ -1006,6 +1029,9 @@ if (!global.settings['spaceTabs']){
 if (!global.settings['statsTabs']){
     global.settings['statsTabs'] = 0;
 }
+if (!global.settings['govTabs2']){
+    global.settings['govTabs2'] = 0;
+}
 if (!global.settings['locale']){
     global.settings['locale'] = 'zh-cn';
 }
@@ -1170,7 +1196,6 @@ if (!global.race['gene_fortify']){
 if (!global.race['old_gods']){
     global.race['old_gods'] = 'none';
 }
-
 if (!global.race['universe']){
     global.race['universe'] = 'standard';
 }
@@ -1178,9 +1203,16 @@ if (!global.race['universe']){
 if (!global.genes['minor']){
     global.genes['minor'] = {};
 }
-
 if (!global.race['minor']){
     global.race['minor'] = {};
+}
+
+if (!global.hasOwnProperty('govern')){
+    global['govern'] = {
+        governor: {},
+        candidate: [],
+        policy: {}
+    };
 }
 
 if (!global.settings.hasOwnProperty('showMil')){
@@ -1336,6 +1368,8 @@ if (!global.settings['at']){
 if (!global.city['morale']){
     global.city['morale'] = {
         current: 0,
+        cap: 0,
+        potential: 0,
         unemployed: 0,
         stress: 0,
         entertain: 0,
@@ -1383,6 +1417,12 @@ if (!global.city.morale['vr']){
 }
 if (!global.city.morale['zoo']){
     global.city.morale['zoo'] = 0;
+}
+if (!global.city.morale['cap']){
+    global.city.morale['cap'] = 0;
+}
+if (!global.city.morale['potential']){
+    global.city.morale['potential'] = 0;
 }
 
 if (!global.city['calendar']){
@@ -1620,6 +1660,10 @@ var affix_list = {
 export function sizeApproximation(value,precision,fixed){
     let result = 0;
     let affix = '';
+    let neg = value < 0 ? true : false;
+    if (neg){
+        value *= -1;
+    }
     if (value <= 9999){
         result = +value.toFixed(precision);
     }
@@ -1655,7 +1699,13 @@ export function sizeApproximation(value,precision,fixed){
         affix = affix_list[global.settings.affix][7];
         result = fixed ? +(value / 1000000000000000000000000).toFixed(1) : (Math.floor(value / 10000000000000000000000) / 100);
     }
-    return (result >= 100 ? +result.toFixed(1) : result) + affix;
+    if (result >= 100){
+        result = +result.toFixed(1);
+    }
+    if (neg){
+        result *= -1;
+    }
+    return result + affix;
 }
 
 $(window).resize(function(){
@@ -1861,6 +1911,7 @@ export function clearStates(){
     global.settings.showEjector = false;
     global.settings.showCargo = false;
     global.settings.showAlchemy  = false;
+    global.settings.showGovernor = false;
     global.settings.space.home = true;
     global.settings.space.moon = false;
     global.settings.space.red = false;
@@ -1892,6 +1943,7 @@ export function clearStates(){
     global.settings.arpa = false;
     global.settings.civTabs = 0;
     global.settings.govTabs = 0;
+    global.settings.govTabs2 = 0;
     global.settings.resTabs = 0;
     global.settings.spaceTabs = 0;
     global.settings.marketTabs = 0

@@ -7,6 +7,7 @@ import { sideMenu } from './functions.js';
 export function racesPage(){
     let content = sideMenu('create');
 
+    let list = [];
     Object.keys(races).forEach(function (race){
         if ((race === 'custom' && !global.hasOwnProperty('custom')) || race === 'protoplasm'){
             return;
@@ -41,14 +42,18 @@ export function racesPage(){
             traitList.push(extraTraits[i]);
         }
         info.append(genes);
-        sideMenu('add',`races-species`,race,races[race].name);
-
+        list.push(race);
+        
         for (let i=0; i<traitList.length; i++){
             let id = `raceTrait${race}${traitList[i]}`;
             let desc = $(`<div></div>`);
             traitDesc(desc,traitList[i],traitList[i] === races[race].fanaticism ? races[race].name : false);
-            popover(id,desc);
+            popover(id,desc,{ wide: true, classes: 'w25' });
         }
+    });
+
+    list.sort((a,b) => races[a].name < races[b].name ? -1 : 1).forEach(function(race){
+        sideMenu('add',`races-species`,race,races[race].name);
     });
 }
 
@@ -81,6 +86,11 @@ export function traitsPage(){
     }
 }
 
+function rName(r){
+    let res = global.hasOwnProperty('resource') && global.resource.hasOwnProperty(r) ? global.resource[r].name : loc(`resource_${r}_name`);
+    return `<span class="has-text-warning">${res}</span>`;
+}
+
 const traitExtra = {
     infiltrator: [
         loc(`wiki_trait_effect_infiltrator_ex1`),
@@ -92,6 +102,9 @@ const traitExtra = {
                 `<span class="has-text-warning">${loc('tech_nanoweave')}</span>`, `<span class="has-text-warning">${loc('tech_orichalcum_analysis')}</span>`, `<span class="has-text-warning">${loc('tech_infernium_fuel')}</span>`
             ].join(', ')
         ])
+    ],
+    heavy: [
+        loc(`wiki_trait_effect_heavy_ex1`,[rName('Stone'),rName('Cement'),rName('Wrought_Iron')])
     ]
 };
 

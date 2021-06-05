@@ -7,6 +7,7 @@ import { loadFoundry } from './jobs.js';
 import { armyRating } from './civics.js';
 import { payCosts, setAction, drawTech, bank_vault, cleanTechPopOver } from './actions.js';
 import { checkRequirements, incrementStruct } from './space.js';
+import { govActive } from './governor.js';
 import { loadTab } from './index.js';
 import { loc } from './locale.js';
 
@@ -512,7 +513,7 @@ const fortressModules = {
             },
             no_queue(){ return global.queue.queue.some(item => item.id === $(this)[0].id) ? true : false; },
             q_once: true,
-            effect(){ return !global.portal.hasOwnProperty('vault') || global.portal.vault.count < 1 ? loc('portal_vault_effect',[global.race['smoldering'] ? 90 : 100]) : loc('portal_vault_effect2'); },
+            effect(){ return !global.portal.hasOwnProperty('vault') || global.portal.vault.count < 1 ? loc('portal_vault_effect',[100]) : loc('portal_vault_effect2'); },
             action(){
                 if (global.portal.vault.count < 2 && payCosts($(this)[0].cost)){
                     incrementStruct('vault','portal');
@@ -587,6 +588,7 @@ const fortressModules = {
                 Bolognium(offset){ return spaceCostMultiplier('arcology', offset, 2800000, 1.22, 'portal'); },
                 Orichalcum(offset){ return spaceCostMultiplier('arcology', offset, 5500000, 1.22, 'portal'); },
                 Nanoweave(offset){ return spaceCostMultiplier('arcology', offset, 650000, 1.22, 'portal'); },
+                Horseshoe(){ return global.race['hooved'] ? 13 : 0; }
             },
             powered(){ return powerCostMod(25); },
             effect(){
@@ -1574,8 +1576,9 @@ const fortressModules = {
             mscan(){
                 let level = 0;
                 Object.keys(global.stats.spire).forEach(function(uni){
-                    if (global.stats.spire.hasOwnProperty(uni) && global.stats.spire[uni].hasOwnProperty(global.portal.spire.boss) && global.stats.spire[uni][global.portal.spire.boss] > level){
-                        level = global.stats.spire[uni][global.portal.spire.boss];
+                    let boss = global.portal.hasOwnProperty('spire') ? global.portal.spire.boss : 'crazed';
+                    if (global.stats.spire.hasOwnProperty(uni) && global.stats.spire[uni].hasOwnProperty(boss) && global.stats.spire[uni][boss] > level){
+                        level = global.stats.spire[uni][boss];
                     }
                 });
                 return level;
@@ -1745,6 +1748,10 @@ export function renderFortress(){
             });
         }
     });
+}
+
+export function checkHellRequirements(region,tech){
+    return checkRequirements(fortressModules,region,tech);
 }
 
 function fortressData(dt){
@@ -2124,6 +2131,11 @@ function casualties(demons,pat_armor,ambush){
         casualties = Math.rand(ambush ? 1 : 0,casualties + 1);
         dead = Math.rand(0,casualties + 1);
         let wounded = casualties - dead;
+        if (global.race['instinct']){
+            let reduction = Math.floor(dead * (traits.instinct.vars[1] / 100));
+            dead -= reduction;
+            wounded += reduction;
+        }
         global.civic.garrison.wounded += wounded;
         global.civic.garrison.workers -= dead;
         global.stats.died += dead;
@@ -2384,8 +2396,15 @@ export function bloodwar(){
     // Surveyor threats
     if (global.civic.hell_surveyor.display && global.civic.hell_surveyor.workers > 0){
         let divisor = 1000;
+        let painVal = govActive('nopain',1);
+        if (painVal){
+            divisor *= 1 + (painVal / 100);
+        }
         if (global.race['blurry']){
             divisor *= 1 + (traits.blurry.vars[0] / 100);
+        }
+        if (global.race['instinct']){
+            divisor *= 1 + (traits.instinct.vars[0] / 100);
         }
         if (global.tech['infernite'] && global.tech.infernite >= 5){
             divisor += 250;
@@ -3114,6 +3133,46 @@ export const monsters = {
     }
 };
 
+export function mechCost(size,infernal){
+    let soul = 9999;
+    let cost = 10000000;
+    switch (size){
+        case 'small':
+            {
+                let baseCost = global.blood['prepared'] && global.blood.prepared >= 2 ? 50000 : 75000;
+                cost = infernal ? baseCost * 2.5 : baseCost;
+                soul = infernal ? 20 : 1;
+            }
+            break;
+        case 'medium':
+            {
+                cost = infernal ? 450000 : 180000;
+                soul = infernal ? 100 : 4;
+            }
+            break;
+        case 'large':
+            {
+                cost = infernal ? 925000 : 375000;
+                soul = infernal ? 500 : 20;
+            }
+            break;
+        case 'titan':
+            {
+                cost = infernal ? 1500000 : 750000;
+                soul = infernal ? 1500 : 75;
+            }
+            break;
+        case 'collector':
+            {
+                let baseCost = global.blood['prepared'] && global.blood.prepared >= 2 ? 8000 : 10000;
+                cost = infernal ? baseCost * 2.5 : baseCost;
+                soul = 1;
+            }
+            break;
+    }
+    return { s: soul, c: cost };
+};
+
 function bossResists(boss){
     let weak = `laser`;
     let resist = `laser`;
@@ -3146,7 +3205,8 @@ export function drawMechLab(){
                 size: 'small',
                 hardpoint: ['laser'],
                 chassis: 'tread',
-                equip: []
+                equip: [],
+                infernal: false
             };
         }
 
@@ -3159,14 +3219,15 @@ export function drawMechLab(){
         title.append(` | <span><span class="has-text-warning">${loc('portal_mech_bay_space')}</span>: {{ m.bay }} / {{ m.max }}</span>`);
         title.append(` | <span><span class="has-text-warning">${loc('portal_mech_sup_avail')}</span>: {{ p.supply | round }} / {{ p.sup_max }}</span>`);
 
-        assemble.append(`<div><span class="has-text-warning">${loc(`portal_mech_space`)}</span> <span class="has-text-danger">{{ b.size | bay }}</span> | <span class="has-text-warning">${loc(`portal_mech_cost`)}</span> <span class="has-text-danger">{{ b.size | price }}</span> | <span class="has-text-warning">${loc(`portal_mech_soul`,[global.resource.Soul_Gem.name])}</span> <span class="has-text-danger">{{ b.size | soul }}</span></div>`)
+        let infernal = global.blood['prepared'] && global.blood.prepared >= 3 ? `<b-checkbox class="patrol" v-model="b.infernal">${loc('portal_mech_infernal')} (${loc('portal_mech_infernal_effect',[25])})</b-checkbox>` : ``;
+        assemble.append(`<div><span class="has-text-warning">${loc(`portal_mech_space`)}</span> <span class="has-text-danger">{{ b.size | bay }}</span> | <span class="has-text-warning">${loc(`portal_mech_cost`)}</span> <span class="has-text-danger">{{ b.size | price }}</span> | <span class="has-text-warning">${loc(`portal_mech_soul`,[global.resource.Soul_Gem.name])}</span> <span class="has-text-danger">{{ b.size | soul }}</span>${infernal}</div>`)
         assemble.append(`<div>{{ b.size | desc }}</div>`);
 
         let options = $(`<div class="bayOptions"></div>`);
         assemble.append(options);
 
         let sizes = ``;
-        ['small','medium','large','titan'].forEach(function(size){
+        ['small','medium','large','titan','collector'].forEach(function(size){
             sizes += `<b-dropdown-item aria-role="listitem" v-on:click="setSize('${size}')" class="size r0" data-val="${size}">${loc(`portal_mech_size_${size}`)}</b-dropdown-item>`;
         });
 
@@ -3189,7 +3250,7 @@ export function drawMechLab(){
             </button>${chassis}
         </b-dropdown>`);
 
-        for (let i=0; i<2; i++){
+        for (let i=0; i<4; i++){
             let weapons = ``;
             ['laser','kinetic','shotgun','missile','flame','plasma','sonic','tesla'].forEach(function(val){
                 weapons += `<b-dropdown-item aria-role="listitem" v-on:click="setWep('${val}',${i})" class="weapon r${i}" data-val="${val}">${loc(`portal_mech_weapon_${val}`)}</b-dropdown-item>`;
@@ -3203,16 +3264,16 @@ export function drawMechLab(){
             </b-dropdown>`);
         }
 
-        let e_cap = global.blood['prepared'] ? 4 : 3;
+        let e_cap = global.blood['prepared'] ? 5 : 4;
         for (let i=0; i<e_cap; i++){
             let equip = ``;
-            ['shields','sonar','grapple','infrared','flare','radiator','coolant','ablative','stabilizer','seals'].forEach(function(val){
-                equip += `<b-dropdown-item aria-role="listitem" v-on:click="setEquip('${val}',${i})" class="equip r${i}" data-val="${val}">${loc(`portal_mech_equip_${val}`)}</b-dropdown-item>`;
+            ['special','shields','sonar','grapple','infrared','flare','radiator','coolant','ablative','stabilizer','seals'].forEach(function(val){
+                equip += `<b-dropdown-item aria-role="listitem" v-on:click="setEquip('${val}',${i})" class="equip r${i}" data-val="${val}">{{ '${val}' | equipment }}</b-dropdown-item>`;
             });
 
             options.append(`<b-dropdown :triggers="['hover']" aria-role="list" v-show="eVis(${i})">
                 <button class="button is-info" slot="trigger">
-                    <span>${loc(`portal_mech_equipment`)}: {{ b.equip[${i}] || 'shields' | elabel }}</span>
+                    <span>${loc(`portal_mech_equipment`)}: {{ b.equip[${i}] || 'shields' | equipment }}</span>
                     <b-icon icon="menu-down"></b-icon>
                 </button>${equip}
             </b-dropdown>`);
@@ -3229,31 +3290,11 @@ export function drawMechLab(){
             },
             methods: {
                 build(){
-                    let cost = 10000000;
-                    let size = 25;
-                    let soul = 10;
-                    switch (global.portal.mechbay.blueprint.size){
-                        case 'small':
-                            cost = global.blood['prepared'] && global.blood.prepared >= 2 ? 50000 : 75000;
-                            size = mechSize('small');
-                            soul = 1;
-                            break;
-                        case 'medium':
-                            cost = 180000;
-                            size = mechSize('medium');
-                            soul = 2;
-                            break;
-                        case 'large':
-                            cost = 375000;
-                            size = mechSize('large');
-                            soul = 5;
-                            break;
-                        case 'titan':
-                            cost = 750000;
-                            size = mechSize('titan');
-                            soul = 10;
-                            break;
-                    }
+                    let costs = mechCost(global.portal.mechbay.blueprint.size,global.portal.mechbay.blueprint.infernal);
+
+                    let cost = costs.c;
+                    let soul = costs.s;
+                    let size = mechSize(global.portal.mechbay.blueprint.size);
 
                     let avail = global.portal.mechbay.max - global.portal.mechbay.bay;
                     if (global.portal.purifier.supply >= cost && avail >= size && global.resource.Soul_Gem.amount >= soul){
@@ -3267,56 +3308,72 @@ export function drawMechLab(){
                 },
                 setSize(s){
                     global.portal.mechbay.blueprint.size = s;
-                    if (s === 'small' || s === 'medium'){
+                    if (s === 'collector'){
+                        global.portal.mechbay.blueprint.hardpoint.length = 0;
+                    }
+                    else if (s === 'small' || s === 'medium'){
                         global.portal.mechbay.blueprint.hardpoint.length = 1;
                     }
                     else {
                         if (global.portal.mechbay.blueprint.hardpoint.length === 1){
-                            global.portal.mechbay.blueprint.hardpoint.push(global.portal.mechbay.blueprint.hardpoint[0]);
+                            global.portal.mechbay.blueprint.hardpoint.push(global.portal.mechbay.blueprint.hardpoint.includes('laser') ? 'plasma' : 'laser');
+                        }
+                        if (s === 'titan'){
+                            if (global.portal.mechbay.blueprint.hardpoint.length === 2){
+                                global.portal.mechbay.blueprint.hardpoint.push(global.portal.mechbay.blueprint.hardpoint.includes('laser')  ? 'shotgun' : 'laser');
+                                global.portal.mechbay.blueprint.hardpoint.push(global.portal.mechbay.blueprint.hardpoint.includes('laser')  ? 'kinetic' : 'laser');
+                            }
+                        }
+                        else {
+                            global.portal.mechbay.blueprint.hardpoint.length = 2;
                         }
                     }
                     switch (s){
                         case 'small':
                             if (global.blood['prepared']){
-                                global.portal.mechbay.blueprint.equip.push('infrared');
+                                global.portal.mechbay.blueprint.equip.push('special');
                             }
                             global.portal.mechbay.blueprint.equip.length = global.blood['prepared'] ? 1 : 0;
                             break;
                         case 'medium':
                             if (global.portal.mechbay.blueprint.equip.length < 1){
-                                global.portal.mechbay.blueprint.equip.push('shields');
+                                global.portal.mechbay.blueprint.equip.push('special');
                             }
                             if (global.blood['prepared']){
-                                global.portal.mechbay.blueprint.equip.push('infrared');
+                                global.portal.mechbay.blueprint.equip.push('shields');
                             }
                             global.portal.mechbay.blueprint.equip.length = global.blood['prepared'] ? 2 : 1;
                             break;
+                        case 'collector':
                         case 'large':
                             if (global.portal.mechbay.blueprint.equip.length < 1){
-                                global.portal.mechbay.blueprint.equip.push('shields');
+                                global.portal.mechbay.blueprint.equip.push('special');
                             }
                             if (global.portal.mechbay.blueprint.equip.length < 2){
-                                global.portal.mechbay.blueprint.equip.push('sonar');
+                                global.portal.mechbay.blueprint.equip.push('shields');
                             }
                             if (global.blood['prepared']){
-                                global.portal.mechbay.blueprint.equip.push('infrared');
+                                global.portal.mechbay.blueprint.equip.push('grapple');
                             }
                             global.portal.mechbay.blueprint.equip.length = global.blood['prepared'] ? 3 : 2;
                             break;
                         case 'titan':
                             if (global.portal.mechbay.blueprint.equip.length < 1){
-                                global.portal.mechbay.blueprint.equip.push('shields');
+                                global.portal.mechbay.blueprint.equip.push('special');
                             }
                             if (global.portal.mechbay.blueprint.equip.length < 2){
-                                global.portal.mechbay.blueprint.equip.push('sonar');
+                                global.portal.mechbay.blueprint.equip.push('shields');
                             }
                             if (global.portal.mechbay.blueprint.equip.length < 3){
                                 global.portal.mechbay.blueprint.equip.push('grapple');
                             }
-                            if (global.blood['prepared']){
-                                global.portal.mechbay.blueprint.equip.push('infrared');
+                            if (global.portal.mechbay.blueprint.equip.length < 4){
+                                global.portal.mechbay.blueprint.equip.push('seals');
                             }
-                            global.portal.mechbay.blueprint.equip.length = global.blood['prepared'] ? 4 : 3;
+                            if (global.blood['prepared']){
+                                global.portal.mechbay.blueprint.equip.push('stabilizer');
+                            }
+                            global.portal.mechbay.blueprint.equip.length = global.blood['prepared'] ? 5 : 4;
                             break;
                     }
                 },
@@ -3332,7 +3389,10 @@ export function drawMechLab(){
                     vBind({el: `#mechAssembly`},'update');
                 },
                 vis(hp){
-                    if (hp === 0 || global.portal.mechbay.blueprint.size === 'large' || global.portal.mechbay.blueprint.size === 'titan'){
+                    if (global.portal.mechbay.blueprint.size === 'collector'){
+                        return false;
+                    }
+                    if (hp === 0 || (global.portal.mechbay.blueprint.size === 'large' && hp < 2) || global.portal.mechbay.blueprint.size === 'titan'){
                         return true;
                     }
                     return false;
@@ -3344,6 +3404,7 @@ export function drawMechLab(){
                             return prep === 1 && es === 0 ? true : false;
                         case 'medium':
                             return es <= (0 + prep) ? true : false;
+                        case 'collector':
                         case 'large':
                             return es <= (1 + prep) ? true : false;
                         case 'titan':
@@ -3356,28 +3417,12 @@ export function drawMechLab(){
                     return mechSize(s);
                 },
                 price(s){
-                    switch (s){
-                        case 'small':
-                            return global.blood['prepared'] && global.blood.prepared >= 2 ? 50000 : 75000;
-                        case 'medium':
-                            return 180000;
-                        case 'large':
-                            return 375000;
-                        case 'titan':
-                            return 750000;
-                    }
+                    let costs = mechCost(s,global.portal.mechbay.blueprint.infernal);
+                    return costs.c;
                 },
                 soul(s){
-                    switch (s){
-                        case 'small':
-                            return 1
-                        case 'medium':
-                            return 2;
-                        case 'large':
-                            return 5;
-                        case 'titan':
-                            return 10;
-                    }
+                    let costs = mechCost(s,global.portal.mechbay.blueprint.infernal);
+                    return costs.s;
                 },
                 slabel(s){
                     return loc(`portal_mech_size_${s}`);
@@ -3388,14 +3433,26 @@ export function drawMechLab(){
                 wlabel(w){
                     return loc(`portal_mech_weapon_${w}`);
                 },
-                elabel(e){
-                    return loc(`portal_mech_equip_${e}`);
-                },
                 desc(s){
                     return loc(`portal_mech_size_${s}_desc`);
                 },
                 round(v){
                     return Math.round(v);
+                },
+                equipment(e){
+                    if (e !== 'special'){
+                        return loc(`portal_mech_equip_${e}`);
+                    }
+                    let type = 'jumpjet';
+                    switch (global.portal.mechbay.blueprint.size){
+                        case 'large':
+                            type = 'battery';
+                            break;
+                        case 'titan':
+                            type = 'target';
+                            break;
+                    }
+                    return loc(`portal_mech_equip_${type}`);
                 }
             }
         });
@@ -3403,7 +3460,7 @@ export function drawMechLab(){
         ['size','chassis','weapon','equip'].forEach(function(type){
             let range = 1;
             if (type === 'weapon'){
-                range = 2;
+                range = 4;
             }
             else if (type === 'equip'){
                 range = e_cap;
@@ -3411,7 +3468,21 @@ export function drawMechLab(){
 
             for (let idx=0; idx<range; idx++){
                 popover(`mechAssembly${type}${idx}`, function(obj){
-                    return loc(`portal_mech_${type}_${$(obj.this).attr(`data-val`)}_desc`);
+                    let val = $(obj.this).attr(`data-val`);
+                    if (val === 'special'){
+                        switch (global.portal.mechbay.blueprint.size){
+                            case 'large':
+                                val = 'battery';
+                                break;
+                            case 'titan':
+                                val = 'target';
+                                break;
+                            default:
+                                val = 'jumpjet';
+                                break;
+                        }
+                    }
+                    return loc(`portal_mech_${type}_${val}_desc`);
                 },
                 {
                     elm: `#mechAssembly .${type}.r${idx}`,
@@ -3444,12 +3515,21 @@ function drawMechs(){
         let mech = global.portal.mechbay.mechs[i];
         used += mechSize(mech.size);
         let inactive = used > global.portal.mechbay.max ? true : false;
-        let desc = $(`<div${inactive ? ` class="inactive-row"` : ``}><a${inactive ? ` class="has-text-danger"` : ``} @click="scrap(${i})">${loc(`portal_mech_scrap`)}</a> | <span>${loc(`portal_mech`)} #${i+1}</span>: <span class="has-text-caution">${loc(`portal_mech_size_${mech.size}`)} ${loc(`portal_mech_chassis_${mech.chassis}`)}</span></div>`);
-        mech.hardpoint.forEach(function(hp){
-            desc.append(` | <span class="has-text-danger">${loc(`portal_mech_weapon_${hp}`)}</span>`);
-        });
+        let infernal = mech.infernal ? `${loc('portal_mech_infernal')} ` : ``;
+        let desc = $(`<div class="mechRow${inactive ? ` inactive-row` : ``}"><a ${inactive ? `class="scrap${i} has-text-danger"` : `class="scrap${i}"`} @click="scrap(${i})">${loc(`portal_mech_scrap`)}</a> | <span>${loc(`portal_mech`)} #${i+1}</span>: <span class="has-text-caution">${infernal}${loc(`portal_mech_size_${mech.size}`)} ${loc(`portal_mech_chassis_${mech.chassis}`)}</span></div>`);
+        let gear_list = $(`<div class="gearList ${mech.size}"></div>`);
+        desc.append(gear_list);
+        if (mech.hardpoint.length > 0){
+            let wep_list = $(`<div></div>`);
+            gear_list.append(wep_list);
+            mech.hardpoint.forEach(function(hp){
+                wep_list.append(`<span> | </span><span class="has-text-danger">${loc(`portal_mech_weapon_${hp}`)}</span>`);
+            });
+        }
+        let eqp_list = $(`<div></div>`);
+        gear_list.append(eqp_list);
         mech.equip.forEach(function(eq){
-            desc.append(` | <span class="has-text-warning">${loc(`portal_mech_equip_${eq}`)}</span>`);
+            eqp_list.append(`<span> | </span><span class="has-text-warning">{{ '${eq}' | equipment('${mech.size}') }}</span>`);
         });
         list.append(desc);
     }
@@ -3460,20 +3540,10 @@ function drawMechs(){
         methods: {
             scrap(id){
                 if (global.portal.mechbay.mechs[id]){
-                    switch (global.portal.mechbay.mechs[id].size){
-                        case 'small':
-                            global.portal.purifier.supply += 25000;
-                            break;
-                        case 'medium':
-                            global.portal.purifier.supply += 60000;
-                            break;
-                        case 'large':
-                            global.portal.purifier.supply += 125000;
-                            break;
-                        case 'titan':
-                            global.portal.purifier.supply += 250000;
-                            break;
-                    }
+                    let costs = mechCost(global.portal.mechbay.mechs[id].size,global.portal.mechbay.mechs[id].infernal);
+                    global.portal.purifier.supply += Math.floor(costs.c / 3);
+                    global.resource.Soul_Gem.amount += Math.floor(costs.s / 2);
+
                     if (global.portal.purifier.supply > global.portal.purifier.sup_max){
                         global.portal.purifier.supply = global.portal.purifier.sup_max;
                     }
@@ -3481,10 +3551,44 @@ function drawMechs(){
                     drawMechs();
                 }
             }
+        },
+        filters: {
+            equipment(e,size){
+                if (e !== 'special'){
+                    return loc(`portal_mech_equip_${e}`);
+                }
+                let type = 'jumpjet';
+                switch (size){
+                    case 'large':
+                        type = 'battery';
+                        break;
+                    case 'titan':
+                        type = 'target';
+                        break;
+                }
+                return loc(`portal_mech_equip_${type}`);
+            }
         }
     });
 
     dragMechList();
+
+    for (let i=0; i<global.portal.mechbay.mechs.length; i++){
+        popover(`mechList-scrap${i}`, function(){
+            let costs = mechCost(global.portal.mechbay.mechs[i].size,global.portal.mechbay.mechs[i].infernal);
+            return loc(`portal_mech_scrap_refund`,[Math.floor(costs.c / 3),Math.floor(costs.s / 2)]);
+        },
+        {
+            elm: `#mechList .scrap${i}`,
+        });
+    }
+}
+
+export function drawMechList(){
+    if (!global.settings.tabLoad && (global.settings.civTabs !== 2 || global.settings.govTabs !== 4)){
+        return;
+    }
+    drawMechs();
 }
 
 export function mechSize(s){
@@ -3497,6 +3601,8 @@ export function mechSize(s){
             return global.blood['prepared'] && global.blood.prepared >= 2 ? 8 : 10;
         case 'titan':
             return global.blood['prepared'] && global.blood.prepared >= 2 ? 20 : 25;
+        case 'collector':
+            return 1;
         case 'default':
             return 25;
     }
@@ -3525,7 +3631,7 @@ function dragMechList(){
 }
 
 export function genSpireFloor(){
-    let types = ['sand','swamp','forest','jungle','rocky','gravel','muddy','grass','brush'];
+    let types = ['sand','swamp','forest','jungle','rocky','gravel','muddy','grass','brush','concrete'];
     global.portal.spire.type = types[Math.floor(Math.seededRandom(0,types.length))];
     if (global.portal.spire.count >= 10){
         global.portal.spire.status = {};
@@ -3586,21 +3692,413 @@ function assignValidStatus(effect){
     }
 }
 
-export function mechRating(mech,boss){
-    let rating = 0;
-    switch (mech.size){
+function terrainRating(mech,rating,effects){
+    if (mech.equip.includes('special') && (mech.size === 'small' || mech.size === 'medium' || mech.size === 'collector')){
+        if (rating < 1){
+            rating += (1 - rating) * (effects.includes('gravity') ? 0.1 : 0.2);
+        }
+    }
+    if (mech.size !== 'small' && rating < 1){
+        let space = 0;
+        let sizes = { small: 0, medium: 0, large: 0, titan: 0, collector: 0 };
+        global.portal.mechbay.mechs.forEach(function(m){
+            space += mechSize(m.size);
+            if (space <= global.portal.mechbay.max){
+                sizes[m.size]++;
+            }
+        });
+        rating += (effects.includes('fog') || effects.includes('dark') ? 0.005 : 0.01) * sizes.small;
+        if (rating > 1){
+            rating = 1;
+        }
+    }
+    return rating;
+}
+
+function weaponPower(mech,power){
+    if (power < 1 && power !== 0){
+        if (mech.equip.includes('special') && mech.size === 'titan'){
+            power += (1 - power) * 0.25;
+        }
+    }
+    if (mech.equip.includes('special') && mech.size === 'large'){
+        power *= 1.02;
+    }
+    return power;
+}
+
+function statusEffect(mech,effect){
+    let rating = 1;
+    switch (effect){
+        case 'freeze':
+            {
+                if (!mech.equip.includes('radiator')){
+                    rating = 0.25;
+                }
+            }
+            break;
+        case 'hot':
+            {
+                if (!mech.equip.includes('coolant')){
+                    rating = 0.25;
+                }
+            }
+            break;
+        case 'corrosive':
+            {
+                if (!mech.equip.includes('ablative')){
+                    rating = mech.equip.includes('shields') ? 0.75 : 0.25;
+                }
+            }
+            break;
+        case 'humid':
+            {
+                if (!mech.equip.includes('seals')){
+                    rating = 0.75;
+                }
+            }
+            break;
+        case 'windy':
+            {
+                if (mech.chassis === 'hover'){
+                    rating = 0.5;
+                }
+            }
+            break;
+        case 'hilly':
+            {
+                if (mech.chassis !== 'spider'){
+                    rating = 0.75;
+                }
+            }
+            break;
+        case 'mountain':
+            {
+                if (mech.chassis !== 'spider' && !mech.equip.includes('grapple')){
+                    rating = mech.equip.includes('flare') ? 0.75 : 0.5;
+                }
+            }
+            break;
+        case 'radioactive':
+            {
+                if (!mech.equip.includes('shields')){
+                    rating = 0.5;
+                }
+            }
+            break;
+        case 'quake':
+            {
+                if (!mech.equip.includes('stabilizer')){
+                    rating = 0.25;
+                }
+            }
+            break;
+        case 'dust':
+            {
+                if (!mech.equip.includes('seals')){
+                    rating = 0.5;
+                }
+            }
+            break;
+        case 'river':
+            {
+                if (mech.chassis !== 'hover'){
+                    rating = 0.65;
+                }
+            }
+            break;
+        case 'tar':
+            {
+                if (mech.chassis !== 'quad'){
+                    rating = mech.chassis === 'tread' || mech.chassis === 'wheel' ? 0.5 : 0.75;
+                }
+            }
+            break;
+        case 'steam':
+            {
+                if (!mech.equip.includes('shields')){
+                    rating = 0.75;
+                }
+            }
+            break;
+        case 'flooded':
+            {
+                if (mech.chassis !== 'hover'){
+                    rating = 0.35;
+                }
+            }
+            break;
+        case 'fog':
+            {
+                if (!mech.equip.includes('sonar')){
+                    rating = 0.2;
+                }
+            }
+            break;
+        case 'rain':
+            {
+                if (!mech.equip.includes('seals')){
+                    rating = 0.75;
+                }
+            }
+            break;
+        case 'hail':
+            {
+                if (!mech.equip.includes('ablative') && !mech.equip.includes('shields')){
+                    rating = 0.75;
+                }
+            }
+            break;
+        case 'chasm':
+            {
+                if (!mech.equip.includes('grapple')){
+                    rating = 0.1;
+                }
+            }
+            break;
+        case 'dark':
+            {
+                if (!mech.equip.includes('infrared')){
+                    rating = mech.equip.includes('flare') ? 0.25 : 0.1;
+                }
+            }
+            break;
+        case 'gravity':
+            {
+                switch (mech.size){
+                    case 'medium':
+                        rating = 0.8;
+                        break;
+                    case 'large':
+                        rating = 0.45;
+                        break;
+                    case 'titan':
+                        rating = 0.25;
+                        break;
+                }
+            }
+            break;
+    }
+    return rating;
+}
+
+export function terrainEffect(mech,type){
+    let terrain = type || global.portal.spire.type;
+    let terrainFactor = 1;
+    switch (mech.chassis){
+        case 'wheel':
+            {
+                switch (terrain){
+                    case 'sand':
+                        terrainFactor = ['small','medium'].includes(mech.size) ? 0.9 : 0.85;
+                        break;
+                    case 'swamp':
+                        terrainFactor = ['small','medium'].includes(mech.size) ? 0.35 : 0.18;
+                        break;
+                    case 'jungle':
+                        terrainFactor = ['small','medium'].includes(mech.size) ? 0.92 : 0.85;
+                        break;
+                    case 'rocky':
+                        terrainFactor = ['small','medium'].includes(mech.size) ? 0.65 : 0.5;
+                        break;
+                    case 'gravel':
+                        terrainFactor = ['small','medium'].includes(mech.size) ? 1 : 0.95;
+                        break;
+                    case 'muddy':
+                        terrainFactor = ['small','medium'].includes(mech.size) ? 0.85 : 0.58;
+                        break;
+                    case 'grass':
+                        terrainFactor = ['small','medium'].includes(mech.size) ? 1.3 : 1.2;
+                        break;
+                    case 'brush':
+                        terrainFactor = ['small','medium'].includes(mech.size) ? 0.9 : 0.8;
+                        break;
+                    case 'concrete':
+                        terrainFactor = ['small','medium'].includes(mech.size) ? 1.1 : 1;
+                        break;
+                }
+            }
+            break;
+        case 'tread':
+            {
+                switch (terrain){
+                    case 'sand':
+                        terrainFactor = ['small','medium'].includes(mech.size) ? 1.15 : 1.1;
+                        break;
+                    case 'swamp':
+                        terrainFactor = ['small','medium'].includes(mech.size) ? 0.55 : 0.4;
+                        break;
+                    case 'forest':
+                        terrainFactor = ['small','medium'].includes(mech.size) ? 1 : 0.95;
+                        break;
+                    case 'jungle':
+                        terrainFactor = ['small','medium'].includes(mech.size) ? 0.95 : 0.9;
+                        break;
+                    case 'rocky':
+                        terrainFactor = ['small','medium'].includes(mech.size) ? 0.65 : 0.5;
+                        break;
+                    case 'gravel':
+                        terrainFactor = ['small','medium'].includes(mech.size) ? 1.3 : 1.2;
+                        break;
+                    case 'muddy':
+                        terrainFactor = ['small','medium'].includes(mech.size) ? 0.88 : 0.72;
+                        break;
+                }
+            }
+            break;
+        case 'biped':
+            {
+                switch (terrain){
+                    case 'sand':
+                        terrainFactor = ['small','medium'].includes(mech.size) ? 0.78 : 0.65;
+                        break;
+                    case 'swamp':
+                        terrainFactor = ['small','medium'].includes(mech.size) ? 0.68 : 0.5;
+                        break;
+                    case 'forest':
+                        terrainFactor = ['small','medium'].includes(mech.size) ? 1 : 0.95;
+                        break;
+                    case 'jungle':
+                        terrainFactor = ['small','medium'].includes(mech.size) ? 0.82 : 0.7;
+                        break;
+                    case 'rocky':
+                        terrainFactor = ['small','medium'].includes(mech.size) ? 0.48 : 0.4;
+                        break;
+                    case 'muddy':
+                        terrainFactor = ['small','medium'].includes(mech.size) ? 0.85 : 0.7;
+                        break;
+                    case 'grass':
+                        terrainFactor = ['small','medium'].includes(mech.size) ? 1.25 : 1.2;
+                        break;
+                    case 'brush':
+                        terrainFactor = ['small','medium'].includes(mech.size) ? 0.92 : 0.85;
+                        break;
+                }
+            }
+            break;
+        case 'quad':
+            {
+                switch (terrain){
+                    case 'sand':
+                        terrainFactor = ['small','medium'].includes(mech.size) ? 0.86 : 0.75;
+                        break;
+                    case 'swamp':
+                        terrainFactor = ['small','medium'].includes(mech.size) ? 0.58 : 0.42;
+                        break;
+                    case 'forest':
+                        terrainFactor = ['small','medium'].includes(mech.size) ? 1.25 : 1.2;
+                        break;
+                    case 'rocky':
+                        terrainFactor = ['small','medium'].includes(mech.size) ? 0.95 : 0.9;
+                        break;
+                    case 'gravel':
+                        terrainFactor = ['small','medium'].includes(mech.size) ? 0.9 : 0.8;
+                        break;
+                    case 'muddy':
+                        terrainFactor = ['small','medium'].includes(mech.size) ? 0.68 : 0.5;
+                        break;
+                    case 'grass':
+                        terrainFactor = ['small','medium'].includes(mech.size) ? 1 : 0.95;
+                        break;
+                    case 'brush':
+                        terrainFactor = ['small','medium'].includes(mech.size) ? 0.95 : 0.9;
+                        break;
+                }
+            }
+            break;
+        case 'spider':
+            {
+                switch (terrain){
+                    case 'sand':
+                        terrainFactor = ['small','medium'].includes(mech.size) ? 0.75 : 0.65;
+                        break;
+                    case 'swamp':
+                        terrainFactor = ['small','medium'].includes(mech.size) ? 0.9 : 0.78;
+                        break;
+                    case 'forest':
+                        terrainFactor = ['small','medium'].includes(mech.size) ? 0.82 : 0.75;
+                        break;
+                    case 'jungle':
+                        terrainFactor = ['small','medium'].includes(mech.size) ? 0.77 : 0.65;
+                        break;
+                    case 'rocky':
+                        terrainFactor = ['small','medium'].includes(mech.size) ? 1.25 : 1.2;
+                        break;
+                    case 'gravel':
+                        terrainFactor = ['small','medium'].includes(mech.size) ? 0.86 : 0.75;
+                        break;
+                    case 'muddy':
+                        terrainFactor = ['small','medium'].includes(mech.size) ? 0.92 : 0.82;
+                        break;
+                    case 'brush':
+                        terrainFactor = ['small','medium'].includes(mech.size) ? 1 : 0.95;
+                        break;
+                }
+            }
+            break;
+        case 'hover':
+            {
+                switch (terrain){
+                    case 'swamp':
+                        terrainFactor = ['small','medium'].includes(mech.size) ? 1.35 : 1.2;
+                        break;
+                    case 'forest':
+                        terrainFactor = ['small','medium'].includes(mech.size) ? 0.65 : 0.48;
+                        break;
+                    case 'jungle':
+                        terrainFactor = ['small','medium'].includes(mech.size) ? 0.55 : 0.35;
+                        break;
+                    case 'rocky':
+                        terrainFactor = ['small','medium'].includes(mech.size) ? 0.82 : 0.68;
+                        break;
+                    case 'muddy':
+                        terrainFactor = ['small','medium'].includes(mech.size) ? 1.15 : 1.08;
+                        break;
+                    case 'brush':
+                        terrainFactor = ['small','medium'].includes(mech.size) ? 0.78 : 0.7;
+                        break;
+                }
+            }
+            break;
+    }
+    return terrainFactor;
+}
+
+export function mechCollect(mech){
+    let rating = mech.infernal ? 31.25 : 25;
+    let terrainFactor = terrainEffect(mech);
+    let effects = [];
+    Object.keys(global.portal.spire.status).forEach(function(effect){
+        effects.push(effect);
+        rating *= statusEffect(mech,effect);
+    });
+    rating *= terrainRating(mech,terrainFactor,effects);
+    return rating;
+}
+
+export function mechWeaponPower(size){
+    switch (size){
         case 'small':
-            rating = 0.002;
-            break;
+            return 0.0025;
         case 'medium':
-            rating = 0.005;
-            break;
+            return 0.0075;
         case 'large':
-            rating = 0.01;
-            break;
+            return 0.01;
         case 'titan':
-            rating = 0.0225;
-            break;
+            return 0.012;
+        default:
+            return 0;
+    }
+}
+
+export function mechRating(mech,boss){
+    let rating = mechWeaponPower(mech.size);
+    if (rating === 0){
+        return 0;
+    }
+
+    if (mech.hasOwnProperty('infernal') && mech.infernal && global.blood['prepared'] && global.blood.prepared >= 3){
+        rating *= 1.25;
     }
 
     if (boss){
@@ -3609,6 +4107,9 @@ export function mechRating(mech,boss){
         }
         if (global.blood['wrath']){
             rating *= 1 + (global.blood.wrath / 20);
+        }
+        if (mech.size === 'titan'){
+            rating *= 1.1;
         }
 
         let affix = universeAffix();
@@ -3633,337 +4134,35 @@ export function mechRating(mech,boss){
             rating *= 1 + (global.blood.wrath / 20);
         }
 
-        switch (mech.chassis){
-            case 'wheel':
-                {
-                    switch (global.portal.spire.type){
-                        case 'sand':
-                            rating *= ['small','medium'].includes(mech.size) ? 0.9 : 0.85;
-                            break;
-                        case 'swamp':
-                            rating *= ['small','medium'].includes(mech.size) ? 0.35 : 0.25;
-                            break;
-                        case 'jungle':
-                            rating *= ['small','medium'].includes(mech.size) ? 0.92 : 0.85;
-                            break;
-                        case 'rocky':
-                            rating *= ['small','medium'].includes(mech.size) ? 0.65 : 0.5;
-                            break;
-                        case 'gravel':
-                            rating *= ['small','medium'].includes(mech.size) ? 1 : 0.95;
-                            break;
-                        case 'muddy':
-                            rating *= ['small','medium'].includes(mech.size) ? 0.85 : 0.65;
-                            break;
-                        case 'grass':
-                            rating *= ['small','medium'].includes(mech.size) ? 1.3 : 1.2;
-                            break;
-                        case 'brush':
-                            rating *= ['small','medium'].includes(mech.size) ? 0.9 : 0.8;
-                            break;
-                    }
-                }
-                break;
-            case 'tread':
-                {
-                    switch (global.portal.spire.type){
-                        case 'sand':
-                            rating *= ['small','medium'].includes(mech.size) ? 1.15 : 1.1;
-                            break;
-                        case 'swamp':
-                            rating *= ['small','medium'].includes(mech.size) ? 0.55 : 0.45;
-                            break;
-                        case 'forest':
-                            rating *= ['small','medium'].includes(mech.size) ? 1 : 0.95;
-                            break;
-                        case 'jungle':
-                            rating *= ['small','medium'].includes(mech.size) ? 0.95 : 0.9;
-                            break;
-                        case 'rocky':
-                            rating *= ['small','medium'].includes(mech.size) ? 0.65 : 0.5;
-                            break;
-                        case 'gravel':
-                            rating *= ['small','medium'].includes(mech.size) ? 1.3 : 1.2;
-                            break;
-                        case 'muddy':
-                            rating *= ['small','medium'].includes(mech.size) ? 0.88 : 0.75;
-                            break;
-                    }
-                }
-                break;
-            case 'biped':
-                {
-                    switch (global.portal.spire.type){
-                        case 'sand':
-                            rating *= ['small','medium'].includes(mech.size) ? 0.78 : 0.65;
-                            break;
-                        case 'swamp':
-                            rating *= ['small','medium'].includes(mech.size) ? 0.68 : 0.55;
-                            break;
-                        case 'forest':
-                            rating *= ['small','medium'].includes(mech.size) ? 1 : 0.95;
-                            break;
-                        case 'jungle':
-                            rating *= ['small','medium'].includes(mech.size) ? 0.82 : 0.7;
-                            break;
-                        case 'rocky':
-                            rating *= ['small','medium'].includes(mech.size) ? 0.48 : 0.4;
-                            break;
-                        case 'muddy':
-                            rating *= ['small','medium'].includes(mech.size) ? 0.85 : 0.75;
-                            break;
-                        case 'grass':
-                            rating *= ['small','medium'].includes(mech.size) ? 1.25 : 1.2;
-                            break;
-                        case 'brush':
-                            rating *= ['small','medium'].includes(mech.size) ? 0.92 : 0.85;
-                            break;
-                    }
-                }
-                break;
-            case 'quad':
-                {
-                    switch (global.portal.spire.type){
-                        case 'sand':
-                            rating *= ['small','medium'].includes(mech.size) ? 0.86 : 0.75;
-                            break;
-                        case 'swamp':
-                            rating *= ['small','medium'].includes(mech.size) ? 0.58 : 0.45;
-                            break;
-                        case 'forest':
-                            rating *= ['small','medium'].includes(mech.size) ? 1.25 : 1.2;
-                            break;
-                        case 'rocky':
-                            rating *= ['small','medium'].includes(mech.size) ? 0.95 : 0.9;
-                            break;
-                        case 'gravel':
-                            rating *= ['small','medium'].includes(mech.size) ? 0.9 : 0.8;
-                            break;
-                        case 'muddy':
-                            rating *= ['small','medium'].includes(mech.size) ? 0.68 : 0.55;
-                            break;
-                        case 'grass':
-                            rating *= ['small','medium'].includes(mech.size) ? 1 : 0.95;
-                            break;
-                        case 'brush':
-                            rating *= ['small','medium'].includes(mech.size) ? 0.95 : 0.9;
-                            break;
-                    }
-                }
-                break;
-            case 'spider':
-                {
-                    switch (global.portal.spire.type){
-                        case 'sand':
-                            rating *= ['small','medium'].includes(mech.size) ? 0.75 : 0.65;
-                            break;
-                        case 'swamp':
-                            rating *= ['small','medium'].includes(mech.size) ? 0.9 : 0.8;
-                            break;
-                        case 'forest':
-                            rating *= ['small','medium'].includes(mech.size) ? 0.82 : 0.75;
-                            break;
-                        case 'jungle':
-                            rating *= ['small','medium'].includes(mech.size) ? 0.77 : 0.65;
-                            break;
-                        case 'rocky':
-                            rating *= ['small','medium'].includes(mech.size) ? 1.25 : 1.2;
-                            break;
-                        case 'gravel':
-                            rating *= ['small','medium'].includes(mech.size) ? 0.86 : 0.75;
-                            break;
-                        case 'muddy':
-                            rating *= ['small','medium'].includes(mech.size) ? 0.92 : 0.85;
-                            break;
-                        case 'brush':
-                            rating *= ['small','medium'].includes(mech.size) ? 1 : 0.95;
-                            break;
-                    }
-                }
-                break;
-            case 'hover':
-                {
-                    switch (global.portal.spire.type){
-                        case 'swamp':
-                            rating *= ['small','medium'].includes(mech.size) ? 1.3 : 1.2;
-                            break;
-                        case 'forest':
-                            rating *= ['small','medium'].includes(mech.size) ? 0.74 : 0.65;
-                            break;
-                        case 'jungle':
-                            rating *= ['small','medium'].includes(mech.size) ? 0.6 : 0.5;
-                            break;
-                        case 'rocky':
-                            rating *= ['small','medium'].includes(mech.size) ? 0.82 : 0.75;
-                            break;
-                        case 'muddy':
-                            rating *= ['small','medium'].includes(mech.size) ? 1.15 : 1.1;
-                            break;
-                        case 'brush':
-                            rating *= ['small','medium'].includes(mech.size) ? 0.78 : 0.7;
-                            break;
-                    }
-                }
-                break;
-        }
-
-        Object.keys(global.portal.spire.status).forEach(function(effect){
-            switch (effect){
-                case 'freeze':
-                    {
-                        if (!mech.equip.includes('radiator')){
-                            rating *= 0.25;
-                        }
-                    }
+        if (global.portal.spire.type === 'concrete'){
+            switch (mech.size){
+                case 'small':
+                    rating *= 0.92;
                     break;
-                case 'hot':
-                    {
-                        if (!mech.equip.includes('coolant')){
-                            rating *= 0.25;
-                        }
-                    }
+                case 'medium':
+                    rating *= 0.95;
                     break;
-                case 'corrosive':
-                    {
-                        if (!mech.equip.includes('ablative')){
-                            rating *= mech.equip.includes('shields') ? 0.75 : 0.25;
-                        }
-                    }
-                    break;
-                case 'humid':
-                    {
-                        if (!mech.equip.includes('seals')){
-                            rating *= 0.75;
-                        }
-                    }
-                    break;
-                case 'windy':
-                    {
-                        if (mech.chassis === 'hover'){
-                            rating *= 0.5;
-                        }
-                    }
-                    break;
-                case 'hilly':
-                    {
-                        if (mech.chassis !== 'spider'){
-                            rating *= 0.75;
-                        }
-                    }
-                    break;
-                case 'mountain':
-                    {
-                        if (mech.chassis !== 'spider' && !mech.equip.includes('grapple')){
-                            rating *= mech.equip.includes('flare') ? 0.75 : 0.5;
-                        }
-                    }
-                    break;
-                case 'radioactive':
-                    {
-                        if (!mech.equip.includes('shields')){
-                            rating *= 0.5;
-                        }
-                    }
-                    break;
-                case 'quake':
-                    {
-                        if (!mech.equip.includes('stabilizer')){
-                            rating *= 0.25;
-                        }
-                    }
-                    break;
-                case 'dust':
-                    {
-                        if (!mech.equip.includes('seals')){
-                            rating *= 0.5;
-                        }
-                    }
-                    break;
-                case 'river':
-                    {
-                        if (mech.chassis !== 'hover'){
-                            rating *= 0.65;
-                        }
-                    }
-                    break;
-                case 'tar':
-                    {
-                        if (mech.chassis !== 'quad'){
-                            rating *= mech.chassis === 'tread' || mech.chassis === 'wheel' ? 0.5 : 0.75;
-                        }
-                    }
-                    break;
-                case 'steam':
-                    {
-                        if (!mech.equip.includes('shields')){
-                            rating *= 0.75;
-                        }
-                    }
-                    break;
-                case 'flooded':
-                    {
-                        if (mech.chassis !== 'hover'){
-                            rating *= 0.35;
-                        }
-                    }
-                    break;
-                case 'fog':
-                    {
-                        if (!mech.equip.includes('sonar')){
-                            rating *= 0.2;
-                        }
-                    }
-                    break;
-                case 'rain':
-                    {
-                        if (!mech.equip.includes('seals')){
-                            rating *= 0.75;
-                        }
-                    }
-                    break;
-                case 'hail':
-                    {
-                        if (!mech.equip.includes('ablative') && !mech.equip.includes('shields')){
-                            rating *= 0.75;
-                        }
-                    }
-                    break;
-                case 'chasm':
-                    {
-                        if (!mech.equip.includes('grapple')){
-                            rating *= 0.1;
-                        }
-                    }
-                    break;
-                case 'dark':
-                    {
-                        if (!mech.equip.includes('infrared')){
-                            rating *= mech.equip.includes('flare') ? 0.25 : 0.1;
-                        }
-                    }
-                    break;
-                case 'gravity':
-                    {
-                        switch (mech.size){
-                            case 'medium':
-                                rating *= 0.75;
-                                break;
-                            case 'large':
-                                rating *= 0.5;
-                                break;
-                            case 'titan':
-                                rating *= 0.25;
-                                break;
-                        }
-                    }
+                case 'titan':
+                    rating *= 1.25;
                     break;
             }
+        }
+
+        let terrainFactor = terrainEffect(mech);
+
+        let effects = [];
+        Object.keys(global.portal.spire.status).forEach(function(effect){
+            effects.push(effect);
+            rating *= statusEffect(mech,effect);
         });
+
+        rating *= terrainRating(mech,terrainFactor,effects);
 
         rating /= global.portal.spire.count;
         let damage = 0;
         for (let i=0; i<mech.hardpoint.length; i++){
-            damage += rating * monsters[global.portal.spire.boss].weapon[mech.hardpoint[i]];
+            let effect = monsters[global.portal.spire.boss].weapon[mech.hardpoint[i]];
+            damage += rating * weaponPower(mech,effect);
         }
         return damage;
     }

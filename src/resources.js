@@ -2,6 +2,7 @@ import { global, tmp_vars, keyMultiplier, breakdown, sizeApproximation, p_on, re
 import { vBind, clearElement, modRes, flib, calc_mastery, calcPillar, eventActive, easterEgg, trickOrTreat, popover, harmonyEffect, darkEffect } from './functions.js';
 import { races, traits } from './races.js';
 import { hellSupression } from './portal.js';
+import { govActive } from './governor.js';
 import { loc } from './locale.js';
 
 export const resource_values = {
@@ -35,6 +36,7 @@ export const resource_values = {
     Bolognium: 9000,
     Vitreloy: 10200,
     Orichalcum: 99000,
+    Horseshoe: 0,
     Genes: 0,
     Soul_Gem: 0,
     Corrupt_Gem: 0,
@@ -406,7 +408,7 @@ export const craftingRatio = (function(){
                 });
             }
         }
-        else{
+        else {
             let multiplier = 1;
             let add_bd = {};
             let multi_bd = {};
@@ -496,6 +498,7 @@ export function defineResources(){
     loadResource('Slave',0,0,false,false,'warning');
     loadResource('Mana',0,1,false,false,'warning');
     loadResource('Knowledge',100,1,false,false,'warning');
+    loadResource('Zen',0,0,false,false,'warning');
     loadResource('Crates',0,0,false,false,'warning');
     loadResource('Containers',0,0,false,false,'warning');
     loadResource('Food',250,1,true,true);
@@ -528,6 +531,7 @@ export function defineResources(){
     loadResource('Bolognium',0,1,false,true,'advanced');
     loadResource('Vitreloy',0,1,false,true,'advanced');
     loadResource('Orichalcum',0,1,false,true,'advanced');
+    loadResource('Horseshoe',-2,0,false,false,'advanced');
     loadResource('Genes',-2,0,false,false,'advanced');
     loadResource('Soul_Gem',-2,0,false,false,'advanced');
     loadResource('Plywood',-1,0,false,false,'danger');
@@ -1043,6 +1047,10 @@ export function marketItem(mount,market_item,name,color,full){
             },
             aBuy(res){
                 let rate = tradeRatio[res];
+                let dealVal = govActive('dealmaker',0);
+                if (dealVal){
+                    rate *= 1 + (dealVal / 100);
+                }
                 if (global.race['persuasive']){
                     rate *= 1 + (global.race['persuasive'] / 100);
                 }
@@ -1110,6 +1118,21 @@ export function marketItem(mount,market_item,name,color,full){
             autoBuy(res){
                 let keyMult = keyMultiplier();
                 for (let i=0; i<keyMult; i++){
+                    if (govActive('dealmaker',0)){
+                        let exporting = 0;
+                        let importing = 0;
+                        Object.keys(global.resource).forEach(function(res){
+                            if (global.resource[res].hasOwnProperty('trade') && global.resource[res].trade < 0){
+                                exporting -= global.resource[res].trade;
+                            }
+                            if (global.resource[res].hasOwnProperty('trade') && global.resource[res].trade > 0){
+                                importing += global.resource[res].trade;
+                            }
+                        });
+                        if (exporting <= importing){
+                            break;
+                        }
+                    }
                     if (global.resource[res].trade >= 0){
                         if (importRouteEnabled(res) && global.city.market.trade < global.city.market.mtrade){
                             global.city.market.trade++;
@@ -1754,7 +1777,6 @@ function breakdownPopover(id,name,type){
                         let val = parseFloat(raw.slice(0,-1));
                         let precision = (val > 0 && val < 1) || (val < 0 && val > -1) ? 4 
                             : ((val > 0 && val < 10) || (val < 0 && val > -10) ? 3 : 2);
-                        val = +(val).toFixed(precision);
                         let suffix = type === '%' ? '%' : '';
                         if (val > 0){
                             return '+' + sizeApproximation(val,precision) + suffix;
@@ -1903,8 +1925,19 @@ function buildContainerLabel(){
     return loc('resource_modal_container_construct_desc',[125,containerValue()]);
 }
 
-function buildCrate(){
-    let keyMutipler = keyMultiplier();
+export function crateGovHook(type,num){
+    switch (type){
+        case 'crate':
+            buildCrate(num);
+            break;
+        case 'container':
+            buildContainer(num);
+            break;
+    }
+}
+
+function buildCrate(num){
+    let keyMutipler = num || keyMultiplier();
     let material = global.race['kindling_kindred'] || global.race['smoldering'] ? (global.race['smoldering'] ? 'Chrysotile' : 'Stone') : 'Plywood';
     let cost = global.race['kindling_kindred'] || global.race['smoldering'] ? 200 : 10;
     if (keyMutipler + global.resource.Crates.amount > global.resource.Crates.max){
@@ -1919,8 +1952,8 @@ function buildCrate(){
     }
 }
 
-function buildContainer(){
-    let keyMutipler = keyMultiplier();
+function buildContainer(num){
+    let keyMutipler = num || keyMultiplier();
     if (keyMutipler + global.resource.Containers.amount > global.resource.Containers.max){
         keyMutipler = global.resource.Containers.max - global.resource.Containers.amount;
     }

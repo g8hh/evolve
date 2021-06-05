@@ -4,6 +4,7 @@ import { actions, updateQueueNames, drawTech, drawCity, addAction, removeAction,
 import { races, traits, cleanAddTrait, cleanRemoveTrait } from './races.js';
 import { renderSpace } from './space.js';
 import { drawMechLab } from './portal.js';
+import { govActive } from './governor.js';
 import { unlockFeat } from './achieve.js';
 import { loc } from './locale.js';
 
@@ -134,7 +135,9 @@ export const arpaProjects = {
         reqs: { monument: 1 },
         grant: 'monuments',
         effect(){
-            return loc('arpa_projects_monument_effect1');
+            let gasVal = govActive('gaslighter',2);
+            let mcap = gasVal ? 2 - gasVal: 2;
+            return loc('arpa_projects_monument_effect1',[mcap]);
         },
         cost: {
             Stone(offset){ return monument_costs('Stone', offset) },
@@ -716,11 +719,11 @@ export const genePool = {
             return false;
         }
     },
-    /*governance: {
+    governance: {
         id: 'genes-governance',
         title: loc('arpa_genepool_governance_title'),
         desc: loc('arpa_genepool_governance_desc'),
-        reqs: { queue: 2, locked: 1 },
+        reqs: { queue: 2 },
         grant: ['governor',1],
         cost: {
             Plasmid(){ return 300; },
@@ -732,7 +735,7 @@ export const genePool = {
             }
             return false;
         }
-    },*/
+    },
     hardened_genes: {
         id: 'genes-hardened_genes',
         title: loc('arpa_genepool_hardened_genes_title'),
@@ -1237,6 +1240,26 @@ export const bloodPool = {
             return global.genes['blood'] && global.genes.blood >= 3 ? true : false;
         },
         cost: { Blood_Stone(){ return 75; } },
+        action(){
+            if (payBloodPrice($(this)[0].cost)){
+                return true;
+            }
+            return false;
+        }
+    },
+    infernal: {
+        id: 'blood-infernal',
+        title: loc('arpa_blood_infernal_title'),
+        desc: loc('arpa_blood_infernal_desc'),
+        reqs: { prepared: 2 },
+        grant: ['prepared',3],
+        condition(){
+            return global.genes['blood'] && global.genes.blood >= 3 ? true : false;
+        },
+        cost: {
+            Blood_Stone(){ return 125; },
+            Artifact(){ return 1; }
+        },
         action(){
             if (payBloodPrice($(this)[0].cost)){
                 return true;
@@ -2153,6 +2176,10 @@ function addProject(parent,project){
                             }
                             if (global.genes['queue'] && global.genes['queue'] >= 2){
                                 max_queue *= 2;
+                            }
+                            let pragVal = govActive('pragmatist',0);
+                            if (pragVal){
+                                max_queue = Math.round(max_queue * (1 + (pragVal / 100)));
                             }
                             let used = 0;
                             for (var j=0; j<global.queue.queue.length; j++){

@@ -5,6 +5,7 @@ import { actions, actionDesc } from './actions.js';
 import { universe_affixes } from './space.js';
 import { arpaAdjustCosts, arpaProjectCosts } from './arpa.js';
 import { gridDefs } from './industry.js';
+import { govActive } from './governor.js';
 import { unlockAchieve, unlockFeat, checkAchievements, universeLevel } from './achieve.js';
 
 export function popover(id,content,opts){
@@ -136,7 +137,7 @@ window.importGame = function importGame(data,utf16){
         if (saveState.hasOwnProperty('tech') && utf16){
             if (saveState.tech.hasOwnProperty('whitehole') && saveState.tech.whitehole >= 4){
                 saveState.tech.whitehole = 3;
-                saveState.resource.Soul_Gem.amount += saveState.race['smoldering'] ? 9 : 10;
+                saveState.resource.Soul_Gem.amount += 10;
                 saveState.resource.Knowledge.amount += 1500000;
                 saveState.stats.know -= 1500000;
             }
@@ -536,6 +537,10 @@ export function costMultiplier(structure,offset,base,mutiplier,cat){
     else if (global.genes['creep'] && global.race['no_crispr']){
         mutiplier -= global.genes['creep'] * 0.002;
     }
+    let nqVal = govActive('noquestions',0);
+    if (nqVal){
+        mutiplier -= nqVal;
+    }
     if (mutiplier < 1.005){
         mutiplier = 1.005;
     }
@@ -563,6 +568,10 @@ export function spaceCostMultiplier(action,offset,base,mutiplier,sector){
     if (global.race['compact']){ mutiplier -= traits.compact.vars[1]; }
     if (global.race.Harmony.count > 0 && global.stats.achieve[`ascended`]){
         mutiplier -= harmonyEffect();
+    }
+    let nqVal = govActive('noquestions',0);
+    if (nqVal){
+        mutiplier -= nqVal;
     }
     if (mutiplier < 1.005){
         mutiplier = 1.005;
@@ -1125,7 +1134,27 @@ export function adjustCosts(costs, wiki){
     costs = smolderAdjust(costs, wiki);
     costs = scienceAdjust(costs);
     costs = rebarAdjust(costs, wiki);
+    costs = extraAdjust(costs, wiki);
+    costs = heavyAdjust(costs, wiki);
     return craftAdjust(costs, wiki);
+}
+
+function extraAdjust(costs, wiki){
+    let extraVal = govActive('extravagant',0);
+    if (extraVal){
+        var newCosts = {};
+        Object.keys(costs).forEach(function (res){
+            if (res === 'Money'){
+                let waste = 1 + (extraVal / 100);
+                newCosts[res] = function(){ return Math.round(costs[res](wiki) * waste); }
+            }
+            else {
+                newCosts[res] = function(){ return costs[res](wiki); }
+            }
+        });
+        return newCosts;
+    }
+    return costs;
 }
 
 function technoAdjust(costs, wiki){
@@ -1149,7 +1178,8 @@ function technoAdjust(costs, wiki){
 }
 
 function scienceAdjust(costs){
-    if ((global.race['smart'] || global.race['dumb']) && costs['Knowledge']){
+    let pragVal = govActive('pragmatist',1);
+    if ((global.race['smart'] || global.race['dumb'] || pragVal) && costs['Knowledge']){
         var newCosts = {};
         Object.keys(costs).forEach(function (res){
             if (res === 'Knowledge'){
@@ -1160,6 +1190,9 @@ function scienceAdjust(costs){
                     }
                     if (global.race['dumb']){
                         cost *= 1 + (traits.dumb.vars[0] / 100);
+                    }
+                    if (pragVal){
+                        cost *= 1 + (pragVal / 100);
                     }
                     return Math.round(cost);
                 }
@@ -1181,7 +1214,7 @@ function smolderAdjust(costs, wiki){
                 let adjustRate = res === 'Plywood' ? 2 : 1;
                 newCosts['Chrysotile'] = function(){ return Math.round(costs[res](wiki) * adjustRate) || 0; }
             }
-            else if (res === 'Structs' || res === 'Chrysotile' || res === 'Knowledge' ||res === 'Custom'){
+            else if (['Structs','Chrysotile','Knowledge','Custom','Soul_Gem','Plasmid','Phage','Dark','Harmony','Blood_Stone','Artifact','Corrupt_Gem','Codex','Demonic_Essence'].includes(res)){
                 newCosts[res] = function(){ return costs[res](wiki); }
             }
             else {
@@ -1224,7 +1257,23 @@ function craftAdjust(costs, wiki){
                 newCosts[res] = function(){ return Math.round(costs[res](wiki) * (1 - (traits.hollow_bones.vars[0] / 100))); }
             }
             else {
-                newCosts[res] = function(){ return Math.round(costs[res](wiki)); }
+                newCosts[res] = function(){ return costs[res](wiki); }
+            }
+        });
+        return newCosts;
+    }
+    return costs;
+}
+
+function heavyAdjust(costs, wiki){
+    if (global.race['heavy']){
+        var newCosts = {};
+        Object.keys(costs).forEach(function (res){
+            if (res === 'Stone' || res === 'Cement' || res === 'Wrought_Iron'){
+                newCosts[res] = function(){ return Math.round(costs[res](wiki) * (1 + (traits.heavy.vars[1] / 100))); }
+            }
+            else {
+                newCosts[res] = function(){ return costs[res](wiki); }
             }
         });
         return newCosts;
@@ -1241,7 +1290,7 @@ function rebarAdjust(costs, wiki){
                 newCosts[res] = function(){ return Math.round(costs[res](wiki) * discount) || 0; }
             }
             else {
-                newCosts[res] = function(){ return Math.round(costs[res](wiki)); }
+                newCosts[res] = function(){ return costs[res](wiki); }
             }
         });
         return newCosts;

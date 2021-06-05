@@ -3,6 +3,7 @@ import { loc } from './locale.js';
 import { races } from './races.js';
 import { govTitle } from './civics.js';
 import { housingLabel, drawTech } from './actions.js';
+import { govActive } from './governor.js';
 import { unlockAchieve } from './achieve.js';
 
 export const events = {
@@ -117,8 +118,12 @@ export const events = {
             let army = (global.civic.garrison.workers - (global.civic.garrison.wounded / 2)) * global.tech.military;
             let enemy = global['resource'][global.race.species].amount / Math.rand(1,4);
             
-            let killed = Math.floor(Math.seededRandom(0,global.civic.garrison.wounded));
-            let wounded = Math.floor(Math.seededRandom(global.civic.garrison.wounded,global.civic.garrison.workers));
+            let killed =  Math.floor(Math.seededRandom(0,global.civic.garrison.wounded));
+            let wounded = Math.floor(Math.seededRandom(0,global.civic.garrison.workers - global.civic.garrison.wounded));
+            if (global.race['instinct']){
+                killed = Math.round(killed / 2);
+                wounded = Math.round(wounded / 2);
+            }
             global.civic.garrison.workers -= killed;
             global.civic.garrison.wounded += wounded;
             global.stats.died += killed;
@@ -165,9 +170,13 @@ export const events = {
         effect(){
             let army = (global.civic.garrison.workers - (global.civic.garrison.wounded / 2)) * global.tech.military;
             let enemy = global.civic.foreign.gov0.mil + global.civic.foreign.gov1.mil + global.civic.foreign.gov2.mil;
-            
+
             let killed = Math.floor(Math.seededRandom(0,global.civic.garrison.wounded));
-            let wounded = Math.floor(Math.seededRandom(global.civic.garrison.wounded,global.civic.garrison.workers));
+            let wounded = Math.floor(Math.seededRandom(0,global.civic.garrison.workers - global.civic.garrison.wounded));
+            if (global.race['instinct']){
+                killed = Math.round(killed / 2);
+                wounded = Math.round(wounded / 2);
+            }
             global.civic.garrison.workers -= killed;
             global.civic.garrison.wounded += wounded;
             global.stats.died += killed;
@@ -201,7 +210,11 @@ export const events = {
         type: 'major',
         effect(){            
             let killed = Math.floor(Math.seededRandom(0,global.civic.garrison.wounded));
-            let wounded = Math.floor(Math.seededRandom(global.civic.garrison.wounded,global.civic.garrison.workers));
+            let wounded = Math.floor(Math.seededRandom(0,global.civic.garrison.workers - global.civic.garrison.wounded));
+            if (global.race['instinct']){
+                killed = Math.round(killed / 2);
+                wounded = Math.round(wounded / 2);
+            }
             global.civic.garrison.workers -= killed;
             global.civic.garrison.wounded += wounded;
             global.stats.died += killed;
@@ -296,7 +309,12 @@ export const events = {
         },
         type: 'major',
         condition(){
-            return global.civic.govern.type === 'oligarchy' ? global.civic.taxes.tax_rate > 45 : global.civic.taxes.tax_rate > 25;
+            let threshold = global.civic.govern.type === 'oligarchy' ? 45 : 25;
+            let aristoVal = govActive('aristocrat',2);
+            if (aristoVal){
+                threshold -= aristoVal;
+            }
+            return global.civic.taxes.tax_rate > threshold;
         },
         effect(){
             return tax_revolt();
@@ -339,6 +357,40 @@ export const events = {
                 case 9:
                     global.civic.govern['protest'] = Math.rand(60,90);
                     return loc('event_protest9');
+            }
+        }
+    },
+    scandal: {
+        reqs: {
+            tech: 'govern'
+        },
+        type: 'major',
+        condition(){
+            return govActive('muckraker',0) ? true : false;
+        },
+        effect(){
+            global.civic.govern['scandal'] = Math.rand(15,90);
+            switch(Math.rand(0,10)){
+                case 0:
+                    return loc('event_scandal0');
+                case 1:
+                    return loc('event_scandal1');
+                case 2:
+                    return loc('event_scandal2');
+                case 3:
+                    return loc('event_scandal3');
+                case 4:
+                    return loc('event_scandal4');
+                case 5:
+                    return loc('event_scandal5');
+                case 6:
+                    return loc('event_scandal6');
+                case 7:
+                    return loc('event_scandal7');
+                case 8:
+                    return loc('event_scandal8');
+                case 9:
+                    return loc('event_scandal9');
             }
         }
     },
@@ -391,6 +443,119 @@ export const events = {
             global.resource[global.race.species].amount--;
             global.civic.miner.workers--;
             return loc('event_mine_collapse');
+        }
+    },
+    m_curious: {
+        reqs: {
+            tech: 'primitive',
+            trait: 'curious',
+        },
+        condition(){
+            if (global.resource[global.race.species].amount >= 40){
+                return true;
+            }
+            return false;
+        },
+        type: 'major',
+        effect(){
+            switch (Math.rand(0,5)){
+                case 0:
+                    {
+                        let res = 'Money';
+                        let vol = Math.rand(50000,5000000);
+                        switch (Math.rand(0,5)){
+                            case 0:
+                                if (global.resource.Steel.display){
+                                    res = 'Steel';
+                                    vol = Math.rand(100,100000);
+                                }
+                                break;
+                            case 1:
+                                if (global.resource.Bolognium.display){
+                                    res = 'Bolognium';
+                                    vol = Math.rand(500,50000);
+                                }
+                                break;
+                            case 2:
+                                if (global.resource.Alloy.display){
+                                    res = 'Alloy';
+                                    vol = Math.rand(250,1000000);
+                                }
+                                break;
+                            case 3:
+                                if (global.resource.Adamantite.display){
+                                    res = 'Adamantite';
+                                    vol = Math.rand(1000,250000);
+                                }
+                                break;
+                            case 4:
+                                if (global.resource.Soul_Gem.display){
+                                    res = 'Soul_Gem';
+                                    vol = 1;
+                                }
+                                break;
+                        }
+                        global.resource[res].amount += vol;
+                        if (global.resource[res].max >= 0 && global.resource[res].amount > global.resource[res].max){
+                            global.resource[res].amount = global.resource[res].max;
+                        }
+                        if (res === 'Money'){
+                            return loc(`event_m_curious0`,[races[global.race.species].name,'$',vol.toLocaleString()]);
+                        }
+                        return loc(`event_m_curious0`,[races[global.race.species].name,vol.toLocaleString(),global.resource[res].name]);
+                    }
+                case 1:
+                    {
+                        global.resource[global.race.species].amount -= 10;
+                        global.civic[global.civic.d_job].workers -= 10;
+                        if (global.civic[global.civic.d_job].workers < 0){
+                            global.civic[global.civic.d_job].workers = 0;
+                        }
+                        return loc(`event_m_curious1`,[races[global.race.species].name]);
+                    }
+                case 2:
+                    {
+                        global.race['inspired'] = Math.rand(600,1200);
+                        return loc(`event_m_curious2`,[races[global.race.species].name]);
+                    }
+                case 3:
+                    {
+                        global.race['distracted'] = Math.rand(200,600);
+                        return loc(`event_m_curious3`,[races[global.race.species].name]);
+                    }
+                case 4:
+                    {
+                        if (global.race.species === 'cath'){
+                            global.race['stimulated'] = Math.rand(500,1000);
+                            return loc(`event_m_curious4a`,[races[global.race.species].name]);
+                        }
+                        else {
+                            return loc(`event_m_curious4b`,[races[global.race.species].name]);
+                        }
+                    }
+            }
+        }
+    },
+    curious1: {
+        reqs: {
+            tech: 'primitive',
+            trait: 'curious',
+        },
+        type: 'minor',
+        effect(){
+            let num = Math.rand(0,5);
+            return loc(`event_curious${num}`,[races[global.race.species].name]);
+        }
+    },
+    curious2: {
+        reqs: {
+            tech: 'primitive',
+            trait: 'curious',
+        },
+        type: 'minor',
+        effect(){
+            let num = Math.rand(5,10);
+            return loc(`event_curious${num}`,[races[global.race.species].name]);
         }
     },
     slave_escape1: slaveLoss('minor','escape1'),

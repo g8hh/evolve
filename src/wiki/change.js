@@ -3,6 +3,29 @@ import { clearElement } from './../functions.js';
 
 const changeList = [
     {
+        version: `1.1.0`,
+        date: `6/4/2021`,
+        changes: [
+            `Appoint a Governor to help run the everyday tasks, unlock in the CRISPR lab.`,
+            `Animal genus split into 2 new beast genus: Carnivore & Herbivore.`,
+            `Carnivore Species: Cath, Wolven, Vulpine.`,
+            `Herbivore Species: Centaur, Rhinotaur, Capybara.`,
+            //`Omnivore Species: Bearkin, Porkenari, Hedgeoken.`,
+            `Cath, Wolven, and Centaur redesigned.`,
+            `Spire Mech Combat rebalanced.`,
+            `Titan mechs now have 4 weapon slots and an extra equipment slot.`,
+            `New Equipment: Jump Jet (All but Heavy & Titan), Battery (Heavy Only), and Targeting Computer (Titan Only).`,
+            `New Scavenger mech type`,
+            `Reweighted Angelic genus trait costs.`,
+            `Major event messages are now shown in a different color from minor ones.`,
+            `Decreased frequency of minor events.`,
+            `Smoldering no longer applies to a variety of special resources.`,
+            `Frenzy renamed to Blood Thirst.`,
+            `Madagascar Tree achievement now requires inheriting Blood Thirst instead of Carnivore.`,
+            `Expanded Hell section of Wiki`
+        ]
+    },
+    {
         version: `1.0.43`,
         date: `5/18/2021`,
         changes: [

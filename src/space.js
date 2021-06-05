@@ -6,6 +6,7 @@ import { spatialReasoning, defineResources } from './resources.js';
 import { loadFoundry } from './jobs.js';
 import { defineIndustry, garrisonSize, describeSoldier } from './civics.js';
 import { payCosts, setAction, setPlanet, storageMultipler, drawTech, bank_vault, updateDesc, actionDesc, templeEffect, casinoEffect, wardenLabel } from './actions.js';
+import { govActive } from './governor.js';
 import { loadTab } from './index.js';
 import { loc } from './locale.js';
 
@@ -452,7 +453,8 @@ const spaceProjects = {
             cost: {
                 Money(offset){ return spaceCostMultiplier('living_quarters', offset, house_adjust(38000), 1.28); },
                 Steel(offset){ return spaceCostMultiplier('living_quarters', offset, house_adjust(15000), 1.28); },
-                Polymer(offset){ return spaceCostMultiplier('living_quarters', offset, house_adjust(9500), 1.28); }
+                Polymer(offset){ return spaceCostMultiplier('living_quarters', offset, house_adjust(9500), 1.28); },
+                Horseshoe(){ return global.race['hooved'] ? 2 : 0; }
             },
             effect(){
                 let gain = global.race['cataclysm'] ? 2 : 1;
@@ -501,7 +503,9 @@ const spaceProjects = {
                 Soul_Gem(offset){ return spaceCostMultiplier('vr_center', offset, 1, 1.25); }
             },
             effect(){
-                return `<div class="has-text-caution">${loc('space_used_support',[races[global.race.species].solar.red])}</div><div>${loc('space_red_vr_center_effect1',[1])}</div><div>${loc('space_red_vr_center_effect2',[2])}</div>`;
+                let gasVal = govActive('gaslighter',1);
+                let morale = gasVal ? gasVal + 1 : 1;
+                return `<div class="has-text-caution">${loc('space_used_support',[races[global.race.species].solar.red])}</div><div>${loc('space_red_vr_center_effect1',[morale])}</div><div>${loc('space_red_vr_center_effect2',[2])}</div>`;
             },
             support(){ return -1; },
             powered(){ return powerCostMod(1); },
@@ -906,7 +910,8 @@ const spaceProjects = {
                 Money(offset){ return spaceCostMultiplier('space_barracks', offset, 350000, 1.28); },
                 Alloy(offset){ return spaceCostMultiplier('space_barracks', offset, 65000, 1.28); },
                 Iridium(offset){ return spaceCostMultiplier('space_barracks', offset, 22500, 1.28); },
-                Wrought_Iron(offset){ return spaceCostMultiplier('space_barracks', offset, 12500, 1.28); }
+                Wrought_Iron(offset){ return spaceCostMultiplier('space_barracks', offset, 12500, 1.28); },
+                Horseshoe(){ return global.race['hooved'] ? 2 : 0; }
             },
             effect(){
                 let oil = +fuel_adjust(2).toFixed(2);
@@ -925,6 +930,32 @@ const spaceProjects = {
             },
             flair(){
                 return loc('space_red_space_barracks_flair');
+            }
+        },
+        horseshoe: {
+            id: 'city-horseshoe',
+            title: loc('city_horseshoe'),
+            desc(){
+                return loc(`city_horseshoe_desc`);
+            },
+            reqs: { mining: 2 },
+            trait: ['hooved','cataclysm'],
+            cost: {
+                Copper(){ return global.race['shoecnt'] && global.race.shoecnt <= 50 ? 5 * (global.race.shoecnt <= 5 ? 1 : global.race.shoecnt - 4) : 0; },
+                Iron(){ return global.race['shoecnt'] && global.race.shoecnt > 50 && global.race.shoecnt <= 100 ? 18 * global.race.shoecnt : 0; },
+                Steel(){ return global.race['shoecnt'] && global.race.shoecnt > 100 && global.race.shoecnt <= 500 ? 40 * global.race.shoecnt : 0; },
+                Adamantite(){ return global.race['shoecnt'] && global.race.shoecnt > 500 ? 75 * global.race.shoecnt : 0; }
+            },
+            no_queue(){ return true },
+            action(){
+                let keyMult = keyMultiplier();
+                for (var i=0; i<keyMult; i++){
+                    if (global.resource.Horseshoe.display && payCosts($(this)[0].cost)){
+                        global.resource.Horseshoe.amount++;
+                        global.race.shoecnt++;
+                    }
+                }
+                return false;
             }
         },
     },
@@ -1866,6 +1897,7 @@ const interstellarProjects = {
                 Furs(offset){ return spaceCostMultiplier('habitat', offset, 38000, 1.25, 'interstellar'); },
                 Adamantite(offset){ return spaceCostMultiplier('habitat', offset, 3200, 1.25, 'interstellar'); },
                 Plywood(offset){ return spaceCostMultiplier('habitat', offset, 10000, 1.25, 'interstellar'); },
+                Horseshoe(){ return global.race['hooved'] ? 1 : 0; }
             },
             effect(){
                 let citizens = 1;
@@ -2151,6 +2183,7 @@ const interstellarProjects = {
                 Stanene(offset){ return spaceCostMultiplier('luxury_condo', offset, 230000, 1.25, 'interstellar'); },
                 Orichalcum(offset){ return spaceCostMultiplier('luxury_condo', offset, 65000, 1.25, 'interstellar'); },
                 Nanoweave(offset){ return spaceCostMultiplier('luxury_condo', offset, 12500, 1.25, 'interstellar'); },
+                Horseshoe(){ return global.race['hooved'] ? 2 : 0; }
             },
             effect(){
                 let citizens = 2;
@@ -2432,6 +2465,7 @@ const interstellarProjects = {
                 Deuterium(offset){ return spaceCostMultiplier('cruiser', offset, +int_fuel_adjust(1500).toFixed(0), 1.28, 'interstellar'); },
                 Neutronium(offset){ return spaceCostMultiplier('cruiser', offset, 2000, 1.28, 'interstellar'); },
                 Aerogel(offset){ return spaceCostMultiplier('cruiser', offset, 250, 1.28, 'interstellar'); },
+                Horseshoe(){ return global.race['hooved'] ? 3 : 0; }
             },
             powered(){ return powerCostMod(1); },
             effect(){
@@ -3574,6 +3608,7 @@ const galaxyProjects = {
                 Elerium(offset){ return spaceCostMultiplier('starbase', offset, 1000, 1.25, 'galaxy'); },
                 Mythril(offset){ return spaceCostMultiplier('starbase', offset, 90000, 1.25, 'galaxy'); },
                 Graphene(offset){ return spaceCostMultiplier('starbase', offset, 320000, 1.25, 'galaxy'); },
+                Horseshoe(){ return global.race['hooved'] ? 5 : 0; }
             },
             effect(){
                 let helium = +(int_fuel_adjust(25)).toFixed(2);
@@ -4149,6 +4184,7 @@ const galaxyProjects = {
                 Furs(offset){ return spaceCostMultiplier('dormitory', offset, 700000, 1.25, 'galaxy'); },
                 Cement(offset){ return spaceCostMultiplier('dormitory', offset, 1200000, 1.25, 'galaxy'); },
                 Plywood(offset){ return spaceCostMultiplier('dormitory', offset, 85000, 1.25, 'galaxy'); },
+                Horseshoe(){ return global.race['hooved'] ? 3 : 0; }
             },
             effect(){
                 return `<div>${loc('plus_max_citizens',[3])}</div><div class="has-text-caution">${loc('minus_power',[$(this)[0].powered()])}</div>`;
@@ -4265,7 +4301,8 @@ const galaxyProjects = {
                 Money(wiki){ return !global.galaxy.hasOwnProperty('consulate') || global.galaxy.consulate.count < 1 || wiki ? 90000000 : 0; },
                 Stone(wiki){ return !global.galaxy.hasOwnProperty('consulate') || global.galaxy.consulate.count < 1 || wiki ? 75000000 : 0; },
                 Furs(wiki){ return !global.galaxy.hasOwnProperty('consulate') || global.galaxy.consulate.count < 1 || wiki ? 30000000 : 0; },
-                Iron(wiki){ return !global.galaxy.hasOwnProperty('consulate') || global.galaxy.consulate.count < 1 || wiki ? 45000000 : 0; }
+                Iron(wiki){ return !global.galaxy.hasOwnProperty('consulate') || global.galaxy.consulate.count < 1 || wiki ? 45000000 : 0; },
+                Horseshoe(){ return global.race['hooved'] ? 10 : 0; }
             },
             effect(){
                 return loc('plus_max_citizens',[10]);
@@ -4449,6 +4486,9 @@ const galaxyProjects = {
                         messageQueue(loc('galaxy_alien2_mission_result2',[races[global.galaxy.alien2.id].home]),'info');
                         if (total < 650){
                             let wreck = 80;
+                            if (global.race['instinct']){
+                                wreck /= 2;
+                            }
                             let loss = [];
                             Object.keys(global.galaxy.defense.gxy_alien2).forEach(function(ship){
                                 for (let i=0; i<global.galaxy.defense.gxy_alien2[ship]; i++){
@@ -4681,6 +4721,9 @@ const galaxyProjects = {
                         if (total >= 2500){
                             wreck = total >= 4500 ? 80 : 160;
                         }
+                        if (global.race['instinct']){
+                            wreck /= 2;
+                        }
 
                         Object.keys(global.galaxy.defense.gxy_chthonian).forEach(function(ship){
                             for (let i=0; i<global.galaxy.defense.gxy_chthonian[ship]; i++){
@@ -4842,25 +4885,25 @@ export function piracy(region,rating,raw){
         let pillage = 0.75;
         switch(region){
             case 'gxy_stargate':
-                pirate = 0.1 * global.tech.piracy;
+                pirate = 0.1 * (global.race['instinct'] ? global.tech.piracy * 0.9 : global.tech.piracy);
                 pillage = 0.5;
                 break;
             case 'gxy_gateway':
-                pirate = 0.1 * global.tech.piracy;
+                pirate = 0.1 * (global.race['instinct'] ? global.tech.piracy * 0.9 : global.tech.piracy);
                 pillage = 1;
                 break;
             case 'gxy_gorddon':
-                pirate = 800;
+                pirate = global.race['instinct'] ? 720 : 800;
                 break;
             case 'gxy_alien1':
-                pirate = 1000;
+                pirate = global.race['instinct'] ? 900 : 1000;
                 break;
             case 'gxy_alien2':
-                pirate = 2500;
+                pirate = global.race['instinct'] ? 2250 : 2500;
                 pillage = 1;
                 break;
             case 'gxy_chthonian':
-                pirate = 7500;
+                pirate = global.race['instinct'] ? 7000 : 7500;
                 pillage = 1;
                 break;
         }
@@ -5545,6 +5588,9 @@ export function fuel_adjust(fuel){
     if (global.race['cataclysm']){
         fuel *= 0.2;
     }
+    if (global.race['heavy']){
+        fuel *= 1 + (traits.heavy.vars[0] / 100);
+    }
     if (eventActive('launch_day')){
         fuel *= 0.95;
     }
@@ -5557,6 +5603,9 @@ export function int_fuel_adjust(fuel){
     }
     if (global.stats.achieve['heavyweight']){
         fuel *= 0.96 ** global.stats.achieve['heavyweight'].l;
+    }
+    if (global.race['heavy']){
+        fuel *= 1 + (traits.heavy.vars[0] / 100);
     }
     if (eventActive('launch_day')){
         fuel *= 0.95;
@@ -5789,6 +5838,12 @@ function ascendLab(){
         genus: dGenus,
         traitlist: []
     };
+
+    for (let i=genome.traitlist.length - 1; i >= 0; i--){
+        if (!traits.hasOwnProperty(genome.traitlist[i]) || traits[genome.traitlist[i]].type !== 'major'){
+            genome.traitlist.splice(i,1);
+        }
+    }
 
     genome.genes = calcGenomeScore(genome);
 

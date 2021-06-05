@@ -11,6 +11,7 @@ import { defineIndustry, buildGarrison, checkControlling } from './civics.js';
 import { renderSpace } from './space.js';
 import { arpa } from './arpa.js';
 import { setPowerGrid } from './industry.js';
+import { defineGovernor } from './governor.js';
 
 const techs = {
     club: {
@@ -114,6 +115,10 @@ const techs = {
                     global.resource.Money.display = true;
                     global.city.market.active = true;
                     global.tech['currency'] = 2;
+                }
+                if (global.race['calm']){
+                    global.resource.Zen.display = true;
+                    global.city['meditation'] = { count: 0 };
                 }
                 return true;
             }
@@ -342,6 +347,110 @@ const techs = {
             Knowledge(){ return 4500000; }
         },
         effect: loc('tech_fertility_clinic_effect'),
+        action(){
+            if (payCosts($(this)[0].cost)){
+                return true;
+            }
+            return false;
+        }
+    },
+    spear: {
+        id: 'tech-spear',
+        title: loc('tech_spear'),
+        desc: loc('tech_spear_desc'),
+        category: 'foraging',
+        era: 'civilized',
+        reqs: { primitive: 3, storage: 1 },
+        trait: ['forager'],
+        grant: ['foraging',1],
+        cost: {
+            Knowledge(){ return 110; },
+            Stone(){ return 75; }
+        },
+        effect: loc('tech_spear_effect'),
+        action(){
+            if (payCosts($(this)[0].cost)){
+                return true;
+            }
+            return false;
+        }
+    },
+    bronze_spear: {
+        id: 'tech-bronze_spear',
+        title: loc('tech_bronze_spear'),
+        desc: loc('tech_bronze_spear_desc'),
+        category: 'foraging',
+        era: 'civilized',
+        reqs: { foraging: 1, mining: 2 },
+        trait: ['forager'],
+        grant: ['foraging',2],
+        cost: {
+            Knowledge(){ return 525; },
+            Copper(){ return 50; }
+        },
+        effect: loc('tech_bronze_spear_effect'),
+        action(){
+            if (payCosts($(this)[0].cost)){
+                return true;
+            }
+            return false;
+        }
+    },
+    iron_spear: {
+        id: 'tech-iron_spear',
+        title: loc('tech_iron_spear'),
+        desc: loc('tech_iron_spear_desc'),
+        category: 'foraging',
+        era: 'civilized',
+        reqs: { foraging: 2, mining: 3 },
+        trait: ['forager'],
+        grant: ['foraging',3],
+        cost: {
+            Knowledge(){ return global.city.ptrait === 'unstable' ? 1650 : 3300; },
+            Iron(){ return 375; }
+        },
+        effect: loc('tech_bronze_spear_effect'),
+        action(){
+            if (payCosts($(this)[0].cost)){
+                return true;
+            }
+            return false;
+        }
+    },
+    dowsing_rod: {
+        id: 'tech-dowsing_rod',
+        title: loc('tech_dowsing_rod'),
+        desc: loc('tech_dowsing_rod_desc'),
+        category: 'foraging',
+        era: 'civilized',
+        reqs: { foraging: 1, mining: 2 },
+        trait: ['forager'],
+        grant: ['dowsing',1],
+        cost: {
+            Knowledge(){ return 450; },
+            Lumber(){ return 750; }
+        },
+        effect: loc('tech_dowsing_rod_effect'),
+        action(){
+            if (payCosts($(this)[0].cost)){
+                return true;
+            }
+            return false;
+        }
+    },
+    metal_detector: {
+        id: 'tech-metal_detector',
+        title: loc('tech_metal_detector'),
+        desc: loc('tech_metal_detector_desc'),
+        category: 'foraging',
+        era: 'civilized',
+        reqs: { dowsing: 1, high_tech: 4 },
+        trait: ['forager'],
+        grant: ['dowsing',2],
+        cost: {
+            Knowledge(){ return 65000; }
+        },
+        effect: loc('tech_metal_detector_effect'),
         action(){
             if (payCosts($(this)[0].cost)){
                 return true;
@@ -2459,6 +2568,32 @@ const techs = {
             return false;
         }
     },
+    governor: {
+        id: 'tech-governor',
+        title: loc('tech_governor'),
+        desc: loc('tech_governor'),
+        category: 'government',
+        era: 'civilized',
+        reqs: { govern: 1 },
+        condition(){
+            return global.genes['governor'] && global.civic.govern.type !== 'anarchy' ? true : false;
+        },
+        grant: ['governor',1],
+        cost: {
+            Knowledge(){ return 1000; }
+        },
+        effect: loc('tech_governor_effect'),
+        action(){
+            if (payCosts($(this)[0].cost) && global.genes['governor']){
+                global.settings.showGovernor = true;
+                return true;
+            }
+            return false;
+        },
+        post(){
+            defineGovernor();
+        }
+    },
     spy: {
         id: 'tech-spy',
         title: loc('tech_spy'),
@@ -2660,9 +2795,8 @@ const techs = {
         category: 'banking',
         era: 'industrialized',
         reqs: { currency: 4, high_tech: 3 },
-        not_trait: ['terrifying'],
+        not_trait: ['terrifying','noble'],
         grant: ['currency',5],
-        not_trait: ['noble'],
         cost: {
             Knowledge(){ return 36000; }
         },
@@ -8199,6 +8333,13 @@ const techs = {
                     global.civic.foreign[`gov${i}`].sab = 0;
                     global.civic.foreign[`gov${i}`].act = 'none';
                 }
+                if (global.genes['governor'] && global.tech['governor'] && global.race['governor'] && global.race.governor['g'] && global.race.governor['tasks']){
+                    for (let i=0; i<global.race.governor.tasks.length; i++){
+                        if (global.race.governor.tasks[`t${i}`] === 'spy' || global.race.governor.tasks[`t${i}`] === 'spyop'){
+                            global.race.governor.tasks[`t${i}`] = 'none';
+                        }
+                    }
+                }
                 delete global.race['banana'];
                 return true;
             }
@@ -8579,7 +8720,7 @@ const techs = {
         effect(){ return `<div>${loc('tech_exotic_infusion_effect',[global.resource.Soul_Gem.name])}</div><div class="has-text-danger">${loc('tech_exotic_infusion_effect2')}</div>`; },
         action(){
             if (payCosts($(this)[0].cost)){
-                global.resource.Soul_Gem.amount += global.race['smoldering'] ? 9 : 10;
+                global.resource.Soul_Gem.amount += 10;
                 global.resource.Knowledge.amount += 1500000;
                 return true;
             }
@@ -8602,7 +8743,7 @@ const techs = {
         effect(){ return `<div>${loc('tech_infusion_check_effect')}</div><div class="has-text-danger">${loc('tech_exotic_infusion_effect2')}</div>`; },
         action(){
             if (payCosts($(this)[0].cost)){
-                global.resource.Soul_Gem.amount += global.race['smoldering'] ? 9 : 10;
+                global.resource.Soul_Gem.amount += 10;
                 global.resource.Knowledge.amount += 1500000;
                 return true;
             }

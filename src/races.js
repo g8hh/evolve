@@ -2,6 +2,7 @@ import { global, save, webWorker } from './vars.js';
 import { loc } from './locale.js';
 import { defineIndustry } from './civics.js';
 import { clearElement, removeFromQueue, removeFromRQueue, getEaster, getHalloween } from './functions.js';
+import { govActive } from './governor.js';
 import { unlockAchieve } from './achieve.js';
 
 const date = new Date();
@@ -65,10 +66,17 @@ export const genus_traits = {
         adaptable: 1,
         wasteful: 1
     },
-    animal: {
-        beast: 1,
-        cautious: 1
+    carnivore: {
+        carnivore: 1,
+        beast: 1
     },
+    herbivore: {
+        herbivore: 1,
+        instinct: 1
+    },
+    /*omnivore: {
+        forager: 1
+    },*/
     small: {
         small: 1,
         weak: 1
@@ -150,6 +158,12 @@ export const traits = {
         type: 'genus',
         val: -5,
     },
+    carnivore: { // No agriculture tech tree path, however unemployed citizens now act as hunters.
+        name: loc('trait_carnivore_name'),
+        desc: loc('trait_carnivore'),
+        type: 'genus',
+        val: 3,
+    },
     beast: { // Improved hunting and soldier training
         name: loc('trait_beast_name'),
         desc: loc('trait_beast'),
@@ -157,6 +171,25 @@ export const traits = {
         val: 3,
         vars: [10,20,20]
     },
+    herbivore: { // No food is gained from hunting
+        name: loc('trait_herbivore_name'),
+        desc: loc('trait_herbivore'),
+        type: 'genus',
+        val: -7,
+    },
+    instinct: { // Avoids Danger
+        name: loc('trait_instinct_name'),
+        desc: loc('trait_instinct'),
+        type: 'genus',
+        val: 5,
+        vars: [10,50]
+    },
+    /*forager: { // Will eat just about anything
+        name: loc('trait_forager_name'),
+        desc: loc('trait_forager'),
+        type: 'genus',
+        val: 2,
+    },*/
     cautious: { // Rain reduces combat rating
         name: loc('trait_cautious_name'),
         desc: loc('trait_cautious'),
@@ -354,7 +387,7 @@ export const traits = {
         name: loc('trait_blissful_name'),
         desc: loc('trait_blissful'),
         type: 'genus',
-        val: 4,
+        val: 3,
     },
     pompous: { // Professors are less effective
         name: loc('trait_pompous_name'),
@@ -367,7 +400,7 @@ export const traits = {
         name: loc('trait_holy_name'),
         desc: loc('trait_holy'),
         type: 'genus',
-        val: 1,
+        val: 4,
         vars: [50,25]
     },
     creative: { // A.R.P.A. Projects are cheaper
@@ -419,11 +452,12 @@ export const traits = {
         val: -4,
         vars: [10]
     },
-    carnivore: { // No agriculture tech tree path, however unemployed citizens now act as hunters.
-        name: loc('trait_carnivore_name'),
-        desc: loc('trait_carnivore'),
+    curious: { // University cap boosted by citizen count, curious random events
+        name: loc('trait_curious_name'),
+        desc: loc('trait_curious'),
         type: 'major',
-        val: 2,
+        val: 4,
+        vars: [0.1]
     },
     pack_mentality: { // Cabins cost more, but cottages cost less.
         name: loc('trait_pack_mentality_name'),
@@ -439,17 +473,64 @@ export const traits = {
         val: 2,
         vars: [20]
     },
+    playful: { // Hunters are Happy
+        name: loc('trait_playful_name'),
+        desc: loc('trait_playful'),
+        type: 'major',
+        val: 5,
+        vars: [0.5]
+    },
+    freespirit: { // Job Stress is higher for those who must work mundane jobs
+        name: loc('trait_freespirit_name'),
+        desc: loc('trait_freespirit'),
+        type: 'major',
+        val: -3
+    },
     beast_of_burden: { // Gains more loot during raids
         name: loc('trait_beast_of_burden_name'),
         desc: loc('trait_beast_of_burden'),
         type: 'major',
         val: 3
     },
-    herbivore: { // No food is gained from hunting
-        name: loc('trait_herbivore_name'),
-        desc: loc('trait_herbivore'),
+    sniper: { // Weapon upgrades are more impactful
+        name: loc('trait_sniper_name'),
+        desc: loc('trait_sniper'),
         type: 'major',
-        val: -7,
+        val: 6,
+        vars: [8]
+    },
+    hooved: { // You require special footwear
+        name: loc('trait_hooved_name'),
+        desc: loc('trait_hooved'),
+        type: 'major',
+        val: -4
+    },
+    rage: { // Wounded soldiers rage with extra power
+        name: loc('trait_rage_name'),
+        desc: loc('trait_rage'),
+        type: 'major',
+        val: 4,
+        vars: [1,50]
+    },
+    heavy: { // Some costs increased
+        name: loc('trait_heavy_name'),
+        desc: loc('trait_heavy'),
+        type: 'major',
+        val: -4,
+        vars: [10,5]
+    },
+    gnawer: { // Population destroys lumber by chewing on it
+        name: loc('trait_gnawer_name'),
+        desc: loc('trait_gnawer'),
+        type: 'major',
+        val: -1,
+        vars: [0.25]
+    },
+    calm: { // Your are very calm, almost zen like
+        name: loc('trait_calm_name'),
+        desc: loc('trait_calm'),
+        type: 'major',
+        val: 6
     },
     pack_rat: { // Storage space is increased
         name: loc('trait_pack_rat_name'),
@@ -1138,12 +1219,12 @@ export const races = {
     cath: {
         name: loc('race_cath'),
         desc: loc('race_cath_desc'),
-        type: 'animal',
+        type: 'carnivore',
         home: loc('race_cath_home'),
         entity: loc('race_cath_entity'),
         traits: {
             lazy: 1,
-            carnivore: 1
+            curious: 1
         },
         solar: {
             red: loc('race_cath_solar_red'),
@@ -1152,36 +1233,55 @@ export const races = {
             gas_moon: loc('race_cath_solar_gas_moon'),
             dwarf: loc('race_cath_solar_dwarf'),
         },
-        fanaticism: 'carnivore'
+        fanaticism: 'curious'
     },
     wolven: {
         name: altRace('wolven') ? loc('race_rabbit') : loc('race_wolven'),
-        desc: altRace('wolven')  ? loc('race_rabbit_desc') : loc('race_wolven_desc'),
-        type: 'animal',
-        home: altRace('wolven')  ? loc('race_rabbit_home') : loc('race_wolven_home'),
-        entity: altRace('wolven')  ? loc('race_rabbit_entity') : loc('race_wolven_entity'),
+        desc: altRace('wolven') ? loc('race_rabbit_desc') : loc('race_wolven_desc'),
+        type: 'carnivore',
+        home: altRace('wolven') ? loc('race_rabbit_home') : loc('race_wolven_home'),
+        entity: altRace('wolven') ? loc('race_rabbit_entity') : loc('race_wolven_entity'),
         traits: {
             pack_mentality: 1,
             tracker: 1
         },
         solar: {
-            red: altRace('wolven')  ? loc('race_rabbit_solar_red') : loc('race_wolven_solar_red'),
-            hell: altRace('wolven')  ? loc('race_rabbit_solar_hell') : loc('race_wolven_solar_hell'),
-            gas: altRace('wolven')  ? loc('race_rabbit_solar_gas') : loc('race_wolven_solar_gas'),
-            gas_moon: altRace('wolven')  ? loc('race_rabbit_solar_gas_moon') : loc('race_wolven_solar_gas_moon'),
-            dwarf: altRace('wolven')  ? loc('race_rabbit_solar_dwarf') : loc('race_wolven_solar_dwarf'),
+            red: altRace('wolven') ? loc('race_rabbit_solar_red') : loc('race_wolven_solar_red'),
+            hell: altRace('wolven') ? loc('race_rabbit_solar_hell') : loc('race_wolven_solar_hell'),
+            gas: altRace('wolven') ? loc('race_rabbit_solar_gas') : loc('race_wolven_solar_gas'),
+            gas_moon: altRace('wolven') ? loc('race_rabbit_solar_gas_moon') : loc('race_wolven_solar_gas_moon'),
+            dwarf: altRace('wolven') ? loc('race_rabbit_solar_dwarf') : loc('race_wolven_solar_dwarf'),
         },
         fanaticism: 'tracker'
+    },
+    vulpine: {
+        name: loc(global.race.universe === 'magic' ? 'race_kitsune' : 'race_vulpine'),
+        desc(){ return loc('race_vulpine_desc',[loc(global.race.universe === 'magic' ? 'race_kitsune' : 'race_vulpine'), foxColor()]); },
+        type: 'carnivore',
+        home: loc('race_vulpine_home'),
+        entity: loc('race_vulpine_entity'),
+        traits: {
+            playful: 1,
+            freespirit: 1
+        },
+        solar: {
+            red: loc('race_vulpine_solar_red'),
+            hell: loc('race_vulpine_solar_hell'),
+            gas: loc('race_vulpine_solar_gas'),
+            gas_moon: loc('race_vulpine_solar_gas_moon'),
+            dwarf: loc('race_vulpine_solar_dwarf'),
+        },
+        fanaticism: 'playful'
     },
     centaur: {
         name: loc('race_centaur'),
         desc: loc('race_centaur_desc'),
-        type: 'animal',
+        type: 'herbivore',
         home: loc('race_centaur_home'),
         entity: loc('race_centaur_entity'),
         traits: {
-            beast_of_burden: 1,
-            herbivore: 1
+            sniper: 1,
+            hooved: 1
         },
         solar: {
             red: loc('race_centaur_solar_red'),
@@ -1190,8 +1290,100 @@ export const races = {
             gas_moon: loc('race_centaur_solar_gas_moon'),
             dwarf: loc('race_centaur_solar_dwarf'),
         },
-        fanaticism: 'beast_of_burden'
+        fanaticism: 'sniper'
     },
+    rhinotaur: {
+        name: loc('race_rhinotaur'),
+        desc: loc('race_rhinotaur_desc'),
+        type: 'herbivore',
+        home: loc('race_rhinotaur_home'),
+        entity: loc('race_rhinotaur_entity'),
+        traits: {
+            rage: 1,
+            heavy: 1
+        },
+        solar: {
+            red: loc('race_rhinotaur_solar_red'),
+            hell: loc('race_rhinotaur_solar_hell'),
+            gas: loc('race_rhinotaur_solar_gas'),
+            gas_moon: loc('race_rhinotaur_solar_gas_moon'),
+            dwarf: loc('race_rhinotaur_solar_dwarf'),
+        },
+        fanaticism: 'rage'
+    },
+    capybara: {
+        name: loc('race_capybara'),
+        desc: loc('race_capybara_desc'),
+        type: 'herbivore',
+        home: loc('race_capybara_home'),
+        entity: loc('race_capybara_entity'),
+        traits: {
+            gnawer: 1,
+            calm: 1
+        },
+        solar: {
+            red: loc('race_capybara_solar_red'),
+            hell: loc('race_capybara_solar_hell'),
+            gas: loc('race_capybara_solar_gas'),
+            gas_moon: loc('race_capybara_solar_gas_moon'),
+            dwarf: loc('race_capybara_solar_dwarf'),
+        },
+        fanaticism: 'calm'
+    },
+    /*bearkin: {
+        name: loc('race_bearkin'),
+        desc: loc('race_bearkin_desc'),
+        type: 'omnivore',
+        home: loc('race_bearkin_home'),
+        entity: loc('race_bearkin_entity'),
+        traits: {
+            
+        },
+        solar: {
+            red: loc('race_bearkin_solar_red'),
+            hell: loc('race_bearkin_solar_hell'),
+            gas: loc('race_bearkin_solar_gas'),
+            gas_moon: loc('race_bearkin_solar_gas_moon'),
+            dwarf: loc('race_bearkin_solar_dwarf'),
+        },
+        fanaticism: ''
+    },
+    porkenari: {
+        name: loc('race_porkenari'),
+        desc: loc('race_porkenari_desc'),
+        type: 'omnivore',
+        home: loc('race_porkenari_home'),
+        entity: loc('race_porkenari_entity'),
+        traits: {
+            
+        },
+        solar: {
+            red: loc('race_porkenari_solar_red'),
+            hell: loc('race_porkenari_solar_hell'),
+            gas: loc('race_porkenari_solar_gas'),
+            gas_moon: loc('race_porkenari_solar_gas_moon'),
+            dwarf: loc('race_porkenari_solar_dwarf'),
+        },
+        fanaticism: ''
+    },
+    hedgeoken: {
+        name: loc('race_hedgeoken'),
+        desc: loc('race_hedgeoken_desc'),
+        type: 'omnivore',
+        home: loc('race_hedgeoken_home'),
+        entity: loc('race_hedgeoken_entity'),
+        traits: {
+            
+        },
+        solar: {
+            red: loc('race_hedgeoken_solar_red'),
+            hell: loc('race_hedgeoken_solar_hell'),
+            gas: loc('race_hedgeoken_solar_gas'),
+            gas_moon: loc('race_hedgeoken_solar_gas_moon'),
+            dwarf: loc('race_hedgeoken_solar_dwarf'),
+        },
+        fanaticism: ''
+    },*/
     kobold: {
         name: loc('race_kobold'),
         desc: loc('race_kobold_desc'),
@@ -1874,7 +2066,6 @@ export const races = {
             arrogant: 1,
             angry: 1,
             lazy: 1,
-            herbivore: 1,
             paranoid: 1,
             greedy: 1,
             puny: 1,
@@ -1892,7 +2083,11 @@ export const races = {
             atrophy: 1,
             invertebrate: 1,
             pathetic: 1,
-            hibernator: 1
+            hibernator: 1,
+            freespirit: 1,
+            heavy: 1,
+            gnawer: 1,
+            hooved: 1
         },
         solar: {
             red: altRace('junker') ? loc('race_ghoul_solar_red') : loc('race_junker_solar_red'),
@@ -1951,6 +2146,14 @@ types: farmer, miner, lumberjack, science, factory, army, hunting
 */
 export function racialTrait(workers,type){
     let modifier = 1;
+    let theoryVal = govActive('theorist',1);
+    if (theoryVal && (type === 'factory' || type === 'miner' || type === 'lumberjack')){
+        modifier *= 1 - (theoryVal / 100);
+    }
+    let inspireVal = govActive('inspirational',0);
+    if (inspireVal && (type === 'farmer' || type === 'factory' || type === 'miner' || type === 'lumberjack')){
+        modifier *= 1 + (inspireVal / 100);
+    }
     if (type === 'lumberjack' && global.race['evil'] && !global.race['soul_eater']){
         modifier *= 1 + ((global.tech['reclaimer'] - 1) * 0.4);
     }
@@ -1963,7 +2166,7 @@ export function racialTrait(workers,type){
             modifier *= 1 + (1 - (mod ** (workers - 10)));
         }
     }
-    if(global.race['cold_blooded'] && type !== 'army' && type !== 'hellArmy' && type !== 'factory' && type !== 'science'){
+    if (global.race['cold_blooded'] && type !== 'army' && type !== 'hellArmy' && type !== 'factory' && type !== 'science'){
         switch(global.city.calendar.temp){
             case 0:
                 modifier *= 1 - (traits.cold_blooded.vars[0] / 100);
@@ -2254,6 +2457,12 @@ export function cleanAddTrait(trait){
             removeFromRQueue(['wharf']);
             delete global.city['wharf'];
             break;
+        case 'hooved':
+            global.resource.Horseshoe.display = true;
+            if (!global.race.hasOwnProperty('shoecnt')){
+                global.race['shoecnt'] = 0;
+            }
+            break;
         case 'slow':
             save.setItem('evolved',LZString.compressToUTF16(JSON.stringify(global)));
             if (webWorker.w){
@@ -2266,6 +2475,10 @@ export function cleanAddTrait(trait){
                 webWorker.w.terminate();
             }
             window.location.reload();
+        case 'calm':
+            global.resource.Zen.display = true;
+            global.city['meditation'] = { count: 0 };
+            break;
         default:
             break;
     }
@@ -2344,11 +2557,25 @@ export function cleanRemoveTrait(trait){
             global.resource.Slave.amount = 0;
             global.resource.Slave.max = 0;
             global.resource.Slave.display = false;
+            if (global.genes['governor'] && global.tech['governor'] && global.race['governor'] && global.race.governor['g'] && global.race.governor['tasks']){
+                for (let i=0; i<global.race.governor.tasks.length; i++){
+                    if (global.race.governor.tasks[`t${i}`] === 'slave'){
+                        global.race.governor.tasks[`t${i}`] = 'none';
+                    }
+                }
+            }
             break;
         case 'cannibalize':
             removeFromQueue(['city-s_alter']);
             removeFromRQueue(['sacrifice']);
             delete global.city['s_alter'];
+            if (global.genes['governor'] && global.tech['governor'] && global.race['governor'] && global.race.governor['g'] && global.race.governor['tasks']){
+                for (let i=0; i<global.race.governor.tasks.length; i++){
+                    if (global.race.governor.tasks[`t${i}`] === 'sacrifice'){
+                        global.race.governor.tasks[`t${i}`] = 'none';
+                    }
+                }
+            }
             break;
         case 'magnificent':
             delete global.city['shrine'];
@@ -2356,6 +2583,16 @@ export function cleanRemoveTrait(trait){
         case 'thalassophobia':
             if (global.tech['wharf']){
                 global.city['wharf'] = { count: 0 };
+            }
+            break;
+        case 'hooved':
+            global.resource.Horseshoe.display = false;
+            if (global.genes['governor'] && global.tech['governor'] && global.race['governor'] && global.race.governor['g'] && global.race.governor['tasks']){
+                for (let i=0; i<global.race.governor.tasks.length; i++){
+                    if (global.race.governor.tasks[`t${i}`] === 'horseshoe'){
+                        global.race.governor.tasks[`t${i}`] = 'none';
+                    }
+                }
             }
             break;
         case 'slow':
@@ -2370,6 +2607,10 @@ export function cleanRemoveTrait(trait){
                 webWorker.w.terminate();
             }
             window.location.reload();
+        case 'calm':
+            global.resource.Zen.display = false;
+            delete global.city['meditation'];
+            break;
         default:
             break;
     }
@@ -2488,4 +2729,11 @@ function shellColor(){
         return loc(`color_${global.race.shell_color}`);
     }
     return loc(`color_green`);
+}
+
+function foxColor(){
+    if (global.race.hasOwnProperty('fox_color')){
+        return loc(`color_${global.race.fox_color}`);
+    }
+    return loc(`color_red`);
 }

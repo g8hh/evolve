@@ -4256,6 +4256,7 @@
   "gov_task_bal_storage": "板条箱/集装箱管理",
   "gov_task_merc": "聘请雇佣兵",
   "gov_task_merc_buffer": "雇佣缓冲量",
+  "gov_task_merc_reserve": "资金保留百分比(0-100)",
   "gov_task_spy": "间谍培训",
   "gov_task_spyop": "间谍活动",
   "gov_task_slave": "奴隶补充",

@@ -3,6 +3,21 @@ import { clearElement } from './../functions.js';
 
 const changeList = [
     {
+        version: `1.1.1`,
+        date: `6/5/2021`,
+        changes: [
+            `Unifying during banana republic now triggers an automatic backup save.`,
+            `Holding a key multiplier with the queue key will now queue mulitple of a building.`,
+            `Dealmaker import bonus buffed from 40% to 75%.`,
+            `Nerfed Beast trait to 8% hunting / 15% windy hunting / 10% soldier training.`,
+            `Restored Cautious trait to Carnivore genus.`,
+            `Added Money Reserve % config values to Merc and Spy recruiter tasks.`,
+            `Horseshoes can now be queued.`,
+            `Adamantite Horseshoes are now much cheaper.`,
+            `Changed progression system for Horseshoe costs, will not change to next resource unless it's unlocked.`
+        ]
+    },
+    {
         version: `1.1.0`,
         date: `6/4/2021`,
         changes: [

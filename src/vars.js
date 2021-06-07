@@ -783,7 +783,33 @@ if (convertVersion(global['version']) < 101001){
     }
 }
 
-global['version'] = '1.1.1';
+if (convertVersion(global['version']) < 101002){
+    if (global.race.hasOwnProperty('frenzy')){
+        global.race['blood_thirst'] = global.race['frenzy'];
+        delete global.race['frenzy'];
+        if (global.city.hasOwnProperty('morale') && global.city.morale.hasOwnProperty('frenzy')){
+            global.city.morale['blood_thirst'] = global.city.morale['frenzy'];
+            delete global.city.morale['frenzy'];
+        }
+    }
+
+    if (global.hasOwnProperty('custom') && global.custom.hasOwnProperty('race0') && global.custom.race0.hasOwnProperty('traits')){
+        for (let i=0; i<global.custom.race0.traits.length; i++){
+            if (global.custom.race0.traits[i] === 'frenzy'){
+                global.custom.race0.traits[i] = 'blood_thirst';
+            }
+        }
+    }
+    
+    if (global.race['jtype'] && global.race['jtype'] === 'omnivore'){
+        global.race['jtype'] = 'carnivore';
+    }
+    if (global.hasOwnProperty('custom') && global.custom.hasOwnProperty('race0') && global.custom.race0.hasOwnProperty('genus') && global.custom.race0.genus === 'omnivore'){
+        global.custom.race0.genus = 'carnivore';
+    }
+}
+
+global['version'] = '1.1.2';
 delete global['beta'];
 
 if (!global.hasOwnProperty('power')){

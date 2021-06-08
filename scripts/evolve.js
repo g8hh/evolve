@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Evolve
 // @namespace    http://tampermonkey.net/
-// @version      3.3.1.58
+// @version      3.3.1.59
 // @description  try to take over the world!
 // @downloadURL  https://gitee.com/likexia/Evolve/raw/master/scripts/evolve.js
 // @author       Fafnir
@@ -3637,7 +3637,9 @@
 
         lastLevel: -1,
         lastPrepared: -1,
-        bestBody: {small: [], medium: [], large: [], titan: [], collector: []},
+        lastSpecial: "",
+        bestMech: {},
+        bestBody: {},
         bestWeapon: [],
 
         Size: ['small','medium','large','titan','collector'],
@@ -3704,12 +3706,16 @@
                 return false;
             }
 
-            if (this.lastLevel !== game.global.portal.spire.count || this.lastPrepared !== game.global.blood.prepared) {
+            if (this.lastLevel !== game.global.portal.spire.count || this.lastPrepared !== game.global.blood.prepared || this.lastSpecial !== settings.mechSpecial) {
                 this.lastLevel = game.global.portal.spire.count;
                 this.lastPrepared = game.global.blood.prepared;
+                this.lastSpecial = settings.mechSpecial;
 
-                this.bestBody = {small: [], medium: [], large: [], titan: [], collector: []};
-                this.bestWeapon = [];
+                this.updateBestWeapon();
+                this.Size.forEach(size => {
+                    this.updateBestBody(size);
+                    this.bestMech[size] = this.getRandomMech(size); // Reference best mech, to compare power
+                });
 
                 // Redraw added label of Mech Lab after change of floor
                 removeMechInfo();
@@ -3736,7 +3742,7 @@
                 }
             }
 
-            let bestMech = this.getRandomMech(game.global.portal.spire.status.gravity ? 'medium' : 'large');
+            let bestMech = this.bestMech[game.global.portal.spire.status.gravity ? 'medium' : 'large'];
             this.mechsPotential = this.mechsPower / (buildings.SpireMechBay.count * 25 / this.getMechSpace(bestMech) * bestMech.power) || 0;
 
             return true;
@@ -3810,10 +3816,14 @@
                 return floorSize; // This floor have configured size
             }
 
-            for (let i = this.Size.length - 2; i >= 0; i--) {
+            if (game.global.portal.spire.status.gravity) {
+                return 'medium'; // Auto size for gravity is always medium
+            }
+
+            for (let i = this.Size.length - 2; i > 0; i--) {
                 let {s, c} = poly.mechCost(this.Size[i]);
                 if (resources.Soul_Gem.spareQuantity >= s && resources.Supply.maxQuantity >= c) {
-                    return this.Size[i]; // Affordale mech for auto size
+                    return this.Size[i]; // Affordable mech for auto size, selected among medium, heavy, and titan
                 }
             }
 
@@ -3881,12 +3891,6 @@
         },
 
         getRandomMech(size) {
-            if (this.bestBody[size].length === 0) {
-                this.updateBestBody(size);
-            }
-            if (this.bestWeapon.length === 0) {
-                this.updateBestWeapon();
-            }
             let randomBody = this.bestBody[size][Math.floor(Math.random() * this.bestBody[size].length)];
             let randomWeapon = this.bestWeapon[Math.floor(Math.random() * this.bestWeapon.length)];
             let weaponsAmount = this.SizeWeapons[size];
@@ -4737,6 +4741,7 @@
         JobManager.addJobToPriorityList(jobs.Hunter);
         JobManager.addJobToPriorityList(jobs.Farmer);
         //JobManager.addJobToPriorityList(jobs.Forager);
+        JobManager.addJobToPriorityList(jobs.Miner);
         JobManager.addJobToPriorityList(jobs.Lumberjack);
         JobManager.addJobToPriorityList(jobs.QuarryWorker);
         JobManager.addJobToPriorityList(jobs.CrystalMiner);
@@ -4749,7 +4754,6 @@
         JobManager.addJobToPriorityList(jobs.HellSurveyor);
         JobManager.addJobToPriorityList(jobs.SpaceMiner);
         JobManager.addJobToPriorityList(jobs.Archaeologist);
-        JobManager.addJobToPriorityList(jobs.Miner);
         JobManager.addJobToPriorityList(jobs.CoalMiner);
         JobManager.addJobToPriorityList(jobs.Banker);
         JobManager.addJobToPriorityList(jobs.Priest);
@@ -8780,7 +8784,7 @@
 
                 // We're buying enough resources now or we don't have enough money to buy more anyway
                 if (deal.index === -1
-                        || deal.resource.isCapped()
+                        || deal.resource.storageRatio > 0.98
                         || requiredTradeRoutes[deal.index] >= importRouteCap
                         || deal.requiredTradeRoutes === requiredTradeRoutes[deal.index]
                         || currentMoneyPerSecond - deal.resource.currentTradeRouteBuyPrice < minimumAllowedMoneyPerSecond) {
@@ -9186,9 +9190,11 @@
 
             // Get list of inefficient mech
             let badMechList = m.activeMechs.filter(mech => {
-                if (mech.infernal) { return false; }
+                if (mech.infernal || mech.power >= m.bestMech[mech.size].power) {
+                    return false;
+                }
                 let [gemRefund, supplyRefund] = m.getMechRefund(mech);
-                // Collector and scout does not refund gems. Let pretend they're returning half of gem during filtering
+                // Collector and scout does not refund gems. Let's pretend they're returning half of gem during filtering
                 return Math.min((gemRefund || 0.5) / newGems, supplyRefund / newSupply) > mech.power / newMech.power;
             }).sort((a, b) => a.efficiency - b.efficiency);
 

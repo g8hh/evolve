@@ -4219,7 +4219,7 @@
   "gov_trait_inspirational_effect": "农民，石工，水晶矿工，伐木工人和水泥工人产量 +%0% 。",
   "gov_trait_pious": "TRANS:Pious",
   "gov_trait_pious_desc": "TRANS:Drawing in the devout could be good for your spirit.",
-  "gov_trait_pious_bd": "TRANS:Tithe",
+  "gov_trait_pious_bd": "什一税",
   "gov_trait_pious_effect": "什一税导致收入 -%0% ，每个寺庙使旅游中心收入 +$%1/s 。",
   "gov_trait_pragmatist": "TRANS:Pragmatist",
   "gov_trait_pragmatist_desc": "TRANS:A pragmatic outlook could help get more done.",

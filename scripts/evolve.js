@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Evolve
 // @namespace    http://tampermonkey.net/
-// @version      3.3.1.62
+// @version      3.3.1.63
 // @description  try to take over the world!
 // @downloadURL  https://gitee.com/likexia/Evolve/raw/master/scripts/evolve.js
 // @author       Fafnir
@@ -502,7 +502,7 @@
             if (this.maxQuantity === 0) {
                 return 0;
             }
-            if (this.storageRequired === 0) {
+            if (this.storageRequired <= 1) {
                 return 1;
             }
             return this.currentQuantity / Math.min(this.maxQuantity, this.storageRequired);
@@ -520,7 +520,7 @@
         }
 
         get timeToRequired() {
-            if (this.storageRatio > 0.98 || this.storageRequired === 0) {
+            if (this.storageRatio > 0.98 || this.storageRequired <= 1) {
                 return 0; // Already full.
             }
             let totalRateOfCharge = this.calculateRateOfChange({all: true});
@@ -686,6 +686,7 @@
         }
     }
 
+
     class Action {
         constructor(name, tab, id, location, flags) {
             this.name = name;
@@ -735,12 +736,35 @@
 
         get title() {
             let def = this.definition;
-            return def ? typeof def.title === 'string' ? def.title : def.title() : this.name;
+            return def ? typeof def.title === 'function' ? def.title() : def.title : this.name;
         }
 
         get desc() {
             let def = this.definition;
-            return def ? typeof def.desc === 'string' ? def.desc : def.desc() : this.name;
+            return def ? typeof def.desc === 'function' ? def.desc() : def.desc : this.name;
+        }
+
+        matchTooltip(tooltip) {
+            let def = this.definition;
+            if (!def) {
+                return false;
+            }
+
+            // First check with no escaping, to make it faster; it seems to work for all buildings currently in game
+            if (!tooltip.startsWith('<div>' + (typeof def.desc === 'function' ? def.desc() : def.desc))) {
+                return false;
+            }
+
+            // Make sure it's actually our tooltip, with only desc there will be collisions between buildings and their techs
+            if (def.effect && tooltip.indexOf($(`<div>${typeof def.effect === 'function' ? def.effect() : def.effect}</div>`).html()) === -1) {
+                return false;
+            }
+
+            // Just in case
+            if (def.flair && tooltip.indexOf($(`<div>${typeof def.flair === 'function' ? def.flair() : def.flair}</div>`).html()) === -1) {
+                return false;
+            }
+            return true;
         }
 
         get vue() {
@@ -769,7 +793,11 @@
         }
 
         isSmartManaged() {
-            return this.isUnlocked() && this.autoStateEnabled && this.autoStateSmart;
+            return settings.autoPower && this.isUnlocked() && this.autoStateEnabled && this.autoStateSmart;
+        }
+
+        isAutoBuildable() {
+            return settings.autoBuild && this.isUnlocked() && this.autoBuildEnabled && this._weighting > 0 && this.count < this.autoMax;
         }
 
         // export function checkPowerRequirements(c_action) from actions.js
@@ -843,9 +871,15 @@
 
             resetMultiplier();
 
-            $('#popper').attr('id', 'TotallyNotAPopper'); // Hide active popper from action, so it won't rewrite it
-            this.vue.action();
-            $('#TotallyNotAPopper').attr('id', 'popper');
+            // Hide active popper from action, so it won't rewrite it
+            let popper = $('#popper');
+            if (popper.length > 0 && !this.matchTooltip(popper.html())) {
+                popper.attr('id', 'TotallyNotAPopper');
+                this.vue.action();
+                popper.attr('id', 'popper');
+            } else {
+                this.vue.action();
+            }
 
             return true;
         }
@@ -1011,7 +1045,7 @@
             }
 
             let optionsNode = document.querySelector("#space-star_dock .special");
-            let title = typeof game.actions.space.spc_gas.star_dock.title === 'string' ? game.actions.space.spc_gas.star_dock.title : game.actions.space.spc_gas.star_dock.title();
+            let title = typeof game.actions.space.spc_gas.star_dock.title === 'function' ? game.actions.space.spc_gas.star_dock.title() : game.actions.space.spc_gas.star_dock.title;
             WindowManager.openModalWindowWithCallback(title, this.cacheOptionsCallback, optionsNode);
             return true;
         }
@@ -1069,7 +1103,6 @@
             this.currentStep = 1;
         }
 
-        // This is the resource requirements for 1% of the project
         updateResourceRequirements() {
             if (!this.isUnlocked()) {
                 return;
@@ -1163,7 +1196,7 @@
         }
 
         get title() {
-            return typeof this.definition.title === 'string' ? this.definition.title : this.definition.title();
+            return typeof this.definition.title === 'function' ? this.definition.title() : this.definition.title;
         }
 
         get name() {
@@ -1980,7 +2013,7 @@
         GateMission: new Action("Gate Mission", "portal", "gate_mission", "prtl_gate"),
         GateEastTower: new Action("Gate East Tower", "portal", "east_tower", "prtl_gate"),
         GateWestTower: new Action("Gate West Tower", "portal", "west_tower", "prtl_gate"),
-        GateGateTurret: new Action("Gate Turret", "portal", "gate_turret", "prtl_gate"),
+        GateTurret: new Action("Gate Turret", "portal", "gate_turret", "prtl_gate"),
         GateInferniteMine: new Action("Gate Infernite Mine", "portal", "infernite_mine", "prtl_gate"),
 
         LakeMission: new Action("Lake Mission", "portal", "lake_mission", "prtl_lake"),
@@ -2082,8 +2115,8 @@
           () => "Saving resources for new mech",
           () => 0
       ],[
-          () => buildings.GateEastTower.isUnlocked() && buildings.GateWestTower.isUnlocked(),
-          (building) => (building === buildings.GateEastTower || building === buildings.GateWestTower) && poly.hellSupression("gate").supress < settings.buildingTowerSuppression / 100,
+          () => buildings.GateEastTower.isUnlocked() && buildings.GateWestTower.isUnlocked() && poly.hellSupression("gate").supress < settings.buildingTowerSuppression / 100,
+          (building) => building === buildings.GateEastTower || building === buildings.GateWestTower,
           () => "Too low gate supression",
           () => 0
       ],[
@@ -2098,10 +2131,8 @@
           () => 0
       ],[
           () => {
-              let bireme = buildings.LakeBireme;
-              let transport = buildings.LakeTransport;
-              return (bireme.autoBuildEnabled && bireme.isUnlocked() && bireme.count < bireme.autoMax && bireme.isAffordable(true)) &&
-                     (transport.autoBuildEnabled && transport.isUnlocked() && transport.count < transport.autoMax && transport.isAffordable(true));
+              return buildings.LakeBireme.isAutoBuildable() && buildings.LakeBireme.isAffordable(true) &&
+                     buildings.LakeTransport.isAutoBuildable() && buildings.LakeTransport.isAffordable(true);
           },
           (building) => {
               if (building === buildings.LakeBireme || building === buildings.LakeTransport) {
@@ -2122,10 +2153,8 @@
           () => 0 // Find what's better - Bireme or Transport
       ],[
           () => {
-              let port = buildings.SpirePort;
-              let camp = buildings.SpireBaseCamp;
-              return (port.autoBuildEnabled && port.isUnlocked() && port.count < port.autoMax && port.isAffordable(true)) &&
-                     (camp.autoBuildEnabled && camp.isUnlocked() && camp.count < camp.autoMax && camp.isAffordable(true));
+              return buildings.SpirePort.isAutoBuildable() && buildings.SpirePort.isAffordable(true) &&
+                     buildings.SpireBaseCamp.isAutoBuildable() && buildings.SpireBaseCamp.isAffordable(true);
           },
           (building) => {
               if (building === buildings.SpirePort || building === buildings.SpireBaseCamp) {
@@ -2149,18 +2178,18 @@
           () => "Not avaiable",
           () => 0 // We can't limit waygate using gameMax, as max here doesn't constant. It's start with 10, but after building count reduces down to 1
       ],[
-          () => buildings.SpireSphinx.isUnlocked(),
-          (building) => building === buildings.SpireSphinx && game.global.tech.hell_spire >= 8,
+          () => buildings.SpireSphinx.isUnlocked() && haveTech("hell_spire", 8),
+          (building) => building === buildings.SpireSphinx,
           () => "Not avaiable",
           () => 0 // Sphinx not usable after solving
       ],[
-          () => buildings.RuinsAncientPillars.isUnlocked(),
-          (building) => building === buildings.RuinsAncientPillars && (game.global.tech.pillars !== 1 || game.global.race.universe === 'micro'),
+          () => buildings.RuinsAncientPillars.isUnlocked() && (game.global.tech.pillars !== 1 || game.global.race.universe === 'micro'),
+          (building) => building === buildings.RuinsAncientPillars,
           () => "Not avaiable",
           () => 0 // Pillars can't be activated in micro, and without tech.
       ],[
-          () => buildings.GorddonEmbassy.isUnlocked() && buildings.GorddonEmbassy.count === 0,
-          (building) => building === buildings.GorddonEmbassy && resources.Knowledge.maxQuantity < settings.fleetEmbassyKnowledge,
+          () => buildings.GorddonEmbassy.count === 0 && resources.Knowledge.maxQuantity < settings.fleetEmbassyKnowledge,
+          (building) => building === buildings.GorddonEmbassy,
           () => `${getNumberString(settings.fleetEmbassyKnowledge)} Max Knowledge required`,
           () => 0
       ],[
@@ -2249,7 +2278,9 @@
           () => settings.buildingWeightingNonOperatingCity
       ],[
           () => true,
-          (building) => building._tab !== "city" && building !== buildings.SpireMechBay && building !== buildings.BadlandsAttractor && building.stateOffCount > 0,
+          (building) => building._tab !== "city" && building.stateOffCount > 0
+            && (building !== buildings.SpireMechBay || !buildings.SpireMechBay.isSmartManaged())
+            && (building !== buildings.BadlandsAttractor || !buildings.BadlandsAttractor.isSmartManaged()),
           () => "Still have some non operating buildings",
           () => settings.buildingWeightingNonOperating
       ],[
@@ -2329,7 +2360,7 @@
           () => settings.buildingWeightingCrateUseless
       ],[
           () => resources.Oil.maxQuantity < resources.Oil.requestedQuantity && buildings.OilWell.count <= 0 && buildings.GasMoonOilExtractor.count <= 0,
-          (building) => building === buildings.OilWell || building === buildings.GasMoonOilExtractor.count,
+          (building) => building === buildings.OilWell || building === buildings.GasMoonOilExtractor,
           () => "Need more fuel",
           () => settings.buildingWeightingMissingFuel
       ],[
@@ -2347,6 +2378,11 @@
           (building) => building === buildings.MeditationChamber,
           () => "No more Meditation Space needed",
           () => settings.buildingWeightingZenUseless
+      ],[
+          () => buildings.GateTurret.isUnlocked() && poly.hellSupression("gate").rating >= 7500,
+          (building) => building === buildings.GateTurret,
+          () => "Gate demons fully supressed",
+          () => settings.buildingWeightingGateTurret
     ]];
 
     // Singleton manager objects
@@ -3457,7 +3493,7 @@
 
         getHellReservedSoldiers(){
             let soldiers = 0;
-            if (buildings.PitSoulForge.stateOnCount > 0 || (buildings.PitAssaultForge.isUnlocked() && buildings.PitAssaultForge.autoBuildEnabled)) {
+            if (buildings.PitSoulForge.count > 0 || buildings.PitAssaultForge.isAutoBuildable()) {
                 // export function soulForgeSoldiers() from portal.js
                 soldiers = Math.round(650 / game.armyRating(1, "hellArmy"));
                 if (game.global.portal.gun_emplacement) {
@@ -3801,6 +3837,7 @@
 
         getPreferedSize() {
             let mechBay = game.global.portal.mechbay;
+            // TODO: Some logic\option to build bunch of collectors at early spire
             if (settings.mechFillBay && mechBay.bay % 2 !== mechBay.max % 2) {
                 return 'collector'; // One collector to fill odd bay
             }
@@ -3836,7 +3873,7 @@
             }
             let power = rating * this.getSizeMod(mech) * (mech.infernal ? 1.25 : 1);
             let efficiency = power / this.getMechSpace(mech);
-            return {rating: rating, power: power, efficiency: efficiency};
+            return {power: power, efficiency: efficiency};
         },
 
         getTimeToClear() {
@@ -3925,7 +3962,8 @@
 
         mechDesc(mech) {
             // (${mech.hardpoint.map(id => game.loc("portal_mech_weapon_" + id)).join(", ")}) [${mech.equip.map(id => game.loc("portal_mech_equip_" + id)).join(", ")}]
-            return `${game.loc("portal_mech_size_" + mech.size)} ${game.loc("portal_mech_chassis_" + mech.chassis)} (${Math.round(mech.rating * 100)}%)`;
+            let rating = mech.power / this.bestMech[mech.size].power;
+            return `${game.loc("portal_mech_size_" + mech.size)} ${game.loc("portal_mech_chassis_" + mech.chassis)} (${Math.round(rating * 100)}%)`;
         },
 
         buildMech(mech) {
@@ -4032,14 +4070,14 @@
                     let result = activeRules[j][wrIndividualCondition](building);
                     // Rule passed
                     if (result) {
-                      building.extraDescription += activeRules[j][wrDescription](result, building) + "<br>";
-                      building.weighting *= activeRules[j][wrMultiplier](result);
+                        building.extraDescription += activeRules[j][wrDescription](result, building) + "<br>";
+                        building.weighting *= activeRules[j][wrMultiplier](result);
 
 
-                      // Last rule disabled building, no need to check the rest
-                      if (building.weighting <= 0) {
-                          break;
-                      }
+                        // Last rule disabled building, no need to check the rest
+                        if (building.weighting <= 0) {
+                            break;
+                        }
                     }
                 }
                 if (building.weighting > 0) {
@@ -4679,6 +4717,7 @@
     function resetMarketSettings() {
         settings.tradeRouteMinimumMoneyPerSecond = 300;
         settings.tradeRouteMinimumMoneyPercentage = 30;
+        settings.tradeRouteSellExcess = true;
     }
 
     function resetStorageState() {
@@ -4806,6 +4845,7 @@
         settings.buildingWeightingCrateUseless = 0.01;
         settings.buildingWeightingHorseshoeUseless = 0.01;
         settings.buildingWeightingZenUseless = 0.01;
+        settings.buildingWeightingGateTurret = 0.01;
     }
 
     function resetBuildingSettings() {
@@ -5043,7 +5083,7 @@
         BuildingManager.addBuildingToPriorityList(buildings.GateMission);
         BuildingManager.addBuildingToPriorityList(buildings.GateEastTower);
         BuildingManager.addBuildingToPriorityList(buildings.GateWestTower);
-        BuildingManager.addBuildingToPriorityList(buildings.GateGateTurret);
+        BuildingManager.addBuildingToPriorityList(buildings.GateTurret);
         BuildingManager.addBuildingToPriorityList(buildings.GateInferniteMine);
 
         BuildingManager.addBuildingToPriorityList(buildings.SpireMission);
@@ -5095,7 +5135,7 @@
 
     function resetProjectSettings() {
         settings.arpaScaleWeighting = true;
-        settings.arpaStep = 1;
+        settings.arpaStep = 10;
     }
 
     function resetProjectState() {
@@ -5420,7 +5460,7 @@
         addSetting("storageAssignExtra", true);
         addSetting("storagePrioritizedOnly", false);
         addSetting("arpaScaleWeighting", true);
-        addSetting("arpaStep", 1);
+        addSetting("arpaStep", 10);
 
         addSetting("productionChrysotileWeight", 2);
         addSetting("productionPrioritizeDemanded", true);
@@ -5496,6 +5536,7 @@
         addSetting("minimumMoneyPercentage", 0);
         addSetting("tradeRouteMinimumMoneyPerSecond", 300);
         addSetting("tradeRouteMinimumMoneyPercentage", 30);
+        addSetting("tradeRouteSellExcess", true);
         addSetting("generalMinimumTaxRate", 20);
         addSetting("generalMinimumMorale", 105);
         addSetting("generalMaximumMorale", 500);
@@ -5583,6 +5624,7 @@
         addSetting("buildingWeightingCrateUseless", 0.01);
         addSetting("buildingWeightingHorseshoeUseless", 0.01);
         addSetting("buildingWeightingZenUseless", 0.01);
+        addSetting("buildingWeightingGateTurret", 0.01);
 
         addSetting("buildingEnabledAll", true);
         addSetting("buildingStateAll", true);
@@ -5604,8 +5646,8 @@
 
         addSetting("mechScrap", "mixed");
         addSetting("mechBuild", "random");
-        addSetting("mechSize", "large");
-        addSetting("mechSizeGravity", "large");
+        addSetting("mechSize", "auto");
+        addSetting("mechSizeGravity", "auto");
         addSetting("mechFillBay", true);
         addSetting("mechScouts", 0.05);
         addSetting("mechSpecial", "prefered");
@@ -5801,7 +5843,9 @@
         // Apply challenges
         for (let [id, trait] of Object.entries(challenges)) {
             if (settings["challenge_" + id] && (!game.global.race[trait] || game.global.race[trait] !== 1)) {
-                evolutions[id].click();
+                if (evolutions[id].click() && id === "junker") {
+                    return;
+                }
             }
         }
 
@@ -5844,7 +5888,7 @@
             let action = state.evolutionTarget.evolutionTree[i];
             if (action.isUnlocked()) {
                 // Don't click challenges which already active
-                if (action !== evolutions.bunker && challenges[action.id] && game.global.race[challenges[action.id]]) {
+                if (challenges[action.id] && game.global.race[challenges[action.id]]) {
                     continue;
                 }
                 if (action.click()) {
@@ -6722,6 +6766,14 @@
                     state.maxSpaceMiners = Math.max(state.maxSpaceMiners, Math.min(availableEmployees, job.breakpoints[i] < 0 ? Number.MAX_SAFE_INTEGER : job.breakpoints[i]));
                     let minersNeeded = buildings.BeltEleriumShip.stateOnCount * 2 + buildings.BeltIridiumShip.stateOnCount + buildings.BeltIronShip.stateOnCount;
                     jobsToAssign = Math.min(jobsToAssign, minersNeeded);
+                }
+
+                if (job === jobs.Entertainer && !haveTech("superstars")) {
+                    let taxBuffer = (settings.autoTax || haveTask("tax")) && game.global.civic.taxes.tax_rate < poly.taxCap(false) ? 1 : 0;
+                    let entertainerMorale = game.global.tech['theatre'] + (game.global.race['musical'] ? 1 : 0);
+                    let moraleExtra = game.global.city.morale.potential - game.global.city.morale.cap - taxBuffer;
+                    let entertainersDelta = Math.floor(moraleExtra / entertainerMorale);
+                    jobsToAssign = Math.min(jobsToAssign, job.count - entertainersDelta);
                 }
 
                 // TODO: Remove extra bankers when cap not needed
@@ -8072,7 +8124,7 @@
     }
 
     function getCitadelConsumption(amount) {
-        return (30 + (amount - 1) * 2.5) * amount * (game.global.race['emfield'] ? 1.5 : 1)
+        return (30 + (amount - 1) * 2.5) * amount * (game.global.race['emfield'] ? 1.5 : 1);
     }
 
     function autoPower() {
@@ -8203,26 +8255,15 @@
                         maxStateOn = 0;
                     } else {
                         let mineAdjust = ((game.global.race['instinct'] ? 7000 : 7500) - poly.piracy("gxy_chthonian")) / game.actions.galaxy.gxy_chthonian.minelayer.ship.rating();
-                        if (mineAdjust > 0) {
-                            maxStateOn = Math.min(maxStateOn, currentStateOn + Math.ceil(mineAdjust));
-                        } else if (mineAdjust <= -1) {
-                            maxStateOn = Math.min(maxStateOn, currentStateOn + Math.floor(mineAdjust));
-                        } else {
-                            maxStateOn = Math.min(maxStateOn, currentStateOn);
-                        }
+                        maxStateOn = Math.min(maxStateOn, currentStateOn + Math.ceil(mineAdjust));
                     }
                 }
                 // Disable uselss Guard Post
                 if (building === buildings.RuinsGuardPost) {
                     let postRating = game.armyRating(1, "hellArmy") * (game.global.race['holy'] ? 1.25 : 1);
                     let postAdjust = Math.max((5000 - poly.hellSupression("ruins").rating) / postRating, (7500 - poly.hellSupression("gate").rating) / postRating);
-                    if (postAdjust > 0) {
-                        maxStateOn = Math.min(maxStateOn, currentStateOn + 1); // We're reserving just one soldier for Guard Posts, so let's increase them by 1
-                    } else if (postAdjust <= -1) {
-                        maxStateOn = Math.min(maxStateOn, currentStateOn + Math.floor(postAdjust));
-                    } else {
-                        maxStateOn = Math.min(maxStateOn, currentStateOn);
-                    }
+                    // We're reserving just one soldier for Guard Posts, so let's increase them by 1
+                    maxStateOn = Math.min(maxStateOn, currentStateOn + 1, currentStateOn + Math.ceil(postAdjust));
                 }
                 // Disable Waygate once it cleared, or if we're going to use bomb, or current potential is too hight
                 if (building === buildings.SpireWaygate && (settings.prestigeDemonicBomb || haveTech("waygate", 3) || (settings.autoMech && MechManager.mechsPotential > settings.mechWaygatePotential))) {
@@ -8233,6 +8274,7 @@
                     maxStateOn = 0;
                 }
                 // Production buildings with capped resources
+                // TODO: Disable elerium and iridium ships when obsolete
                 if (building === buildings.BeltEleriumShip && !resources.Elerium.isUseful()) {
                     maxStateOn = Math.min(maxStateOn, resources.Elerium.getBusyWorkers("job_space_miner", currentStateOn));
                 }
@@ -8348,32 +8390,27 @@
 
         if (manageSpire && resources.Spire_Support.rateOfChange > 0) {
             let spireSupport = Math.floor(resources.Spire_Support.rateOfChange);
-            let puri = buildings.SpirePurifier;
-            let mech = buildings.SpireMechBay;
-            let port = buildings.SpirePort;
-            let camp = buildings.SpireBaseCamp;
             // Try to prevent building bays when they won't have enough time to work out used supplies. It assumes that time to build new bay ~= time to clear floor.
-            let buildAllowed = settings.autoBuild && (settings.prestigeType !== "demonic" || (settings.prestigeDemonicFloor - buildings.SpireTower.count) / mech.count > 1 || resources.Supply.isCapped());
-            let puriBuildable = buildAllowed && puri.autoBuildEnabled && puri.count < puri.autoMax && resources.Money.maxQuantity >= resourceCost(puri, resources.Money);
-            let mechBuildable = buildAllowed && mech.autoBuildEnabled && mech.count < mech.autoMax && resources.Money.maxQuantity >= resourceCost(mech, resources.Money);
-            let portBuildable = buildAllowed && port.autoBuildEnabled && port.count < port.autoMax && resources.Money.maxQuantity >= resourceCost(port, resources.Money);
-            let campBuildable = buildAllowed && camp.autoBuildEnabled && camp.count < camp.autoMax && resources.Money.maxQuantity >= resourceCost(camp, resources.Money);
-            let nextPuriCost = puriBuildable && mechBuildable ? resourceCost(puri, resources.Supply) : Number.MAX_SAFE_INTEGER; // We don't need purifiers if mech bay already maxed
-            let nextMechCost = mechBuildable ? resourceCost(mech, resources.Supply) : Number.MAX_SAFE_INTEGER;
-            let maxPorts = portBuildable ? port.autoMax : port.count;
-            let maxCamps = campBuildable ? camp.autoMax : camp.count;
+            let buildAllowed = (settings.prestigeType !== "demonic" || (settings.prestigeDemonicFloor - buildings.SpireTower.count) / buildings.SpireMechBay.count > 1 || resources.Supply.isCapped());
+            const spireBuildable = (building) => buildAllowed && building.isAutoBuildable() && resources.Money.maxQuantity >= resourceCost(building, resources.Money);
+
+            let nextMechCost = spireBuildable(buildings.SpireMechBay) ? resourceCost(buildings.SpireMechBay, resources.Supply) : Number.MAX_SAFE_INTEGER;
+            // We don't need purifiers if mech bay already maxed
+            let nextPuriCost = nextMechCost !== Number.MAX_SAFE_INTEGER && spireBuildable(buildings.SpirePurifier) ? resourceCost(buildings.SpirePurifier, resources.Supply) : Number.MAX_SAFE_INTEGER;
+            let maxPorts = spireBuildable(buildings.SpirePort) ? buildings.SpirePort.autoMax : buildings.SpirePort.count;
+            let maxCamps = spireBuildable(buildings.SpireBaseCamp) ? buildings.SpireBaseCamp.autoMax : buildings.SpireBaseCamp.count;
 
             let [bestSupplies, bestPort, bestBase] = getBestSupplyRatio(spireSupport, maxPorts, maxCamps);
-            puri.extraDescription = `Supported Supplies: ${Math.floor(bestSupplies)}<br>${puri.extraDescription}`;
+            buildings.SpirePurifier.extraDescription = `Supported Supplies: ${Math.floor(bestSupplies)}<br>${buildings.SpirePurifier.extraDescription}`;
 
             let canBuild = bestSupplies >= nextPuriCost || bestSupplies >= nextMechCost;
 
-            for (let targetMech = Math.min(mech.count, spireSupport); targetMech >= 0; targetMech--) {
+            for (let targetMech = Math.min(buildings.SpireMechBay.count, spireSupport); targetMech >= 0; targetMech--) {
                 let [targetSupplies, targetPort, targetCamp] = getBestSupplyRatio(spireSupport - targetMech, maxPorts, maxCamps);
-                if (!canBuild || targetSupplies >= nextPuriCost || targetSupplies >= nextMechCost || targetPort > port.count || targetCamp > camp.count) {
-                    mech.tryAdjustState(targetMech - mech.stateOnCount);
-                    port.tryAdjustState(targetPort - port.stateOnCount);
-                    camp.tryAdjustState(targetCamp - camp.stateOnCount);
+                if (!canBuild || targetSupplies >= nextPuriCost || targetSupplies >= nextMechCost || targetPort > buildings.SpirePort.count || targetCamp > buildings.SpireBaseCamp.count) {
+                    buildings.SpireMechBay.tryAdjustState(targetMech - buildings.SpireMechBay.stateOnCount);
+                    buildings.SpirePort.tryAdjustState(targetPort - buildings.SpirePort.stateOnCount);
+                    buildings.SpireBaseCamp.tryAdjustState(targetCamp - buildings.SpireBaseCamp.stateOnCount);
                     break;
                 }
             }
@@ -8694,7 +8731,9 @@
     }
 
     function adjustTradeRoutes() {
-        let tradableResources = MarketManager.priorityList.filter(r => r.isMarketUnlocked() && (r.autoTradeBuyEnabled || r.autoTradeSellEnabled)).sort((a, b) => b.currentTradeRouteSellPrice - a.currentTradeRouteSellPrice);
+        let tradableResources = MarketManager.priorityList
+          .filter(r => r.isMarketUnlocked() && (r.autoTradeBuyEnabled || r.autoTradeSellEnabled))
+          .sort((a, b) => (b.storageRatio > 0.99 ? b.currentTradeRouteSellPrice * 1000 : b.usefulRatio) - (a.storageRatio > 0.99 ? a.currentTradeRouteSellPrice * 1000 : a.usefulRatio));
         let maxTradeRoutes = MarketManager.getMaxTradeRoutes();
         let tradeRoutesUsed = 0;
         let currentMoneyPerSecond = resources.Money.rateOfChange;
@@ -8704,11 +8743,10 @@
         let importRouteCap = MarketManager.getImportRouteCap();
         let exportRouteCap = MarketManager.getExportRouteCap();
 
-        // TODO: Sell excess
         // Fill trade routes with selling
         for (let i = 0; i < tradableResources.length; i++) {
             let resource = tradableResources[i];
-            if (tradeRoutesUsed < maxTradeRoutes && resource.autoTradeSellEnabled && resource.isCapped()){
+            if (tradeRoutesUsed < maxTradeRoutes && resource.autoTradeSellEnabled && (resource.storageRatio > 0.99 || (settings.tradeRouteSellExcess && resource.usefulRatio > 1))){
                 let freeRoutes = maxTradeRoutes - tradeRoutesUsed;
                 let routesToLimit = Math.floor((resource.rateOfChange - resource.autoTradeSellMinPerSecond) / resource.tradeRouteQuantity);
                 let routesToAssign = Math.min(freeRoutes, routesToLimit, exportRouteCap);
@@ -9146,7 +9184,7 @@
             }
         }
 
-        let canExpandBay = buildings.SpirePurifier.isAffordable(true) || buildings.SpireMechBay.isAffordable(true);
+        let canExpandBay = buildings.SpireMechBay.isAutoBuildable() && (buildings.SpireMechBay.isAffordable(true) || (buildings.SpirePurifier.isAutoBuildable() && buildings.SpirePurifier.isAffordable(true)));
         let mechScrap = settings.mechScrap;
         if (settings.mechBaysFirst && canExpandBay && resources.Supply.currentQuantity < resources.Supply.maxQuantity) {
             // We can build purifier or bay once we'll have enough resources, do not rebuild old mechs
@@ -9772,14 +9810,14 @@
             if (node.classList.contains('popper')) {
                 if (node.innerHTML.startsWith('<div>')) {
                     for (let building of Object.values(buildings)){
-                        if (building.isUnlocked() && node.innerHTML.startsWith('<div>' + building.desc)){
+                        if (building.isUnlocked() && building.matchTooltip(node.innerHTML)){
                             node.innerHTML += `<div>${building.extraDescription}</div>`;
                             return;
                         }
                     }
                 }
                 for (let project of Object.values(projects)){
-                    if (node.innerHTML.startsWith(project.desc)){
+                    if (project.isUnlocked() && node.innerHTML.startsWith(project.desc)){
                         node.innerHTML += `<div style="border-top: solid .0625rem #999">${project.extraDescription}</div>`;
                         return;
                     }
@@ -11633,8 +11671,8 @@
     function resetMechSettings() {
         settings.mechScrap = "mixed";
         settings.mechBuild = "random";
-        settings.mechSize = "large";
-        settings.mechSizeGravity = "large";
+        settings.mechSize = "auto";
+        settings.mechSizeGravity = "auto";
         settings.mechFillBay = true;
         settings.mechScouts = 0.05;
         settings.mechSpecial = "prefered";
@@ -11780,6 +11818,7 @@
 
         addSettingsNumber(currentNode, "tradeRouteMinimumMoneyPerSecond", "Trade minimum money /s", "Uses the highest per second amount of these two values. Will trade for resources until this minimum money per second amount is hit");
         addSettingsNumber(currentNode, "tradeRouteMinimumMoneyPercentage", "Trade minimum money percentage /s", "Uses the highest per second amount of these two values. Will trade for resources until this percentage of your money per second amount is hit");
+        addSettingsToggle(currentNode, "tradeRouteSellExcess", "Sell excess resources", "With this option enabled script will be allowed to sell resources above amounts needed for constructions or researches, wihtout it script sell only capped resources.");
 
         currentNode.append(`
           <table style="width:100%">
@@ -12511,6 +12550,7 @@
         addWeightingRule(tableBodyNode, "Freight Yard, Container Port", "Have unused crates or containers", "buildingWeightingCrateUseless");
         addWeightingRule(tableBodyNode, "Horseshoes", "No more Horseshoes needed", "buildingWeightingHorseshoeUseless");
         addWeightingRule(tableBodyNode, "Meditation Chamber", "No more Meditation Space needed", "buildingWeightingZenUseless");
+        addWeightingRule(tableBodyNode, "Gate Turret", "Gate demons fully supressed", "buildingWeightingGateTurret");
 
         document.documentElement.scrollTop = document.body.scrollTop = currentScrollPosition;
     }
@@ -13269,14 +13309,17 @@
     }
 
     function createMechInfo() {
-        $('#mechList .mechRow').each(function(index) {
-            let mech = game.global.portal.mechbay.mechs[index];
-            let stats = MechManager.getMechStats(mech);
-            let info = mech.size === 'collector' ?
-              `${Math.round(stats.rating*100)}%, ${getNiceNumber(stats.power*MechManager.collectorValue)} /s`:
-              `${Math.round(stats.rating*100)}%, ${getNiceNumber(stats.power*100)}, ${getNiceNumber(stats.efficiency*100)}`;
-            $(this).prepend(`<span class="ea-mech-info">${info} | </span>`);
-        });
+        if (MechManager.initLab()) {
+            $('#mechList .mechRow').each(function(index) {
+                let mech = game.global.portal.mechbay.mechs[index];
+                let stats = MechManager.getMechStats(mech);
+                let rating = stats.power / MechManager.bestMech[mech.size].power;
+                let info = mech.size === 'collector' ?
+                  `${Math.round(rating*100)}%, ${getNiceNumber(stats.power*MechManager.collectorValue)} /s`:
+                  `${Math.round(rating*100)}%, ${getNiceNumber(stats.power*100)}, ${getNiceNumber(stats.efficiency*100)}`;
+                $(this).prepend(`<span class="ea-mech-info">${info} | </span>`);
+            });
+        }
     }
 
     function removeMechInfo() {
@@ -13732,7 +13775,7 @@
     }
 
     var poly = {
-    // Taken directly from game code with no functional changes, and minified. Actual for v1.0.33 of game.
+    // Taken directly from game code with no functional changes, and minified.
         // export function arpaAdjustCosts(costs) from arpa.js
         arpaAdjustCosts: function(t){return t=function(r){if(game.global.race.creative){var n={};return Object.keys(r).forEach(function(t){n[t]=function(){return.8*r[t]()}}),n}return r}(t),poly.adjustCosts(t)},
         // function govPrice(gov) from civics.js
@@ -13745,7 +13788,7 @@
         // export const monsters from portal.js
         monsters: {fire_elm:{weapon:{laser:1.05,flame:0,plasma:.25,kinetic:.5,missile:.5,sonic:1,shotgun:.75,tesla:.65},nozone:{freeze:!0,flooded:!0},amp:{hot:1.75,humid:.8,steam:.9}},water_elm:{weapon:{laser:.65,flame:.5,plasma:1,kinetic:.2,missile:.5,sonic:.5,shotgun:.25,tesla:.75},nozone:{hot:!0,freeze:!0},amp:{steam:1.5,river:1.1,flooded:2,rain:1.75,humid:1.25}},rock_golem:{weapon:{laser:1,flame:.5,plasma:1,kinetic:.65,missile:.95,sonic:.75,shotgun:.35,tesla:0},nozone:{},amp:{}},bone_golem:{weapon:{laser:.45,flame:.35,plasma:.55,kinetic:1,missile:1,sonic:.75,shotgun:.75,tesla:.15},nozone:{},amp:{}},mech_dino:{weapon:{laser:.85,flame:.05,plasma:.55,kinetic:.45,missile:.5,sonic:.35,shotgun:.5,tesla:1},nozone:{},amp:{}},plant:{weapon:{laser:.42,flame:1,plasma:.65,kinetic:.2,missile:.25,sonic:.75,shotgun:.35,tesla:.38},nozone:{},amp:{}},crazed:{weapon:{laser:.5,flame:.85,plasma:.65,kinetic:1,missile:.35,sonic:.15,shotgun:.95,tesla:.6},nozone:{},amp:{}},minotaur:{weapon:{laser:.32,flame:.5,plasma:.82,kinetic:.44,missile:1,sonic:.15,shotgun:.2,tesla:.35},nozone:{},amp:{}},ooze:{weapon:{laser:.2,flame:.65,plasma:1,kinetic:0,missile:0,sonic:.85,shotgun:0,tesla:.15},nozone:{},amp:{}},zombie:{weapon:{laser:.35,flame:1,plasma:.45,kinetic:.08,missile:.8,sonic:.18,shotgun:.95,tesla:.05},nozone:{},amp:{}},raptor:{weapon:{laser:.68,flame:.55,plasma:.85,kinetic:1,missile:.44,sonic:.22,shotgun:.33,tesla:.66},nozone:{},amp:{}},frost_giant:{weapon:{laser:.9,flame:.82,plasma:1,kinetic:.25,missile:.08,sonic:.45,shotgun:.28,tesla:.5},nozone:{hot:!0},amp:{freeze:2.5,hail:1.65}},swarm:{weapon:{laser:.02,flame:1,plasma:.04,kinetic:.01,missile:.08,sonic:.66,shotgun:.38,tesla:.45},nozone:{},amp:{}},dragon:{weapon:{laser:.18,flame:0,plasma:.12,kinetic:.35,missile:1,sonic:.22,shotgun:.65,tesla:.15},nozone:{},amp:{}},mech_dragon:{weapon:{laser:.84,flame:.1,plasma:.68,kinetic:.18,missile:.75,sonic:.22,shotgun:.28,tesla:1},nozone:{},amp:{}},construct:{weapon:{laser:.5,flame:.2,plasma:.6,kinetic:.34,missile:.9,sonic:.08,shotgun:.28,tesla:1},nozone:{},amp:{}},beholder:{weapon:{laser:.75,flame:.15,plasma:1,kinetic:.45,missile:.05,sonic:.01,shotgun:.12,tesla:.3},nozone:{},amp:{}},worm:{weapon:{laser:.55,flame:.38,plasma:.45,kinetic:.2,missile:.05,sonic:1,shotgun:.02,tesla:.01},nozone:{},amp:{}},hydra:{weapon:{laser:.85,flame:.75,plasma:.85,kinetic:.25,missile:.45,sonic:.5,shotgun:.6,tesla:.65},nozone:{},amp:{}},colossus:{weapon:{laser:1,flame:.05,plasma:.75,kinetic:.45,missile:1,sonic:.35,shotgun:.35,tesla:.5},nozone:{},amp:{}},lich:{weapon:{laser:.1,flame:.1,plasma:.1,kinetic:.45,missile:.75,sonic:.35,shotgun:.75,tesla:.5},nozone:{},amp:{}},ape:{weapon:{laser:1,flame:.95,plasma:.85,kinetic:.5,missile:.5,sonic:.05,shotgun:.35,tesla:.68},nozone:{},amp:{}},bandit:{weapon:{laser:.65,flame:.5,plasma:.85,kinetic:1,missile:.5,sonic:.25,shotgun:.75,tesla:.25},nozone:{},amp:{}},croc:{weapon:{laser:.65,flame:.05,plasma:.6,kinetic:.5,missile:.5,sonic:1,shotgun:.2,tesla:.75},nozone:{},amp:{}},djinni:{weapon:{laser:0,flame:.35,plasma:1,kinetic:.15,missile:0,sonic:.65,shotgun:.22,tesla:.4},nozone:{},amp:{}},snake:{weapon:{laser:.5,flame:.5,plasma:.5,kinetic:.5,missile:.5,sonic:.5,shotgun:.5,tesla:.5},nozone:{},amp:{}},centipede:{weapon:{laser:.5,flame:.85,plasma:.95,kinetic:.65,missile:.6,sonic:0,shotgun:.5,tesla:.01},nozone:{},amp:{}},spider:{weapon:{laser:.65,flame:1,plasma:.22,kinetic:.75,missile:.15,sonic:.38,shotgun:.9,tesla:.18},nozone:{},amp:{}},manticore:{weapon:{laser:.05,flame:.25,plasma:.95,kinetic:.5,missile:.15,sonic:.48,shotgun:.4,tesla:.6},nozone:{},amp:{}},fiend:{weapon:{laser:.75,flame:.25,plasma:.5,kinetic:.25,missile:.75,sonic:.25,shotgun:.5,tesla:.5},nozone:{},amp:{}},bat:{weapon:{laser:.16,flame:.18,plasma:.12,kinetic:.25,missile:.02,sonic:1,shotgun:.9,tesla:.58},nozone:{},amp:{}},medusa:{weapon:{laser:.35,flame:.1,plasma:.3,kinetic:.95,missile:1,sonic:.15,shotgun:.88,tesla:.26},nozone:{},amp:{}},ettin:{weapon:{laser:.5,flame:.35,plasma:.8,kinetic:.5,missile:.25,sonic:.3,shotgun:.6,tesla:.09},nozone:{},amp:{}},faceless:{weapon:{laser:.6,flame:.28,plasma:.6,kinetic:0,missile:.05,sonic:.8,shotgun:.15,tesla:1},nozone:{},amp:{}},enchanted:{weapon:{laser:1,flame:.02,plasma:.95,kinetic:.2,missile:.7,sonic:.05,shotgun:.65,tesla:.01},nozone:{},amp:{}},gargoyle:{weapon:{laser:.15,flame:.4,plasma:.3,kinetic:.5,missile:.5,sonic:.85,shotgun:1,tesla:.2},nozone:{},amp:{}},chimera:{weapon:{laser:.38,flame:.6,plasma:.42,kinetic:.85,missile:.35,sonic:.5,shotgun:.65,tesla:.8},nozone:{},amp:{}},gorgon:{weapon:{laser:.65,flame:.65,plasma:.65,kinetic:.65,missile:.65,sonic:.65,shotgun:.65,tesla:.65},nozone:{},amp:{}},kraken:{weapon:{laser:.75,flame:.35,plasma:.75,kinetic:.35,missile:.5,sonic:.18,shotgun:.05,tesla:.85},nozone:{},amp:{}},homunculus:{weapon:{laser:.05,flame:1,plasma:.1,kinetic:.85,missile:.65,sonic:.5,shotgun:.75,tesla:.2},nozone:{},amp:{}}},
         // export function hellSupression(area, val) from portal.js
-        hellSupression: function(t,e){switch(t){case"ruins":{let t=e||buildings.RuinsGuardPost.stateOnCount,r=75*buildings.RuinsArcology.stateOnCount,a=game.armyRating(t,"hellArmy",0);game.global.race.holy&&(a*=1.25);let l=(a+r)/5e3;return{supress:l>1?1:l,rating:a+r}}case"gate":{let t=poly.hellSupression("ruins",e),r=100*buildings.GateGateTurret.stateOnCount;game.global.race.holy&&(r*=1.25);let a=(t.rating+r)/7500;return{supress:a>1?1:a,rating:t.rating+r}}default:return 0}},
+        hellSupression: function(t,e){switch(t){case"ruins":{let t=e||buildings.RuinsGuardPost.stateOnCount,r=75*buildings.RuinsArcology.stateOnCount,a=game.armyRating(t,"hellArmy",0);game.global.race.holy&&(a*=1.25);let l=(a+r)/5e3;return{supress:l>1?1:l,rating:a+r}}case"gate":{let t=poly.hellSupression("ruins",e),r=100*buildings.GateTurret.stateOnCount;game.global.race.holy&&(r*=1.25);let a=(t.rating+r)/7500;return{supress:a>1?1:a,rating:t.rating+r}}default:return 0}},
         // function taxCap(min) from civics.js
         taxCap: function(e){let a=haveTech("currency",5);if(e)return!a&&!game.global.race.terrifying||game.global.race.noble?10:0;{let e=30;return game.global.race.noble?e="oligarchy"===game.global.civic.govern.type?40:20:(e="oligarchy"===game.global.civic.govern.type?50:30,(a||game.global.race.terrifying)&&(e+=20)),"noble"===getGovernor()&&(e+=10),e}},
         // export function mechCost(size,infernal) from portal.js

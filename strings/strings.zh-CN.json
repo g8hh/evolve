@@ -3165,7 +3165,7 @@
   "race_orc_solar_gas_moon": "落锤 (Hammerfell) ",
   "race_orc_solar_dwarf": "狼牙棒 (Mace) ",
   "race_cath": "猫族",
-  "race_cath_desc": "CHANGE:猫族是一种相当懒散的猫科动物。当兴致来了的时候，他们是善于隐蔽和擅长捕猎的好手。但是，大部分猫族成员更喜欢懒懒散散。~FROM:The cath are a feline race who are typically lazy. They are stealthy and adapt at hunting when motivated. However, most Cath prefer to laze about rather than work hard.~TO:The cath are a feline race who are typically lazy. They are curious and love exploring the unknown. However, most Cath prefer to laze about rather than work hard.",
+  "race_cath_desc": "猫族是一种相当懒散的猫科动物。他们充满了好奇心，喜欢探索未知事物。但是，大部分猫族成员更喜欢懒懒散散。",
   "race_cath_entity": "猫人",
   "race_cath_home": "卡萨 (Cathar) ",
   "race_cath_solar_red": "虎斑猫 (Tabbi) ",

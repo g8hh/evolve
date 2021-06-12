@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Evolve
 // @namespace    http://tampermonkey.net/
-// @version      3.3.1.63
+// @version      3.3.1.63.1
 // @description  try to take over the world!
 // @downloadURL  https://gitee.com/likexia/Evolve/raw/master/scripts/evolve.js
 // @author       Fafnir
@@ -744,29 +744,6 @@
             return def ? typeof def.desc === 'function' ? def.desc() : def.desc : this.name;
         }
 
-        matchTooltip(tooltip) {
-            let def = this.definition;
-            if (!def) {
-                return false;
-            }
-
-            // First check with no escaping, to make it faster; it seems to work for all buildings currently in game
-            if (!tooltip.startsWith('<div>' + (typeof def.desc === 'function' ? def.desc() : def.desc))) {
-                return false;
-            }
-
-            // Make sure it's actually our tooltip, with only desc there will be collisions between buildings and their techs
-            if (def.effect && tooltip.indexOf($(`<div>${typeof def.effect === 'function' ? def.effect() : def.effect}</div>`).html()) === -1) {
-                return false;
-            }
-
-            // Just in case
-            if (def.flair && tooltip.indexOf($(`<div>${typeof def.flair === 'function' ? def.flair() : def.flair}</div>`).html()) === -1) {
-                return false;
-            }
-            return true;
-        }
-
         get vue() {
             return getVueById(this._vueBinding);
         }
@@ -873,7 +850,7 @@
 
             // Hide active popper from action, so it won't rewrite it
             let popper = $('#popper');
-            if (popper.length > 0 && !this.matchTooltip(popper.html())) {
+            if (popper.length > 0 && popper.data('id').indexOf(this._vueBinding) === -1) {
                 popper.attr('id', 'TotallyNotAPopper');
                 this.vue.action();
                 popper.attr('id', 'popper');
@@ -1017,6 +994,13 @@
                 }
                 return true;
             }
+        }
+    }
+
+    class EvolutionAction extends Action {
+        isUnlocked() {
+            let node = document.getElementById(this._vueBinding);
+            return node !== null && !node.classList.contains('is-hidden');
         }
     }
 
@@ -1566,25 +1550,28 @@
 
     // Biomes and traits sorted by habitability
     const planetBiomes = ["oceanic", "forest", "grassland", "desert", "volcanic", "tundra", "eden", "hellscape"];
-    const planetTraits = ["magnetic", "none", "rage", "elliptical", "stormy", "toxic", "ozone", "mellow", "trashed", "flare", "unstable", "dense"];
+    const planetTraits = ["magnetic", "elliptical", "none", "rage", "stormy", "toxic", "ozone", "trashed", "dense", "unstable", "mellow", "flare"];
     const planetBiomeGenus = {hellscape: "demonic", eden: "angelic", oceanic: "aquatic", forest: "fey", desert: "sand", volcanic: "heat", tundra: "polar"};
 
-    const challenges = {
-        mastery: "weak_mastery",
-        plasmid: "no_plasmid",
-        trade: "no_trade",
-        craft: "no_craft",
-        crispr: "no_crispr",
-        joyless: "joyless",
-        steelen: "steelen",
-        decay: "decay",
-        emfield: "emfield",
-        junker: "junker",
-        cataclysm: "cataclysm",
-        banana: "banana",
-    };
+    const challenges = [
+        [{id:"plasmid", trait:"no_plasmid"},
+         {id:"mastery", trait:"weak_mastery"},
+       /*{id:"nerfed", trait:"nerfed"}*/],
+        [{id:"crispr", trait:"no_crispr"},
+       /*{id:"badgenes", trait:"badgenes"}*/],
+        [{id:"trade", trait:"no_trade"}],
+        [{id:"craft", trait:"no_craft"}],
+        [{id:"joyless", trait:"joyless"}],
+        [{id:"steelen", trait:"steelen"}],
+        [{id:"decay", trait:"decay"}],
+        [{id:"emfield", trait:"emfield"}],
+        [{id:"junker", trait:"junker"}],
+        [{id:"cataclysm", trait:"cataclysm"}],
+        [{id:"banana", trait:"banana"}],
+      //[{id:"truepath", trait:"truepath"}],
+    ];
     const governors = ["soldier", "criminal", "entrepreneur", "educator", "spiritual", "bluecollar", "noble", "media", "sports", "bureaucrat"];
-    const evolutionSettingsToStore = ["userEvolutionTarget", "prestigeType", ...Object.keys(challenges).map(id => "challenge_" + id)];
+    const evolutionSettingsToStore = ["userEvolutionTarget", "prestigeType", ...challenges.map(c => "challenge_" + c[0].id)];
     const prestigeNames = {mad: "MAD", bioseed: "Bioseed", cataclysm: "Cataclysm", vacuum: "Vacuum", whitehole: "Whitehole", ascension: "Ascension", demonic: "Infusion"};
     const logIgnore = ["food", "lumber", "stone", "chrysotile", "slaughter", "s_alter", "slave_market"];
     const galaxyRegions = ["gxy_stargate", "gxy_gateway", "gxy_gorddon", "gxy_alien1", "gxy_alien2", "gxy_chthonian"];
@@ -3662,7 +3649,7 @@
         _listVueBinding: "mechList",
         _listVue: undefined,
 
-        collectorValue: 200000, // Collector power mod. Higher number - more often they'll be scrapped
+        collectorValue: 150000, // Collector power mod. Higher number - more often they'll be scrapped
 
         spaceUsed: 0,
         activeMechs: [],
@@ -4536,7 +4523,7 @@
 
     function initialiseRaces() {
         for (let id in game.actions.evolution) {
-            evolutions[id] = new Action("", "evolution", id, "");
+            evolutions[id] = new EvolutionAction("", "evolution", id, "");
         }
         let e = evolutions;
 
@@ -4678,8 +4665,8 @@
         settings.evolutionQueueEnabled = false;
         settings.evolutionQueueRepeat = false;
         settings.evolutionBackup = false;
-        for (let id in challenges) {
-            settings["challenge_" + id] = false;
+        for (let i = 0; i < challenges.length; i++) {
+            settings["challenge_" + challenges[i][0].id] = false;
         }
     }
 
@@ -5592,7 +5579,9 @@
         addSetting("userPlanetTargetName", "none");
         addSetting("userEvolutionTarget", "auto");
 
-        Object.values(challenges).forEach(id => addSetting("challenge_" + id, false));
+        for (let i = 0; i < challenges.length; i++) {
+            addSetting("challenge_" + challenges[i][0].id, false)
+        }
 
         addSetting("userResearchTheology_1", "auto");
         addSetting("userResearchTheology_2", "auto");
@@ -5661,32 +5650,20 @@
         extraList.forEach(id => addSetting("extra_w_" + id, 0));
 
         // TODO: Remove me some day. Cleaning up old settings.
-        ["buildingWeightingTriggerConflict", "researchAlienGift", "arpaBuildIfStorageFullCraftableMin", "arpaBuildIfStorageFullResourceMaxPercent", "arpaBuildIfStorageFull", "productionMoneyIfOnly", "autoAchievements", "autoChallenge", "autoMAD", "autoSpace", "autoSeeder", "foreignSpyManage", "foreignHireMercCostLowerThan", "userResearchUnification", "btl_Ambush", "btl_max_Ambush", "btl_Raid", "btl_max_Raid", "btl_Pillage", "btl_max_Pillage", "btl_Assault", "btl_max_Assault", "btl_Siege", "btl_max_Siege", "smelter_fuel_Oil", "smelter_fuel_Coal", "smelter_fuel_Lumber", "planetSettingsCollapser", "buildingManageSpire", "hellHandleAttractors", "researchFilter"].forEach(id => delete settings[id]);
+        settings.challenge_plasmid = settings.challenge_mastery || settings.challenge_plasmid; // Merge challenge settings
+        ["buildingWeightingTriggerConflict", "researchAlienGift", "arpaBuildIfStorageFullCraftableMin", "arpaBuildIfStorageFullResourceMaxPercent", "arpaBuildIfStorageFull", "productionMoneyIfOnly", "autoAchievements", "autoChallenge", "autoMAD", "autoSpace", "autoSeeder", "foreignSpyManage", "foreignHireMercCostLowerThan", "userResearchUnification", "btl_Ambush", "btl_max_Ambush", "btl_Raid", "btl_max_Raid", "btl_Pillage", "btl_max_Pillage", "btl_Assault", "btl_max_Assault", "btl_Siege", "btl_max_Siege", "smelter_fuel_Oil", "smelter_fuel_Coal", "smelter_fuel_Lumber", "planetSettingsCollapser", "buildingManageSpire", "hellHandleAttractors", "researchFilter", "challenge_mastery"].forEach(id => delete settings[id]);
         ["foreignAttack", "foreignOccupy", "foreignSpy", "foreignSpyMax", "foreignSpyOp"].forEach(id => [0, 1, 2].forEach(index => delete settings[id + index]));
         Object.values(resources).forEach(resource => delete settings['res_storage_w_' + resource.id]);
         Object.values(projects).forEach(project => delete settings['arpa_ignore_money_' + project.id]);
         Object.values(buildings).filter(building => !building.isSwitchable()).forEach(building => delete settings['bld_s_' + building._vueBinding]);
     }
 
-    function getConfiguredAchievementLevel() {
+    function getAchievementLevel(context) {
         let a_level = 1;
-        if (game.global.race.universe === 'antimatter') {
-            if (settings.challenge_mastery) { a_level++; }
-        } else {
-            if (settings.challenge_plasmid) { a_level++; }
-        }
-        if (settings.challenge_trade) { a_level++; }
-        if (settings.challenge_craft) { a_level++; }
-        if (settings.challenge_crispr) { a_level++; }
-        return a_level;
-    }
-
-    function getQueueAchievementLevel(queue) {
-        let a_level = 1;
-        if (queue.challenge_plasmid || queue.challenge_mastery) { a_level++; }
-        if (queue.challenge_trade) { a_level++; }
-        if (queue.challenge_craft) { a_level++; }
-        if (queue.challenge_crispr) { a_level++; }
+        if (context.challenge_plasmid) { a_level++; }
+        if (context.challenge_trade) { a_level++; }
+        if (context.challenge_craft) { a_level++; }
+        if (context.challenge_crispr) { a_level++; }
         return a_level;
     }
 
@@ -5752,7 +5729,7 @@
             // Try to pick race for achievement first
             if (settings.userEvolutionTarget === "auto") {
                 // Determine star level based on selected challenges and use it to check if achievements for that level have been... achieved
-                let achievementLevel = getConfiguredAchievementLevel();
+                let achievementLevel = getAchievementLevel(settings);
                 let targetedGroup = {race: null, remainingPercent: 0};
 
                 let genusGroups = {};
@@ -5841,10 +5818,13 @@
         }
 
         // Apply challenges
-        for (let [id, trait] of Object.entries(challenges)) {
-            if (settings["challenge_" + id] && (!game.global.race[trait] || game.global.race[trait] !== 1)) {
-                if (evolutions[id].click() && id === "junker") {
-                    return;
+        for (let i = 0; i < challenges.length; i++) {
+            if (settings["challenge_" + challenges[i][0].id]) {
+                for (let j = 0; j < challenges[i].length; j++) {
+                    let {id, trait} = challenges[i][j];
+                    if (game.global.race[trait] !== 1 && evolutions[id].click() && id === "junker") {
+                        return; // Give game time to update state after activating junker
+                    }
                 }
             }
         }
@@ -5888,7 +5868,8 @@
             let action = state.evolutionTarget.evolutionTree[i];
             if (action.isUnlocked()) {
                 // Don't click challenges which already active
-                if (challenges[action.id] && game.global.race[challenges[action.id]]) {
+                let challenge = challenges.flat().find(c => c.id === action.id);
+                if (challenge && game.global.race[challenge.trait]) {
                     continue;
                 }
                 if (action.click()) {
@@ -5991,7 +5972,7 @@
         let planets = generatePlanets();
 
         // Let's try to calculate how many achievements we can get here
-        let alevel = getConfiguredAchievementLevel();
+        let alevel = getAchievementLevel(settings);
         for (let i = 0; i < planets.length; i++){
             let planet = planets[i];
             planet.achieve = 0;
@@ -8066,7 +8047,7 @@
         }
 
         // Unification
-        if (itemId === "tech-unification2" && !settings.foreignUnification) {
+        if ((itemId === "tech-unification2" || itemId === "tech-unite") && !settings.foreignUnification) {
             return false;
         }
 
@@ -8393,12 +8374,15 @@
             // Try to prevent building bays when they won't have enough time to work out used supplies. It assumes that time to build new bay ~= time to clear floor.
             let buildAllowed = (settings.prestigeType !== "demonic" || (settings.prestigeDemonicFloor - buildings.SpireTower.count) / buildings.SpireMechBay.count > 1 || resources.Supply.isCapped());
             const spireBuildable = (building) => buildAllowed && building.isAutoBuildable() && resources.Money.maxQuantity >= resourceCost(building, resources.Money);
+            let mechBuildable = spireBuildable(buildings.SpireMechBay);
+            let puriBuildable = spireBuildable(buildings.SpirePurifier);
+            let portBuildable = spireBuildable(buildings.SpirePort);
+            let campBuildable = spireBuildable(buildings.SpireBaseCamp);
 
-            let nextMechCost = spireBuildable(buildings.SpireMechBay) ? resourceCost(buildings.SpireMechBay, resources.Supply) : Number.MAX_SAFE_INTEGER;
-            // We don't need purifiers if mech bay already maxed
-            let nextPuriCost = nextMechCost !== Number.MAX_SAFE_INTEGER && spireBuildable(buildings.SpirePurifier) ? resourceCost(buildings.SpirePurifier, resources.Supply) : Number.MAX_SAFE_INTEGER;
-            let maxPorts = spireBuildable(buildings.SpirePort) ? buildings.SpirePort.autoMax : buildings.SpirePort.count;
-            let maxCamps = spireBuildable(buildings.SpireBaseCamp) ? buildings.SpireBaseCamp.autoMax : buildings.SpireBaseCamp.count;
+            let nextMechCost = mechBuildable ? resourceCost(buildings.SpireMechBay, resources.Supply) : Number.MAX_SAFE_INTEGER;
+            let nextPuriCost = puriBuildable && mechBuildable && (portBuildable || campBuildable) ? resourceCost(buildings.SpirePurifier, resources.Supply) : Number.MAX_SAFE_INTEGER;
+            let maxPorts = portBuildable ? buildings.SpirePort.autoMax : buildings.SpirePort.count;
+            let maxCamps = campBuildable ? buildings.SpireBaseCamp.autoMax : buildings.SpireBaseCamp.count;
 
             let [bestSupplies, bestPort, bestBase] = getBestSupplyRatio(spireSupport, maxPorts, maxCamps);
             buildings.SpirePurifier.extraDescription = `Supported Supplies: ${Math.floor(bestSupplies)}<br>${buildings.SpirePurifier.extraDescription}`;
@@ -9807,20 +9791,20 @@
             return;
         }
         mutations.forEach(mutation => mutation.addedNodes.forEach(node => {
-            if (node.classList.contains('popper')) {
-                if (node.innerHTML.startsWith('<div>')) {
-                    for (let building of Object.values(buildings)){
-                        if (building.isUnlocked() && building.matchTooltip(node.innerHTML)){
-                            node.innerHTML += `<div>${building.extraDescription}</div>`;
-                            return;
-                        }
-                    }
+            if (node.id === "popper") {
+                let dataId = node.dataset.id;
+                let obj = null;
+                if (dataId.match(/^popArpa/)) { // "popArpa[id-with-no-tab]" for projects
+                    obj = arpaIds["arpa" + dataId.substr(7)];
+                } else if (dataId.match(/^q.*\d$/)) { // "q[id][order]" for buildings in queue
+                    let objId = dataId.substr(1, dataId.length-2);
+                    obj = buildingIds[objId] || arpaIds[objId];
+                } else { // "[id]" for normal buildings
+                    obj = buildingIds[dataId];
                 }
-                for (let project of Object.values(projects)){
-                    if (project.isUnlocked() && node.innerHTML.startsWith(project.desc)){
-                        node.innerHTML += `<div style="border-top: solid .0625rem #999">${project.extraDescription}</div>`;
-                        return;
-                    }
+
+                if (obj && obj.extraDescription !== "") {
+                    node.innerHTML += `<div style="border-top: solid .0625rem #999">${obj.extraDescription}</div>`;
                 }
             }
         }));
@@ -10763,8 +10747,11 @@
         addSettingsToggle(currentNode, "evolutionBackup", "Soft Reset", "Perform soft resets until you'll get chosen race. Useless after getting mass exintion perk.");
 
         // Challenges
-        for (let id in challenges) {
-            addSettingsToggle(currentNode, `challenge_${id}`, game.loc(`evo_challenge_${id}`), game.loc(`evo_challenge_${id}_effect`));
+        for (let i = 0; i < challenges.length; i++) {
+            let set = challenges[i];
+            addSettingsToggle(currentNode, `challenge_${set[0].id}`,
+              set.map(c => game.loc(`evo_challenge_${c.id}`)).join(" | "),
+              set.map(c => game.loc(`evo_challenge_${c.id}_effect`)).join("&#013;"));
         }
 
         addStandardHeading(currentNode, "Evolution Queue");
@@ -10854,7 +10841,7 @@
         }
         let star = $("#topBar .flair svg").clone();
         star.removeClass();
-        star.addClass("star" + getQueueAchievementLevel(queuedEvolution));
+        star.addClass("star" + getAchievementLevel(queuedEvolution));
 
         if (queuedEvolution.prestigeType !== "none") {
             if (prestigeNames[queuedEvolution.prestigeType]) {
@@ -10868,7 +10855,7 @@
 
         let queueNode = $(`
           <tr id="script_evolution_${id}" value="${id}" class="script-draggable">
-            <td style="width:25%"><span class="${raceClass}">${raceName}</span> <span class="${prestigeClass}">${prestigeName}</span> ${star.prop('outerHTML') ?? (getQueueAchievementLevel(queuedEvolution)-1) + "*"}</td>
+            <td style="width:25%"><span class="${raceClass}">${raceName}</span> <span class="${prestigeClass}">${prestigeName}</span> ${star.prop('outerHTML') ?? (getAchievementLevel(queuedEvolution)-1) + "*"}</td>
             <td style="width:70%"><textarea class="textarea">${JSON.stringify(queuedEvolution, null, 4)}</textarea></td>
             <td style="width:5%"><a class="button is-dark is-small"><span>X</span></a></td>
           </tr>`);

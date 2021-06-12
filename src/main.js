@@ -1,7 +1,7 @@
 import { global, save, webWorker, intervals, keyMap, resizeGame, breakdown, sizeApproximation, keyMultiplier, p_on, moon_on, red_on, belt_on, int_on, gal_on, spire_on, set_qlevel, quantum_level } from './vars.js';
 import { loc } from './locale.js';
 import { unlockAchieve, checkAchievements, drawAchieve, alevel, universeAffix, challengeIcon, unlockFeat } from './achieve.js';
-import { gameLoop, vBind, popover, flib, tagEvent, clearElement, timeCheck, arpaTimeCheck, timeFormat, powerModifier, modRes, messageQueue, calc_mastery, calcPillar, darkEffect, buildQueue, cleanBuildPopOver, vacuumCollapse, shrineBonusActive, getShrineBonus, eventActive, easterEgg, easterEggBind, trickOrTreatBind, powerGrid } from './functions.js';
+import { gameLoop, vBind, popover, clearPopper, flib, tagEvent, clearElement, timeCheck, arpaTimeCheck, timeFormat, powerModifier, modRes, messageQueue, calc_mastery, calcPillar, darkEffect, buildQueue, vacuumCollapse, shrineBonusActive, getShrineBonus, eventActive, easterEgg, easterEggBind, trickOrTreatBind, powerGrid } from './functions.js';
 import { races, traits, racialTrait, randomMinorTrait, biomes, planetTraits } from './races.js';
 import { defineResources, resource_values, spatialReasoning, craftCost, plasmidBonus, faithBonus, tradeRatio, craftingRatio, crateValue, containerValue, tradeSellPrice, tradeBuyPrice, atomic_mass, supplyValue, galaxyOffers } from './resources.js';
 import { defineJobs, job_desc, loadFoundry, farmerValue } from './jobs.js';
@@ -7233,7 +7233,7 @@ function midLoop(){
             }
 
             if (t_action && t_action['no_queue'] && t_action.no_queue() && !t_action['grant'] && !t_action['q_once']){
-                cleanBuildPopOver(`q${global.queue.queue[i].id}${i}`);
+                clearPopper(`q${t_action.id}${i}`);
                 global.queue.queue.splice(i,1);
                 buildQueue();
                 break;
@@ -7248,7 +7248,7 @@ function midLoop(){
                 }
                 if (t_action['queue_complete']){
                     if (queued[global.queue.queue[i].id] > t_action.queue_complete()){
-                        cleanBuildPopOver(`q${global.queue.queue[i].id}${i}`);
+                        clearPopper(`q${t_action.id}${i}`);
                         global.queue.queue[i].q -= queued[global.queue.queue[i].id] - t_action.queue_complete();
                         if (global.queue.queue[i].q <= 0){
                             global.queue.queue.splice(i,1);
@@ -7294,7 +7294,7 @@ function midLoop(){
                 }
             }
             else if (t_action['grant'] && global.tech[t_action.grant[0]] && global.tech[t_action.grant[0]] >= t_action.grant[1]){
-                cleanBuildPopOver(`q${global.queue.queue[i].id}${i}`);
+                clearPopper(`q${t_action.id}${i}`);
                 global.queue.queue.splice(i,1);
                 buildQueue();
                 break;
@@ -7336,7 +7336,7 @@ function midLoop(){
                             global.queue.queue[idx].q--;
                         }
                         else {
-                            cleanBuildPopOver(`q${global.queue.queue[idx].id}${idx}`);
+                            clearPopper(`q${c_action.id}${idx}`);
                             global.queue.queue.splice(idx,1);
                             buildQueue();
                         }
@@ -7362,7 +7362,7 @@ function midLoop(){
                             global.queue.queue[idx].q--;
                         }
                         else {
-                            cleanBuildPopOver(`q${global.queue.queue[idx].id}${idx}`);
+                            clearPopper(`q${c_action.id}${idx}`);
                             global.queue.queue.splice(idx,1);
                             buildQueue();
                         }
@@ -7401,7 +7401,7 @@ function midLoop(){
         let last = false;
         for (let i=0; i<global.queue.queue.length; i++){
             if (last === global.queue.queue[i].id){
-                cleanBuildPopOver(`q${global.queue.queue[i].id}${i}`);
+                clearPopper(`q${global.queue.queue[i].id}${i}`);
                 global.queue.queue[i-1].q += global.queue.queue[i].q;
                 global.queue.queue.splice(i,1);
                 break;

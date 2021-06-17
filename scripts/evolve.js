@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Evolve
 // @namespace    http://tampermonkey.net/
-// @version      3.3.1.66
+// @version      3.3.1.66.1
 // @description  try to take over the world!
 // @downloadURL  https://gitee.com/likexia/Evolve/raw/master/scripts/evolve.js
 // @author       Fafnir
@@ -1626,6 +1626,9 @@
 
     // Class instances
     var resources = { // Resources order follow game order, and used to initialize priorities
+
+        Thermite: new Resource("Thermite", "Thermite"),
+
         // Evolution resources
         RNA: new Resource("RNA", "RNA"),
         DNA: new Resource("DNA", "DNA"),

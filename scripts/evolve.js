@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Evolve
 // @namespace    http://tampermonkey.net/
-// @version      3.3.1.66.1
+// @version      3.3.1.67
 // @description  try to take over the world!
 // @downloadURL  https://gitee.com/likexia/Evolve/raw/master/scripts/evolve.js
 // @author       Fafnir
@@ -1611,7 +1611,7 @@
         globalProductionModifier: 1,
         moneyIncomes: new Array(11).fill(0),
         moneyMedian: 0,
-        soulGemIncomes: [],
+        soulGemIncomes: [{tick: 0, gems: 0}],
         soulGemLast: Number.MAX_SAFE_INTEGER,
 
         knowledgeRequiredByTechs: 0,
@@ -1626,8 +1626,6 @@
 
     // Class instances
     var resources = { // Resources order follow game order, and used to initialize priorities
-
-        Thermite: new Resource("Thermite", "Thermite"),
 
         // Evolution resources
         RNA: new Resource("RNA", "RNA"),
@@ -3413,7 +3411,7 @@
         },
 
         isForeignUnlocked() {
-            return !game.global.race['cataclysm'] && !game.global.tech['world_control']
+            return getVueById('foreign')?.vis() ?? false;
         },
 
         get currentSoldiers() {
@@ -3554,6 +3552,7 @@
             // If requested number is bigger than amount of healthy soldiers, returned value will be spoiled
             // To avoid that we're explicitly passing zero number of wounded soldiers as string(!)
             // "0" casts to true boolean, and overrides real amount of wounded soldiers, yet still acts as 0 in math
+            // TODO: Fixed in 1.2, change "0" to 0
             let singleSoldierAttackRating = game.armyRating(100, "army", "0") / 100;
             let maxSoldiers = Math.ceil(targetRating / singleSoldierAttackRating);
 
@@ -3568,9 +3567,11 @@
             // At 10 soldiers there's no hivemind bonus or malus, and the malus gets up to 50%, so start with up to 2x soldiers below 10
 
             maxSoldiers = this.maxSoldiers;
+            // TODO: Fixed in 1.2, change "0" to 0
             if (game.armyRating(maxSoldiers, "army", "0") < targetRating) {
                 return Number.MAX_SAFE_INTEGER;
             }
+            // TODO: Fixed in 1.2, change "0" to 0
             while (maxSoldiers > 1 && game.armyRating(maxSoldiers - 1, "army", "0") > targetRating) {
                 maxSoldiers--;
             }
@@ -4334,10 +4335,12 @@
     function initialiseState() {
         // Construct craftable resource list
         for (let [name, costs] of Object.entries(game.craftCost)) {
-            for (let i = 0; i < costs.length; i++) {
-                resources[name].resourceRequirements.push(new ResourceRequirement(resources[costs[i].r], costs[i].a));
+            if (resources[name]) {
+                for (let i = 0; i < costs.length; i++) {
+                    resources[name].resourceRequirements.push(new ResourceRequirement(resources[costs[i].r], costs[i].a));
+                }
+                state.craftableResourceList.push(resources[name]);
             }
-            state.craftableResourceList.push(resources[name]);
         }
         state.lastWasteful = game.global.race.wasteful;
         state.lastLumber = isLumberRace();
@@ -4590,7 +4593,6 @@
     }
 
     function resetHellSettings() {
-        settings.hellCountGems = true;
         settings.hellTurnOffLogMessages = true;
         settings.hellHandlePatrolCount = true;
         settings.hellHomeGarrison = 10;
@@ -5558,7 +5560,6 @@
         addSetting("foreignPolicyInferior", "Annex");
         addSetting("foreignPolicySuperior", "Sabotage");
 
-        addSetting("hellCountGems", true);
         addSetting("hellTurnOffLogMessages", true);
         addSetting("hellHandlePatrolCount", true);
         addSetting("hellHomeGarrison", 10);
@@ -5658,7 +5659,7 @@
 
         // TODO: Remove me some day. Cleaning up old settings.
         settings.challenge_plasmid = settings.challenge_mastery || settings.challenge_plasmid; // Merge challenge settings
-        ["buildingWeightingTriggerConflict", "researchAlienGift", "arpaBuildIfStorageFullCraftableMin", "arpaBuildIfStorageFullResourceMaxPercent", "arpaBuildIfStorageFull", "productionMoneyIfOnly", "autoAchievements", "autoChallenge", "autoMAD", "autoSpace", "autoSeeder", "foreignSpyManage", "foreignHireMercCostLowerThan", "userResearchUnification", "btl_Ambush", "btl_max_Ambush", "btl_Raid", "btl_max_Raid", "btl_Pillage", "btl_max_Pillage", "btl_Assault", "btl_max_Assault", "btl_Siege", "btl_max_Siege", "smelter_fuel_Oil", "smelter_fuel_Coal", "smelter_fuel_Lumber", "planetSettingsCollapser", "buildingManageSpire", "hellHandleAttractors", "researchFilter", "challenge_mastery"].forEach(id => delete settings[id]);
+        ["buildingWeightingTriggerConflict", "researchAlienGift", "arpaBuildIfStorageFullCraftableMin", "arpaBuildIfStorageFullResourceMaxPercent", "arpaBuildIfStorageFull", "productionMoneyIfOnly", "autoAchievements", "autoChallenge", "autoMAD", "autoSpace", "autoSeeder", "foreignSpyManage", "foreignHireMercCostLowerThan", "userResearchUnification", "btl_Ambush", "btl_max_Ambush", "btl_Raid", "btl_max_Raid", "btl_Pillage", "btl_max_Pillage", "btl_Assault", "btl_max_Assault", "btl_Siege", "btl_max_Siege", "smelter_fuel_Oil", "smelter_fuel_Coal", "smelter_fuel_Lumber", "planetSettingsCollapser", "buildingManageSpire", "hellHandleAttractors", "researchFilter", "challenge_mastery", "hellCountGems"].forEach(id => delete settings[id]);
         ["foreignAttack", "foreignOccupy", "foreignSpy", "foreignSpyMax", "foreignSpyOp"].forEach(id => [0, 1, 2].forEach(index => delete settings[id + index]));
         Object.values(resources).forEach(resource => delete settings['res_storage_w_' + resource.id]);
         Object.values(projects).forEach(project => delete settings['arpa_ignore_money_' + project.id]);
@@ -9192,10 +9193,8 @@
                 if (settings.mechSaveSupply) { // If we're going to save up supplies we need to reserve time for it
                     supplyCost += resources.Supply.maxQuantity;
                 }
-                let timeToFullBay = (supplyCost - resources.Supply.currentQuantity) / resources.Supply.rateOfChange;
-                if (settings.hellCountGems) {
-                    timeToFullBay = Math.max(timeToFullBay, (mechToBuild * newGems - resources.Soul_Gem.currentQuantity) / resources.Soul_Gem.rateOfChange);
-                }
+                let timeToFullBay = Math.max((supplyCost - resources.Supply.currentQuantity) / resources.Supply.rateOfChange,
+                              (mechToBuild * newGems - resources.Soul_Gem.currentQuantity) / resources.Soul_Gem.rateOfChange);
                 // timeToClear changes drastically with new mechs, let's try to normalize it, scaling it with available power
                 let estimatedTotalPower = m.mechsPower + mechToBuild * newMech.power;
                 let estimatedTimeToClear = m.getTimeToClear() * (m.mechsPower / estimatedTotalPower);
@@ -9806,6 +9805,11 @@
         mutations.forEach(mutation => mutation.addedNodes.forEach(node => {
             if (node.id === "popper") {
                 let dataId = node.dataset.id;
+                if (dataId === 'powerStatus') {
+                    let disabled = Object.values(buildings).reduce((net, b) => net + (b === buildings.NeutronCitadel ? getCitadelConsumption(b.count) - getCitadelConsumption(b.stateOnCount) : b.stateOffCount * b.powered), 0);
+                    node.innerHTML += `<p class="modal_bd"><span>Disabled</span><span class="has-text-danger">${getNiceNumber(disabled)}</span></p>`;
+                    return;
+                }
                 let obj = null;
                 if (dataId.match(/^popArpa/)) { // "popArpa[id-with-no-tab]" for projects
                     obj = arpaIds["arpa" + dataId.substr(7)];
@@ -11429,7 +11433,6 @@
         let currentNode = $(`#script_${secondaryPrefix}hellContent`);
         currentNode.empty().off("*");
 
-        addSettingsToggle(currentNode, "hellCountGems", "Show Souls Gems income rate", "Track gained soul gems, and show rate per hour. Shown number based only on past gains, thus it won't react on hell adjustments immediately - it'll need some time to accumulate new data. Also, for first hour\\few gems after enabling this option\\reloading page shown number will be aproximated.");
         // Entering Hell
         addSettingsHeader1(currentNode, "Entering Hell");
         addSettingsToggle(currentNode, "hellTurnOffLogMessages", "Turn off patrol and surveyor log messages", "Automatically turns off the hell patrol and surveyor log messages");
@@ -13246,40 +13249,30 @@
 
         // Soul Gems income rate
         if (resources.Soul_Gem.isUnlocked()) {
-            if (settings.hellCountGems) {
-                // First tick of counting, init array
-                if (state.soulGemLast === Number.MAX_SAFE_INTEGER) {
-                    state.soulGemIncomes = [{tick: state.scriptTick - 1, gems: 0}];
-                }
-                if (resources.Soul_Gem.currentQuantity > state.soulGemLast) {
-                    state.soulGemIncomes.push({tick: state.scriptTick, gems: resources.Soul_Gem.currentQuantity - state.soulGemLast})
-                }
-                // Always override amount of gems, this way we're ignoring expenses, and only tracking incomes
-                state.soulGemLast = resources.Soul_Gem.currentQuantity;
-                let gems = 0;
-                let i = state.soulGemIncomes.length;
-                while (--i >= 0) {
-                    let income = state.soulGemIncomes[i];
-                    // Get all gems gained in last hour, or at least 10 last gems in any time frame, if rate is low
-                    if (state.scriptTick - income.tick > 3600 && gems > 10) {
-                        break;
-                    } else {
-                        gems += income.gems;
-                    }
-                }
-                // If loop was broken prematurely - clean up old records which we don't need anymore
-                if (i >= 0) {
-                    state.soulGemIncomes = state.soulGemIncomes.splice(i+1);
-                }
-                let timePassed = state.scriptTick - state.soulGemIncomes[0].tick;
-                let rate = gems / timePassed * 3600;
-                resources.Soul_Gem.rateOfChange = gems / timePassed;
-                $("#resSoul_Gem span:eq(2)").text(`${getNiceNumber(rate)} /h`);
-            } else if (state.soulGemLast !== Number.MAX_SAFE_INTEGER) {
-                // Gems tracking was just disabled. Let's reset state, and remove number from gui
-                state.soulGemLast = Number.MAX_SAFE_INTEGER;
-                $("#resSoul_Gem span:eq(2)").text("");
+            if (resources.Soul_Gem.currentQuantity > state.soulGemLast) {
+                state.soulGemIncomes.push({tick: state.scriptTick, gems: resources.Soul_Gem.currentQuantity - state.soulGemLast})
             }
+            // Always override amount of gems, this way we're ignoring expenses, and only tracking incomes
+            state.soulGemLast = resources.Soul_Gem.currentQuantity;
+            let gems = 0;
+            let i = state.soulGemIncomes.length;
+            while (--i >= 0) {
+                let income = state.soulGemIncomes[i];
+                // Get all gems gained in last hour, or at least 10 last gems in any time frame, if rate is low
+                if (state.scriptTick - income.tick > 3600 && gems > 10) {
+                    break;
+                } else {
+                    gems += income.gems;
+                }
+            }
+            // If loop was broken prematurely - clean up old records which we don't need anymore
+            if (i >= 0) {
+                state.soulGemIncomes = state.soulGemIncomes.splice(i+1);
+            }
+            let timePassed = state.scriptTick - state.soulGemIncomes[0].tick;
+            let rate = gems / timePassed * 3600;
+            resources.Soul_Gem.rateOfChange = gems / timePassed;
+            $("#resSoul_Gem span:eq(2)").text(`${getNiceNumber(rate)} /h`);
         }
 
         // Previous game stats
@@ -13713,6 +13706,14 @@
             // Especially considering that player can not only reset, but also import different save at any moment
             let minPower = [75, 125, 200];
             let maxPower = [125, 175, 300];
+            if (game.global.race['truepath']) {
+                [1.5, 1.4, 1.25].forEach((mod, idx) => {
+                    minPower[idx] *= mod;
+                    maxPower[idx] *= mod;
+                });
+                minPower.push(650, 300);
+                maxPower.push(750, 300);
+            }
 
             if (game.global.civic.foreign[govProp].mil < minPower[govIndex]) {
                 return game.global.civic.foreign[govProp].mil;

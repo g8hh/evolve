@@ -52,7 +52,7 @@ export function racesPage(){
         }
     });
 
-    list.sort((a,b) => races[a].name < races[b].name ? -1 : 1).forEach(function(race){
+    list.forEach(function(race){
         sideMenu('add',`races-species`,race,races[race].name);
     });
 }

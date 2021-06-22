@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Evolve
 // @namespace    http://tampermonkey.net/
-// @version      3.3.1.67
+// @version      3.3.1.68
 // @description  try to take over the world!
 // @downloadURL  https://gitee.com/likexia/Evolve/raw/master/scripts/evolve.js
 // @author       Fafnir
@@ -164,6 +164,14 @@
             this.resource = resource;
         }
 
+        get definition() {
+            return game.global.civic['craftsman'];
+        }
+
+        get id() {
+            return this.resource.id;
+        }
+
         isUnlocked() {
             return game.global.resource[this._originalId].display;
         }
@@ -292,7 +300,7 @@
             this.currentContainers = instance.containers;
 
             // When routes are managed - we're excluding trade diff from operational rate of change.
-            if (settings.autoMarket && this.isTradable() && (this.autoTradeBuyEnabled || this.autoTradeSellEnabled)) {
+            if (settings.autoMarket && this.isTradable()) {
                 this.currentTradeRoutes = instance.trade;
                 this.currentTradeRouteBuyPrice = game.tradeBuyPrice(this._id);
                 this.currentTradeRouteSellPrice = game.tradeSellPrice(this._id);
@@ -352,7 +360,11 @@
         }
 
         get spareQuantity() {
-            return Math.max(0, this.currentQuantity - this.requestedQuantity);
+            return this.currentQuantity - this.requestedQuantity;
+        }
+
+        get spareMaxQuantity() {
+            return this.maxQuantity - this.requestedQuantity;
         }
 
         isUnlocked() {
@@ -570,7 +582,7 @@
             }
 
             this.currentQuantity = game.global.city.power;
-            this.maxQuantity = Number.MAX_SAFE_INTEGER;
+            this.maxQuantity = Object.values(buildings).reduce((net, b) => net + (b === buildings.NeutronCitadel ? getCitadelConsumption(b.count) - getCitadelConsumption(b.stateOnCount) : b.stateOffCount * b.powered), 0);
             this.rateOfChange = game.global.city.power;
         }
 
@@ -848,6 +860,11 @@
 
             resetMultiplier();
 
+            // TODO: Priest unlocked upon hovering... Remove once fixed in game.
+            if (this === buildings.Temple || this === buildings.RedZiggurat) {
+                this.definition.effect();
+            }
+
             // Hide active popper from action, so it won't rewrite it
             let popper = $('#popper');
             if (popper.length > 0 && popper.data('id').indexOf(this._vueBinding) === -1) {
@@ -1030,15 +1047,13 @@
 
             let optionsNode = document.querySelector("#space-star_dock .special");
             let title = typeof game.actions.space.spc_gas.star_dock.title === 'function' ? game.actions.space.spc_gas.star_dock.title() : game.actions.space.spc_gas.star_dock.title;
-            WindowManager.openModalWindowWithCallback(title, this.cacheOptionsCallback, optionsNode);
+            WindowManager.openModalWindowWithCallback(optionsNode, title, () => {
+                buildings.GasSpaceDockProbe.cacheOptions();
+                buildings.GasSpaceDockShipSegment.cacheOptions();
+                buildings.GasSpaceDockPrepForLaunch.cacheOptions();
+                buildings.GasSpaceDockLaunch.cacheOptions();
+            });
             return true;
-        }
-
-        cacheOptionsCallback() {
-            buildings.GasSpaceDockProbe.cacheOptions();
-            buildings.GasSpaceDockShipSegment.cacheOptions();
-            buildings.GasSpaceDockPrepForLaunch.cacheOptions();
-            buildings.GasSpaceDockLaunch.cacheOptions();
         }
     }
 
@@ -1606,6 +1621,7 @@
         // We need to keep them separated, as we *don't* want to click on queue targets. Game will handle that. We're just managing resources for them.
         queuedTargets: [],
         triggerTargets: [],
+        otherTargets: [],
 
         maxSpaceMiners: 0,
         globalProductionModifier: 1,
@@ -1626,7 +1642,6 @@
 
     // Class instances
     var resources = { // Resources order follow game order, and used to initialize priorities
-
         // Evolution resources
         RNA: new Resource("RNA", "RNA"),
         DNA: new Resource("DNA", "DNA"),
@@ -1857,7 +1872,7 @@
 
         // Gas
         GasMission: new Action("Gas Mission", "space", "gas_mission", "spc_gas"),
-        GasMining: new Action("Gas Helium-3 Collector", "space", "gas_mining", "spc_gas"),
+        GasMining: new Action("Gas Helium-3 Collector", "space", "gas_mining", "spc_gas", {smart: true}),
         GasStorage: new Action("Gas Fuel Depot", "space", "gas_storage", "spc_gas"),
         GasSpaceDock: new SpaceDock("Gas Space Dock", "space", "star_dock", "spc_gas"),
         GasSpaceDockProbe: new ModalAction("Gas Space Probe", "starDock", "probes", "", "starDock"),
@@ -1869,7 +1884,7 @@
         GasMoonMission: new Action("Gas Moon Mission", "space", "gas_moon_mission", "spc_gas_moon"),
         GasMoonOutpost: new Action("Gas Moon Mining Outpost", "space", "outpost", "spc_gas_moon"),
         GasMoonDrone: new Action("Gas Moon Mining Drone", "space", "drone", "spc_gas_moon"),
-        GasMoonOilExtractor: new Action("Gas Moon Oil Extractor", "space", "oil_extractor", "spc_gas_moon"),
+        GasMoonOilExtractor: new Action("Gas Moon Oil Extractor", "space", "oil_extractor", "spc_gas_moon", {smart: true}),
 
         // Belt
         BeltMission: new Action("Belt Mission", "space", "belt_mission", "spc_belt"),
@@ -2079,6 +2094,22 @@
           () => "Not enough storage",
           () => 0 // Red buildings need to be filtered out, so they won't prevent affordable buildings with lower weight from building
       ],[
+          () => game.global.race['truepath'] && buildings.SpaceTestLaunch.isUnlocked() && !haveTech('world_control'),
+          (building) => {
+              if (building === buildings.SpaceTestLaunch) {
+                  let sabotage = 1;
+                  for (let i = 0; i < 3; i++){
+                      let gov = game.global.civic.foreign[`gov${i}`];
+                      if (!gov.occ && !gov.anx && !gov.buy) {
+                          sabotage++;
+                      }
+                  }
+                  return 1 / (sabotage + 1);
+              }
+          },
+          (chance) => `${Math.round(chance*100)}% chance of successful launch`,
+          (chance) => chance < 0.5 ? chance : 0
+      ],[
           () => settings.jobDisableMiners && buildings.GatewayStarbase.count > 0,
           (building) => building === buildings.Mine || building === buildings.CoalMine,
           () => "Miners disabled in Andromeda",
@@ -2110,7 +2141,7 @@
       ],[
           () => settings.prestigeWhiteholeSaveGems && settings.prestigeType === "whitehole",
           (building) => {
-              let gemsCost = building.resourceRequirements.find(requirement => requirement.resource === resources.Soul_Gem)?.quantity ?? 0;
+              let gemsCost = resourceCost(building, resources.Soul_Gem);
               if (gemsCost > 0 && resources.Soul_Gem.currentQuantity - gemsCost < 10) {
                   return true;
               }
@@ -2307,12 +2338,12 @@
           () => "New building",
           () => settings.buildingWeightingNew
       ],[
-          () => resources.Power.isUnlocked() && resources.Power.currentQuantity < (game.global.race['emfield'] ? 1.5 : 1),
+          () => resources.Power.isUnlocked() && resources.Power.currentQuantity < resources.Power.maxQuantity,
           (building) => building === buildings.LakeCoolingTower || building.powered < 0,
           () => "Need more energy",
           () => settings.buildingWeightingNeedfulPowerPlant
       ],[
-          () => resources.Power.isUnlocked() && resources.Power.currentQuantity > (game.global.race['emfield'] ? 1.5 : 1),
+          () => resources.Power.isUnlocked() && resources.Power.currentQuantity > resources.Power.maxQuantity,
           (building) => building !== buildings.Mill && building.powered < 0,
           () => "No need for more energy",
           () => settings.buildingWeightingUselessPowerPlant
@@ -2371,6 +2402,11 @@
           (building) => building === buildings.GateTurret,
           () => "Gate demons fully supressed",
           () => settings.buildingWeightingGateTurret
+      ],[
+          () => resources.Containers.maxQuantity === 0 && resources.Crates.maxQuantity === 0,
+          (building) => building === buildings.Shed || building === buildings.RedGarage || building === buildings.AlphaWarehouse || building === buildings.ProximaCargoYard,
+          () => "Need more storage",
+          () => settings.buildingWeightingNeedStorage
     ]];
 
     // Singleton manager objects
@@ -2459,7 +2495,7 @@
             Miner: {id: 'miner', isUnlocked: () => true},
             Lumberjack: {id: 'lumberjack', isUnlocked: () => isLumberRace() && !game.global.race['evil']},
             Science: {id: 'science', isUnlocked: () => true},
-            Factory: {id: 'factory', isUnlocked: () => true},
+            Factory: {id: 'factory', isUnlocked: () => jobs.CementWorker.count > 0},
             Army: {id: 'army', isUnlocked: () => true},
             Hunting: {id: 'hunting', isUnlocked: () => true},
             Crafting: {id: 'crafting', isUnlocked: () => haveTech("magic", 4)},
@@ -2899,8 +2935,6 @@
     }
 
     var GovernmentManager = {
-        _governmentToSet: null,
-
         Types: {
             anarchy: {id: "anarchy", isUnlocked: () => false}, // Special - should not be shown to player
             autocracy: {id: "autocracy", isUnlocked: () => true},
@@ -2937,20 +2971,11 @@
 
             let optionsNode = document.querySelector("#govType button");
             let title = game.loc('civics_government_type');
-            this._governmentToSet = government;
-            WindowManager.openModalWindowWithCallback(title, this.setGovernmentCallback, optionsNode);
+            WindowManager.openModalWindowWithCallback(optionsNode, title, () => {
+                GameLog.logSuccess(GameLog.Types.special, `Revolution! Government changed to ${game.loc("govern_" + government)}.`);
+                getVueById('govModal')?.setGov(government);
+            });
         },
-
-        setGovernmentCallback() {
-            if (GovernmentManager._governmentToSet !== null) {
-                let button = document.querySelector(`#govModal [data-gov="${GovernmentManager._governmentToSet}"]`);
-                if (button) {
-                    GameLog.logSuccess(GameLog.Types.special, `发生革命！政体切换为 ${game.loc("govern_" + GovernmentManager._governmentToSet)} 。`);
-                    logClick(button, "set government");
-                }
-                GovernmentManager._governmentToSet = null;
-            }
-        }
     }
 
     var MarketManager = {
@@ -2982,26 +3007,17 @@
         },
 
         getMaxMultiplier(){
-            // function tradeMax() from resources.js
-            if (haveTech("currency", 6)){
-                return 1000000;
-            } else if (haveTech("currency", 4)){
-                return 5000;
-            } else {
-                return 100;
-            }
+            return getVueById("market-qty")?.limit() ?? 1;
         },
 
         getUnitBuyPrice(resource) {
             // marketItem > vBind > purchase from resources.js
             let price = game.global.resource[resource.id].value;
             if (game.global.race['arrogant']){
-                let traitsArrogant0 = 10;
-                price *= 1 + (traitsArrogant0 / 100);
+                price *= 1.1;
             }
             if (game.global.race['conniving']){
-                let traitsConniving0 = 5;
-                price *= 1 - (traitsConniving0 / 100);
+                price *= 0.95;
             }
             return price;
         },
@@ -3010,16 +3026,13 @@
             // marketItem > vBind > sell from resources.js
             let divide = 4;
             if (game.global.race['merchant']){
-                let traitsMerchant0 = 25;
-                divide *= 1 - (traitsMerchant0 / 100);
+                divide *= 0.75;
             }
             if (game.global.race['asymmetrical']){
-                let traitsAsymmetrical0 = 20;
-                divide *= 1 + (traitsAsymmetrical0 / 100);
+                divide *= 1.2;
             }
             if (game.global.race['conniving']){
-                let traitsConniving0 = 5;
-                divide *= 1 - (traitsConniving0 / 100);
+                divide *= 0.95;
             }
             return game.global.resource[resource.id].value / divide;
         },
@@ -3196,36 +3209,15 @@
     }
 
     var SpyManager = {
-        _espionageToPerform: null,
-        _lastAttackTick: [ -1000, -1000, -1000 ], // Last tick when we attacked. Don't want to run influence when we are attacking foreign powers
-
         Types: {
-            Influence: {id: "influence"},
-            Sabotage: {id: "sabotage"},
-            Incite: {id: "incite"},
-            Annex: {id: "annex"},
-            Purchase: {id: "purchase"},
-            Occupy: {id: "occupy"},
+            Influence: {id: "influence", rival: true},
+            Sabotage: {id: "sabotage", rival: true},
+            Incite: {id: "incite", rival: false},
+            Annex: {id: "annex", rival: false},
+            Purchase: {id: "purchase", rival: false},
         },
 
-        isUnlocked() {
-            if (!haveTech("spy")) { return false; }
-
-            let node = document.getElementById("foreign");
-            if (node === null || node.style.display === "none") { return false; }
-
-            let foreignVue = getVueById("foreign");
-            if (foreignVue === undefined || !foreignVue.vis()) { return false; }
-
-            return true;
-        },
-
-        updateLastAttackTick(govIndex) {
-            this._lastAttackTick[govIndex] = state.scriptTick;
-        },
-
-        performEspionage(govIndex, espionageId) {
-            if (!this.isUnlocked()) { return; }
+        performEspionage(govIndex, espionageId, influenceAllowed) {
             if (WindowManager.isOpen()) { return; } // Don't try anything if a window is already open
 
             let optionsSpan = document.querySelector(`#gov${govIndex} div span:nth-child(3)`);
@@ -3234,115 +3226,54 @@
             let optionsNode = document.querySelector(`#gov${govIndex} div span:nth-child(3) button`);
             if (optionsNode === null || optionsNode.getAttribute("disabled") === "disabled") { return; }
 
-            if (espionageId === this.Types.Occupy.id) {
-                if (this.isEspionageUseful(govIndex, this.Types.Sabotage.id)) {
-                    this._espionageToPerform = this.Types.Sabotage.id;
-                }
-            } else if (espionageId === this.Types.Annex.id || espionageId === this.Types.Purchase.id) {
+            let espionageToPerform = null;
+            if (espionageId === this.Types.Annex.id || espionageId === this.Types.Purchase.id) {
                 // Occupation routine
                 if (this.isEspionageUseful(govIndex, espionageId)) {
                     // If we can annex\purchase right now - do it
-                    this._espionageToPerform = espionageId;
-                } else if (this.isEspionageUseful(govIndex, this.Types.Influence.id) &&
-                           state.scriptTick - this._lastAttackTick[govIndex] >= 600) {
+                    espionageToPerform = espionageId;
+                } else if (this.isEspionageUseful(govIndex, this.Types.Influence.id) && influenceAllowed) {
                     // Influence goes second, as it always have clear indication when HSTL already at zero
-                    this._espionageToPerform = this.Types.Influence.id;
+                    espionageToPerform = this.Types.Influence.id;
                 } else if (this.isEspionageUseful(govIndex, this.Types.Incite.id)) {
                     // And now incite
-                    this._espionageToPerform = this.Types.Incite.id;
+                    espionageToPerform = this.Types.Incite.id;
                 }
             } else if (this.isEspionageUseful(govIndex, espionageId)) {
                 // User specified spy operation. If it is not already at miximum effect then proceed with it.
-                this._espionageToPerform = espionageId;
+                espionageToPerform = espionageId;
             }
 
-            if (this._espionageToPerform !== null) {
-                if (this._espionageToPerform === this.Types.Purchase.id) {
+            if (espionageToPerform !== null) {
+                if (espionageToPerform === this.Types.Purchase.id) {
                     resources.Money.currentQuantity -= poly.govPrice("gov" + govIndex);
                 }
-                GameLog.logSuccess(GameLog.Types.spying, `Performing "${this._espionageToPerform}" covert operation against ${getGovName(govIndex)}.`);
                 let title = game.loc('civics_espionage_actions');
-                WindowManager.openModalWindowWithCallback(title, this.performEspionageCallback, optionsNode);
+                WindowManager.openModalWindowWithCallback(optionsNode, title, () => {
+                    GameLog.logSuccess(GameLog.Types.spying, `Performing "${game.loc("civics_spy_" + espionageToPerform)}" covert operation against ${getGovName(govIndex)}.`);
+                    getVueById('espModal')?.[espionageToPerform]?.(govIndex);
+                });
             }
         },
 
         isEspionageUseful(govIndex, espionageId) {
-            let govProp = "gov" + govIndex;
+            let gov = game.global.civic.foreign["gov" + govIndex];
 
-            if (espionageId === this.Types.Occupy.id) {
-                return this.isEspionageUseful(govIndex, this.Types.Sabotage.id);
+            // Return true when requested task is useful, or when we don't have enough spies prove it's not
+            switch (espionageId) {
+                case this.Types.Influence.id:
+                    return gov.hstl > (gov.spy > 0 ? 0 : 10);
+                case this.Types.Sabotage.id:
+                    return gov.spy < 1 || gov.mil > (gov.spy > 1 ? 50 : 74);
+                case this.Types.Incite.id:
+                    return gov.spy < 3 || gov.unrest < (gov.spy > 3 ? 100 : 76);
+                case this.Types.Annex.id:
+                    return gov.hstl <= 50 && gov.unrest >= 50 && game.global.city.morale.current >= (200 + gov.hstl - gov.unrest);
+                case this.Types.Purchase.id:
+                    return gov.spy >= 3 && resources.Money.currentQuantity >= poly.govPrice("gov" + govIndex);
             }
-
-            if (espionageId === this.Types.Influence.id) {
-                // MINIMUM hstl (relation) is 0 so if we are already at 0 then don't perform this operation
-                if (game.global.civic.foreign[govProp].spy < 1 && game.global.civic.foreign[govProp].hstl > 10) {
-                    // With less than one spy we can only see general relations. If relations are worse than Good then operation is useful
-                    // Good relations is <= 10 hstl
-                    return true;
-                } else if (game.global.civic.foreign[govProp].hstl > 0) {
-                    // We have enough spies to know the exact value. 0 is minimum so only useful if > 0
-                    return true;
-                }
-            }
-
-            if (espionageId === this.Types.Sabotage.id) {
-                // MINIMUM mil (military) is 50 so if we are already at 50 then don't perform this operation
-                if (game.global.civic.foreign[govProp].spy < 1) {
-                    // With less than one spy we don't have any indication of military strength so return that operation is useful
-                    return true;
-                } else if (game.global.civic.foreign[govProp].spy === 1 && game.global.civic.foreign[govProp].mil >= 75) {
-                    // With one spy we can only see general military strength. If military strength is better than Weak then operation is useful
-                    // Weak military is < 75 mil
-                    return true;
-                } else if (game.global.civic.foreign[govProp].mil > 50) {
-                    // We have enough spies to know the exact value. 50 is minimum so only useful if > 50
-                    return true;
-                }
-            }
-
-            if (espionageId === this.Types.Incite.id) {
-                // MAXIMUM unrest (discontent) is 100 so if we are already at 100 then don't perform this operation
-                // Discontent requires at least 4 spies to see the value
-                if (game.global.civic.foreign[govProp].spy < 3) {
-                    // With less than three spies we don't have any indication of discontent so return that operation is useful
-                    return true;
-                } else if (game.global.civic.foreign[govProp].spy === 3 && game.global.civic.foreign[govProp].unrest <= 75) {
-                    // With three spies we can only see general discontent. If discontent is lower than High then operation is useful
-                    // High discontent is <= 75 mil
-                    return true;
-                } else if (game.global.civic.foreign[govProp].unrest < 100) {
-                    // We have enough spies to know the exact value. 100 is maximum so only useful if < 100
-                    return true;
-                }
-            }
-
-            if (espionageId === this.Types.Annex.id) {
-                // Annex option shows up once hstl <= 50 && unrest >= 50
-                // And we're also checking morale, to make sure button not just showed, but can actually be clicked
-                if (game.global.civic.foreign[govProp].hstl <= 50 && game.global.civic.foreign[govProp].unrest >= 50 && game.global.city.morale.current >= (200 + game.global.civic.foreign[govProp].hstl - game.global.civic.foreign[govProp].unrest)){
-                    return true;
-                }
-            }
-
-            if (espionageId === this.Types.Purchase.id) {
-                // Check if we have enough spies and money
-                if (game.global.civic.foreign[govProp].spy >= 3 && resources.Money.currentQuantity >= poly.govPrice(govProp)){
-                    return true;
-                }
-            }
-
             return false;
         },
-
-        performEspionageCallback() {
-            if (SpyManager._espionageToPerform !== null) {
-                let button = document.querySelector(`#espModal [data-esp="${SpyManager._espionageToPerform}"]`);
-                if (button) {
-                    logClick(button, "perform espionage");
-                }
-                SpyManager._espionageToPerform = null;
-            }
-        }
     }
 
     var WarManager = {
@@ -3350,7 +3281,6 @@
         _garrisonVue: undefined,
         _hellVueBinding:"fort",
         _hellVue: undefined,
-        tactic: 0,
         workers: 0,
         wounded: 0,
         max: 0,
@@ -3392,7 +3322,6 @@
 
         updateData() {
             if (game.global.civic.garrison) {
-                this.tactic = game.global.civic.garrison.tactic;
                 this.workers = game.global.civic.garrison.workers;
                 this.wounded = game.global.civic.garrison.wounded;
                 this.raid = game.global.civic.garrison.raid;
@@ -3435,7 +3364,6 @@
         },
 
         launchCampaign(govIndex) {
-            SpyManager.updateLastAttackTick(govIndex);
             this._garrisonVue.campaign(govIndex);
         },
 
@@ -3453,17 +3381,12 @@
                 cost *= 1.1 ** this.m_use;
             }
             if (game.global.race['brute']){
-                let traitsBrute0 = 50;
-                cost *= 1 - (traitsBrute0 / 100);
+                cost *= 0.5;
             }
             return Math.round(cost);
         },
 
         hireMercenary() {
-            if (!this.isMercenaryUnlocked()) {
-                return false;
-            }
-
             let cost = this.getMercenaryCost();
             if (this.workers >= this.max || resources.Money.currentQuantity < cost){
                 return false;
@@ -3499,30 +3422,18 @@
             return soldiers;
         },
 
-        increaseCampaignDifficulty() {
-            this._garrisonVue.next();
-            this.tactic = Math.min(this.tactic + 1, 4);
-        },
-
-        decreaseCampaignDifficulty() {
-            this._garrisonVue.last();
-            this.tactic = Math.max(this.tactic - 1, 0);
-        },
-
-        // buildGarrison > vBind > filters > tactics from civics.js
-        getCampaignTitle(tactic) {
-            switch(tactic){
-                case 0:
-                    return game.loc('civics_garrison_tactic_ambush');
-                case 1:
-                    return game.loc('civics_garrison_tactic_raid');
-                case 2:
-                    return game.loc('civics_garrison_tactic_pillage');
-                case 3:
-                    return game.loc('civics_garrison_tactic_assault');
-                case 4:
-                    return game.loc('civics_garrison_tactic_siege');
+        setTactic(newTactic){
+            let currentTactic = game.global.civic.garrison.tactic;
+            for (let i = currentTactic; i < newTactic; i++) {
+                this._garrisonVue.next();
             }
+            for (let i = currentTactic; i > newTactic; i--) {
+                this._garrisonVue.last();
+            }
+        },
+
+        getCampaignTitle(tactic) {
+            return this._garrisonVue.$options.filters.tactics(tactic);
         },
 
         addBattalion(count) {
@@ -3543,6 +3454,26 @@
             this.raid = Math.max(this.raid - count, 0);
         },
 
+        getGovArmy(tactic, govIndex) { // function battleAssessment(gov)
+            let enemy = [5, 27.5, 62.5, 125, 300][tactic];
+            if (game.global.race['banana']) {
+                enemy *= 2;
+            }
+            return enemy * getGovPower(govIndex) / 100;
+        },
+
+        getAdvantage(army, tactic, govIndex) {
+            return (1 - (this.getGovArmy(tactic, govIndex) / army)) * 100;
+        },
+
+        getRatingForAdvantage(adv, tactic, govIndex) {
+            return this.getGovArmy(tactic, govIndex) / (1 - (adv/100));
+        },
+
+        getSoldiersForAdvantage(advantage, tactic, govIndex) {
+            return this.getSoldiersForAttackRating(this.getRatingForAdvantage(advantage, tactic, govIndex));
+        },
+
         // Calculates the required soldiers to reach the given attack rating, assuming everyone is healthy.
         getSoldiersForAttackRating(targetRating) {
             if (!targetRating || targetRating <= 0) {
@@ -3553,9 +3484,8 @@
             // To avoid that we're explicitly passing zero number of wounded soldiers as string(!)
             // "0" casts to true boolean, and overrides real amount of wounded soldiers, yet still acts as 0 in math
             // TODO: Fixed in 1.2, change "0" to 0
-            let singleSoldierAttackRating = game.armyRating(100, "army", "0") / 100;
+            let singleSoldierAttackRating = game.armyRating(10, "army", "0") / 10;
             let maxSoldiers = Math.ceil(targetRating / singleSoldierAttackRating);
-
             if (!game.global.race['hivemind']) {
                 return maxSoldiers;
             }
@@ -3565,12 +3495,10 @@
             // Just loop through and remove 1 at a time until we're under the max rating.
 
             // At 10 soldiers there's no hivemind bonus or malus, and the malus gets up to 50%, so start with up to 2x soldiers below 10
-
-            maxSoldiers = this.maxSoldiers;
-            // TODO: Fixed in 1.2, change "0" to 0
-            if (game.armyRating(maxSoldiers, "army", "0") < targetRating) {
-                return Number.MAX_SAFE_INTEGER;
+            if (maxSoldiers < 10) {
+                maxSoldiers = Math.min(10, maxSoldiers * 2);
             }
+
             // TODO: Fixed in 1.2, change "0" to 0
             while (maxSoldiers > 1 && game.armyRating(maxSoldiers - 1, "army", "0") > targetRating) {
                 maxSoldiers--;
@@ -3655,10 +3583,6 @@
 
         collectorValue: 150000, // Collector power mod. Higher number - more often they'll be scrapped
 
-        // TODO: We can't scrap old and build new mech in same tick due to vue bug, that's a workaround for it. Remove once fixed.
-        nextMech: null,
-        spaceUsed: 0,
-
         activeMechs: [],
         inactiveMechs: [],
         mechsPower: 0,
@@ -3666,6 +3590,8 @@
 
         lastLevel: -1,
         lastPrepared: -1,
+        lastWrath: -1,
+        lastScouts: -1,
         lastSpecial: "",
         bestSize: [],
         bestMech: {},
@@ -3736,11 +3662,35 @@
                 return false;
             }
 
-            if (this.lastLevel !== game.global.portal.spire.count || this.lastPrepared !== game.global.blood.prepared || this.lastSpecial !== settings.mechSpecial) {
+            this.activeMechs = [];
+            this.inactiveMechs = [];
+            this.mechsPower = 0;
+
+            let spaceUsed = 0;
+            let currentScouts = 0;
+            let mechBay = game.global.portal.mechbay;
+            for (let i = 0; i < mechBay.mechs.length; i++) {
+                let mech = {id: i, ...mechBay.mechs[i], ...this.getMechStats(mechBay.mechs[i])};
+                spaceUsed += this.getMechSpace(mech);
+                if (spaceUsed <= mechBay.max) {
+                    this.activeMechs.push(mech);
+                    if (mech.size !== 'collector') {
+                        this.mechsPower += mech.power;
+                    }
+                    if (mech.size === 'small') {
+                        currentScouts++;
+                    }
+                } else {
+                    this.inactiveMechs.push(mech);
+                }
+            }
+
+            if (this.lastLevel !== game.global.portal.spire.count || this.lastPrepared !== game.global.blood.prepared || this.lastWrath !== game.global.blood.wrath || this.lastScouts !== currentScouts || this.lastSpecial !== settings.mechSpecial) {
                 this.lastLevel = game.global.portal.spire.count;
                 this.lastPrepared = game.global.blood.prepared;
+                this.lastWrath = game.global.blood.wrath;
+                this.lastScouts = currentScouts;
                 this.lastSpecial = settings.mechSpecial;
-                this.nextMech = null;
 
                 this.updateBestWeapon();
                 this.Size.forEach(size => {
@@ -3752,26 +3702,6 @@
                 // Redraw added label of Mech Lab after change of floor
                 removeMechInfo();
                 createMechInfo();
-                return false; // Return false to delay autoMech for one tick after clearing floor, that will give autoPower time to start building, if needed
-            }
-
-            this.activeMechs = [];
-            this.inactiveMechs = [];
-
-            this.spaceUsed = 0;
-            this.mechsPower = 0;
-            let mechBay = game.global.portal.mechbay;
-            for (let i = 0; i < mechBay.mechs.length; i++) {
-                let mech = {id: i, ...mechBay.mechs[i], ...this.getMechStats(mechBay.mechs[i])};
-                this.spaceUsed += this.getMechSpace(mech);
-                if (this.spaceUsed <= mechBay.max) {
-                    this.activeMechs.push(mech);
-                    if (mech.size !== 'collector') {
-                        this.mechsPower += mech.power;
-                    }
-                } else {
-                    this.inactiveMechs.push(mech);
-                }
             }
 
             let bestMech = this.bestMech[this.bestSize[0]];
@@ -3834,13 +3764,11 @@
 
         getPreferedSize() {
             let mechBay = game.global.portal.mechbay;
-            // TODO: Some logic\option to build bunch of collectors at early spire
-            if (settings.mechFillBay && mechBay.bay % 2 !== mechBay.max % 2) {
+            if (settings.mechFillBay && mechBay.bay % 2 !== mechBay.max % 2 && mechBay.max % 1 === 0) {
                 return 'collector'; // One collector to fill odd bay
             }
 
-            let scouts = this.activeMechs.reduce((amount, mech) => amount + (mech.size === 'small'), 0);
-            if ((scouts * 2) / mechBay.max < settings.mechScouts) {
+            if ((this.lastScouts * 2) / mechBay.max < settings.mechScouts) {
                 return 'small'; // Build scouts up to configured ratio
             }
 
@@ -3976,6 +3904,7 @@
         scrapMech(mech) {
             this._listVue.scrap(mech.id);
             GameLog.logSuccess(GameLog.Types.mech_scrap, `${this.mechDesc(mech)} 机甲已解体。`);
+            // TODO: One line for multiple scraps
         },
 
         dragMech(oldId, newId) {
@@ -4034,6 +3963,7 @@
                     max -= job.count;
                 }
             }
+            max -= game.global.city.foundry?.Thermite ?? 0;
             return max;
         }
     }
@@ -4197,10 +4127,10 @@
             return trigger;
         },
 
-        AddTriggerFromSetting(seq, priority, requirementType, requirementId, requirementCount, actionType, actionId, actionCount) {
-            let existingSequence = this.priorityList.some(trigger => trigger.seq === seq);
+        AddTriggerFromSetting(raw) {
+            let existingSequence = this.priorityList.some(trigger => trigger.seq === raw.seq);
             if (!existingSequence) {
-                let trigger = new Trigger(seq, priority, requirementType, requirementId, requirementCount, actionType, actionId, actionCount);
+                let trigger = new Trigger(raw.seq, raw.priority, raw.requirementType, raw.requirementId, raw.requirementCount, raw.actionType, raw.actionId, raw.actionCount);
                 this.priorityList.push(trigger);
             }
         },
@@ -4256,7 +4186,7 @@
             }
         },
 
-        openModalWindowWithCallback(callbackWindowTitle, callbackFunction, elementToClick) {
+        openModalWindowWithCallback(elementToClick, callbackWindowTitle, callbackFunction) {
             if (this.isOpen()) {
                 return;
             }
@@ -4335,7 +4265,7 @@
     function initialiseState() {
         // Construct craftable resource list
         for (let [name, costs] of Object.entries(game.craftCost)) {
-            if (resources[name]) {
+            if (resources[name]) { // Ignore Thermite
                 for (let i = 0; i < costs.length; i++) {
                     resources[name].resourceRequirements.push(new ResourceRequirement(resources[costs[i].r], costs[i].a));
                 }
@@ -4590,6 +4520,7 @@
         settings.foreignPowerRequired = 75;
         settings.foreignPolicyInferior = "Annex";
         settings.foreignPolicySuperior = "Sabotage";
+        settings.foreignPolicyRival = "Sabotage";
     }
 
     function resetHellSettings() {
@@ -4802,10 +4733,10 @@
         jobs.Unemployed.breakpoints = [0, 0, 0];
         jobs.Hunter.breakpoints = [0, 0, 0];
         jobs.Farmer.breakpoints = [0, 0, 0]; // Farmers are calculated based on food rate of change only, ignoring cap
-        //jobs.Forager.breakpoints = [5, 10, 0];
-        jobs.Lumberjack.breakpoints = [5, 10, 0]; // Basic jobs are special - remaining workers divided between them
-        jobs.QuarryWorker.breakpoints = [5, 10, 0]; // Basic jobs are special - remaining workers divided between them
-        jobs.CrystalMiner.breakpoints = [5, 10, 0]; // Basic jobs are special - remaining workers divided between them
+        //jobs.Forager.breakpoints = [4, 10, 0];
+        jobs.Lumberjack.breakpoints = [4, 10, 0]; // Basic jobs are special - remaining workers divided between them
+        jobs.QuarryWorker.breakpoints = [4, 10, 0]; // Basic jobs are special - remaining workers divided between them
+        jobs.CrystalMiner.breakpoints = [2, 5, 0]; // Basic jobs are special - remaining workers divided between them
         jobs.Scavenger.breakpoints = [0, 0, 0]; // Basic jobs are special - remaining workers divided between them
 
         jobs.Scientist.breakpoints = [3, 6, -1];
@@ -4841,6 +4772,7 @@
         settings.buildingWeightingHorseshoeUseless = 0.01;
         settings.buildingWeightingZenUseless = 0.01;
         settings.buildingWeightingGateTurret = 0.01;
+        settings.buildingWeightingNeedStorage = 1;
     }
 
     function resetBuildingSettings() {
@@ -5147,7 +5079,7 @@
 
         projects.LaunchFacility._weighting = 100;
         projects.SuperCollider._weighting = 5;
-        projects.Railway._weighting = 0.01;
+        projects.Railway._weighting = 0.1;
         projects.StockExchange._weighting = 0.5;
         projects.ManaSyphon._autoMax = 79;
         projects.ManaSyphon.autoBuildEnabled = false;
@@ -5155,7 +5087,7 @@
 
     function resetProductionSettings() {
         settings.productionChrysotileWeight = 2;
-        settings.productionPrioritizeDemanded = true;
+        settings.productionFoundryWeighting = "demanded";
         settings.productionWaitMana = true;
         settings.productionSmelting = "storage";
         settings.productionFactoryMinIngredients = 0.01;
@@ -5182,7 +5114,7 @@
         Object.assign(resources.Brick, {autoCraftEnabled: true, weighting: 1, preserve: 0});
         Object.assign(resources.Wrought_Iron, {autoCraftEnabled: true, weighting: 1, preserve: 0});
         Object.assign(resources.Sheet_Metal, {autoCraftEnabled: true, weighting: 2, preserve: 0});
-        Object.assign(resources.Mythril, {autoCraftEnabled: true, weighting: 3, preserve: 0.1});
+        Object.assign(resources.Mythril, {autoCraftEnabled: true, weighting: 3, preserve: 0});
         Object.assign(resources.Aerogel, {autoCraftEnabled: true, weighting: 3, preserve: 0});
         Object.assign(resources.Nanoweave, {autoCraftEnabled: true, weighting: 10, preserve: 0});
         Object.assign(resources.Scarletite, {autoCraftEnabled: true, weighting: 1, preserve: 0});
@@ -5192,7 +5124,9 @@
         Object.assign(DroidManager.Productions.Uranium, {priority: -1, weighting: 10});
         Object.assign(DroidManager.Productions.Coal, {priority: -1, weighting: 10});
 
-        Object.values(RitualManager.Productions).forEach(spell => spell.weighting = 1);
+        Object.values(RitualManager.Productions).forEach(spell => spell.weighting = 100);
+        RitualManager.Productions.Hunting.weighting = 10;
+        RitualManager.Productions.Farmer.weighting = 1;
     }
 
     function resetTriggerSettings() {
@@ -5215,16 +5149,7 @@
 
         settings.triggers = settings.triggers ?? [];
         TriggerManager.priorityList = [];
-        settings.triggers.forEach(trigger => {
-            // TODO: Remove me some day. Converts IDs from old\original script settings
-            if (techIds["tech-" + trigger.actionId]) {
-                trigger.actionId = "tech-" + trigger.actionId;
-            }
-            if (techIds["tech-" + trigger.requirementId]) {
-                trigger.requirementId = "tech-" + trigger.requirementId;
-            }
-            TriggerManager.AddTriggerFromSetting(trigger.seq, trigger.priority, trigger.requirementType, trigger.requirementId, trigger.requirementCount, trigger.actionType, trigger.actionId, trigger.actionCount);
-        });
+        settings.triggers.forEach(trigger => TriggerManager.AddTriggerFromSetting(trigger));
 
         for (let i = 0; i < MinorTraitManager.priorityList.length; i++) {
             let trait = MinorTraitManager.priorityList[i];
@@ -5458,7 +5383,7 @@
         addSetting("arpaStep", 10);
 
         addSetting("productionChrysotileWeight", 2);
-        addSetting("productionPrioritizeDemanded", true);
+        addSetting("productionFoundryWeighting", "demanded");
         addSetting("productionWaitMana", true);
         addSetting("productionSmelting", "storage");
         addSetting("productionFactoryMinIngredients", 0.01);
@@ -5559,6 +5484,7 @@
         addSetting("foreignPowerRequired", 75);
         addSetting("foreignPolicyInferior", "Annex");
         addSetting("foreignPolicySuperior", "Sabotage");
+        addSetting("foreignPolicyRival", "Sabotage");
 
         addSetting("hellTurnOffLogMessages", true);
         addSetting("hellHandlePatrolCount", true);
@@ -5621,6 +5547,7 @@
         addSetting("buildingWeightingHorseshoeUseless", 0.01);
         addSetting("buildingWeightingZenUseless", 0.01);
         addSetting("buildingWeightingGateTurret", 0.01);
+        addSetting("buildingWeightingNeedStorage", 1);
 
         addSetting("buildingEnabledAll", true);
         addSetting("buildingStateAll", true);
@@ -5643,7 +5570,7 @@
         addSetting("mechScrap", "mixed");
         addSetting("mechScrapEfficiency", 2);
         addSetting("mechBuild", "random");
-        addSetting("mechSize", "auto");
+        addSetting("mechSize", "titan");
         addSetting("mechSizeGravity", "auto");
         addSetting("mechFillBay", true);
         addSetting("mechScouts", 0.05);
@@ -5657,9 +5584,17 @@
         traitList.forEach(id => addSetting("trait_w_" + id, 0));
         extraList.forEach(id => addSetting("extra_w_" + id, 0));
 
-        // TODO: Remove me some day. Cleaning up old settings.
+        // Convert old setings
+        settings.triggers.forEach(t => {
+            if (techIds["tech-" + t.actionId]) { t.actionId = "tech-" + t.actionId; }
+            if (techIds["tech-" + t.requirementId]) { t.requirementId = "tech-" + t.requirementId; }
+        });
+        if (settings.hasOwnProperty("productionPrioritizeDemanded")) {
+            settings.productionFoundryWeighting = settings.productionPrioritizeDemanded ? "demanded" : "none";
+        }
         settings.challenge_plasmid = settings.challenge_mastery || settings.challenge_plasmid; // Merge challenge settings
-        ["buildingWeightingTriggerConflict", "researchAlienGift", "arpaBuildIfStorageFullCraftableMin", "arpaBuildIfStorageFullResourceMaxPercent", "arpaBuildIfStorageFull", "productionMoneyIfOnly", "autoAchievements", "autoChallenge", "autoMAD", "autoSpace", "autoSeeder", "foreignSpyManage", "foreignHireMercCostLowerThan", "userResearchUnification", "btl_Ambush", "btl_max_Ambush", "btl_Raid", "btl_max_Raid", "btl_Pillage", "btl_max_Pillage", "btl_Assault", "btl_max_Assault", "btl_Siege", "btl_max_Siege", "smelter_fuel_Oil", "smelter_fuel_Coal", "smelter_fuel_Lumber", "planetSettingsCollapser", "buildingManageSpire", "hellHandleAttractors", "researchFilter", "challenge_mastery", "hellCountGems"].forEach(id => delete settings[id]);
+        // Remove old settings
+        ["buildingWeightingTriggerConflict", "researchAlienGift", "arpaBuildIfStorageFullCraftableMin", "arpaBuildIfStorageFullResourceMaxPercent", "arpaBuildIfStorageFull", "productionMoneyIfOnly", "autoAchievements", "autoChallenge", "autoMAD", "autoSpace", "autoSeeder", "foreignSpyManage", "foreignHireMercCostLowerThan", "userResearchUnification", "btl_Ambush", "btl_max_Ambush", "btl_Raid", "btl_max_Raid", "btl_Pillage", "btl_max_Pillage", "btl_Assault", "btl_max_Assault", "btl_Siege", "btl_max_Siege", "smelter_fuel_Oil", "smelter_fuel_Coal", "smelter_fuel_Lumber", "planetSettingsCollapser", "buildingManageSpire", "hellHandleAttractors", "researchFilter", "challenge_mastery", "hellCountGems", "productionPrioritizeDemanded"].forEach(id => delete settings[id]);
         ["foreignAttack", "foreignOccupy", "foreignSpy", "foreignSpyMax", "foreignSpyOp"].forEach(id => [0, 1, 2].forEach(index => delete settings[id + index]));
         Object.values(resources).forEach(resource => delete settings['res_storage_w_' + resource.id]);
         Object.values(projects).forEach(project => delete settings['arpa_ignore_money_' + project.id]);
@@ -6109,158 +6044,104 @@
         }
     }
 
-    function manageSpies() {
-        if (haveTask("spyop") || !SpyManager.isUnlocked()) {
-            return;
+    function autoFight() {
+        let garrisonAvailable = WarManager.initGarrison();
+        let foreignAvailable = WarManager.isForeignUnlocked();
+        let foreigns = null;
+
+        if (garrisonAvailable) {
+            autoMerc();
         }
-
-        let [rank, subdued, bestTarget] = findAttackTarget();
-
-        let lastTarget = bestTarget;
-        if (settings.foreignPolicySuperior === "Occupy" || settings.foreignPolicySuperior === "Sabotage"){
-            lastTarget = 2;
+        if (foreignAvailable) {
+            foreigns = updateForeigns();
+            autoSpy(foreigns); // Can unoccupy foreign power in rare occasions, without caching back new status, but such desync should not cause any harm
         }
-
-        if (settings.foreignPacifist) {
-            bestTarget = -1;
-            lastTarget = -1;
-        }
-
-        // Train spies
-        if (settings.foreignTrainSpy) {
-            let foreignVue = getVueById("foreign");
-            for (let i = 0; i < 3; i++){
-                let gov = game.global.civic.foreign[`gov${i}`]
-
-                // Government is subdued
-                if (gov.occ || gov.anx || gov.buy) {
-                    continue;
-                }
-                // We can't train a spy as the button is disabled (cost or already training)
-                if (foreignVue.spy_disabled(i)) {
-                    continue;
-                }
-
-                let spiesRequired = settings[`foreignSpyMax`];
-                if (spiesRequired < 0) {
-                    spiesRequired = Number.MAX_SAFE_INTEGER;
-                }
-                // We need 3 spies to purchase, but only if we have enough money
-                // City price affected by unrest, and we can't see unrest without 3 spies. So, instead of checking real number we're comparing max money with hardcoded minimum cost
-                if (settings[`foreignPolicy${rank[i]}`] === "Purchase" && spiesRequired < 3 && (!settings.foreignOccupyLast || i !== lastTarget) &&
-                   ((i == 0 && resources.Money.maxQuantity >= 865350) ||
-                    (i == 1 && resources.Money.maxQuantity >= 1153800) ||
-                    (i == 2 && resources.Money.maxQuantity >= 1730700))) {
-                    spiesRequired = 3;
-                }
-
-                // We reached the max number of spies allowed
-                if (gov.spy >= spiesRequired){
-                    continue;
-                }
-
-                GameLog.logSuccess(GameLog.Types.spying, `Training a spy to send against ${getGovName(i)}.`);
-                foreignVue.spy(i);
-            }
-        }
-
-        // We can't use out spies yet
-        if (!haveTech("spy", 2)) {
-            return;
-        }
-
-        for (let i = 0; i < 3; i++){
-            // Do we have any spies?
-            let gov = game.global.civic.foreign[`gov${i}`];
-            if (gov.spy < 1) {
-                continue;
-            }
-
-            // No missions means we're explicitly ignoring it. So be it.
-            let espionageMission = SpyManager.Types[settings[`foreignPolicy${rank[i]}`]];
-            if (!espionageMission) {
-                continue;
-            }
-
-            // Force sabotage, if needed, and we know it's useful
-            if (i === bestTarget && settings.foreignForceSabotage && gov.spy > 1 && gov.mil > 50) {
-                espionageMission = SpyManager.Types.Sabotage;
-            }
-
-            // Don't waste time and money on last foreign power, if we're going to occupy it
-            if (i === lastTarget && settings.foreignOccupyLast &&
-                espionageMission !== SpyManager.Types.Sabotage && espionageMission !== SpyManager.Types.Occupy){
-                continue;
-            }
-
-            // Don't annex or purchase our farm target
-            if (i === bestTarget && subdued < 2 && (espionageMission === SpyManager.Types.Purchase || espionageMission === SpyManager.Types.Annex) && SpyManager.isEspionageUseful(i, espionageMission.id)) {
-                continue;
-            }
-
-            // Unoccupy power if it's subdued, but we want something different
-            if ((gov.anx && espionageMission !== SpyManager.Types.Annex) ||
-                (gov.buy && espionageMission !== SpyManager.Types.Purchase) ||
-                (gov.occ && espionageMission !== SpyManager.Types.Occupy && (i !== bestTarget || !settings.foreignOccupyLast))){
-                getVueById("garrison").campaign(i);
-            } else if (!gov.anx && !gov.buy && !gov.occ) {
-                SpyManager.performEspionage(i, espionageMission.id);
-            }
+        if (garrisonAvailable && foreignAvailable) {
+            autoBattle(foreigns); // Invalidates garrison, and adds unaccounted amount of resources after attack
         }
     }
 
-    // Rank inferiors and superiors cities, count subdued cities, and select looting target
-    function findAttackTarget() {
-        let rank = [];
-        let attackIndex = -1;
-        let subdued = 0;
-        for (let i = 0; i < 3; i++){
-            if (getGovPower(i) <= settings.foreignPowerRequired) {
-                rank[i] = "Inferior";
+    function updateForeigns() {
+        let activeForeigns = [];
+        let controlledForeigns = 0;
+
+        let unlockedForeigns = !haveTech("rival") ? [0, 1, 2] : [3];
+        let inferiorTarget = null;
+        let currentTarget = null;
+
+        unlockedForeigns.forEach(i => {
+            let foreign = {id: i, gov: game.global.civic.foreign[`gov${i}`]};
+            activeForeigns.push(foreign);
+
+            let rank = "";
+            if (i === 3) {
+                rank = "Rival";
+            } else if (getGovPower(i) <= settings.foreignPowerRequired) {
+                rank = "Inferior";
             } else {
-                rank[i] = "Superior";
+                rank = "Superior";
+            }
+            foreign.policy = settings[`foreignPolicy${rank}`];
+
+            if ((foreign.gov.anx && foreign.policy === "Annex") ||
+                (foreign.gov.buy && foreign.policy === "Purchase") ||
+                (foreign.gov.occ && foreign.policy === "Occupy")) {
+                controlledForeigns++;
             }
 
-            if (settings.foreignUnification) {
-                let gov = game.global.civic.foreign[`gov${i}`];
-                let policy = settings[`foreignPolicy${rank[i]}`];
-                if ((gov.anx && policy === "Annex") ||
-                    (gov.buy && policy === "Purchase") ||
-                    (gov.occ && policy === "Occupy")) {
-                    subdued++;
-                    continue;
-                }
+            if (!foreign.gov.anx && !foreign.gov.buy && rank === "Inferior") {
+                inferiorTarget = foreign;
+            }
+        });
+
+        if (!settings.foreignPacifist) {
+            // Try to attacks last uncontrolled inferior, or first occupied, or just first, in this order.
+            currentTarget = inferiorTarget ?? activeForeigns.find(f => f.gov.occ) ?? activeForeigns[0];
+
+            let readyToUnify = settings.foreignUnification && controlledForeigns >= 2 && game.global.tech['unify'] === 1;
+
+            // Don't annex or purchase our farm target, unless we're ready to unify
+            if (!readyToUnify && ["Annex", "Purchase"].includes(currentTarget.policy) && SpyManager.isEspionageUseful(currentTarget.id, SpyManager.Types[currentTarget.policy].id)) {
+                currentTarget.policy = "Ignore";
+            }
+            // Force sabotage, if needed, and we know it's useful
+            if (settings.foreignForceSabotage && SpyManager.isEspionageUseful(currentTarget.id, SpyManager.Types.Sabotage.id)) {
+                currentTarget.policy = "Sabotage";
             }
 
-            if (rank[i] === "Inferior" || i === 0) {
-                attackIndex = i;
+            // Set last foreign to sabbotage only, and then switch to occupy once we're ready to unify
+            if (settings.foreignOccupyLast && !haveTech('world_control')) {
+                let lastTarget = ["Ocuupy", "Sabbotage"].includes(settings.foreignPolicySuperior) ? Math.max(...unlockedForeigns) : currentTarget.id;
+                activeForeigns.find(foreign => foreign.id === lastTarget).policy = readyToUnify ? "Occupy" : "Sabotage";
+            }
+
+            // Do not attack if policy set to influence, or we're ready to unify
+            if (currentTarget.policy === "Influence" || readyToUnify) {
+                currentTarget = null;
             }
         }
 
-        return [rank, subdued, attackIndex];
+        return [activeForeigns, currentTarget];
     }
 
-    function autoBattle() {
+    function autoMerc() {
         let m = WarManager;
-
-        if (!m.initGarrison() || m.maxCityGarrison <= 0) {
+        if (!m.isMercenaryUnlocked() || m.maxCityGarrison <= 0) {
             return;
         }
 
-        // Don't send our troops out if we're preparing for MAD as we need all troops at home for maximum plasmids
-        if (state.goal === "Reset") {
-            m.hireMercenary(); // but hire mercenaries if we can afford it to get there quicker
-            return;
-        }
-
-        // Mercenaries can still be hired once the "foreign" section is hidden by unification so do this before checking if warManager is unlocked
-        if (m.isMercenaryUnlocked() && !haveTask("merc")) {
+        if (!haveTask("merc")) {
             let mercenaryCost = m.getMercenaryCost();
             let mercenariesHired = 0;
             let mercenaryMax = m.maxSoldiers - settings.foreignHireMercDeadSoldiers;
-            let minMoney = Math.max(resources.Money.maxQuantity * settings.foreignHireMercMoneyStoragePercent / 100, (settings.storageAssignExtra ? resources.Money.storageRequired / 1.03 : resources.Money.storageRequired));
             let maxCost = state.moneyMedian * settings.foreignHireMercCostLowerThanIncome;
-            while (m.currentSoldiers < mercenaryMax && resources.Money.currentQuantity >= mercenaryCost &&
+            let minMoney = Math.max(resources.Money.maxQuantity * settings.foreignHireMercMoneyStoragePercent / 100, Math.min(resources.Money.maxQuantity - maxCost, (settings.storageAssignExtra ? resources.Money.storageRequired / 1.03 : resources.Money.storageRequired)));
+            if (state.goal === "Reset") { // Get as much as possible before reset
+                mercenaryMax = m.maxSoldiers;
+                minMoney = 0;
+                maxCost = Number.MAX_SAFE_INTEGER;
+            }
+            while (m.currentSoldiers < mercenaryMax && resources.Money.spareQuantity >= mercenaryCost &&
                   (resources.Money.currentQuantity - mercenaryCost > minMoney || mercenaryCost < maxCost) &&
                 m.hireMercenary()) {
                 mercenariesHired++;
@@ -6274,9 +6155,76 @@
                 GameLog.logSuccess(GameLog.Types.mercenary, `雇佣了 ${mercenariesHired} 名雇佣兵。`);
             }
         }
+    }
 
-        // Stop here, if we don't want to attack anything
-        if (settings.foreignPacifist || !m.isForeignUnlocked()) {
+    function autoSpy([activeForeigns, currentTarget]) {
+        if (haveTask("spyop") || !haveTech("spy")) {
+            return;
+        }
+
+        // Train spies
+        if (settings.foreignTrainSpy) {
+            let foreignVue = getVueById("foreign");
+            for (let i = 0; i < activeForeigns.length; i++) {
+                let foreign = activeForeigns[i];
+                // Spy already in training, or can't be afforded, or foreign is under control
+                if (foreignVue.spy_disabled(foreign.id) || foreign.gov.occ || foreign.gov.anx || foreign.gov.buy) {
+                    continue;
+                }
+
+                let spiesRequired = settings.foreignSpyMax >= 0 ? settings.foreignSpyMax : Number.MAX_SAFE_INTEGER;
+                if (spiesRequired < 1 && foreign.policy !== "Occupy" && foreign.policy !== "Ignore") {
+                    spiesRequired = 1;
+                }
+                // We need 3 spies to purchase, but only if we have enough money cap to purchase
+                // City price affected by unrest, and we can't see unrest without 3 spies.
+                // Here we're comparing max money with hardcoded minimum cost
+                if (spiesRequired < 3 && foreign.policy === "Purchase" && resources.Money.maxQuantity >= [865350, 1153800, 1730700][foreign.id]) {
+                    spiesRequired = 3;
+                }
+
+                // We reached the max number of spies allowed
+                if (foreign.gov.spy >= spiesRequired){
+                    continue;
+                }
+
+                GameLog.logSuccess(GameLog.Types.spying, `Training a spy to send against ${getGovName(foreign.id)}.`);
+                foreignVue.spy(foreign.id);
+            }
+        }
+
+        // We can't use our spies yet
+        if (!haveTech("spy", 2)) {
+            return;
+        }
+
+        // Perform espionage
+        for (let i = 0; i < activeForeigns.length; i++) {
+            let foreign = activeForeigns[i];
+            // Spy is missing, busy, or have nosthing to do
+            if (foreign.gov.spy < 1 || foreign.gov.sab !== 0 || foreign.policy === "None") {
+                continue;
+            }
+
+            let espionageMission = SpyManager.Types[foreign.policy === "Occupy" ? "Sabotage" : foreign.policy];
+            if (!espionageMission) {
+                continue;
+            }
+
+            // Unoccupy power if it's controlled, but we want something different
+            if ((foreign.gov.anx && foreign.policy !== "Annex") ||
+                (foreign.gov.buy && foreign.policy !== "Purchase") ||
+                (foreign.gov.occ && foreign.policy !== "Occupy")){
+                getVueById("garrison")?.campaign(foreign.id);
+            } else if (!foreign.gov.anx && !foreign.gov.buy && !foreign.gov.occ) {
+                SpyManager.performEspionage(foreign.id, espionageMission.id, foreign !== currentTarget);
+            }
+        }
+    }
+
+    function autoBattle([activeForeigns, currentTarget]) {
+        let m = WarManager;
+        if (m.maxCityGarrison <= 0 || state.goal === "Reset" || settings.foreignPacifist) {
             return;
         }
 
@@ -6289,34 +6237,19 @@
         let bestAttackRating = game.armyRating(m.currentCityGarrison - m.wounded, "army");
         let requiredTactic = 0;
 
-        let [rank, subdued, attackIndex] = findAttackTarget();
-
         // Check if there's something that we want and can occupy, and switch to that target if found
-        for (let i = 0; i < 3; i++){
-            if (settings[`foreignPolicy${rank[i]}`] === "Occupy" && !game.global.civic.foreign[`gov${i}`].occ
-                && getAdvantage(bestAttackRating, 4, i) >= settings.foreignMinAdvantage) {
-                attackIndex = i;
+        for (let i = 0; i < activeForeigns.length; i++) {
+            let foreign = activeForeigns[i];
+            if (foreign.policy === "Occupy" && !foreign.gov.occ && m.getAdvantage(bestAttackRating, 4, foreign.id) >= settings.foreignMinAdvantage) {
+                currentTarget = foreign;
                 requiredTactic = 4;
                 break;
             }
         }
 
         // Nothing to attack
-        if (attackIndex < 0) {
+        if (!currentTarget) {
             return;
-        }
-        let gov = game.global.civic.foreign[`gov${attackIndex}`];
-
-        // Check if we want and can unify, unless we're already about to occupy something
-        if (requiredTactic !== 4 && subdued >= 2 && haveTech("unify")){
-            if (settings.foreignOccupyLast && getAdvantage(bestAttackRating, 4, attackIndex) > 0) {
-                // Occupy last force
-                requiredTactic = 4;
-            }
-            if (!settings.foreignOccupyLast && (settings[`foreignPolicy${rank[attackIndex]}`] === "Annex" || settings[`foreignPolicy${rank[attackIndex]}`] === "Purchase")) {
-                // We want to Annex or Purchase last one, stop attacking so we can influence it
-                return;
-            }
         }
 
         let minSoldiers = null;
@@ -6324,26 +6257,25 @@
 
         // Check if we can siege for loot
         if (requiredTactic !== 4) {
-            let minSiegeSoldiers = m.getSoldiersForAttackRating(getRatingForAdvantage(settings.foreignMinAdvantage, 4, attackIndex));
+            let minSiegeSoldiers = m.getSoldiersForAdvantage(settings.foreignMinAdvantage, 4, currentTarget.id);
             if (minSiegeSoldiers <= settings.foreignMaxSiegeBattalion && minSiegeSoldiers <= m.currentCityGarrison) {
                 minSoldiers = minSiegeSoldiers;
-                maxSoldiers = Math.min(m.getSoldiersForAttackRating(getRatingForAdvantage(settings.foreignMaxAdvantage, 4, attackIndex)), settings.foreignMaxSiegeBattalion+1);
+                maxSoldiers = Math.min(m.getSoldiersForAdvantage(settings.foreignMaxAdvantage, 4, currentTarget.id), settings.foreignMaxSiegeBattalion + 1);
                 requiredTactic = 4;
             }
         }
-
         // If we aren't going to siege our target, then let's find best tactic for plundering
         if (requiredTactic !== 4) {
             for (let i = 3; i > 0; i--) {
-                if (getAdvantage(bestAttackRating, i, attackIndex) >= settings.foreignMinAdvantage) {
+                if (m.getAdvantage(bestAttackRating, i, currentTarget.id) >= settings.foreignMinAdvantage) {
                     requiredTactic = i;
                     break;
                 }
             }
         }
 
-        minSoldiers = minSoldiers ?? m.getSoldiersForAttackRating(getRatingForAdvantage(settings.foreignMinAdvantage, requiredTactic, attackIndex));
-        maxSoldiers = maxSoldiers ?? m.getSoldiersForAttackRating(getRatingForAdvantage(settings.foreignMaxAdvantage, requiredTactic, attackIndex));
+        minSoldiers = minSoldiers ?? m.getSoldiersForAdvantage(settings.foreignMinAdvantage, requiredTactic, currentTarget.id);
+        maxSoldiers = maxSoldiers ?? m.getSoldiersForAdvantage(settings.foreignMaxAdvantage, requiredTactic, currentTarget.id);
 
         // Max soldiers advantage should be above our max. Let's tune it down to stay in prefered range, if we can
         if (maxSoldiers > minSoldiers) {
@@ -6352,15 +6284,15 @@
         maxSoldiers = Math.min(maxSoldiers, m.currentCityGarrison - m.wounded);
 
         // Occupy can pull soldiers from ships, let's make sure it won't happen
-        if (gov.anx || gov.buy || gov.occ) {
+        if (currentTarget.gov.anx || currentTarget.gov.buy || currentTarget.gov.occ) {
             // If it occupied currently - we'll get enough soldiers just by unoccupying it
-            m.launchCampaign(attackIndex);
-        } else if (requiredTactic == 4 && m.crew > 0) {
+            m.launchCampaign(currentTarget.id);
+        } else if (requiredTactic === 4 && m.crew > 0) {
             let occCost = game.global.civic.govern.type === "federation" ? 15 : 20;
             let missingSoldiers = occCost - (m.currentCityGarrison - m.wounded - maxSoldiers);
             if (missingSoldiers > 0) {
                 // Not enough soldiers in city, let's try to pull them from hell
-                if (!m.initHell() || m.hellSoldiers - m.hellReservedSoldiers < missingSoldiers) {
+                if (!settings.autoHell || !m.initHell() || m.hellSoldiers - m.hellReservedSoldiers < missingSoldiers) {
                     return;
                 }
                 let patrolsToRemove = Math.ceil((missingSoldiers - m.hellGarrison) / m.hellPatrolSize);
@@ -6372,12 +6304,7 @@
         }
 
         // Set attack type
-        while (m.tactic < requiredTactic) {
-            m.increaseCampaignDifficulty();
-        }
-        while (m.tactic > requiredTactic) {
-            m.decreaseCampaignDifficulty();
-        }
+        m.setTactic(requiredTactic);
 
         // Now adjust our battalion size to fit between our campaign attack rating ranges
         let deltaBattalion = maxSoldiers - m.raid;
@@ -6390,18 +6317,16 @@
 
         // Log the interaction
         let campaignTitle = m.getCampaignTitle(requiredTactic);
-        let aproximateSign = gov.spy < 1 ? "~" : "";
         let battalionRating = game.armyRating(m.raid, "army");
-        let advantagePercent = getAdvantage(battalionRating, requiredTactic, attackIndex).toFixed(1);
-        GameLog.logSuccess(GameLog.Types.attack, `Launching ${campaignTitle} campaign against ${getGovName(attackIndex)} with ${aproximateSign}${advantagePercent}% advantage.`);
+        let advantagePercent = m.getAdvantage(battalionRating, requiredTactic, currentTarget.id).toFixed(1);
+        GameLog.logSuccess(GameLog.Types.attack, `Launching ${campaignTitle} campaign against ${getGovName(currentTarget.id)} with ${currentTarget.gov.spy < 1 ? "~" : ""}${advantagePercent}% advantage.`);
 
-        m.launchCampaign(attackIndex);
+        m.launchCampaign(currentTarget.id);
     }
 
     function autoHell() {
         let m = WarManager;
-
-        if (!m.initHell()) {
+        if (!m.initGarrison() || !m.initHell()) {
             return;
         }
 
@@ -6638,9 +6563,8 @@
         // Now assign crafters
         if (settings.autoCraftsmen){
             // Taken from game source, no idea what this "140" means.
-            let traitsResourceful0 = 10;
             let speed = game.global.genes['crafty'] ? 2 : 1;
-            let craft_costs = game.global.race['resourceful'] ? (1 - traitsResourceful0 / 100) : 1;
+            let craft_costs = game.global.race['resourceful'] ? 0.9 : 1;
             let costMod = speed * craft_costs / 140;
 
             // Get list of craftabe resources
@@ -6693,15 +6617,19 @@
             let requestedJobs = availableJobs.filter(job => job.resource.isDemanded());
             if (requestedJobs.length > 0) {
                 availableJobs = requestedJobs;
-            } else if (settings.productionPrioritizeDemanded) {
+            } else if (settings.productionFoundryWeighting === "demanded") {
                 let usefulJobs = availableJobs.filter(job => job.resource.currentQuantity < job.resource.storageRequired);
                 if (usefulJobs.length > 0) {
                     availableJobs = usefulJobs;
                 }
             }
 
-            // Sort them by amount and weight. Yes, it can be empty, not a problem.
-            availableJobs.sort((a, b) => (a.resource.currentQuantity / a.resource.weighting) - (b.resource.currentQuantity / b.resource.weighting));
+            if (settings.productionFoundryWeighting === "buildings" && state.otherTargets.length > 0) {
+                let scaledWeightings = Object.fromEntries(availableJobs.map(job => [job.id, (state.otherTargets.find(building => resourceCost(building, job.resource) > job.resource.currentQuantity)?.weighting ?? 0) * job.resource.weighting]));
+                availableJobs.sort((a, b) => (a.resource.currentQuantity / scaledWeightings[a.id]) - (b.resource.currentQuantity / scaledWeightings[b.id]));
+            } else {
+                availableJobs.sort((a, b) => (a.resource.currentQuantity / a.resource.weighting) - (b.resource.currentQuantity / b.resource.weighting));
+            }
 
             for (let i = 0; i < JobManager.craftingJobs.length; i++) {
                 let job = JobManager.craftingJobs[i];
@@ -6790,6 +6718,9 @@
                     }
                 }
 
+                if (job === jobs.CrystalMiner && !resources.Crystal.isUseful()) {
+                    jobsToAssign = Math.min(jobsToAssign, resources.Crystal.getBusyWorkers("job_crystal_miner", jobs.CrystalMiner.count));
+                }
                 if (job === jobs.CementWorker) {
                     let stoneRateOfChange = resources.Stone.calculateRateOfChange({buy: true}) + (job.count * 3) - 5;
                     if (game.global.race['smoldering'] && settings.autoQuarry) {
@@ -6818,7 +6749,7 @@
         let splitJobs = [];
         if (lumberjackIndex !== -1) splitJobs.push( { jobIndex: lumberjackIndex, job: jobs.Lumberjack, weighting: settings.jobLumberWeighting} );
         if (quarryWorkerIndex !== -1) splitJobs.push( { jobIndex: quarryWorkerIndex, job: jobs.QuarryWorker, weighting: settings.jobQuarryWeighting});
-        if (crystalMinerIndex !== -1) splitJobs.push( { jobIndex: crystalMinerIndex, job: jobs.CrystalMiner, weighting: settings.jobCrystalWeighting});
+        if (crystalMinerIndex !== -1 && resources.Crystal.isUseful()) splitJobs.push( { jobIndex: crystalMinerIndex, job: jobs.CrystalMiner, weighting: settings.jobCrystalWeighting});
         if (scavengerIndex !== -1) splitJobs.push( { jobIndex: scavengerIndex, job: jobs.Scavenger, weighting: settings.jobScavengerWeighting});
 
         // Balance lumberjacks, quarry workers, crystal miners and scavengers if they are unlocked
@@ -7544,22 +7475,27 @@
             case 'mad':
                 let madVue = getVueById("mad");
                 if (madVue?.display && haveTech("mad")) {
-                    state.goal = "Reset";
+                    if (state.goal !== 'Reset') {
+                        state.goal = 'Reset';
+                        return;
+                    }
                     if (madVue.armed) {
                         madVue.arm();
                     }
 
                     if (!settings.prestigeMADWait || (WarManager.currentSoldiers >= WarManager.maxSoldiers && resources.Population.currentQuantity >= resources.Population.maxQuantity && WarManager.currentSoldiers + resources.Population.currentQuantity >= settings.prestigeMADPopulation)) {
                         state.goal = "GameOverMan";
-                        console.log("Soft resetting game with MAD");
                         madVue.launch();
                     }
                 }
                 return;
             case 'bioseed':
                 if (isBioseederPrestigeAvailable()) { // Ship completed and probe requirements met
+                    if (state.goal !== 'Reset') {
+                        state.goal = 'Reset';
+                        return;
+                    }
                     if (buildings.GasSpaceDockLaunch.isUnlocked()) {
-                        console.log("Soft resetting game with BioSeeder ship");
                         state.goal = "GameOverMan";
                         buildings.GasSpaceDockLaunch.click();
                     } else if (buildings.GasSpaceDockPrepForLaunch.isUnlocked()) {
@@ -7572,10 +7508,13 @@
                 return;
             case 'cataclysm':
                 if (isCataclysmPrestigeAvailable()) {
+                    if (state.goal !== 'Reset') {
+                        state.goal = 'Reset';
+                        return;
+                    }
                     if (settings.autoEvolution) {
                         loadQueuedSettings(); // Cataclysm doesnt't have evolution stage, so we need to load settings here, before reset
                     }
-                    state.goal = "Reset";
                     techIds["tech-dial_it_to_11"].click();
                 }
                 return;
@@ -7584,19 +7523,24 @@
                 return;
             case 'whitehole':
                 if (isWhiteholePrestigeAvailable()) { // Solar mass requirements met and research available
-                    state.goal = "Reset";
+                    if (state.goal !== 'Reset') {
+                        state.goal = 'Reset';
+                        return;
+                    }
                     ["tech-infusion_confirm", "tech-infusion_check", "tech-exotic_infusion"].forEach(id => techIds[id].click());
                 }
                 return;
             case 'ascension':
                 if (isAscensionPrestigeAvailable()) {
-                    state.goal = "Reset";
+                    if (state.goal !== 'Reset') {
+                        state.goal = 'Reset';
+                        return;
+                    }
                     buildings.SiriusAscend.click();
                 }
                 return;
             case 'demonic':
                 if (isDemonicPrestigeAvailable()) {
-                    state.goal = "Reset";
                     techIds["tech-demonic_infusion"].click();
                 }
                 return;
@@ -7901,11 +7845,11 @@
             }
         }
 
-        let targetsList = [...state.queuedTargets, ...state.triggerTargets];
+        let ignoredList = [...state.queuedTargets, ...state.triggerTargets];
         let buildingList = [...BuildingManager.managedPriorityList(), ...ProjectManager.managedPriorityList()];
 
         // Sort array so we'll have prioritized buildings on top. We'll need that below to avoid deathlocks, when building 1 waits for building 2, and building 2 waits for building 3. That's something we don't want to happen when building 1 and building 3 doesn't conflicts with each other.
-        buildingList.sort((a, b) => b.weighting - a.weighting);
+        state.otherTargets = buildingList.sort((a, b) => b.weighting - a.weighting);
 
         let estimatedTime = {};
         let affordableCache = {};
@@ -7915,7 +7859,7 @@
             let building = buildingList[i];
 
             // Only go further if it's affordable building, and not current target
-            if (targetsList.includes(building) || !(affordableCache[building.id] ?? (affordableCache[building.id] = building.isAffordable()))) {
+            if (ignoredList.includes(building) || !(affordableCache[building._vueBinding] ?? (affordableCache[building._vueBinding] = building.isAffordable()))) {
                 continue;
             }
 
@@ -7939,13 +7883,13 @@
                     // And we don't want to process clickable buildings - all buildings with highter weighting should already been proccessed.
                     // If that thing is affordable, but wasn't bought - it means something block it, and it won't be builded soon anyway, so we'll ignore it's demands.
                     // x10 weight for building to be checked against
-                    if (weightDiffRatio < 10 && (affordableCache[other.id] ?? (affordableCache[other.id] = other.isAffordable()))){
+                    if (weightDiffRatio < 10 && (affordableCache[other._vueBinding] ?? (affordableCache[other._vueBinding] = other.isAffordable()))){
                         continue;
                     }
 
                     // Calculate time to build for competing building, if it's not cached
-                    if (!estimatedTime[other.id]){
-                        estimatedTime[other.id] = [];
+                    if (!estimatedTime[other._vueBinding]){
+                        estimatedTime[other._vueBinding] = [];
 
                         for (let k = 0; k < other.resourceRequirements.length; k++) {
                             let resource = other.resourceRequirements[k].resource;
@@ -7958,15 +7902,15 @@
 
                             let totalRateOfCharge = resource.calculateRateOfChange({buy: true});
                             if (totalRateOfCharge > 0) {
-                                estimatedTime[other.id][resource.id] = (quantity - resource.currentQuantity) / totalRateOfCharge;
+                                estimatedTime[other._vueBinding][resource.id] = (quantity - resource.currentQuantity) / totalRateOfCharge;
                             } else if (settings.buildingsIgnoreZeroRate && resource.storageRatio < 0.975 && resource.currentQuantity < quantity) {
-                                estimatedTime[other.id][resource.id] = Number.MAX_SAFE_INTEGER;
+                                estimatedTime[other._vueBinding][resource.id] = Number.MAX_SAFE_INTEGER;
                             } else {
                                 // Craftables and such, which not producing at this moment. We can't realistically calculate how much time it'll take to fulfil requirement(too many factors), so let's assume we can get it any any moment.
-                                estimatedTime[other.id][resource.id] = 0;
+                                estimatedTime[other._vueBinding][resource.id] = 0;
                             }
                         }
-                        estimatedTime[other.id].total = Math.max(0, ...Object.values(estimatedTime[other.id]));
+                        estimatedTime[other._vueBinding].total = Math.max(0, ...Object.values(estimatedTime[other._vueBinding]));
                     }
 
                     // Compare resource costs
@@ -7992,7 +7936,7 @@
 
                         // We can use up to this amount of resources without delaying competing building
                         // Not very accurate, as income can fluctuate wildly for foundry, factory, and such, but should work as bottom line
-                        if (thisRequirement.quantity <= (estimatedTime[other.id].total - estimatedTime[other.id][resource.id]) * resource.calculateRateOfChange({buy: true})) {
+                        if (thisRequirement.quantity <= (estimatedTime[other._vueBinding].total - estimatedTime[other._vueBinding][resource.id]) * resource.calculateRateOfChange({buy: true})) {
                             continue;
                         }
 
@@ -8198,15 +8142,29 @@
                 if (manageTransport && (building === buildings.LakeTransport || building === buildings.LakeBireme)) {
                     continue;
                 }
-                // Disable empty buildings
-                if (building === buildings.CementPlant && jobs.CementWorker.count === 0) {
-                    maxStateOn = 0;
-                }
-                if (building === buildings.Mine && jobs.Miner.count === 0) {
-                    maxStateOn = 0;
-                }
-                if (building === buildings.CoalMine && jobs.CoalMiner.count === 0) {
-                    maxStateOn = 0;
+                if (resources.Power.currentQuantity <= resources.Power.maxQuantity) { // Saving power, unless we can afford everything
+                    // Disable Belt Space Stations with no workers
+                    if (building === buildings.BeltSpaceStation && game.breakdown.c.Elerium) {
+                        let stationStorage = parseFloat(game.breakdown.c.Elerium[game.loc("space_belt_station_title")] ?? 0);
+                        let extraStations = Math.floor((resources.Elerium.maxQuantity - resources.Elerium.storageRequired) / stationStorage);
+                        let minersNeeded = buildings.BeltEleriumShip.stateOnCount * 2 + buildings.BeltIridiumShip.stateOnCount + buildings.BeltIronShip.stateOnCount;
+                        maxStateOn = Math.min(maxStateOn, Math.max(currentStateOn - extraStations, Math.ceil(minersNeeded / 3)));
+                    }
+                    if (building === buildings.CementPlant && jobs.CementWorker.count === 0) {
+                        maxStateOn = 0;
+                    }
+                    if (building === buildings.Mine && jobs.Miner.count === 0) {
+                        maxStateOn = 0;
+                    }
+                    if (building === buildings.CoalMine && jobs.CoalMiner.count === 0) {
+                        maxStateOn = 0;
+                    }
+                    if (building === buildings.GasMining && !resources.Helium_3.isUseful()) {
+                        maxStateOn = Math.min(maxStateOn, resources.Helium_3.getBusyWorkers("space_gas_mining_title", currentStateOn));
+                    }
+                    if (building === buildings.GasMoonOilExtractor  && !resources.Oil.isUseful()) {
+                        maxStateOn = Math.min(maxStateOn, resources.Oil.getBusyWorkers("space_gas_moon_oil_extractor_title", currentStateOn));
+                    }
                 }
                 // Disable barracks on bioseed run, if enabled
                 if (building === buildings.Barracks && settings.prestigeEnabledBarracks < 100 && !WarManager.isForeignUnlocked() && buildings.GasSpaceDockShipSegment.count < 90 && buildings.DwarfWorldController.count < 1) {
@@ -8230,13 +8188,6 @@
                 // Disable mills with surplus energy
                 if (building === buildings.Mill && building.powered && resources.Food.storageRatio < 0.7 && (jobs.Farmer.count > 0 || jobs.Hunter.count > 0)) {
                     maxStateOn = Math.min(maxStateOn, currentStateOn - ((resources.Power.currentQuantity - 5) / (-building.powered)));
-                }
-                // Disable Belt Space Stations with no workers
-                if (building === buildings.BeltSpaceStation && resources.Power.currentQuantity - ((building.count - currentStateOn) * building.powered) < 20) {
-                    let stationStorage = parseFloat(game.breakdown.c.Elerium[game.loc("space_belt_station_title")] ?? 0);
-                    let extraStations = Math.floor((resources.Elerium.maxQuantity - resources.Elerium.storageRequired) / stationStorage);
-                    let minersNeeded = buildings.BeltEleriumShip.stateOnCount * 2 + buildings.BeltIridiumShip.stateOnCount + buildings.BeltIronShip.stateOnCount;
-                    maxStateOn = Math.min(maxStateOn, Math.max(currentStateOn - extraStations, Math.ceil(minersNeeded / 3)));
                 }
                 // Disable useless Mine Layers
                 if (building === buildings.ChthonianMineLayer) {
@@ -8351,7 +8302,6 @@
             building.tryAdjustState(maxStateOn - currentStateOn);
 
             if (building === buildings.NeutronCitadel) {
-                building.extraDescription = `Next level will increase total consumption by ${getCitadelConsumption(maxStateOn+1) - getCitadelConsumption(maxStateOn)} MW<br>${building.extraDescription}`;
                 availablePower -= getCitadelConsumption(maxStateOn);
             } else {
                 availablePower -= building.powered * maxStateOn;
@@ -8725,7 +8675,7 @@
 
     function adjustTradeRoutes() {
         let tradableResources = MarketManager.priorityList
-          .filter(r => r.isMarketUnlocked() && (r.autoTradeBuyEnabled || r.autoTradeSellEnabled))
+          .filter(r => r.isMarketUnlocked())
           .sort((a, b) => (b.storageRatio > 0.99 ? b.currentTradeRouteSellPrice * 1000 : b.usefulRatio) - (a.storageRatio > 0.99 ? a.currentTradeRouteSellPrice * 1000 : a.usefulRatio));
         let maxTradeRoutes = MarketManager.getMaxTradeRoutes();
         let tradeRoutesUsed = 0;
@@ -9120,7 +9070,6 @@
             return;
         }
         let mechBay = game.global.portal.mechbay;
-        buildings.SpireMechBay.extraDescription = `Currrent team potential: ${getNiceNumber(m.mechsPotential)}<br>${buildings.SpireMechBay.extraDescription}`;
 
         // Rearrange mechs for best efficiency if some of the bays are disabled
         if (m.inactiveMechs.length > 0) {
@@ -9140,29 +9089,23 @@
         }
 
         if (haveTask("mech")) {
-            return;
+            return; // Do nothing except dragging if governor enabled
         }
 
         let newMech = {};
         if (settings.mechBuild === "random") {
-            newMech = m.nextMech ?? m.getRandomMech(m.getPreferedSize());
-            m.nextMech = null;
+            newMech = m.getRandomMech(m.getPreferedSize());
         } else if (settings.mechBuild === "user") {
             newMech = {...mechBay.blueprint, ...m.getMechStats(mechBay.blueprint)};
         } else { // mechBuild === "none"
-            return;
+            return; // Mech build disabled, stop here
         }
         let [newGems, newSupply, newSpace] = m.getMechCost(newMech);
 
-        // Not enough supply capacity
-        if (resources.Supply.maxQuantity - resources.Supply.requestedQuantity < newSupply) {
-            return;
+        if (!settings.mechFillBay && resources.Supply.spareMaxQuantity < newSupply) {
+            return; // Not enough supply capacity, and smaller mechs are disabled, can't do anything
         }
 
-        // TODO: Workaround for scrap vue bug - it doesn't update used space. Remove me once it's fixed in game.
-        if (mechBay.bay !== m.spaceUsed) {
-            return;
-        }
         let baySpace = mechBay.max - mechBay.bay;
         let lastFloor = settings.prestigeType === "demonic" && buildings.SpireTower.count >= settings.prestigeDemonicFloor && haveTech("waygate", 3);
 
@@ -9174,13 +9117,13 @@
             }
             let timeToFullSupplies = missingSupplies / resources.Supply.rateOfChange;
             if (m.getTimeToClear() <= timeToFullSupplies) {
-                return;
+                return; // Floor will be cleared before capping supplies, save them
             }
         }
 
-        let canExpandBay = buildings.SpireMechBay.isAutoBuildable() && (buildings.SpireMechBay.isAffordable(true) || (buildings.SpirePurifier.isAutoBuildable() && buildings.SpirePurifier.isAffordable(true)));
+        let canExpandBay = settings.mechBaysFirst && buildings.SpireMechBay.isAutoBuildable() && (buildings.SpireMechBay.isAffordable(true) || (buildings.SpirePurifier.isAutoBuildable() && buildings.SpirePurifier.isAffordable(true)));
         let mechScrap = settings.mechScrap;
-        if (settings.mechBaysFirst && canExpandBay && resources.Supply.currentQuantity < resources.Supply.maxQuantity) {
+        if (canExpandBay && resources.Supply.currentQuantity < resources.Supply.maxQuantity) {
             // We can build purifier or bay once we'll have enough resources, do not rebuild old mechs
             mechScrap = "none";
         } else if (settings.mechScrap === "mixed") {
@@ -9203,14 +9146,14 @@
         }
 
         // Check if we need to scrap anything
-        if ((mechScrap === "single" && baySpace < newSpace) || (mechScrap === "all" && (baySpace < newSpace || resources.Supply.spareQuantity < newSupply || resources.Soul_Gem.spareQuantity < newGems))) {
+        if (newSupply < resources.Supply.spareMaxQuantity && ((mechScrap === "single" && baySpace < newSpace) || (mechScrap === "all" && (baySpace < newSpace || resources.Supply.spareQuantity < newSupply || resources.Soul_Gem.spareQuantity < newGems)))) {
             let spaceGained = 0;
             let supplyGained = 0;
             let gemsGained = 0;
             let powerLost = 0;
 
             // Get list of inefficient mech
-            let scrapEfficiency = lastFloor ? Math.min(settings.mechScrapEfficiency, baySpace < newSpace ? 0 : 1) : settings.mechScrapEfficiency;
+            let scrapEfficiency = lastFloor ? Math.min(settings.mechScrapEfficiency, 1) : settings.mechScrapEfficiency;
             let badMechList = m.activeMechs.filter(mech => {
                 if (mech.infernal || mech.power >= m.bestMech[mech.size].power) {
                     return false;
@@ -9221,6 +9164,7 @@
                 let powerRatio = mech.power / newMech.power;
                 return costRatio / powerRatio > scrapEfficiency;
             }).sort((a, b) => a.efficiency - b.efficiency);
+            // TODO: Preserve min amount of scouts
 
             // Remove worst mechs untill we have enough room for new mech
             let trashMechs = [];
@@ -9238,20 +9182,19 @@
                 trashMechs.forEach(mech => m.scrapMech(mech));
                 resources.Supply.currentQuantity = Math.min(resources.Supply.currentQuantity + supplyGained, resources.Supply.maxQuantity);
                 resources.Soul_Gem.currentQuantity += gemsGained;
-                m.nextMech = newMech;
-                return; // Just scrapped something, give game a second to recalculate mechs before buying replacement
-            }
-            if (trashMechs.reduce((sum, mech) => sum += m.getMechSpace(mech), 0) >= newSpace) {
+                // TODO: Workaround for scrap vue bug - it doesn't update used space in callback. Remove when fixed.
+                m._assemblyVue.m.bay -= spaceGained;
+            } else if (baySpace + spaceGained >= newSpace) {
                 return; // We have scrapable mechs, but don't want to scrap them right now. Waiting for more supplies for instant replace.
             }
         }
 
-        // Try to squeeze in smaller mech, if we can't fit preferred one
-        if (mechScrap !== "none" && settings.mechFillBay && !canExpandBay && baySpace < newSpace && baySpace > 1) {
-            for (let i = m.Size.length - 3; i >= 0; i--) {
-                if (m.getMechSpace({size: m.Size[i]}) <= baySpace) {
+        // Try to squeeze smaller mech, if we can't fit preferred one
+        if (settings.mechFillBay && !canExpandBay && (baySpace < newSpace || resources.Supply.maxQuantity < newSupply)) {
+            for (let i = m.Size.indexOf(newMech.size) - 1; i >= 0; i--) {
+                [newGems, newSupply, newSpace] = m.getMechCost({size: m.Size[i]});
+                if (newSpace <= baySpace && newSupply <= resources.Supply.maxQuantity) {
                     newMech = m.getRandomMech(m.Size[i]);
-                    [newGems, newSupply, newSpace] = m.getMechCost(newMech);
                     break;
                 }
             }
@@ -9259,8 +9202,8 @@
 
         // We have everything to get new mech
         if (resources.Soul_Gem.spareQuantity >= newGems && resources.Supply.spareQuantity >= newSupply && baySpace >= newSpace) {
-            if (settings.mechBuild !== "user" && game.global.portal.mechbay.blueprint.infernal) {
-                $("#mechAssembly .b-checkbox").click();
+            if (settings.mechBuild !== "user" && mechBay.blueprint.infernal) {
+                $("#mechAssembly .b-checkbox").click(); // Never build inferno mechs
             }
             m.buildMech(newMech);
             resources.Supply.currentQuantity -= newSupply;
@@ -9455,6 +9398,7 @@
     }
 
     function updatePriorityTargets() {
+        state.otherTargets = [];
         state.queuedTargets = [];
         // Buildings queue
         let bufferMult = settings.storageAssignExtra ? 1.03 : 1;
@@ -9480,10 +9424,17 @@
             for (let i = 0; i < game.global.r_queue.queue.length; i++) {
                 let id = game.global.r_queue.queue[i].id;
                 let obj = techIds[id];
-                if (obj && obj.isAffordable(true)) {
-                    state.queuedTargets.push(obj);
+                if (obj) {
+                    // TODO: Duplicate update. Refactor me.
+                    obj.updateResourceRequirements();
+                    obj.resourceRequirements.forEach(requirement => {
+                        requirement.resource.storageRequired = Math.max(requirement.quantity*bufferMult, requirement.resource.storageRequired);
+                    });
+                    if (obj.isAffordable(true)) {
+                        state.queuedTargets.push(obj);
+                    }
                 }
-                if (!game.global.settings.qAny) {
+                if (!game.global.settings.qAny_res) {
                     break;
                 }
             }
@@ -9798,6 +9749,23 @@
         }));
     }
 
+    function getTooltipInfo(obj) {
+        let notes = [];
+        if (obj === buildings.NeutronCitadel) {
+            notes.push(`Next level will increase total consumption by ${getCitadelConsumption(obj.stateOnCount+1) - getCitadelConsumption(obj.stateOnCount)} MW`);
+        }
+        if (obj === buildings.SpireMechBay && MechManager.initLab()) {
+            notes.push(`Currrent team potential: ${getNiceNumber(MechManager.mechsPotential)}`);
+        }
+        // Other tooltips goes here...
+
+        if (obj.extraDescription) {
+            notes.push(obj.extraDescription);
+        }
+        return notes.join("<br>");
+    }
+
+    const infusionStep = {"blood-lust": 15, "blood-illuminate": 12, "blood-greed": 16, "blood-hoarder": 14, "blood-artisan": 8, "blood-attract": 4, "blood-wrath": 2};
     function addTooltip(mutations) {
         if (!settings.masterScriptToggle) {
             return;
@@ -9805,23 +9773,39 @@
         mutations.forEach(mutation => mutation.addedNodes.forEach(node => {
             if (node.id === "popper") {
                 let dataId = node.dataset.id;
+                // Tooltips for things with no script objects
                 if (dataId === 'powerStatus') {
-                    let disabled = Object.values(buildings).reduce((net, b) => net + (b === buildings.NeutronCitadel ? getCitadelConsumption(b.count) - getCitadelConsumption(b.stateOnCount) : b.stateOffCount * b.powered), 0);
-                    node.innerHTML += `<p class="modal_bd"><span>Disabled</span><span class="has-text-danger">${getNiceNumber(disabled)}</span></p>`;
+                    node.innerHTML += `<p class="modal_bd"><span>Disabled</span><span class="has-text-danger">${getNiceNumber(resources.Power.maxQuantity)}</span></p>`;
+                    return;
+                } else if (infusionStep[dataId]) {
+                    let BloodStone = game.loc('resource_Blood_Stone_name').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+                    node.innerHTML = node.innerHTML.replace(new RegExp(`${BloodStone}: \\d+`), `$& (+${infusionStep[dataId]})`);
                     return;
                 }
+
+                let match = null;
                 let obj = null;
-                if (dataId.match(/^popArpa/)) { // "popArpa[id-with-no-tab]" for projects
-                    obj = arpaIds["arpa" + dataId.substr(7)];
-                } else if (dataId.match(/^q.*\d$/)) { // "q[id][order]" for buildings in queue
-                    let objId = dataId.substr(1, dataId.length-2);
-                    obj = buildingIds[objId] || arpaIds[objId];
+                if (match = dataId.match(/^popArpa([a-z_-]+)\d*$/)) { // "popArpa[id-with-no-tab][quantity]" for projects
+                    obj = arpaIds["arpa" + match[1]];
+                } else if (match = dataId.match(/^q([a-z_-]+)\d*$/)) { // "q[id][order]" for buildings in queue
+                    obj = buildingIds[match[1]] || arpaIds[match[1]];
                 } else { // "[id]" for normal buildings
                     obj = buildingIds[dataId];
                 }
+                if (!obj) {
+                    return;
+                }
 
-                if (obj && obj.extraDescription !== "") {
-                    node.innerHTML += `<div style="border-top: solid .0625rem #999">${obj.extraDescription}</div>`;
+                // Flair, added before other descriptions
+                if (obj === buildings.BlackholeStellarEngine && buildings.BlackholeMassEjector.count > 0 && game.global.interstellar.stellar_engine.exotic < 0.025) {
+                    let massPerSec = (resources.Elerium.atomicMass * game.global.interstellar.mass_ejector.Elerium + resources.Infernite.atomicMass * game.global.interstellar.mass_ejector.Infernite) || -1;
+                    let missingExotics = (0.025 - game.global.interstellar.stellar_engine.exotic) * 1e10;
+                    node.innerHTML += `<div id="popTimer" class="flair has-text-advanced">Contaminated in [${poly.timeFormat(missingExotics / massPerSec)}]</div>`;
+                }
+
+                let description = getTooltipInfo(obj);
+                if (description) {
+                    node.innerHTML += `<div style="border-top: solid .0625rem #999">${description}</div>`;
                 }
             }
         }));
@@ -9923,8 +9907,7 @@
             autoCraft(); // Invalidates quantities of craftables, missing exposed craftingRatio to calculate craft result on script side
         }
         if (settings.autoFight) {
-            manageSpies(); // Can unoccupy foreign power in rare occasions, without caching back new status, but such desync should not cause any harm
-            autoBattle(); // Invalidates garrison, and adds unaccounted amount of resources after attack
+            autoFight();
         }
         if (settings.autoTax) {
             autoTax();
@@ -9974,7 +9957,7 @@
             return;
         }
 
-        // Wait until exposed data fully initialized (consume is empty until game process first tick)
+        // Wait until exposed data fully initialized ('p' in fastLoop, 'c' in midLoop)
         if (!game.global?.race || !game.breakdown.p.consume) {
             setTimeout(mainAutoEvolveScript, 100);
             return;
@@ -10146,7 +10129,8 @@
             }
 
             /* Fixes for game styles */
-            #powerStatus { white-space: nowrap; }
+            #popTimer { margin-bottom: 0.1rem }
+            #powerStatus { white-space: nowrap; } // TODO: Remove in 1.2
             .barracks { white-space: nowrap; }
             .area { width: calc(100% / 6) !important; max-width: 8rem; }
             .offer-item { width: 15% !important; max-width: 7.5rem; }
@@ -10625,7 +10609,7 @@
 
         addSettingsToggle(currentNode, "prestigeWaitAT", "Use all Accelerated Time", "Delay reset until all accelerated time will be used");
         addSettingsToggle(currentNode, "prestigeBioseedConstruct", "Ignore useless buildings", "Space Dock, Bioseeder Ship and Probes will be constructed only when Bioseed prestige enabled. World Collider won't be constructed during Bioseed. Jump Ship won't be constructed during Whitehole. Stellar Engine won't be constucted during Vacuum Collapse.");
-        addSettingsNumber(currentNode, "prestigeEnabledBarracks", "Barracks after unification", "Percent of barracks to keep enabled after unification, disabling some of them can reduce stress. All barracks will be enabled back when Bioseeder Ship will be at 90%, or after building World Collider");
+        addSettingsNumber(currentNode, "prestigeEnabledBarracks", "Percent of active barracks after unification", "Percent of barracks to keep enabled after unification, disabling some of them can reduce stress. All barracks will be enabled back when Bioseeder Ship will be at 90%, or after building World Collider");
 
         // MAD
         addSettingsHeader1(currentNode, "Mutual Assured Destruction");
@@ -11386,23 +11370,29 @@
         addSettingsHeader1(currentNode, "Foreign Powers");
         addSettingsToggle(currentNode, "foreignPacifist", "Pacifist", "Turns attacks off and on");
 
-        addSettingsToggle(currentNode, "foreignUnification", "Perform unification", "Perform unification once all three powers are subdued. autoResearch should be enabled for this to work.");
-        addSettingsToggle(currentNode, "foreignOccupyLast", "Occupy last foreign power", "Occupy last foreign power once other two are subdued, and unification is researched. It will speed up unification. And even if you don't want to unify at all - disabled above checkbox, and just want to plunder enemies, this option still better to keep enabled. As a side effect it will prevent you from wasting money influencing and inciting last foreign power, and allow you to occupy it during looting with sieges, for additional production bonus. Disable it only if you want annex\\purchase achievements.");
-
+        addSettingsToggle(currentNode, "foreignUnification", "Perform unification", "Perform unification once all three powers are controlled. autoResearch should be enabled for this to work.");
+        addSettingsToggle(currentNode, "foreignOccupyLast", "Occupy last foreign power", "Occupy last foreign power once other two are controlled, and unification is researched to speed up unification. Disable if you want annex\\purchase achievements.");
+        addSettingsToggle(currentNode, "foreignForceSabotage", "Sabotage foreign power when useful", "Perform sabotage against current target if it's useful(power above 50), regardless of required power, and default action defined above");
         addSettingsToggle(currentNode, "foreignTrainSpy", "Train spies", "Train spies to use against foreign powers");
         addSettingsNumber(currentNode, "foreignSpyMax", "Maximum spies", "Maximum spies per foreign power");
 
         addSettingsNumber(currentNode, "foreignPowerRequired", "Military Power to switch target", "Switches to attack next foreign power once its power lowered down to this number. When exact numbers not know script tries to approximate it.");
 
-        let policyOptions = [{val: "Ignore", label: "Ignore", hint: ""}, ...Object.keys(SpyManager.Types).map(id => ({val: id, label: id}))];
+        const spyMap = ([name, task]) => ({val: name, label: game.loc("civics_spy_" + task.id), hint: ""});
+        let policyOptions = [{val: "Ignore", label: "Ignore", hint: ""},
+                             ...Object.entries(SpyManager.Types).map(spyMap),
+                             {val: "Occupy", label: "Occupy", hint: ""}];
         addSettingsSelect(currentNode, "foreignPolicyInferior", "Inferior Power", "Perform this against inferior foreign power, with military power equal or below given threshold. Complex actions includes required preparation - Annex and Purchase will incite and influence, Occupy will sabotage, until said options will be available.", policyOptions);
         addSettingsSelect(currentNode, "foreignPolicySuperior", "Superior Power", "Perform this against superior foreign power, with military power above given threshold. Complex actions includes required preparation - Annex and Purchase will incite and influence, Occupy will sabotage, until said options will be available.", policyOptions);
-        addSettingsToggle(currentNode, "foreignForceSabotage", "Sabotage foreign power when useful", "Perform sabotage against current target if it's useful(power above 50), regardless of required power, and default action defined above");
+
+        /*let rivalOptions = [{val: "Ignore", label: "Ignore", hint: ""},
+                             ...Object.entries(SpyManager.Types).filter(([name, task]) => task.rival).map(spyMap)];
+        addSettingsSelect(currentNode, "foreignPolicyRival", "Rival Power", "Perform this against rival foreign power.", rivalOptions);*/
 
         // Campaign panel
         addSettingsHeader1(currentNode, "Campaigns");
-        addSettingsNumber(currentNode, "foreignAttackLivingSoldiersPercent", "Attack only if at least this percentage of your garrison soldiers are alive", "Only attacks if you ALSO have the target battalion size of healthy soldiers available, so this setting will only take effect if your battalion does not include all of your soldiers");
-        addSettingsNumber(currentNode, "foreignAttackHealthySoldiersPercent", "... and at least this percentage of your garrison is not injured", "Set to less than 100 to take advantage of being able to heal more soldiers in a game day than get wounded in a typical attack");
+        addSettingsNumber(currentNode, "foreignAttackLivingSoldiersPercent", "Minimum percentage of alive soldiers for attack", "Only attacks if you ALSO have the target battalion size of healthy soldiers available, so this setting will only take effect if your battalion does not include all of your soldiers");
+        addSettingsNumber(currentNode, "foreignAttackHealthySoldiersPercent", "Minimum percentage of healthy soldiers for attack", "Set to less than 100 to take advantage of being able to heal more soldiers in a game day than get wounded in a typical attack");
         addSettingsNumber(currentNode, "foreignHireMercMoneyStoragePercent", "Hire mercenary if money storage greater than percent", "Hire a mercenary if remaining money after purchase will be greater than this percent");
         addSettingsNumber(currentNode, "foreignHireMercCostLowerThanIncome", "OR if cost lower than money earned in X seconds", "Combines with the money storage percent setting to determine when to hire mercenaries");
         addSettingsNumber(currentNode, "foreignHireMercDeadSoldiers", "AND amount of dead soldiers above this number", "Hire a mercenary only when current amount of dead soldiers above given number");
@@ -11587,7 +11577,7 @@
                             {val: "user", label: "Current design", hint: "Build whatever currently set in Mech Lab"}];
         addSettingsSelect(currentNode, "mechBuild", "Build mechs", "Configures what will be build. Infernal mechs won't ever be build.", buildOptions);
 
-        let sizeOptions = [{val: "auto", label: "Script Managed", hint: "Select biggest affordable mech based on current amount of Soul Gems, and Supplies storage cap"}, ...MechManager.Size.map(id => ({val: id, label: game.loc(`portal_mech_size_${id}`), hint: game.loc(`portal_mech_size_${id}_desc`)}))];
+        let sizeOptions = [{val: "auto", label: "Most efficient", hint: "Select mech with best power per size for current floor, based on current amount of Soul Gems, and Supplies storage cap"}, ...MechManager.Size.map(id => ({val: id, label: game.loc(`portal_mech_size_${id}`), hint: game.loc(`portal_mech_size_${id}_desc`)}))];
         addSettingsSelect(currentNode, "mechSize", "Prefered mech size", "Size of random mechs", sizeOptions);
         addSettingsSelect(currentNode, "mechSizeGravity", "Gravity mech size", "Override prefered size with this on floors with high gravity", sizeOptions);
 
@@ -11599,7 +11589,7 @@
         addSettingsNumber(currentNode, "mechScouts", "Minimum scouts ratio", "Scouts compensate terrain penalty of suboptimal mechs. Build them up to this ratio.");
         addSettingsNumber(currentNode, "mechWaygatePotential", "Maximum mech potential for Waygate", "Fight Demon Lord only when current mech team potential below given amount. Full bay of best mechs will have `1` potential. Damage against Demon Lord does not affected by floor modifiers, all mechs always does 100% damage to him. Thus it's most time-efficient to fight him at times when mechs can't make good progress against regular monsters, and waiting for rebuilding. Auto Power needs to be on for this to work.");
         addSettingsToggle(currentNode, "mechSaveSupply", "Save up full supplies for next floor", "Stop building new mechs close to next floor, preparing to build bunch of new mechs suited for next enemy");
-        addSettingsToggle(currentNode, "mechFillBay", "Fill remaining bay space with smaller mechs", "Once mech bay is packed with optimal mechs of prefered size up to the limit fill up remaining space with smaller mechs, if possible");
+        addSettingsToggle(currentNode, "mechFillBay", "Build smaller mechs when preferred not available", "Build smaller mechs when prefered size can't be used due to low remaining bay space, or supplies cap");
         addSettingsToggle(currentNode, "buildingMechsFirst", "Build spire buildings only with full bay", "Fill mech bays up to current limit before spending resources on additional spire buildings");
         addSettingsToggle(currentNode, "mechBaysFirst", "Scrap mechs only after building maximum bays", "Scrap old mechs only when no new bays and purifiers can be builded");
 
@@ -11674,7 +11664,7 @@
         settings.mechScrap = "mixed";
         settings.mechScrapEfficiency = 2;
         settings.mechBuild = "random";
-        settings.mechSize = "auto";
+        settings.mechSize = "titan";
         settings.mechSizeGravity = "auto";
         settings.mechFillBay = true;
         settings.mechScouts = 0.05;
@@ -12256,7 +12246,10 @@
 
     function updateProductionTableFoundry(currentNode) {
         addStandardHeading(currentNode, "Foundry");
-        addSettingsToggle(currentNode, "productionPrioritizeDemanded", "Prioritize demanded craftables", "Resources already produced above maximum amount required for constructing buildings won't be crafted, if there's better options enabled and available, ignoring weighted ratio");
+        let weightingOptions = [{val: "none", label: "None", hint: "Use configured weightings with no additional adjustments, craftables with x2 weighting will be crafted two times more intense than with x1, etc."},
+                                {val: "demanded", label: "Prioritize demanded", hint: "Ignore craftables once stored amount surpass cost of most expensive building, until all missing resources will be crafted. After that works as with 'none' adjustments."},
+                                {val: "buildings", label: "Buildings weightings", hint: "Uses weightings of buildings which are waiting for craftables, as multipliers to craftables weighting. This option requires autoBuild."}];
+        addSettingsSelect(currentNode, "productionFoundryWeighting", "Weightings adjustments", "Configures how exactly craftables will be weighted against each other", weightingOptions);
 
         currentNode.append(`
           <table style="width:100%">
@@ -12554,6 +12547,7 @@
         addWeightingRule(tableBodyNode, "Horseshoes", "No more Horseshoes needed", "buildingWeightingHorseshoeUseless");
         addWeightingRule(tableBodyNode, "Meditation Chamber", "No more Meditation Space needed", "buildingWeightingZenUseless");
         addWeightingRule(tableBodyNode, "Gate Turret", "Gate demons fully supressed", "buildingWeightingGateTurret");
+        addWeightingRule(tableBodyNode, "Warehouses, Garage, Cargo Yard", "Need more storage", "buildingWeightingNeedStorage");
 
         document.documentElement.scrollTop = document.body.scrollTop = currentScrollPosition;
     }
@@ -13338,7 +13332,7 @@
             let project = ProjectManager.priorityList[i];
             let projectElement = $('#arpa' + project.id + ' .head');
             if (projectElement.length) {
-                let toggle = $(`<label id="script_arpa1_${project.id}" tabindex="0" class="switch ea-arpa-toggle" style="position:relative; max-width:75px;margin-top: -36px;left:45%;float:left;"><input type="checkbox"${project.autoBuildEnabled ? " checked" : ""}> <span class="check" style="height:5px;"></span></label>`);
+                let toggle = $(`<label id="script_arpa1_${project.id}" tabindex="0" class="switch ea-arpa-toggle" style="position:relative; max-width:75px;margin-top: -36px;left:59%;float:left;"><input type="checkbox"${project.autoBuildEnabled ? " checked" : ""}> <span class="check" style="height:5px;"></span></label>`);
                 projectElement.append(toggle);
                 toggle.on('change', {entity: project, property: "autoBuildEnabled", sync: "script_arpa2_" + project.id}, toggleCallback);
             }
@@ -13539,9 +13533,8 @@
 
     function getResourcesPerClick() {
         let amount = 1;
-        let traitsStrong0 = 5;
         if (game.global.race['strong']) {
-            amount *= traitsStrong0;
+            amount *= 5;
         }
         if (game.global.genes['enhance']) {
             amount *= 2;
@@ -13691,54 +13684,35 @@
     function getGovPower(govIndex) {
         // This function is full of hacks. But all that can be accomplished by wise player without peeking inside game variables
         // We really need to know power as accurate as possible, otherwise script becomes wonky when spies dies on mission
-        let govProp = "gov" + govIndex;
-        if (game.global.civic.foreign[govProp].spy > 0) {
+        let gov = game.global.civic.foreign["gov" + govIndex];
+        if (gov.spy > 0) {
             // With 2+ spies we know exact number, for 1 we're assuming trick with advantage
             // We can see ambush advantage with a single spy, and knowing advantage we can calculate power
             // Proof of concept: military_power = army_offence / (5 / (1-advantage))
             // I'm not going to waste time parsing tooltips, and take that from internal variable instead
-            return game.global.civic.foreign[govProp].mil;
+            return gov.mil;
         } else {
             // We're going to use another trick here. We know minimum and maximum power for gov
             // If current power is below minimum, that means we sabotaged it already, but spy died since that
             // We know we seen it for sure, so let's just peek inside, imitating memory
             // We could cache those values, but making it persistent in between of page reloads would be a pain
             // Especially considering that player can not only reset, but also import different save at any moment
-            let minPower = [75, 125, 200];
-            let maxPower = [125, 175, 300];
+            let minPower = [75, 125, 200, 650, 300];
+            let maxPower = [125, 175, 300, 750, 300];
             if (game.global.race['truepath']) {
                 [1.5, 1.4, 1.25].forEach((mod, idx) => {
                     minPower[idx] *= mod;
                     maxPower[idx] *= mod;
                 });
-                minPower.push(650, 300);
-                maxPower.push(750, 300);
             }
 
-            if (game.global.civic.foreign[govProp].mil < minPower[govIndex]) {
-                return game.global.civic.foreign[govProp].mil;
+            if (gov.mil < minPower[govIndex]) {
+                return gov.mil;
             } else {
                 // Above minimum. Even if we ever sabotaged it, unfortunately we can't prove it. Not peeking inside, and assuming worst.
                 return maxPower[govIndex];
             }
         }
-    }
-
-    const armyPower = [5, 27.5, 62.5, 125, 300];
-    function getGovArmy(tactic, govIndex) { // function battleAssessment(gov)
-        let enemy = armyPower[tactic];
-        if (game.global.race['banana']) {
-            enemy *= 2;
-        }
-        return enemy * getGovPower(govIndex) / 100;
-    }
-
-    function getAdvantage(army, tactic, govIndex) {
-        return (1 - (getGovArmy(tactic, govIndex) / army)) * 100;
-    }
-
-    function getRatingForAdvantage(adv, tactic, govIndex) {
-        return getGovArmy(tactic, govIndex) / (1 - (adv/100));
     }
 
     function getVueById(elementId) {
@@ -13796,8 +13770,10 @@
         mechCost: function(e,a){let l=9999,r=1e7;switch(e){case"small":{let e=game.global.blood.prepared>=2?5e4:75e3;r=a?2.5*e:e,l=a?20:1}break;case"medium":r=a?45e4:18e4,l=a?100:4;break;case"large":r=a?925e3:375e3,l=a?500:20;break;case"titan":r=a?15e5:75e4,l=a?1500:75;break;case"collector":{let e=game.global.blood.prepared>=2?8e3:1e4;r=a?2.5*e:e,l=1}}return{s:l,c:r}},
         // function terrainRating(mech,rating,effects) from portal.js
         terrainRating: function(e,l,a){if(!e.equip.includes("special")||"small"!==e.size&&"medium"!==e.size&&"collector"!==e.size||l<1&&(l+=(1-l)*(a.includes("gravity")?.1:.2)),"small"!==e.size&&l<1){let e=0,i={small:0,medium:0,large:0,titan:0,collector:0};for(let l=0;l<game.global.portal.mechbay.mechs.length;l++){let a=game.global.portal.mechbay.mechs[l];(e+=MechManager.getMechSpace(a))<=game.global.portal.mechbay.max&&i[a.size]++}(l+=(a.includes("fog")||a.includes("dark")?.005:.01)*i.small)>1&&(l=1)}return l},
-        //function weaponPower(mech,power) from portal.js
+        // function weaponPower(mech,power) from portal.js
         weaponPower: function(e,i){return i<1&&0!==i&&e.equip.includes("special")&&"titan"===e.size&&(i+=.25*(1-i)),e.equip.includes("special")&&"large"===e.size&&(i*=1.02),i},
+        // export function timeFormat(time) from functions.js
+        timeFormat: function(e){let i;if(e<0)i=game.loc("time_never");else if((e=+e.toFixed(0))>60){let l=e%60,s=(e-l)/60;if(s>=60){let e=s%60,l=(s-e)/60;if(l>24){i=`${(l-(e=l%24))/24}d ${e}h`}else i=`${l}h ${e=("0"+e).slice(-2)}m`}else i=`${s=("0"+s).slice(-2)}m ${l=("0"+l).slice(-2)}s`}else i=`${e=("0"+e).slice(-2)}s`;return i},
 
     // Reimplemented:
         // export function crateValue() from resources.js

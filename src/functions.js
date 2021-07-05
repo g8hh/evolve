@@ -1524,6 +1524,8 @@ export function getBaseIcon(name,type){
                 return 'rocket';
             case 'solstice':
                 return 'sun';
+            case 'firework':
+                return 'firework';
             case 'egghunt':
                 return 'egg';
             case 'halloween':
@@ -1548,7 +1550,7 @@ export function drawIcon(icon,size,shade,id,inject){
     if (id){
         select = `id="${id}" `;
     }
-    inject = inject ?? '';
+    inject = inject || '';
     return `<span ${inject}${select}class="flair drawnIcon"><svg class="star${shade}" version="1.1" x="0px" y="0px" width="${size}px" height="${size}px" viewBox="${svgViewBox(icon)}" xml:space="preserve">${svgIcons(icon)}</svg></span>`;
 }
 

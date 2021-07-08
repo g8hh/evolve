@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Evolve
 // @namespace    http://tampermonkey.net/
-// @version      3.3.1.72
+// @version      3.3.1.73
 // @description  try to take over the world!
 // @downloadURL  https://gitee.com/likexia/Evolve/raw/master/scripts/evolve.js
 // @author       Fafnir
@@ -1064,27 +1064,14 @@
     }
 
     class ModalAction extends Action {
-        constructor(name, tab, id, location, modalTab) {
-            super(name, tab, id, location);
+        constructor(...args) {
+            super(...args);
 
-            this._modalTab = modalTab;
             this._vue = undefined;
         }
 
         get vue() {
             return this._vue;
-        }
-
-        get definition() {
-            if (this._location !== "") {
-                return game.actions[this._modalTab][this._location][this._id];
-            } else {
-                return game.actions[this._modalTab][this._id];
-            }
-        }
-
-        get instance() {
-            return game.global[this._modalTab][this._id];
         }
 
         isOptionsCached() {
@@ -1533,20 +1520,14 @@
         }
 
         geneCost() {
-            let count = this.geneCount();
-
-            if (count < 0 || count >= Fibonacci.length) {
-                return Number.MAX_SAFE_INTEGER;
-            }
-
-            return this.traitName === 'mastery' ? Fibonacci[count] * 5 : Fibonacci[count];
+            return this.traitName === 'mastery' ? Fibonacci(this.geneCount()) * 5 : Fibonacci(this.geneCount());
         }
     }
 
     // Script constants
 
-    // 50 Fibonacci numbers starting from "5"
-    const Fibonacci = Array.from({length: 50}, ((a, b) => _ => ([b, a] = [a + b, b, a])[2])(5, 8));
+    // Fibonacci numbers starting from "5"
+    const Fibonacci = ((m) => (n) => m[n] ?? (m[n] = Fibonacci(n-1) + Fibonacci(n-2)))([5,8]);
 
     const numberSuffix = {
         K: 1000,
@@ -1785,7 +1766,7 @@
         Stone: new Action("Stone", "city", "stone", ""),
         Chrysotile: new Action("Chrysotile", "city", "chrysotile", ""),
         Slaughter: new Action("Slaughter", "city", "slaughter", ""),
-        ForgeHorseshoe: new Action("Horseshoe", "city", "horseshoe", ""),
+        ForgeHorseshoe: new ForgeHorseshoe("Horseshoe", "city", "horseshoe", "", {housing: true, garrison: true}),
         SacrificialAltar: new Action("Sacrificial Altar", "city", "s_alter", ""),
         MeditationChamber: new Action("Meditation Chamber", "city", "meditation", ""),
 
@@ -1864,7 +1845,7 @@
         RedExoticLab: new Action("Red Exotic Materials Lab", "space", "exotic_lab", "spc_red", {knowledge: true}),
         RedZiggurat: new Action("Red Ziggurat", "space", "ziggurat", "spc_red"),
         RedSpaceBarracks: new Action("Red Marine Barracks", "space", "space_barracks", "spc_red", {garrison: true}),
-        RedForgeHorseshoe: new ForgeHorseshoe("Red Horseshoe (Cataclysm only)", "space", "horseshoe", "spc_red"),
+        RedForgeHorseshoe: new ForgeHorseshoe("Red Horseshoe (Cataclysm only)", "space", "horseshoe", "spc_red", {housing: true, garrison: true}),
 
         HellMission: new Action("Hell Mission", "space", "hell_mission", "spc_hell"),
         HellGeothermal: new Action("Hell Geothermal Plant", "space", "geothermal", "spc_hell"),
@@ -1879,10 +1860,10 @@
         GasMining: new Action("Gas Helium-3 Collector", "space", "gas_mining", "spc_gas", {smart: true}),
         GasStorage: new Action("Gas Fuel Depot", "space", "gas_storage", "spc_gas"),
         GasSpaceDock: new SpaceDock("Gas Space Dock", "space", "star_dock", "spc_gas"),
-        GasSpaceDockProbe: new ModalAction("Gas Space Probe", "starDock", "probes", "", "starDock"),
-        GasSpaceDockShipSegment: new ModalAction("Gas Bioseeder Ship Segment", "starDock", "seeder", "", "starDock"),
-        GasSpaceDockPrepForLaunch: new ModalAction("Gas Prep Ship", "starDock", "prep_ship", "", "starDock"),
-        GasSpaceDockLaunch: new ModalAction("Gas Launch Ship", "starDock", "launch_ship", "", "starDock"),
+        GasSpaceDockProbe: new ModalAction("Gas Space Probe", "starDock", "probes", ""),
+        GasSpaceDockShipSegment: new ModalAction("Gas Bioseeder Ship Segment", "starDock", "seeder", ""),
+        GasSpaceDockPrepForLaunch: new ModalAction("Gas Prep Ship", "starDock", "prep_ship", ""),
+        GasSpaceDockLaunch: new ModalAction("Gas Launch Ship", "starDock", "launch_ship", ""),
 
         GasMoonMission: new Action("Gas Moon Mission", "space", "gas_moon_mission", "spc_gas_moon"),
         GasMoonOutpost: new Action("Gas Moon Mining Outpost", "space", "outpost", "spc_gas_moon"),
@@ -3912,8 +3893,6 @@
 
         scrapMech(mech) {
             this._listVue.scrap(mech.id);
-            GameLog.logSuccess(GameLog.Types.mech_scrap, `${this.mechDesc(mech)} 机甲已解体。`);
-            // TODO: One line for multiple scraps
         },
 
         dragMech(oldId, newId) {
@@ -5565,7 +5544,7 @@
         addSetting("fleetEmbassyKnowledge", 6000000);
         addSetting("fleetAlienGiftKnowledge", 6500000);
         addSetting("fleetAlien2Knowledge", 9000000);
-        addSetting("fleetChthonianPower", 4500);
+        addSetting("fleetChthonianLoses", "frigate");
 
         addSetting("mechScrap", "mixed");
         addSetting("mechScrapEfficiency", 2);
@@ -5595,7 +5574,7 @@
         }
         settings.challenge_plasmid = settings.challenge_mastery || settings.challenge_plasmid; // Merge challenge settings
         // Remove old settings
-        ["buildingWeightingTriggerConflict", "researchAlienGift", "arpaBuildIfStorageFullCraftableMin", "arpaBuildIfStorageFullResourceMaxPercent", "arpaBuildIfStorageFull", "productionMoneyIfOnly", "autoAchievements", "autoChallenge", "autoMAD", "autoSpace", "autoSeeder", "foreignSpyManage", "foreignHireMercCostLowerThan", "userResearchUnification", "btl_Ambush", "btl_max_Ambush", "btl_Raid", "btl_max_Raid", "btl_Pillage", "btl_max_Pillage", "btl_Assault", "btl_max_Assault", "btl_Siege", "btl_max_Siege", "smelter_fuel_Oil", "smelter_fuel_Coal", "smelter_fuel_Lumber", "planetSettingsCollapser", "buildingManageSpire", "hellHandleAttractors", "researchFilter", "challenge_mastery", "hellCountGems", "productionPrioritizeDemanded"].forEach(id => delete settings[id]);
+        ["buildingWeightingTriggerConflict", "researchAlienGift", "arpaBuildIfStorageFullCraftableMin", "arpaBuildIfStorageFullResourceMaxPercent", "arpaBuildIfStorageFull", "productionMoneyIfOnly", "autoAchievements", "autoChallenge", "autoMAD", "autoSpace", "autoSeeder", "foreignSpyManage", "foreignHireMercCostLowerThan", "userResearchUnification", "btl_Ambush", "btl_max_Ambush", "btl_Raid", "btl_max_Raid", "btl_Pillage", "btl_max_Pillage", "btl_Assault", "btl_max_Assault", "btl_Siege", "btl_max_Siege", "smelter_fuel_Oil", "smelter_fuel_Coal", "smelter_fuel_Lumber", "planetSettingsCollapser", "buildingManageSpire", "hellHandleAttractors", "researchFilter", "challenge_mastery", "hellCountGems", "productionPrioritizeDemanded", "fleetChthonianPower"].forEach(id => delete settings[id]);
         ["foreignAttack", "foreignOccupy", "foreignSpy", "foreignSpyMax", "foreignSpyOp"].forEach(id => [0, 1, 2].forEach(index => delete settings[id + index]));
         Object.values(resources).forEach(resource => delete settings['res_storage_w_' + resource.id]);
         Object.values(projects).forEach(project => delete settings['arpa_ignore_money_' + project.id]);
@@ -6493,7 +6472,6 @@
         let minFarmers = 0;
         if (farmerIndex !== -1) {
             let foodRateOfChange = resources.Food.calculateRateOfChange({buy: true});
-            let foodRateOfChangeReal = foodRateOfChange * gameTicksPerSecond("mid");
             let minFoodStorage = resources.Food.maxQuantity * 0.2;
             let maxFoodStorage = resources.Food.maxQuantity * 0.6;
             if (game.global.race['ravenous']) { // Ravenous hunger
@@ -6526,14 +6504,14 @@
             } else if (resources.Food.isCapped()) {
                 // Full food storage, remove all farmers instantly
                 requiredJobs[farmerIndex] = 0;
-            } else if (resources.Food.currentQuantity + foodRateOfChangeReal < minFoodStorage) {
+            } else if (resources.Food.currentQuantity + foodRateOfChange * gameTicksPerSecond("mid") < minFoodStorage) {
                 // We want food to fluctuate between 0.2 and 0.6 only. We only want to add one per loop until positive
                 if (jobList[farmerIndex].count === 0) { // We can't calculate production with no workers, assign one first
                     requiredJobs[farmerIndex] = 1;
                     log("autoJobs", "Adding one farmer");
                 } else {
                     let foodPerWorker = resources.Food.getProduction("job_" + jobList[farmerIndex].id) / jobList[farmerIndex].count;
-                    let missingWorkers = Math.ceil(foodRateOfChange / -foodPerWorker) || 1;
+                    let missingWorkers = Math.ceil(foodRateOfChange / -foodPerWorker) || 0;
                     requiredJobs[farmerIndex] = jobList[farmerIndex].count + missingWorkers;
                     log("autoJobs", `Adding ${missingWorkers} farmers`);
                 }
@@ -7154,7 +7132,7 @@
                             rate -= resourceCost.minRateOfChange;
                         }
                         if (production.resource.isDemanded()) {
-                            rate += resourceCost.resource.spareQuantity;
+                            rate += resourceCost.resource.currentQuantity;
                         }
 
                         // If we can't afford it (it's above our minimum rate of change) then remove a factory
@@ -7935,7 +7913,7 @@
                         }
 
                         // We have enought resources for both buildings, no need to preserve it
-                        if (resource.currentQuantity > (otherRequirement.quantity + thisRequirement.quantity)) {
+                        if (resource.currentQuantity >= (otherRequirement.quantity + thisRequirement.quantity)) {
                             continue;
                         }
 
@@ -8864,12 +8842,43 @@
         resources.Money.rateOfChange = currentMoneyPerSecond;
     }
 
-    // TODO: Add FleetManager, and move generic code there
-    function autoFleet() {
-        if (!game.global.tech.piracy) { return; }
+    var FleetManager = {
+        _fleetVueBinding: "fleet",
+        _fleetVue: undefined,
 
-        let vue = getVueById("fleet");
-        if (vue === undefined) { return false; }
+        initFleet() {
+            if (!game.global.tech.piracy) {
+                return false;
+            }
+
+            this._fleetVue = getVueById(this._fleetVueBinding);
+            if (this._fleetVue === undefined) {
+                return false;
+            }
+
+            return true;
+        },
+
+        addShip(region, ship, count) {
+            resetMultiplier();
+            for (let i = 0; i < count; i++) {
+                this._fleetVue.add(region, ship);
+            }
+        },
+
+        subShip(region, ship, count) {
+            resetMultiplier();
+            for (let i = 0; i < count; i++) {
+                this._fleetVue.sub(region, ship);
+            }
+        }
+    }
+
+    function autoFleet() {
+        if (!FleetManager.initFleet()) {
+            return;
+        }
+        let def = game.global.galaxy.defense;
 
         // Init our current state
         let allRegions = [
@@ -8887,56 +8896,69 @@
             {name: "cruiser_ship", count: 0, power: game.actions.galaxy.gxy_gateway.cruiser_ship.ship.rating()},
             {name: "dreadnought", count: 0, power: game.actions.galaxy.gxy_gateway.dreadnought.ship.rating()},
         ];
+        let minPower = allFleets[0].power;
 
         // We can't rely on stateOnCount - it won't give us correct number of ships of some of them missing crew
         let fleetIndex = Object.fromEntries(allFleets.map((ship, index) => [ship.name, index]));
-        Object.values(game.global.galaxy.defense).forEach(assigned => Object.entries(assigned).forEach(([ship, count]) => allFleets[fleetIndex[ship]].count += count));
+        Object.values(def).forEach(assigned => Object.entries(assigned).forEach(([ship, count]) => allFleets[fleetIndex[ship]].count += count));
 
         // Check if we can perform assault mission
         let assault = null;
-        if (buildings.ChthonianMission.isUnlocked() && settings.fleetChthonianPower > 0) {
-            if ((settings.fleetChthonianPower == 2500 && allFleets[fleetIndex.frigate_ship].count >= 2) ||
-                (settings.fleetChthonianPower == 4500 && allFleets[fleetIndex.frigate_ship].count >= 1)) {
-                let totalPower = allFleets.reduce((sum, ship) => sum + (ship.power >= 80 ? ship.power * ship.count : 0), 0);
-                if (totalPower >= settings.fleetChthonianPower) {
-                    assault = {shipPower: 80, region: "gxy_chthonian", mission: buildings.ChthonianMission};
+        if (buildings.ChthonianMission.isUnlocked() && settings.fleetChthonianLoses !== "ignore") {
+            let fleetReq, fleetWreck;
+            if (settings.fleetChthonianLoses === "low") {
+                fleetReq = 4500;
+                fleetWreck = 80;
+            } else if (settings.fleetChthonianLoses === "avg") {
+                fleetReq = 2500;
+                fleetWreck = 160;
+            } else if (settings.fleetChthonianLoses === "high") {
+                fleetReq = 1250;
+                fleetWreck = 500;
+            } else if (settings.fleetChthonianLoses === "dread") {
+                if (allFleets[4].count > 0) {
+                    assault = {ships: [0,0,0,0,1], region: "gxy_chthonian", mission: buildings.ChthonianMission};
+                }
+            } else if (settings.fleetChthonianLoses === "frigate") {
+                let totalPower = allFleets.reduce((sum, ship) => sum + (ship.power >= allFleets[2].power ? ship.power * ship.count : 0), 0);
+                if (totalPower >= 4500) {
+                    assault = {ships: allFleets.map((ship, idx) => idx >= 2 ? ship.count : 0), region: "gxy_chthonian", mission: buildings.ChthonianMission};
                 }
             }
-            if (settings.fleetChthonianPower == 1250) {
-                let totalPower = allFleets.reduce((sum, ship) => sum + (ship.power * ship.count), 0);
-                if (totalPower >= settings.fleetChthonianPower) {
-                    assault = {shipPower: 1, region: "gxy_chthonian", mission: buildings.ChthonianMission};
-                }
+            if (game.global.race['instinct']) {
+                fleetWreck /= 2;
             }
-        }
-        if (buildings.Alien2Mission.isUnlocked() && resources.Knowledge.maxQuantity >= settings.fleetAlien2Knowledge) {
-            let totalPower = allFleets.reduce((sum, ship) => sum + (ship.power * ship.count), 0);
-            if (totalPower >= 650) {
-                assault = {shipPower: 1, region: "gxy_alien2", mission: buildings.Alien2Mission};
+
+            let availableShips = allFleets.map(ship => ship.count);
+            let powerToReserve = fleetReq - fleetWreck;
+            for (let i = availableShips.length - 1; i >= 0 && powerToReserve > 0; i--) {
+                let reservedShips = Math.min(availableShips[i], Math.ceil(powerToReserve / allFleets[i].power));
+                availableShips[i] -= reservedShips;
+                powerToReserve -= reservedShips * allFleets[i].power;
             }
-        }
-        // TODO: Add better banana and instinct assaults
-        if (assault && (!game.global.race['banana'] || assault.region !== "gxy_chthonian" || settings.fleetChthonianPower === 1250)) {
-            // Unassign all ships from where there're assigned currently
-            Object.entries(game.global.galaxy.defense).forEach(([region, assigned]) => {
-                if (region !== "gxy_gateway") {
-                    Object.entries(assigned).forEach(([ship, count]) => {
-                        resetMultiplier();
-                        for (let i = 0; i < count; i++) {
-                            vue.sub(region, ship);
-                        }
-                    });
-                }
-            });
-            // Assign to target region
-            allFleets.forEach(ship => {
-                if (ship.power >= assault.shipPower) {
-                    resetMultiplier();
-                    for (let i = 0; i < ship.count; i++) {
-                        vue.add(assault.region, ship.name);
+            if (powerToReserve <= 0) {
+                let sets = availableShips.map((amount, idx) => [...Array(Math.min(amount, Math.floor((fleetWreck + (minPower - 0.1)) / allFleets[idx].power)) + 1).keys()]);
+                for (let set of cartesian(...sets)) {
+                    let powerMissing = fleetWreck - set.reduce((sum, amt, idx) => sum + amt * allFleets[idx].power, 0);
+                    if (powerMissing <= 0 && powerMissing > minPower * -1) {
+                        let lastShip = set.reduce((prev, val, cur) => val > 0 ? cur : prev, 0);
+                        let team = allFleets.map((ship, idx) => idx >= lastShip ? ship.count : set[idx]);
+                        assault = {ships: team, region: "gxy_chthonian", mission: buildings.ChthonianMission};
+                        break;
                     }
                 }
-            });
+            }
+        } else if (buildings.Alien2Mission.isUnlocked() && resources.Knowledge.maxQuantity >= settings.fleetAlien2Knowledge) {
+            let totalPower = allFleets.reduce((sum, ship) => sum + (ship.power * ship.count), 0);
+            if (totalPower >= 650) {
+                assault = {ships: allFleets.map(ship => ship.count), region: "gxy_alien2", mission: buildings.Alien2Mission};
+            }
+        }
+        if (assault) {
+            // Unassign all ships from where there're assigned currently
+            Object.entries(def).forEach(([region, assigned]) => Object.entries(assigned).forEach(([ship, count]) => FleetManager.subShip(region, ship, count)));
+            // Assign to target region
+            allFleets.forEach((ship, idx) => FleetManager.addShip(assault.region, ship.name, assault.ships[idx]));
             assault.mission.click();
             return; // We're done for now; lot of data was invalidated during attack, we'll manage remaining ships in next tick
         }
@@ -8966,7 +8988,7 @@
                     ship.cover = overflows[ship.count - maxAllocate - 1];
                 }
             } else {
-                ship.cover = ship.power - 9.9;
+                ship.cover = ship.power - (minPower - 0.1);
             }
             if (ship.count >= maxAllocate) {
                 missingDef.forEach((def, idx, arr) => arr[idx] = def % ship.power);
@@ -9043,36 +9065,10 @@
             allFleets.forEach(ship => allRegions[2].assigned[ship.name] += ship.count);
         }
 
-        allRegions.splice(1, 1); // No need to adjust gateway, all leftover ships will end there naturally
-        for (let i = 0; i < allRegions.length; i++) {
-            let region = allRegions[i];
-            for (let ship in region.assigned) {
-                let shipsToAssign = region.assigned[ship];
-                let deltaShip = region.assigned[ship] - game.global.galaxy.defense[region.name][ship];
+        let shipDeltas = allRegions.map(region => Object.entries(region.assigned).map(([ship, count]) => [ship, count - def[region.name][ship]]));
 
-                if (deltaShip < 0) {
-                    resetMultiplier();
-                    for (let i = 0; i > deltaShip; i--) {
-                        vue.sub(region.name, ship);
-                    }
-                }
-            }
-        }
-
-        for (let i = 0; i < allRegions.length; i++) {
-            let region = allRegions[i];
-            for (let ship in region.assigned) {
-                let shipsToAssign = region.assigned[ship];
-                let deltaShip = region.assigned[ship] - game.global.galaxy.defense[region.name][ship];
-
-                if (deltaShip > 0) {
-                    resetMultiplier();
-                    for (let i = 0; i < deltaShip; i++) {
-                        vue.add(region.name, ship);
-                    }
-                }
-            }
-        }
+        shipDeltas.forEach((ships, region) => ships.forEach(([ship, delta]) => delta < 0 && FleetManager.subShip(allRegions[region].name, ship, delta * -1)));
+        shipDeltas.forEach((ships, region) => ships.forEach(([ship, delta]) => delta > 0 && FleetManager.addShip(allRegions[region].name, ship, delta)));
     }
 
     function autoMech() {
@@ -9190,6 +9186,12 @@
             // Now go scrapping, if possible and benefical
             if (trashMechs.length > 0 && powerLost / spaceGained < newMech.efficiency && baySpace + spaceGained >= newSpace && resources.Supply.spareQuantity + supplyGained >= newSupply && resources.Soul_Gem.spareQuantity + gemsGained >= newGems) {
                 trashMechs.sort((a, b) => b.id - a.id); // Goes from bottom to top of the list, so it won't shift IDs
+                if (trashMechs.length > 1) {
+                    let average = trashMechs.map(mech => mech.power / m.bestMech[mech.size].power);
+                    GameLog.logSuccess(GameLog.Types.mech_scrap, `${trashMechs.length}机甲(~${Math.round(average * 100)}%)已解体。`);
+                } else {
+                    GameLog.logSuccess(GameLog.Types.mech_scrap, `${m.mechDesc(trashMechs[0])}机甲已解体。`);
+                }
                 trashMechs.forEach(mech => m.scrapMech(mech));
                 resources.Supply.currentQuantity = Math.min(resources.Supply.currentQuantity + supplyGained, resources.Supply.maxQuantity);
                 resources.Soul_Gem.currentQuantity += gemsGained;
@@ -9585,7 +9587,7 @@
 
         state.moneyIncomes.push(resources.Money.rateOfChange);
         state.moneyIncomes.shift();
-        state.moneyMedian = state.moneyIncomes.slice().sort((a, b) => a - b)[5];
+        state.moneyMedian = average(state.moneyIncomes);
 
         // This comes from the "const towerSize = (function(){" in portal.js in the game code
         let towerSize = 1000;
@@ -9766,13 +9768,15 @@
         if (obj === buildings.SpireMechBay && MechManager.initLab()) {
             notes.push(`Currrent team potential: ${getNiceNumber(MechManager.mechsPotential)}`);
         }
-        // Other tooltips goes here...
 
-        if (((!settings.autoARPA && obj._tab === "arpa") || (!settings.autoBuild && obj._tab !== "arpa")) && !state.queuedTargets.includes(obj)) {
+        if ((obj instanceof Technology || (!settings.autoARPA && obj._tab === "arpa") || (!settings.autoBuild && obj._tab !== "arpa")) && !state.queuedTargets.includes(obj)) {
             let conflict = getCostConflict(obj);
             if (conflict) {
                 notes.push(`Conflicts with ${conflict.target.title} for ${conflict.res.name} (${conflict.cause})`);
             }
+        }
+        if (obj instanceof Technology && settings.researchIgnore.includes(obj._vueBinding)) {
+            notes.push("Ignored research");
         }
 
         if (obj.extraDescription) {
@@ -9805,8 +9809,8 @@
                     obj = arpaIds["arpa" + match[1]];
                 } else if (match = dataId.match(/^q([a-z_-]+)\d*$/)) { // "q[id][order]" for buildings in queue
                     obj = buildingIds[match[1]] || arpaIds[match[1]];
-                } else { // "[id]" for normal buildings
-                    obj = buildingIds[dataId];
+                } else { // "[id]" for buildings and researches
+                    obj = buildingIds[dataId] || techIds[dataId];
                 }
                 if (!obj) {
                     return;
@@ -10260,6 +10264,7 @@
                     updateSettingsFromState();
                     removeScriptSettings();
                     stopMechObserver();
+                    removeStorageToggles();
                     removeMarketToggles();
                     removeArpaToggles();
                     removeCraftToggles();
@@ -10642,7 +10647,7 @@
         addSettingsHeader1(currentNode, "Whitehole");
         addSettingsToggle(currentNode, "prestigeWhiteholeSaveGems", "Save up Soul Gems for reset", "Save up enough Soul Gems for reset, only excess gems will be used. This option does not affect triggers.");
         addSettingsNumber(currentNode, "prestigeWhiteholeMinMass", "Minimum solar mass for reset", "Required minimum solar mass of blackhole before prestiging. Script do not stabilize on blackhole run, this number will need to be reached naturally");
-        addSettingsToggle(currentNode, "prestigeWhiteholeStabiliseMass", "Stabilise blackhole", "Stabilises the blackhole with exotic materials, during whitehole run won't go beyond minimum mass set above");
+        addSettingsToggle(currentNode, "prestigeWhiteholeStabiliseMass", "Stabilize blackhole", "Stabilizes the blackhole with exotic materials, disabled on whitehole runs");
         addSettingsToggle(currentNode, "prestigeWhiteholeEjectEnabled", "Enable mass ejector", "If not enabled the mass ejector will not be managed by the script");
         addSettingsToggle(currentNode, "prestigeWhiteholeEjectExcess", "Eject excess resources", "Eject resources above amount required for buildings, normally only resources with full storages will be ejected, until 'Eject everything' option is activated.");
         addSettingsNumber(currentNode, "prestigeWhiteholeDecayRate", "(Decay Challenge) Eject rate", "Set amount of ejected resources up to this percent of decay rate, only useful during Decay Challenge");
@@ -10856,7 +10861,8 @@
             raceName = "Unrecognized race!";
             raceClass = "has-text-danger";
         }
-        let star = $("#topBar .flair svg").clone();
+
+        let star = $(`#settings a.dropdown-item:contains("${game.loc(game.global.settings.icon)}") svg`).clone();
         star.removeClass();
         star.addClass("star" + getAchievementLevel(queuedEvolution));
 
@@ -11491,14 +11497,13 @@
         addSettingsNumber(currentNode, "fleetAlienGiftKnowledge", "Mininum knowledge for Alien Gift", "Researching Alien Gift increases maximum piracy up to 250, script won't Auto Research it until this knowledge cap is reached.");
         addSettingsNumber(currentNode, "fleetAlien2Knowledge", "Mininum knowledge for Alien 2 Assault", "Assaulting Alien 2 increases maximum piracy up to 500, script won't do it until this knowledge cap is reached. Regardless of set value it won't ever try to assault until you have big enough fleet to do it without loses.");
 
-        // TODO: More options what to lose in assault. Such as 2 scouts and 2 corvettes.
-        let assaultOptions = [{val: -1, label: "Manual assault", hint: "Won't ever launch assault mission on Chthonian"},
-                              {val: 1250, label: "Ignore casualties", hint: "Launch Chthonian Assault Mission when it can be won with any loses (1250+ total fleet power, many ships will be lost)"},
-                              {val: 2500, label: "Lose 2 Frigates", hint: "Not available in Banana Republic challenge. Launch Chthonian Assault Mission when it can be won with average loses (2500+ total fleet power, two Frigates will be lost)"},
-                              {val: 4500, label: "Lose 1 Frigate", hint: "Not available in Banana Republic challenge. Launch Chthonian Assault Mission when it can be won with minimal loses (4500+ total fleet power, one Frigate will be lost)"}];
-        addSettingsSelect(currentNode, "fleetChthonianPower", "Chthonian Mission", "Assault Chthonian when chosen outcome is achievable", assaultOptions)
-          .on('change', 'select', () => settings.fleetChthonianPower = parseInt(settings.fleetChthonianPower));
-        // fleetChthonianPower need to be number, not string.
+        let assaultOptions = [{val: "ignore", label: "Manual assault", hint: "Won't ever launch assault mission on Chthonian"},
+                              {val: "high", label: "High casualties", hint: "Unlock Chthonian using mixed fleet, high casualties (1250+ total fleet power, 500 will be lost)"},
+                              {val: "avg", label: "Average casualties", hint: "Unlock Chthonian using mixed fleet, average casualties (2500+ total fleet power, 160 will be lost)"},
+                              {val: "low", label: "Low casualties", hint: "Unlock Chthonian using mixed fleet, low casualties (4500+ total fleet power, 80 will be lost)"},
+                              {val: "frigate", label: "Frigate", hint: "Unlock Chthonian loosing Frigate ship(s) (4500+ total fleet power, suboptimal for banana\\instinct runs)"},
+                              {val: "dread", label: "Dreadnought", hint: "Unlock Chthonian with Dreadnought suicide mission"}];
+        addSettingsSelect(currentNode, "fleetChthonianLoses", "Chthonian Mission", "Assault Chthonian when chosen outcome is achievable. Mixed fleet formed to clear mission with minimum possible wasted ships, e.g. for low causlities it can sacriface 8 scouts, or 2 corvettes and 2 scouts, or frigate, and such. Whatever will be first available. It also takes in account perks and challenges, adjusting fleet accordingly.", assaultOptions);
 
         currentNode.append(`
           <table style="width:100%">
@@ -11552,7 +11557,7 @@
         settings.fleetEmbassyKnowledge = 6000000;
         settings.fleetAlienGiftKnowledge = 6500000;
         settings.fleetAlien2Knowledge = 9000000;
-        settings.fleetChthonianPower = 4500;
+        settings.fleetChthonianLoses = "frigate";
     }
 
     function buildMechSettings() {
@@ -11956,6 +11961,11 @@
             resetStorageSettings();
             updateSettingsFromState();
             updateStorageSettingsContent();
+
+            // Redraw toggles on storage tab
+            if ($('#resStorage .ea-storage-toggle').length > 0) {
+                createStorageToggles();
+            }
         };
 
         buildSettingsSection(sectionId, sectionName, resetFunction, updateStorageSettingsContent);
@@ -12002,10 +12012,10 @@
             storageElement.append(buildStandartLabel(resource.name));
 
             storageElement = storageElement.next();
-            storageElement.append(buildStandartSettingsToggle(resource, "autoStorageEnabled", "script_res_storage_" + resource.id));
+            storageElement.append(buildStandartSettingsToggle(resource, "autoStorageEnabled", "script_res_storage2_" + resource.id, "script_res_storage1_" + resource.id));
 
             storageElement = storageElement.next();
-            storageElement.append(buildStandartSettingsToggle(resource, "storeOverflow", "script_res_overflow_" + resource.id));
+            storageElement.append(buildStandartSettingsToggle(resource, "storeOverflow", "script_res_overflow2_" + resource.id, "script_res_overflow1_" + resource.id));
 
             storageElement = storageElement.next();
             storageElement.append(buildStandartSettingsInput(resource, "res_crates_m_" + resource.id, "_autoCratesMax"));
@@ -13147,7 +13157,7 @@
             createSettingToggle(scriptNode, 'autoCraft', 'Automatically produce craftable resources, thresholds when it happens depends on current demands and stocks.', createCraftToggles, removeCraftToggles);
             createSettingToggle(scriptNode, 'autoBuild', 'Construct buildings based on their weightings(user configured), and various rules(e.g. it won\'t build building which have no support to run)', createBuildingToggles, removeBuildingToggles);
             createSettingToggle(scriptNode, 'autoPower', 'Manages power based on a priority order of buildings. Also disables currently useless buildings to save up resources.');
-            createSettingToggle(scriptNode, 'autoStorage', 'Assigns crates and containers to resources needed for buildings enabled for Auto Build, queued buildings, researches, and enabled projects');
+            createSettingToggle(scriptNode, 'autoStorage', 'Assigns crates and containers to resources needed for buildings enabled for Auto Build, queued buildings, researches, and enabled projects', createStorageToggles, removeStorageToggles);
             createSettingToggle(scriptNode, 'autoMarket', 'Allows for automatic buying and selling of resources once specific ratios are met. Also allows setting up trade routes until a minimum specified money per second is reached. The will trade in and out in an attempt to maximise your trade routes.', createMarketToggles, removeMarketToggles);
             createSettingToggle(scriptNode, 'autoGalaxyMarket', 'Manages galaxy trade routes');
             createSettingToggle(scriptNode, 'autoResearch', 'Performs research when minimum requirements are met.');
@@ -13231,6 +13241,9 @@
         let currentBuildingToggles = $('#mTabCivil .ea-building-toggle').length;
         if (settings.autoBuild && (currentBuildingToggles === 0 || currentBuildingToggles !== state.buildingToggles)) {
             createBuildingToggles();
+        }
+        if (settings.autoStorage && game.global.settings.showStorage && $('#resStorage .ea-storage-toggle').length === 0) {
+            createStorageToggles();
         }
         if (settings.autoMarket && game.global.settings.showMarket && $('#market .ea-market-toggle').length === 0) {
             createMarketToggles();
@@ -13429,34 +13442,6 @@
         $("#script_supply_top_row").remove();
     }
 
-    function createMarketToggle(resource) {
-        let marketElement = $('#market-' + resource.id);
-        if (!marketElement.length) {
-            return;
-        }
-        let marketRow = $('<span class="ea-market-toggle" style="margin-left: auto; margin-right: 0.2rem; float:right;"></span>');
-
-        if (!game.global.race['no_trade']) {
-            let toggleBuy = $(`<label id="script_buy1_${resource.id}" tabindex="0" title="Enable buying of this resource. When to buy is set in the Settings tab."  class="switch"><input type="checkbox"${resource.autoBuyEnabled ? " checked" : ""}> <span class="check" style="height:5px;"></span><span class="state"></span></label>`);
-            let toggleSell = $(`<label id="script_sell1_${resource.id}" tabindex="0" title="Enable selling of this resource. When to sell is set in the Settings tab."  class="switch"><input type="checkbox"${resource.autoSellEnabled ? " checked" : ""}> <span class="check" style="height:5px;"></span><span class="state"></span></label>`);
-            marketRow.append(toggleBuy);
-            marketRow.append(toggleSell);
-
-            toggleBuy.on('change', {entity: resource, property: "autoBuyEnabled", sync: "script_buy2_" + resource.id}, toggleCallback);
-            toggleSell.on('change', {entity: resource, property: "autoSellEnabled", sync: "script_sell2_" + resource.id}, toggleCallback);
-        }
-
-        let toggleTradeFor = $(`<label id="script_tbuy1_${resource.id}" tabindex="0" title="Enable trading for this resource. Max routes is set in the Settings tab." class="switch"><input type="checkbox"${resource.autoTradeBuyEnabled ? " checked" : ""}> <span class="check" style="height:5px;"></span><span class="state"></span></label>`);
-        let toggleTradeAway = $(`<label id="script_tsell1_${resource.id}" tabindex="0" title="Enable trading this resource away. Min income is set in the Settings tab." class="switch"><input type="checkbox"${resource.autoTradeSellEnabled ? " checked" : ""}> <span class="check" style="height:5px;"></span><span class="state"></span></label>`);
-        marketRow.append(toggleTradeFor);
-        marketRow.append(toggleTradeAway);
-
-        toggleTradeFor.on('change', {entity: resource, property: "autoTradeBuyEnabled", sync: "script_tbuy2_" + resource.id}, toggleCallback);
-        toggleTradeAway.on('change', {entity: resource, property: "autoTradeSellEnabled", sync: "script_tsell2_" + resource.id}, toggleCallback);
-
-        marketElement.append(marketRow);
-    }
-
     function createMarketToggles() {
         removeMarketToggles();
 
@@ -13468,16 +13453,39 @@
             $("#market > .market-item .trade .zero").text("×");
         }
 
-        $("#market-qty").after(`<div class="market-item vb" id="script_market_top_row" style="overflow:hidden">
-                                  <span style="margin-left: auto; margin-right: 0.2rem; float:right;">
-   ${!game.global.race['no_trade']?'<span class="has-text-success" style="width: 2.75rem; margin-right: 0.3em; display: inline-block; text-align: center;">买</span>\
-                                    <span class="has-text-danger" style="width: 2.75rem; margin-right: 0.3em; display: inline-block; text-align: center;">卖</span>':''}
-                                    <span class="has-text-warning" style="width: 2.75rem; margin-right: 0.3em; display: inline-block; text-align: center;">线买</span>
-                                    <span class="has-text-warning" style="width: 2.75rem; display: inline-block; text-align: center;">线卖</span>
-                                  </span>
-                                </div>`);
+        $("#market-qty").after(`
+          <div class="market-item vb" id="script_market_top_row" style="overflow:hidden">
+            <span style="margin-left: auto; margin-right: 0.2rem; float:right;">
+              ${!game.global.race['no_trade']?`
+              <span class="has-text-success" style="width: 2.75rem; margin-right: 0.3em; display: inline-block; text-align: center;">买</span>
+              <span class="has-text-danger" style="width: 2.75rem; margin-right: 0.3em; display: inline-block; text-align: center;">卖</span>`:''}
+              <span class="has-text-warning" style="width: 2.75rem; margin-right: 0.3em; display: inline-block; text-align: center;">线买</span>
+              <span class="has-text-warning" style="width: 2.75rem; display: inline-block; text-align: center;">线卖</span>
+            </span>
+          </div>`);
 
-        MarketManager.priorityList.forEach(res => createMarketToggle(res));
+        for (let resource of MarketManager.priorityList) {
+            let marketElement = $('#market-' + resource.id);
+            if (marketElement.length > 0) {
+                let marketRow = $('<span class="ea-market-toggle" style="margin-left: auto; margin-right: 0.2rem; float:right;"></span>');
+
+                if (!game.global.race['no_trade']) {
+                    marketRow.append(
+                      $(`<label id="script_buy1_${resource.id}" tabindex="0" title="Enable buying of this resource."  class="switch"><input type="checkbox"${resource.autoBuyEnabled ? " checked" : ""}> <span class="check" style="height:5px;"></span><span class="state"></span></label>`)
+                        .on('change', {entity: resource, property: "autoBuyEnabled", sync: "script_buy2_" + resource.id}, toggleCallback),
+                      $(`<label id="script_sell1_${resource.id}" tabindex="0" title="Enable selling of this resource."  class="switch"><input type="checkbox"${resource.autoSellEnabled ? " checked" : ""}> <span class="check" style="height:5px;"></span><span class="state"></span></label>`)
+                        .on('change', {entity: resource, property: "autoSellEnabled", sync: "script_sell2_" + resource.id}, toggleCallback));
+                }
+
+                marketRow.append(
+                  $(`<label id="script_tbuy1_${resource.id}" tabindex="0" title="Enable trading for this resource." class="switch"><input type="checkbox"${resource.autoTradeBuyEnabled ? " checked" : ""}> <span class="check" style="height:5px;"></span><span class="state"></span></label>`)
+                    .on('change', {entity: resource, property: "autoTradeBuyEnabled", sync: "script_tbuy2_" + resource.id}, toggleCallback),
+                  $(`<label id="script_tsell1_${resource.id}" tabindex="0" title="Enable trading this resource away." class="switch"><input type="checkbox"${resource.autoTradeSellEnabled ? " checked" : ""}> <span class="check" style="height:5px;"></span><span class="state"></span></label>`)
+                    .on('change', {entity: resource, property: "autoTradeSellEnabled", sync: "script_tsell2_" + resource.id}, toggleCallback));
+
+                marketRow.appendTo(marketElement);
+            }
+        }
     }
 
     function removeMarketToggles() {
@@ -13491,6 +13499,36 @@
             $("#market .market-item[id] .trade > :first-child").text("路线");
             $("#market > .market-item .trade .zero").text("清零");
         }
+    }
+
+    function createStorageToggles() {
+        removeStorageToggles();
+
+        $("#createHead").after(`
+          <div class="market-item vb" id="script_storage_top_row" style="overflow:hidden">
+            <span style="margin-left: auto; margin-right: 0.2rem; float:right;">
+              <span class="has-text-warning" style="width: 2.75rem; margin-right: 0.3em; display: inline-block; text-align: center;">Auto</span>
+              <span class="has-text-warning" style="width: 2.75rem; display: inline-block; text-align: center;">Over</span>
+            </span>
+          </div>`);
+
+        for (let resource of StorageManager.priorityList) {
+            let storageElement = $('#stack-' + resource.id);
+            if (storageElement.length > 0) {
+                $('<span class="ea-storage-toggle" style="margin-left: auto; margin-right: 0.2rem; float:right;"></span>')
+                  .append(
+                    $(`<label id="script_res_storage1_${resource.id}" tabindex="0" title="Enable storing of this resource." class="switch"><input type="checkbox"${resource.autoStorageEnabled ? " checked" : ""}> <span class="check" style="height:5px;"></span><span class="state"></span></label>`)
+                      .on('change', {entity: resource, property: "autoStorageEnabled", sync: "script_res_storage2_" + resource.id}, toggleCallback),
+                    $(`<label id="script_res_overflow1_${resource.id}" tabindex="0" title="Enable storing overflow of this resource." class="switch"><input type="checkbox"${resource.storeOverflow ? " checked" : ""}> <span class="check" style="height:5px;"></span><span class="state"></span></label>`)
+                      .on('change', {entity: resource, property: "storeOverflow", sync: "script_res_overflow2_" + resource.id}, toggleCallback))
+                  .appendTo(storageElement);
+            }
+        }
+    }
+
+    function removeStorageToggles() {
+        $('#resStorage .ea-storage-toggle').remove();
+        $("#script_storage_top_row").remove();
     }
 
     // Util functions
@@ -13514,6 +13552,12 @@
             }
         }
         return combs;
+    }
+
+    // https://stackoverflow.com/a/44012184
+    function* cartesian(head, ...tail) {
+        let remainder = tail.length > 0 ? cartesian(...tail) : [[]];
+        for (let r of remainder) for (let h of head) yield [h, ...r];
     }
 
     function average(arr) {

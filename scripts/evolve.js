@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Evolve
 // @namespace    http://tampermonkey.net/
-// @version      3.3.1.73
+// @version      3.3.1.74
 // @description  try to take over the world!
 // @downloadURL  https://gitee.com/likexia/Evolve/raw/master/scripts/evolve.js
 // @author       Fafnir
@@ -1578,7 +1578,7 @@
     const governors = ["soldier", "criminal", "entrepreneur", "educator", "spiritual", "bluecollar", "noble", "media", "sports", "bureaucrat"];
     const evolutionSettingsToStore = ["userEvolutionTarget", "prestigeType", ...challenges.map(c => "challenge_" + c[0].id)];
     const prestigeNames = {mad: "MAD", bioseed: "Bioseed", cataclysm: "Cataclysm", vacuum: "Vacuum", whitehole: "Whitehole", ascension: "Ascension", demonic: "Infusion"};
-    const logIgnore = ["food", "lumber", "stone", "chrysotile", "slaughter", "s_alter", "slave_market"];
+    const logIgnore = ["food", "lumber", "stone", "chrysotile", "slaughter", "s_alter", "slave_market", "horseshoe"];
     const galaxyRegions = ["gxy_stargate", "gxy_gateway", "gxy_gorddon", "gxy_alien1", "gxy_alien2", "gxy_chthonian"];
     const settingsSections = ["general", "prestige", "evolution", "research", "market", "storage", "production", "war", "hell", "fleet", "job", "building", "project", "government", "logging", "minorTrait", "weighting", "ejector", "planet", "mech"];
     const unlimitedJobs = ["unemployed", "hunter", "farmer", "lumberjack", "quarry_worker", "crystal_miner", "scavenger", "forager"]; // this.definition.max holds zero at evolution stage, and that can mess with settings gui
@@ -1933,7 +1933,7 @@
         SiriusSpaceElevator: new Action("Sirius Space Elevator", "interstellar", "space_elevator", "int_sirius"),
         SiriusGravityDome: new Action("Sirius Gravity Dome", "interstellar", "gravity_dome", "int_sirius"),
         SiriusAscensionMachine: new Action("Sirius Ascension Machine", "interstellar", "ascension_machine", "int_sirius"),
-        SiriusAscensionTrigger: new Action("Sirius Ascension Machine (Complete)", "interstellar", "ascension_trigger", "int_sirius"),
+        SiriusAscensionTrigger: new Action("Sirius Ascension Machine (Complete)", "interstellar", "ascension_trigger", "int_sirius", {smart: true}),
         SiriusAscend: new Action("Sirius Ascend", "interstellar", "ascend", "int_sirius"),
         SiriusThermalCollector: new Action("Sirius Thermal Collector", "interstellar", "thermal_collector", "int_sirius"),
 
@@ -2006,10 +2006,10 @@
         GateInferniteMine: new Action("Gate Infernite Mine", "portal", "infernite_mine", "prtl_gate"),
 
         LakeMission: new Action("Lake Mission", "portal", "lake_mission", "prtl_lake"),
-        LakeHarbour: new Action("Lake Harbour", "portal", "harbour", "prtl_lake"),
-        LakeCoolingTower: new Action("Lake Cooling Tower", "portal", "cooling_tower", "prtl_lake"),
-        LakeBireme: new Action("Lake Bireme Warship", "portal", "bireme", "prtl_lake", {ship: true, smart: true}),
-        LakeTransport: new Action("Lake Transport", "portal", "transport", "prtl_lake", {ship: true, smart: true}),
+        LakeHarbour: new Action("Lake Harbour", "portal", "harbour", "prtl_lake", {smart: true}),
+        LakeCoolingTower: new Action("Lake Cooling Tower", "portal", "cooling_tower", "prtl_lake", {smart: true}),
+        LakeBireme: new Action("Lake Bireme Warship", "portal", "bireme", "prtl_lake", {smart: true}),
+        LakeTransport: new Action("Lake Transport", "portal", "transport", "prtl_lake", {smart: true}),
 
         SpireMission: new Action("Spire Mission", "portal", "spire_mission", "prtl_spire"),
         SpirePurifier: new Action("Spire Purifier", "portal", "purifier", "prtl_spire"),
@@ -2026,7 +2026,7 @@
 
     var linkedBuildings = [
         [buildings.LakeTransport, buildings.LakeBireme],
-        [buildings.SpirePort, buildings.SpireBaseCamp, buildings.SpireMechBay],
+        [buildings.SpirePort, buildings.SpireBaseCamp],
     ]
 
     var projects = {
@@ -2108,7 +2108,7 @@
       ],[
           () => settings.autoMech && settings.mechBuild !== "none" && settings.buildingMechsFirst && buildings.SpireMechBay.count > 0 && buildings.SpireMechBay.stateOffCount === 0,
           (building) => {
-              if (building === buildings.SpirePurifier || building === buildings.SpirePort || building === buildings.SpireBaseCamp || building === buildings.SpireMechBay) {
+              if (resourceCost(building, resources.Supply) > 0) {
                   let mechBay = game.global.portal.mechbay;
                   let newSize = !haveTask("mech") ? settings.mechBuild === "random" ? MechManager.getPreferredSize() : mechBay.blueprint.size : "titan";
                   let [newGems, newSupply, newSpace] = MechManager.getMechCost({size: newSize});
@@ -2285,6 +2285,7 @@
           () => true,
           (building) => building._tab !== "city" && building.stateOffCount > 0
             && (building !== buildings.SpireMechBay || !buildings.SpireMechBay.isSmartManaged())
+            && (building !== buildings.RuinsGuardPost || !buildings.RuinsGuardPost.isSmartManaged() || isHellSupressUseful())
             && (building !== buildings.BadlandsAttractor || !buildings.BadlandsAttractor.isSmartManaged()),
           () => "Still have some non operating buildings",
           () => settings.buildingWeightingNonOperating
@@ -2309,13 +2310,13 @@
           () => "Not needed for Vacuum Collapse prestige",
           () => 0
       ],[
-          () => settings.prestigeBioseedConstruct && settings.prestigeType === "ascension" && (!settings.prestigeAscensionPillar || game.global.race.universe === 'micro' || game.global.pillars[game.global.race.species] >= game.alevel()),
-          (building) => building === buildings.PitMission || building === buildings.RuinsMission,
+          () => settings.prestigeBioseedConstruct && settings.prestigeType === "ascension",
+          (building) => building === buildings.GateMission || ((building === buildings.PitMission || building === buildings.RuinsMission) && isPillarFinished()),
           () => "Not needed for Ascension prestige",
           () => 0
       ],[
           () => settings.prestigeType === "mad" && (haveTech("mad") || (techIds['tech-mad'].isAffordable(true) && techIds['tech-mad'].resourceRequirements.every(req => req.resource.isUnlocked()))),
-          (building) => !building.is.housing && !building.is.garrison && resourceCost(building, resources.Knowledge) <= 0,
+          (building) => !building.is.housing && !building.is.garrison && resourceCost(building, resources.Knowledge) <= 0 && (building !== buildings.OilWell || !game.global.race.terrifying), // Terrifying can't buy oil, keep building rigs
           () => "Awaiting MAD prestige",
           () => settings.buildingWeightingMADUseless
       ],[
@@ -3346,7 +3347,7 @@
         },
 
         get availableGarrison() {
-            return this.currentCityGarrison - this.wounded;
+            return game.global.race['rage'] ? Math.min(this.maxCityGarrison, this.currentSoldiers - this.wounded) : this.currentCityGarrison - this.wounded;
         },
 
         get hellGarrison()  {
@@ -3354,6 +3355,15 @@
         },
 
         launchCampaign(govIndex) {
+            this._garrisonVue.campaign(govIndex);
+        },
+
+        release(govIndex) {
+            if (game.global.civic.foreign["gov" + govIndex].occ) {
+                let occSoldiers = getOccCosts();
+                this.workers += occSoldiers;
+                this.max += occSoldiers;
+            }
             this._garrisonVue.campaign(govIndex);
         },
 
@@ -3571,12 +3581,13 @@
         _listVueBinding: "mechList",
         _listVue: undefined,
 
-        collectorValue: 150000, // Collector power mod. Higher number - more often they'll be scrapped
+        collectorValue: 20000, // Collectors power mod. Higher number - more often they'll be scrapped. Current value derieved from scout: collectorValue = collectorPower / (scoutPower / scoutSize), to equalize relative values of collectors and combat mechs with same efficiency.
 
         activeMechs: [],
         inactiveMechs: [],
         mechsPower: 0,
         mechsPotential: 0,
+        isActive: false,
 
         lastLevel: -1,
         lastPrepared: -1,
@@ -3681,6 +3692,7 @@
                 this.lastWrath = game.global.blood.wrath;
                 this.lastScouts = currentScouts;
                 this.lastSpecial = settings.mechSpecial;
+                this.isActive = true;
 
                 this.updateBestWeapon();
                 this.Size.forEach(size => {
@@ -3756,6 +3768,13 @@
             let mechBay = game.global.portal.mechbay;
             if (settings.mechFillBay && mechBay.bay % 2 !== mechBay.max % 2 && mechBay.max % 1 === 0) {
                 return 'collector'; // One collector to fill odd bay
+            }
+
+            if (resources.Supply.storageRatio < 0.9 && resources.Supply.rateOfChange < settings.mechMinSupply) {
+                let collectorsCount = this.activeMechs.filter(mech => mech.size === 'collector').length;
+                if (collectorsCount / mechBay.max < settings.mechMaxCollectors) {
+                    return 'collector'; // Bootstrap income
+                }
             }
 
             if ((this.lastScouts * 2) / mechBay.max < settings.mechScouts) {
@@ -5014,6 +5033,7 @@
         BuildingManager.addBuildingToPriorityList(buildings.StargateDepot);
         BuildingManager.addBuildingToPriorityList(buildings.DwarfEleriumContainer);
 
+        BuildingManager.addBuildingToPriorityList(buildings.GasMoonOilExtractor);
         BuildingManager.addBuildingToPriorityList(buildings.NeutronMission);
         BuildingManager.addBuildingToPriorityList(buildings.NeutronStellarForge);
         BuildingManager.addBuildingToPriorityList(buildings.NeutronMiner);
@@ -5025,7 +5045,6 @@
         BuildingManager.addBuildingToPriorityList(buildings.RockQuarry);
         BuildingManager.addBuildingToPriorityList(buildings.Sawmill);
         BuildingManager.addBuildingToPriorityList(buildings.GasMining);
-        BuildingManager.addBuildingToPriorityList(buildings.GasMoonOilExtractor);
         BuildingManager.addBuildingToPriorityList(buildings.NeutronCitadel);
         BuildingManager.addBuildingToPriorityList(buildings.Mine);
         BuildingManager.addBuildingToPriorityList(buildings.CoalMine);
@@ -5553,6 +5572,8 @@
         addSetting("mechSizeGravity", "auto");
         addSetting("mechFillBay", true);
         addSetting("mechScouts", 0.05);
+        addSetting("mechMinSupply", 1000);
+        addSetting("mechMaxCollectors", 0.5);
         addSetting("mechSpecial", "prefered");
         addSetting("mechSaveSupply", true);
         addSetting("buildingMechsFirst", true);
@@ -6195,7 +6216,8 @@
             if ((foreign.gov.anx && foreign.policy !== "Annex") ||
                 (foreign.gov.buy && foreign.policy !== "Purchase") ||
                 (foreign.gov.occ && foreign.policy !== "Occupy")){
-                getVueById("garrison")?.campaign(foreign.id);
+                WarManager.release(foreign.id);
+                foreign.released = true;
             } else if (!foreign.gov.anx && !foreign.gov.buy && !foreign.gov.occ) {
                 SpyManager.performEspionage(foreign.id, espionageMission.id, foreign !== currentTarget);
             }
@@ -6209,8 +6231,8 @@
         }
 
         // If we are not fully ready then return
-        if (m.wounded > (1 - settings.foreignAttackHealthySoldiersPercent / 100) * m.maxCityGarrison ||
-            m.currentCityGarrison < settings.foreignAttackLivingSoldiersPercent / 100 * m.maxCityGarrison) {
+        if ((m.wounded > (1 - settings.foreignAttackHealthySoldiersPercent / 100) * m.maxCityGarrison && !game.global.race['rage'] ) ||
+            (m.currentCityGarrison < settings.foreignAttackLivingSoldiersPercent / 100 * m.maxCityGarrison && (!settings.foreignProtectSoldiers || settings.foreignMinAdvantage < 75))) {
             return;
         }
 
@@ -6220,7 +6242,7 @@
         let maxBattalion = new Array(5).fill(m.maxCityGarrison);
         if (settings.foreignProtectSoldiers) {
             let armor = ((game.global.race.scales ? 2 : 0) + (game.global.tech.armor ?? 0)) * (game.global.race.armored ? 4 : 1) - (game.global.race.frail ? 1 : 0);
-            let protectedBattalion = [5, 10, 25, 50, 999].map((cap, tactic) => (armor >= cap ? Number.MAX_SAFE_INTEGER : ((armor - (game.global.city.ptrait === 'rage' ? 1 : 0)) * 5 - tactic)));
+            let protectedBattalion = [5, 10, 25, 50, 999].map((cap, tactic) => (armor >= cap ? Number.MAX_SAFE_INTEGER : ((armor - (game.global.city.ptrait === 'rage' ? 1 : 0)) * (5 - tactic))));
             maxBattalion = maxBattalion.map((garrison, tactic) => Math.min(garrison, protectedBattalion[tactic]));
         }
         maxBattalion[4] = Math.min(maxBattalion[4], settings.foreignMaxSiegeBattalion);
@@ -6265,12 +6287,12 @@
         }
 
         // Occupy can pull soldiers from ships, let's make sure it won't happen
-        if (currentTarget.gov.anx || currentTarget.gov.buy || currentTarget.gov.occ) {
+        if (!currentTarget.released && (currentTarget.gov.anx || currentTarget.gov.buy || currentTarget.gov.occ)) {
             // If it occupied currently - we'll get enough soldiers just by unoccupying it
-            m.launchCampaign(currentTarget.id);
-        } else if (requiredTactic === 4 && m.crew > 0) {
-            let occCost = game.global.civic.govern.type === "federation" ? 15 : 20;
-            let missingSoldiers = occCost - (m.availableGarrison - requiredBattalion);
+            m.release(currentTarget.id);
+        }
+        if (requiredTactic === 4 && (m.crew > 0 || currentTarget.policy === "Occupy")) {
+            let missingSoldiers = getOccCosts() - (m.currentCityGarrison - requiredBattalion);
             if (missingSoldiers > 0) {
                 // Not enough soldiers in city, let's try to pull them from hell
                 if (!settings.autoHell || !m.initHell() || m.hellSoldiers - m.hellReservedSoldiers < missingSoldiers) {
@@ -7394,7 +7416,7 @@
             }
 
             let keepRatio = enabledEjectors >= settings.prestigeWhiteholeEjectAllCount ? 0.05 : 0.985;
-            if (resource === resources.Food && !game.global.race['ravenous']) {
+            if (resource === resources.Food && !isHungryRace()) {
                 keepRatio = Math.max(keepRatio, 0.25);
             }
             keepRatio = Math.max(keepRatio, resource.requestedQuantity / resource.maxQuantity + 0.01);
@@ -7544,11 +7566,15 @@
     }
 
     function isAscensionPrestigeAvailable() {
-        return settings.prestigeAscensionSkipCustom && buildings.SiriusAscend.isUnlocked() && (!settings.prestigeAscensionPillar || game.global.race.universe === 'micro' || game.global.pillars[game.global.race.species] >= game.alevel());
+        return settings.prestigeAscensionSkipCustom && buildings.SiriusAscend.isUnlocked() && isPillarFinished();
     }
 
     function isDemonicPrestigeAvailable() {
-        return buildings.SpireTower.count > settings.prestigeDemonicFloor && haveTech("waygate", 3) && (!settings.autoMech || MechManager.mechsPotential <= settings.prestigeDemonicPotential) && techIds["tech-demonic_infusion"].isUnlocked();
+        return buildings.SpireTower.count > settings.prestigeDemonicFloor && haveTech("waygate", 3) && (!settings.autoMech || (!MechManager.isActive && MechManager.mechsPotential <= settings.prestigeDemonicPotential)) && techIds["tech-demonic_infusion"].isUnlocked();
+    }
+
+    function isPillarFinished() {
+        return !settings.prestigeAscensionPillar || game.global.race.universe === 'micro' || game.global.pillars[game.global.race.species] >= game.alevel();
     }
 
     function getBlackholeMass() {
@@ -8049,6 +8075,10 @@
         return (30 + (amount - 1) * 2.5) * amount * (game.global.race['emfield'] ? 1.5 : 1);
     }
 
+    function isHellSupressUseful() {
+        return jobs.Archaeologist.count > 0 || jobs.Scarletite.count > 0 || buildings.RuinsArcology.stateOnCount > 0 || buildings.GateInferniteMine.stateOnCount > 0;
+    }
+
     function autoPower() {
         // Only start doing this once power becomes available. Isn't useful before then
         if (!resources.Power.isUnlocked()) {
@@ -8096,7 +8126,7 @@
         }
 
         let manageTransport = buildings.LakeTransport.isSmartManaged() && buildings.LakeBireme.isSmartManaged();
-        let manageSpire = buildings.SpirePort.isSmartManaged() && buildings.SpireBaseCamp.isSmartManaged() && buildings.SpireMechBay.isSmartManaged();
+        let manageSpire = buildings.SpirePort.isSmartManaged() && buildings.SpireBaseCamp.isSmartManaged();
 
         // Start assigning buildings from the top of our priority list to the bottom
         for (let i = 0; i < buildingList.length; i++) {
@@ -8154,6 +8184,18 @@
                     if (building === buildings.GasMoonOilExtractor  && !resources.Oil.isUseful()) {
                         maxStateOn = Math.min(maxStateOn, resources.Oil.getBusyWorkers("space_gas_moon_oil_extractor_title", currentStateOn));
                     }
+                    // Enable cooling towers only if we can power at least two harbours
+                    if (building === buildings.LakeCoolingTower && availablePower < (building.powered * maxStateOn + ((500 * 0.92 ** maxStateOn) * (game.global.race['emfield'] ? 1.5 : 1)).toFixed(2) * Math.min(2, buildings.LakeHarbour.count))) {
+                        maxStateOn = 0;
+                    }
+                    // Don't bother powering harbour if we have power for only one
+                    if (building === buildings.LakeHarbour && maxStateOn === 1 && building.count > 1) {
+                        maxStateOn = 0;
+                    }
+                }
+                // Do not enable Ascension Machine whire we're waiting for pillar
+                if (building === buildings.SiriusAscensionTrigger && !isPillarFinished()) {
+                    maxStateOn = 0;
                 }
                 // Disable barracks on bioseed run, if enabled
                 if (building === buildings.Barracks && settings.prestigeEnabledBarracks < 100 && !WarManager.isForeignUnlocked() && buildings.GasSpaceDockShipSegment.count < 90 && buildings.DwarfWorldController.count < 1) {
@@ -8171,7 +8213,7 @@
                     maxStateOn = Math.min(maxStateOn, attractorAdjust);
                 }
                 // Disable tourist center with full money
-                if (building === buildings.TouristCenter && !game.global.race['ravenous'] && resources.Food.storageRatio < 0.7 && !resources.Money.isUseful()) {
+                if (building === buildings.TouristCenter && !isHungryRace() && resources.Food.storageRatio < 0.7 && !resources.Money.isUseful()) {
                     maxStateOn = Math.min(maxStateOn, resources.Money.getBusyWorkers("tech_tourism", currentStateOn));
                 }
                 // Disable mills with surplus energy
@@ -8187,13 +8229,20 @@
                         maxStateOn = Math.min(maxStateOn, currentStateOn + Math.ceil(mineAdjust));
                     }
                 }
-                // Disable uselss Guard Post
+                // Disable useless Guard Post
                 if (building === buildings.RuinsGuardPost) {
-                    let postRating = game.armyRating(1, "hellArmy") * (game.global.race['holy'] ? 1.25 : 1);
-                    // 1 extra to workaround rounding errors
-                    let postAdjust = Math.max((5001 - poly.hellSupression("ruins").rating) / postRating, (7501 - poly.hellSupression("gate").rating) / postRating);
-                    // We're reserving just one soldier for Guard Posts, so let's increase them by 1
-                    maxStateOn = Math.min(maxStateOn, currentStateOn + 1, currentStateOn + Math.ceil(postAdjust));
+                    if (isHellSupressUseful()) {
+                        let postRating = game.armyRating(1, "hellArmy") * (game.global.race['holy'] ? 1.25 : 1);
+                        // 1 extra to workaround rounding errors
+                        let postAdjust = (5001 - poly.hellSupression("ruins").rating) / postRating;
+                        if (haveTech('hell_gate')) {
+                            postAdjust = Math.max(postAdjust, (7501 - poly.hellSupression("gate").rating) / postRating);
+                        }
+                        // We're reserving just one soldier for Guard Posts, so let's increase them by 1
+                        maxStateOn = Math.min(maxStateOn, currentStateOn + 1, currentStateOn + Math.ceil(postAdjust));
+                    } else {
+                        maxStateOn = 0;
+                    }
                 }
                 // Disable Waygate once it cleared, or if we're going to use bomb, or current potential is too hight
                 if (building === buildings.SpireWaygate && (settings.prestigeDemonicBomb || haveTech("waygate", 3) || (settings.autoMech && MechManager.mechsPotential > settings.mechWaygatePotential))) {
@@ -8247,7 +8296,7 @@
 
                     if (resourceType.resource === resources.Food) {
                         // Wendigo doesn't store food. Let's assume it's always available.
-                        if (resourceType.resource.storageRatio > 0.05 || game.global.race['ravenous']) {
+                        if (resourceType.resource.storageRatio > 0.05 || isHungryRace()) {
                             continue;
                         }
                     } else if (!(resourceType.resource instanceof Support) && resourceType.resource.storageRatio > 0.01) {
@@ -8318,12 +8367,18 @@
         }
 
         if (manageSpire && resources.Spire_Support.rateOfChange > 0) {
-            let spireSupport = Math.floor(resources.Spire_Support.rateOfChange);
             // Try to prevent building bays when they won't have enough time to work out used supplies. It assumes that time to build new bay ~= time to clear floor.
-            let buildAllowed = (settings.prestigeType !== "demonic" || (settings.prestigeDemonicFloor - buildings.SpireTower.count) > buildings.SpireMechBay.count);
+            // Make sure we have some transports, so we won't stuck with 0 supply income after disabling collectors, and also let mech manager finish rebuilding after switching floor
+            // And also let autoMech do minimum preparation, so we won't stuck with near zero potential
+            let buildAllowed = buildings.SpireMechBay.isSmartManaged()
+              && (settings.prestigeType !== "demonic" || (settings.prestigeDemonicFloor - buildings.SpireTower.count) > buildings.SpireMechBay.count)
+              && (!settings.autoMech || !MechManager.isActive)
+              && game.global.portal.transport.cargo.used > 0
+              && game.global.portal.transport.cargo.max > 0;
+
             const spireBuildable = (building) => buildAllowed && building.isAutoBuildable() && resources.Money.maxQuantity >= resourceCost(building, resources.Money);
             let mechBuildable = spireBuildable(buildings.SpireMechBay);
-            let puriBuildable = spireBuildable(buildings.SpirePurifier);
+            let puriBuildable = spireBuildable(buildings.SpirePurifier) && buildings.SpirePurifier.stateOffCount === 0;
             let portBuildable = spireBuildable(buildings.SpirePort);
             let campBuildable = spireBuildable(buildings.SpireBaseCamp);
 
@@ -8332,11 +8387,11 @@
             let maxPorts = portBuildable ? buildings.SpirePort.autoMax : buildings.SpirePort.count;
             let maxCamps = campBuildable ? buildings.SpireBaseCamp.autoMax : buildings.SpireBaseCamp.count;
 
+            let spireSupport = Math.floor(resources.Spire_Support.rateOfChange);
             let [bestSupplies, bestPort, bestBase] = getBestSupplyRatio(spireSupport, maxPorts, maxCamps);
             buildings.SpirePurifier.extraDescription = `Supported Supplies: ${Math.floor(bestSupplies)}<br>${buildings.SpirePurifier.extraDescription}`;
 
             let canBuild = bestSupplies >= nextPuriCost || bestSupplies >= nextMechCost;
-
             for (let targetMech = Math.min(buildings.SpireMechBay.count, spireSupport); targetMech >= 0; targetMech--) {
                 let [targetSupplies, targetPort, targetCamp] = getBestSupplyRatio(spireSupport - targetMech, maxPorts, maxCamps);
                 if (!canBuild || targetSupplies >= nextPuriCost || targetSupplies >= nextMechCost || targetPort > buildings.SpirePort.count || targetCamp > buildings.SpireBaseCamp.count) {
@@ -8356,8 +8411,10 @@
         for (let i = 0; i < warnBuildings.length; i++) {
             let building = buildingIds[warnBuildings[i].parentNode.id];
             if (building && building.autoStateEnabled && !building.is.ship) {
-                if ((building === buildings.BeltEleriumShip || building === buildings.BeltIridiumShip || building === buildings.BeltIronShip) &&
-                    (buildings.BeltEleriumShip.stateOnCount * 2 + buildings.BeltIridiumShip.stateOnCount + buildings.BeltIronShip.stateOnCount) <= resources.Belt_Support.maxQuantity) {
+                if (((building === buildings.BeltEleriumShip || building === buildings.BeltIridiumShip || building === buildings.BeltIronShip) &&
+                     (buildings.BeltEleriumShip.stateOnCount * 2 + buildings.BeltIridiumShip.stateOnCount + buildings.BeltIronShip.stateOnCount) <= resources.Belt_Support.maxQuantity) ||
+                    ((building === buildings.LakeBireme || building === buildings.LakeTransport) &&
+                     (buildings.LakeBireme.stateOnCount + buildings.LakeTransport.stateOnCount) <= resources.Lake_Support.maxQuantity)) {
                       continue;
                 }
                 building.tryAdjustState(-1);
@@ -9077,6 +9134,8 @@
             return;
         }
         let mechBay = game.global.portal.mechbay;
+        let prolongActive = m.isActive;
+        m.isActive = false;
 
         // Rearrange mechs for best efficiency if some of the bays are disabled
         if (m.inactiveMechs.length > 0) {
@@ -9116,11 +9175,11 @@
         let baySpace = mechBay.max - mechBay.bay;
         let lastFloor = settings.prestigeType === "demonic" && buildings.SpireTower.count >= settings.prestigeDemonicFloor && haveTech("waygate", 3);
 
-        // Save up supply for next floor
-        if (settings.mechSaveSupply && !lastFloor) {
+        // Save up supply for next floor when, unless our supply income only from collectors, thet aren't built yet
+        if (settings.mechSaveSupply && !lastFloor && !m.isActive && ((game.global.portal.transport.cargo.used > 0 && game.global.portal.transport.cargo.max > 0) || resources.Supply.rateOfChange >= settings.mechMinSupply)) {
             let missingSupplies = resources.Supply.maxQuantity - resources.Supply.currentQuantity;
-            if (baySpace < newSpace) { // Not always accurate as we can't really predict what we're going to build\scrap, but better than nothing
-                missingSupplies -= m.getMechRefund(newMech)[1];
+            if (baySpace < newSpace) {
+                missingSupplies -= m.getMechRefund({size: "titan"})[1];
             }
             let timeToFullSupplies = missingSupplies / resources.Supply.rateOfChange;
             if (m.getTimeToClear() <= timeToFullSupplies) {
@@ -9128,9 +9187,9 @@
             }
         }
 
-        let canExpandBay = settings.mechBaysFirst && buildings.SpireMechBay.isAutoBuildable() && (buildings.SpireMechBay.isAffordable(true) || (buildings.SpirePurifier.isAutoBuildable() && buildings.SpirePurifier.isAffordable(true)));
+        let canExpandBay = settings.mechBaysFirst && buildings.SpireMechBay.isAutoBuildable() && (buildings.SpireMechBay.isAffordable(true) || (buildings.SpirePurifier.isAutoBuildable() && buildings.SpirePurifier.isAffordable(true) && buildings.SpirePurifier.stateOffCount === 0));
         let mechScrap = settings.mechScrap;
-        if (canExpandBay && resources.Supply.currentQuantity < resources.Supply.maxQuantity) {
+        if (canExpandBay && resources.Supply.currentQuantity < resources.Supply.maxQuantity && !m.isActive) {
             // We can build purifier or bay once we'll have enough resources, do not rebuild old mechs
             mechScrap = "none";
         } else if (settings.mechScrap === "mixed") {
@@ -9187,7 +9246,7 @@
             if (trashMechs.length > 0 && powerLost / spaceGained < newMech.efficiency && baySpace + spaceGained >= newSpace && resources.Supply.spareQuantity + supplyGained >= newSupply && resources.Soul_Gem.spareQuantity + gemsGained >= newGems) {
                 trashMechs.sort((a, b) => b.id - a.id); // Goes from bottom to top of the list, so it won't shift IDs
                 if (trashMechs.length > 1) {
-                    let average = trashMechs.map(mech => mech.power / m.bestMech[mech.size].power);
+                    let rating = average(trashMechs.map(mech => mech.power / m.bestMech[mech.size].power));
                     GameLog.logSuccess(GameLog.Types.mech_scrap, `${trashMechs.length}机甲(~${Math.round(average * 100)}%)已解体。`);
                 } else {
                     GameLog.logSuccess(GameLog.Types.mech_scrap, `${m.mechDesc(trashMechs[0])}机甲已解体。`);
@@ -9196,6 +9255,7 @@
                 resources.Supply.currentQuantity = Math.min(resources.Supply.currentQuantity + supplyGained, resources.Supply.maxQuantity);
                 resources.Soul_Gem.currentQuantity += gemsGained;
                 // TODO: Workaround for scrap vue bug - it doesn't update used space in callback. Remove when fixed.
+                baySpace += spaceGained;
                 m._assemblyVue.m.bay -= spaceGained;
             } else if (baySpace + spaceGained >= newSpace) {
                 return; // We have scrapable mechs, but don't want to scrap them right now. Waiting for more supplies for instant replace.
@@ -9203,7 +9263,7 @@
         }
 
         // Try to squeeze smaller mech, if we can't fit preferred one
-        if (settings.mechFillBay && !canExpandBay && (baySpace < newSpace || resources.Supply.maxQuantity < newSupply)) {
+        if (settings.mechFillBay && ((!canExpandBay && baySpace < newSpace) || resources.Supply.maxQuantity < newSupply)) {
             for (let i = m.Size.indexOf(newMech.size) - 1; i >= 0; i--) {
                 [newGems, newSupply, newSpace] = m.getMechCost({size: m.Size[i]});
                 if (newSpace <= baySpace && newSupply <= resources.Supply.maxQuantity) {
@@ -9221,6 +9281,7 @@
             m.buildMech(newMech);
             resources.Supply.currentQuantity -= newSupply;
             resources.Soul_Gem.currentQuantity -= newGems;
+            m.isActive = prolongActive;
             return;
         }
     }
@@ -9665,7 +9726,8 @@
         // Init lookup table for buildings
         for (let building of Object.values(buildings)){
             buildingIds[building._vueBinding] = building;
-            if (building.isMission()) {
+            // Don't force building Jump Ship and Pit Assault, they're prety expensive at the moment when unlocked.
+            if (building.isMission() && building !== buildings.BlackholeJumpShip && building !== buildings.PitAssaultForge) {
                 state.missionBuildingList.push(building);
             }
         }
@@ -9769,7 +9831,7 @@
             notes.push(`Currrent team potential: ${getNiceNumber(MechManager.mechsPotential)}`);
         }
 
-        if ((obj instanceof Technology || (!settings.autoARPA && obj._tab === "arpa") || (!settings.autoBuild && obj._tab !== "arpa")) && !state.queuedTargets.includes(obj)) {
+        if ((obj instanceof Technology || (!settings.autoARPA && obj._tab === "arpa") || (!settings.autoBuild && obj._tab !== "arpa")) && !state.queuedTargets.includes(obj) && !state.triggerTargets.includes(obj)) {
             let conflict = getCostConflict(obj);
             if (conflict) {
                 notes.push(`Conflicts with ${conflict.target.title} for ${conflict.res.name} (${conflict.cause})`);
@@ -11601,6 +11663,8 @@
                               {val: "never", label: "Never", hint: "Never add special equipment"}];
         addSettingsSelect(currentNode, "mechSpecial", "Special mechs", "Configures special equip", specialOptions);
         addSettingsNumber(currentNode, "mechScouts", "Minimum scouts ratio", "Scouts compensate terrain penalty of suboptimal mechs. Build them up to this ratio.");
+        addSettingsNumber(currentNode, "mechMinSupply", "Minimum supply income", "Build collectors if current supply income above given number");
+        addSettingsNumber(currentNode, "mechMaxCollectors", "Maximum collectors ratio", "Limiter for above option, maximum space used by collectors");
         addSettingsNumber(currentNode, "mechWaygatePotential", "Maximum mech potential for Waygate", "Fight Demon Lord only when current mech team potential below given amount. Full bay of best mechs will have `1` potential. Damage against Demon Lord does not affected by floor modifiers, all mechs always does 100% damage to him. Thus it's most time-efficient to fight him at times when mechs can't make good progress against regular monsters, and waiting for rebuilding. Auto Power needs to be on for this to work.");
         addSettingsToggle(currentNode, "mechSaveSupply", "Save up full supplies for next floor", "Stop building new mechs close to next floor, preparing to build bunch of new mechs suited for next enemy");
         addSettingsToggle(currentNode, "mechFillBay", "Build smaller mechs when preferred not available", "Build smaller mechs when preferred size can't be used due to low remaining bay space, or supplies cap");
@@ -11682,6 +11746,8 @@
         settings.mechSizeGravity = "auto";
         settings.mechFillBay = true;
         settings.mechScouts = 0.05;
+        settings.mechMinSupply = 1000;
+        settings.mechMaxCollectors = 0.5;
         settings.mechSpecial = "prefered";
         settings.mechSaveSupply = true;
         settings.buildingMechsFirst = true;
@@ -13507,8 +13573,8 @@
         $("#createHead").after(`
           <div class="market-item vb" id="script_storage_top_row" style="overflow:hidden">
             <span style="margin-left: auto; margin-right: 0.2rem; float:right;">
-              <span class="has-text-warning" style="width: 2.75rem; margin-right: 0.3em; display: inline-block; text-align: center;">Auto</span>
-              <span class="has-text-warning" style="width: 2.75rem; display: inline-block; text-align: center;">Over</span>
+              <span class="has-text-warning" style="width: 2.75rem; margin-right: 0.3em; display: inline-block; text-align: center;">自动</span>
+              <span class="has-text-warning" style="width: 2.75rem; display: inline-block; text-align: center;">溢出</span>
             </span>
           </div>`);
 
@@ -13708,6 +13774,10 @@
         return game.global.tech[research] && game.global.tech[research] >= level;
     }
 
+    function isHungryRace() {
+        return game.global.race['carnivore'] || game.global.race['ravenous'];
+    }
+
     function isHunterRace() {
         return game.global.race['carnivore'] || game.global.race['soul_eater'];
     }
@@ -13722,6 +13792,10 @@
 
     function resourceCost(obj, resource) {
         return obj.resourceRequirements.find(requirement => requirement.resource === resource)?.quantity ?? 0;
+    }
+
+    function getOccCosts() {
+        return game.global.civic.govern.type === "federation" ? 15 : 20;
     }
 
     function getGovName(govIndex) {

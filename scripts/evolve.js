@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Evolve
 // @namespace    http://tampermonkey.net/
-// @version      3.3.1.74
+// @version      3.3.1.74.1
 // @description  try to take over the world!
 // @downloadURL  https://gitee.com/likexia/Evolve/raw/master/scripts/evolve.js
 // @author       Fafnir
@@ -247,7 +247,7 @@
 
             this.storeOverflow = false;
             this.storagePriority = 0;
-            this.storageRequired = 0;
+            this.storageRequired = 1;
             this.autoStorageEnabled = true;
             this._autoCratesMax = -1;
             this._autoContainersMax = -1;
@@ -912,8 +912,8 @@
         }
 
         getMissingSupport() {
-            // We're going to build Mech Bays with no support, to enable them later
-            if (this === buildings.SpireMechBay && this.autoStateSmart) {
+            // We're going to build Spire things with no support, to enable them later
+            if ((this === buildings.SpirePort || this === buildings.SpireBaseCamp || this === buildings.SpireMechBay) && this.autoStateSmart) {
                 return null;
             }
 
@@ -1882,6 +1882,7 @@
         DwarfWorldCollider: new Action("Dwarf World Collider", "space", "world_collider", "spc_dwarf"),
         DwarfWorldController: new Action("Dwarf World Collider (Complete)", "space", "world_controller", "spc_dwarf", {knowledge: true}),
         /*
+        DwarfShipyard: new Action("Dwarf Ship Yard", "space", "shipyard", "spc_dwarf"),
         TitanMission: new Action("Titan Mission", "space", "titan_mission", "spc_titan"),
         TitanSpaceport: new Action("Titan Spaceport", "space", "titan_spaceport", "spc_titan"),
         EnceladusMission: new Action("Enceladus Mission", "space", "enceladus_mission", "spc_enceladus"),
@@ -2284,6 +2285,8 @@
       ],[
           () => true,
           (building) => building._tab !== "city" && building.stateOffCount > 0
+            && (building !== buildings.SpirePort || !buildings.SpirePort.isSmartManaged())
+            && (building !== buildings.SpireBaseCamp || !buildings.SpireBaseCamp.isSmartManaged())
             && (building !== buildings.SpireMechBay || !buildings.SpireMechBay.isSmartManaged())
             && (building !== buildings.RuinsGuardPost || !buildings.RuinsGuardPost.isSmartManaged() || isHellSupressUseful())
             && (building !== buildings.BadlandsAttractor || !buildings.BadlandsAttractor.isSmartManaged()),
@@ -3702,7 +3705,6 @@
                 this.bestSize = Object.values(this.bestMech).filter(m => m.size !== 'collector').sort((a, b) => b.efficiency - a.efficiency).map(m => m.size);
 
                 // Redraw added label of Mech Lab after change of floor
-                removeMechInfo();
                 createMechInfo();
             }
 
@@ -5058,6 +5060,9 @@
 
         // And Blood Stone
         buildings.SpireWaygate.autoBuildEnabled = false;
+
+        buildings.ForgeHorseshoe._autoMax = 20;
+        buildings.RedForgeHorseshoe._autoMax = 20;
     }
 
     function resetProjectSettings() {
@@ -5088,7 +5093,7 @@
     function resetProductionSettings() {
         settings.productionChrysotileWeight = 2;
         settings.productionFoundryWeighting = "demanded";
-        settings.productionWaitMana = true;
+        settings.productionRitualManaUse = 0.5;
         settings.productionSmelting = "storage";
         settings.productionFactoryMinIngredients = 0.01;
     }
@@ -5381,7 +5386,7 @@
 
         addSetting("productionChrysotileWeight", 2);
         addSetting("productionFoundryWeighting", "demanded");
-        addSetting("productionWaitMana", true);
+        addSetting("productionRitualManaUse", 0.5);
         addSetting("productionSmelting", "storage");
         addSetting("productionFactoryMinIngredients", 0.01);
 
@@ -5595,7 +5600,7 @@
         }
         settings.challenge_plasmid = settings.challenge_mastery || settings.challenge_plasmid; // Merge challenge settings
         // Remove old settings
-        ["buildingWeightingTriggerConflict", "researchAlienGift", "arpaBuildIfStorageFullCraftableMin", "arpaBuildIfStorageFullResourceMaxPercent", "arpaBuildIfStorageFull", "productionMoneyIfOnly", "autoAchievements", "autoChallenge", "autoMAD", "autoSpace", "autoSeeder", "foreignSpyManage", "foreignHireMercCostLowerThan", "userResearchUnification", "btl_Ambush", "btl_max_Ambush", "btl_Raid", "btl_max_Raid", "btl_Pillage", "btl_max_Pillage", "btl_Assault", "btl_max_Assault", "btl_Siege", "btl_max_Siege", "smelter_fuel_Oil", "smelter_fuel_Coal", "smelter_fuel_Lumber", "planetSettingsCollapser", "buildingManageSpire", "hellHandleAttractors", "researchFilter", "challenge_mastery", "hellCountGems", "productionPrioritizeDemanded", "fleetChthonianPower"].forEach(id => delete settings[id]);
+        ["buildingWeightingTriggerConflict", "researchAlienGift", "arpaBuildIfStorageFullCraftableMin", "arpaBuildIfStorageFullResourceMaxPercent", "arpaBuildIfStorageFull", "productionMoneyIfOnly", "autoAchievements", "autoChallenge", "autoMAD", "autoSpace", "autoSeeder", "foreignSpyManage", "foreignHireMercCostLowerThan", "userResearchUnification", "btl_Ambush", "btl_max_Ambush", "btl_Raid", "btl_max_Raid", "btl_Pillage", "btl_max_Pillage", "btl_Assault", "btl_max_Assault", "btl_Siege", "btl_max_Siege", "smelter_fuel_Oil", "smelter_fuel_Coal", "smelter_fuel_Lumber", "planetSettingsCollapser", "buildingManageSpire", "hellHandleAttractors", "researchFilter", "challenge_mastery", "hellCountGems", "productionPrioritizeDemanded", "fleetChthonianPower", "productionWaitMana"].forEach(id => delete settings[id]);
         ["foreignAttack", "foreignOccupy", "foreignSpy", "foreignSpyMax", "foreignSpyOp"].forEach(id => [0, 1, 2].forEach(index => delete settings[id + index]));
         Object.values(resources).forEach(resource => delete settings['res_storage_w_' + resource.id]);
         Object.values(projects).forEach(project => delete settings['arpa_ignore_money_' + project.id]);
@@ -6271,7 +6276,8 @@
 
         if (requiredTactic !== 4) {
             // If we don't need to occupy our target, then let's find best tactic for plundering
-            for (let i = 4; i >= 0; i--) {
+            // Never try siege if it can mess with unification
+            for (let i = !settings.foreignUnification || settings.foreignOccupyLast ? 4 : 3; i >= 0; i--) {
                 let soldiersMin = m.getSoldiersForAdvantage(settings.foreignMinAdvantage, i, currentTarget.id);
                 if (soldiersMin <= maxBattalion[i]) {
                     requiredBattalion = Math.max(soldiersMin, Math.min(maxBattalion[i], m.availableGarrison, m.getSoldiersForAdvantage(settings.foreignMaxAdvantage, i, currentTarget.id) - 1));
@@ -6908,23 +6914,25 @@
             pylonAdjustments[spell.id] = 0;
             resources.Mana.rateOfChange += RitualManager.manaCost(RitualManager.currentSpells(spell));
         }
+        let manaToUse = resources.Mana.rateOfChange * (resources.Mana.storageRatio > 0.99 ? 1 : settings.productionRitualManaUse);
 
-        if (!settings.productionWaitMana || resources.Mana.isCapped()) {
-            let spellSorter = (a, b) => ((pylonAdjustments[a.id] / a.weighting) - (pylonAdjustments[b.id] / b.weighting)) || b.weighting - a.weighting;
-            let remainingSpells = spells.slice();
-            while(remainingSpells.length > 0) {
-                let spell = remainingSpells.sort(spellSorter)[0];
-                let amount = pylonAdjustments[spell.id];
-                let cost = RitualManager.manaCost(amount + 1) - RitualManager.manaCost(amount);
+        let usableMana = manaToUse;
 
-                if (cost <= resources.Mana.rateOfChange) {
-                    pylonAdjustments[spell.id] = amount + 1;
-                    resources.Mana.rateOfChange -= cost;
-                } else {
-                    remainingSpells.shift();
-                }
+        let spellSorter = (a, b) => ((pylonAdjustments[a.id] / a.weighting) - (pylonAdjustments[b.id] / b.weighting)) || b.weighting - a.weighting;
+        let remainingSpells = spells.slice();
+        while(remainingSpells.length > 0) {
+            let spell = remainingSpells.sort(spellSorter)[0];
+            let amount = pylonAdjustments[spell.id];
+            let cost = RitualManager.manaCost(amount + 1) - RitualManager.manaCost(amount);
+
+            if (cost <= manaToUse) {
+                pylonAdjustments[spell.id] = amount + 1;
+                manaToUse -= cost;
+            } else {
+                remainingSpells.shift();
             }
         }
+        resources.Mana.rateOfChange - (usableMana - manaToUse);
 
         let pylonDeltas = spells.map((spell) => pylonAdjustments[spell.id] - RitualManager.currentSpells(spell));
 
@@ -8233,10 +8241,10 @@
                 if (building === buildings.RuinsGuardPost) {
                     if (isHellSupressUseful()) {
                         let postRating = game.armyRating(1, "hellArmy") * (game.global.race['holy'] ? 1.25 : 1);
-                        // 1 extra to workaround rounding errors
-                        let postAdjust = (5001 - poly.hellSupression("ruins").rating) / postRating;
+                        // 1 extra power to compensate rounding errors, 100 extra to compensate heling drinf of rage races
+                        let postAdjust = ((game.global.race['rage'] ? 5100 : 5001) - poly.hellSupression("ruins").rating) / postRating;
                         if (haveTech('hell_gate')) {
-                            postAdjust = Math.max(postAdjust, (7501 - poly.hellSupression("gate").rating) / postRating);
+                            postAdjust = Math.max(postAdjust, ((game.global.race['rage'] ? 7600 : 7501) - poly.hellSupression("gate").rating) / postRating);
                         }
                         // We're reserving just one soldier for Guard Posts, so let's increase them by 1
                         maxStateOn = Math.min(maxStateOn, currentStateOn + 1, currentStateOn + Math.ceil(postAdjust));
@@ -8384,20 +8392,35 @@
 
             let nextMechCost = mechBuildable ? resourceCost(buildings.SpireMechBay, resources.Supply) : Number.MAX_SAFE_INTEGER;
             let nextPuriCost = puriBuildable && mechBuildable && (portBuildable || campBuildable) ? resourceCost(buildings.SpirePurifier, resources.Supply) : Number.MAX_SAFE_INTEGER;
+            let spireSupport = Math.floor(resources.Spire_Support.rateOfChange);
+            let maxBay = Math.min(buildings.SpireMechBay.count, spireSupport);
             let maxPorts = portBuildable ? buildings.SpirePort.autoMax : buildings.SpirePort.count;
             let maxCamps = campBuildable ? buildings.SpireBaseCamp.autoMax : buildings.SpireBaseCamp.count;
 
-            let spireSupport = Math.floor(resources.Spire_Support.rateOfChange);
             let [bestSupplies, bestPort, bestBase] = getBestSupplyRatio(spireSupport, maxPorts, maxCamps);
             buildings.SpirePurifier.extraDescription = `Supported Supplies: ${Math.floor(bestSupplies)}<br>${buildings.SpirePurifier.extraDescription}`;
 
             let canBuild = bestSupplies >= nextPuriCost || bestSupplies >= nextMechCost;
-            for (let targetMech = Math.min(buildings.SpireMechBay.count, spireSupport); targetMech >= 0; targetMech--) {
+            for (let targetMech = maxBay; targetMech >= 0; targetMech--) {
                 let [targetSupplies, targetPort, targetCamp] = getBestSupplyRatio(spireSupport - targetMech, maxPorts, maxCamps);
-                if (!canBuild || targetSupplies >= nextPuriCost || targetSupplies >= nextMechCost || targetPort > buildings.SpirePort.count || targetCamp > buildings.SpireBaseCamp.count) {
-                    buildings.SpireMechBay.tryAdjustState(targetMech - buildings.SpireMechBay.stateOnCount);
-                    buildings.SpirePort.tryAdjustState(targetPort - buildings.SpirePort.stateOnCount);
-                    buildings.SpireBaseCamp.tryAdjustState(targetCamp - buildings.SpireBaseCamp.stateOnCount);
+
+                let storageUpgrade =
+                    targetPort > buildings.SpirePort.count ? buildings.SpirePort :
+                    targetCamp > buildings.SpireBaseCamp.count ? buildings.SpireBaseCamp :
+                    null;
+                if (storageUpgrade) {
+                    let storageCost = resourceCost(storageUpgrade, resources.Supply);
+                    for (let i = maxBay; i >= 0; i--) {
+                        let [storageSupplies, storagePort, storageCamp] = getBestSupplyRatio(spireSupport - i, maxPorts, maxCamps);
+                        if (storageSupplies >= storageCost) {
+                            adjustSpire(i, storagePort, storageCamp);
+                            break;
+                        }
+                    }
+                    break;
+                }
+                if (!canBuild || targetSupplies >= nextPuriCost || targetSupplies >= nextMechCost) {
+                    adjustSpire(targetMech, targetPort, targetCamp);
                     break;
                 }
             }
@@ -8421,6 +8444,12 @@
                 break;
             }
         }
+    }
+
+    function adjustSpire(mech, port, camp) {
+        buildings.SpireMechBay.tryAdjustState(mech - buildings.SpireMechBay.stateOnCount);
+        buildings.SpirePort.tryAdjustState(port - buildings.SpirePort.stateOnCount);
+        buildings.SpireBaseCamp.tryAdjustState(camp - buildings.SpireBaseCamp.stateOnCount);
     }
 
     function getBestSupplyRatio(support, maxPorts, maxCamps) {
@@ -9219,7 +9248,11 @@
             let powerLost = 0;
 
             // Get list of inefficient mech
-            let scrapEfficiency = lastFloor ? Math.min(settings.mechScrapEfficiency, 1) : settings.mechScrapEfficiency;
+            let scrapEfficiency =
+              baySpace === 0 && resources.Supply.storageRatio > 0.9 ? 0 :
+              lastFloor ? Math.min(settings.mechScrapEfficiency, 1) :
+              settings.mechScrapEfficiency;
+
             let badMechList = m.activeMechs.filter(mech => {
                 if (mech.infernal || mech.power >= m.bestMech[mech.size].power) {
                     return false;
@@ -10305,7 +10338,7 @@
             return;
         }
 
-        importExportNode.append(' <button id="script_settingsImport" class="button">Import Script Settings</button>');
+        importExportNode.append(' <button id="script_settingsImport" class="button">导入脚本设置</button>');
 
         $('#script_settingsImport').on("click", function() {
             if ($('#importExport').val().length > 0) {
@@ -10340,7 +10373,7 @@
             }
         });
 
-        importExportNode.append(' <button id="script_settingsExport" class="button">Export Script Settings</button>');
+        importExportNode.append(' <button id="script_settingsExport" class="button">导出脚本设置</button>');
 
         $('#script_settingsExport').on("click", function() {
             //$('#importExport').val(LZString.compressToBase64(JSON.stringify(global)));
@@ -12421,7 +12454,7 @@
 
     function updateProductionTablePylon(currentNode) {
         addStandardHeading(currentNode, "Pylon");
-        addSettingsToggle(currentNode, "productionWaitMana", "Wait for full mana", "Cast rituals only with full mana");
+        addSettingsNumber(currentNode, "productionRitualManaUse", "Mana income used", "Income portion to use on rituals. Setting to 1 is not recomended, as it will halt mana regeneration. Applied only when mana not capped - with capped mana script will always use all income.");
 
         currentNode.append(`
           <table style="width:100%">
@@ -13352,7 +13385,8 @@
             }
             let timePassed = state.scriptTick - state.soulGemIncomes[0].tick;
             let rate = gems / timePassed * 3600;
-            resources.Soul_Gem.rateOfChange = gems / timePassed;
+            // Apply game speed to sync with other incomes
+            resources.Soul_Gem.rateOfChange = gems / timePassed * gameTicksPerSecond("mid");
             $("#resSoul_Gem span:eq(2)").text(`${getNiceNumber(rate)} /h`);
         }
 
@@ -13384,6 +13418,7 @@
 
     function createMechInfo() {
         if (MechManager.initLab()) {
+            removeMechInfo();
             $('#mechList .mechRow').each(function(index) {
                 let mech = game.global.portal.mechbay.mechs[index];
                 let stats = MechManager.getMechStats(mech);
@@ -13403,8 +13438,8 @@
     function startMechObserver() {
         stopMechObserver();
 
-        MechManager.mechObserver.observe(document.getElementById("mechLab"), {childList: true});
         createMechInfo();
+        MechManager.mechObserver.observe(document.getElementById("mechLab"), {childList: true});
     }
 
     function stopMechObserver() {

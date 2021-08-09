@@ -264,10 +264,42 @@ export function removeFromRQueue(tech_trees){
     }
 }
 
+export function calcQueueMax(){
+    let max_queue = global.tech['queue'] >= 2 ? (global.tech['queue'] >= 3 ? 8 : 5) : 3;
+    if (global.stats.feat['journeyman'] && global.stats.feat['journeyman'] >= 2){
+        max_queue += global.stats.feat['journeyman'] >= 4 ? 2 : 1;
+    }
+    if (global.genes['queue'] && global.genes['queue'] >= 2){
+        max_queue *= 2;
+    }
+    let pragVal = govActive('pragmatist',0);
+    if (pragVal){
+        max_queue = Math.round(max_queue * (1 + (pragVal / 100)));
+    }
+    
+    global.queue.max = max_queue;
+}
+
+export function calcRQueueMax(){
+    let max_queue = 3;
+    if (global.stats.feat['journeyman']){
+        max_queue += global.stats.feat['journeyman'] >= 3 ? (global.stats.feat['journeyman'] >= 5 ? 3 : 2) : 1;
+    }
+    if (global.genes['queue'] && global.genes['queue'] >= 2){
+        max_queue *= 2;
+    }
+    let theoryVal = govActive('theorist',0);
+    if (theoryVal){
+        max_queue = Math.round(max_queue * (1 + (theoryVal / 100)));
+    }
+    
+    global.r_queue.max = max_queue;
+}
+
 export function buildQueue(){
     clearDragQueue();
     clearElement($('#buildQueue'));
-    $('#buildQueue').append($(`<h2 class="has-text-success is-sr-only">${loc('building_queue')}</h2>`));
+    $('#buildQueue').append($(`<h2 class="has-text-success is-sr-only">${loc('building_queue')} ({{ | used_q }}/{{ max }})</h2>`));
 
     let queue = $(`<ul class="buildList"></ul>`);
     $('#buildQueue').append(queue);
@@ -335,6 +367,14 @@ export function buildQueue(){
                 },
                 max_t(max,time){
                     return time === max || time < 0 ? '' : ` / ${timeFormat(max)}`;
+                },
+                used_q(){
+                    let used = 0;
+                    for (let i=0; i<global.queue.queue.length; i++){
+                        used += Math.ceil(global.queue.queue[i].q / global.queue.queue[i].qs);
+                    }
+                    
+                    return used;
                 }
             }
         });
@@ -1186,6 +1226,7 @@ export function adjustCosts(costs, wiki){
         });
         return newCosts;
     }
+    costs = inflationAdjust(costs, wiki);
     costs = technoAdjust(costs, wiki);
     costs = kindlingAdjust(costs, wiki);
     costs = smolderAdjust(costs, wiki);
@@ -1194,6 +1235,23 @@ export function adjustCosts(costs, wiki){
     costs = extraAdjust(costs, wiki);
     costs = heavyAdjust(costs, wiki);
     return craftAdjust(costs, wiki);
+}
+
+function inflationAdjust(costs, wiki){
+    if (global.race['inflation']){
+        var newCosts = {};
+        Object.keys(costs).forEach(function (res){
+            if (res === 'Money'){
+                let rate = 1 + (global.race.inflation / 100);
+                newCosts[res] = function(){ return Math.round(costs[res](wiki) * rate); }
+            }
+            else {
+                newCosts[res] = function(){ return costs[res](wiki); }
+            }
+        });
+        return newCosts;
+    }
+    return costs;
 }
 
 function extraAdjust(costs, wiki){

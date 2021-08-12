@@ -33,7 +33,7 @@ const spaceProjects = {
             action(){
                 if (payCosts($(this)[0].cost)){
                     global.space['satellite'] = { count: 0 };
-                    messageQueue(loc('space_home_test_launch_action'),'info');
+                    messageQueue(loc('space_home_test_launch_action'),'info',false,['progress']);
                     return true;
                 }
                 return false;
@@ -185,7 +185,7 @@ const spaceProjects = {
             effect: loc('space_moon_mission_effect'),
             action(){
                 if (payCosts($(this)[0].cost)){
-                    messageQueue(loc('space_moon_mission_action'),'info');
+                    messageQueue(loc('space_moon_mission_action'),'info',false,['progress']);
                     global.space['iridium_mine'] = { count: 0, on: 0 };
                     global.space['helium_mine'] = { count: 0, on: 0 };
                     return true;
@@ -364,7 +364,7 @@ const spaceProjects = {
             },
             action(){
                 if (payCosts($(this)[0].cost)){
-                    messageQueue(loc('space_red_mission_action',[races[global.race.species].solar.red]),'info');
+                    messageQueue(loc('space_red_mission_action',[races[global.race.species].solar.red]),'info',false,['progress']);
                     global.space['living_quarters'] = { count: 0, on: 0 };
                     global.space['garage'] = { count: 0 };
                     global.space['red_mine'] = { count: 0, on: 0 };
@@ -941,6 +941,7 @@ const spaceProjects = {
             },
             reqs: { primitive: 3 },
             trait: ['hooved','cataclysm'],
+            inflation: false,
             cost: {
                 Lumber(){ 
                     let active = global.race['shoecnt'] && !global.race['kindling_kindred'] && !global.race['smoldering']
@@ -1000,7 +1001,7 @@ const spaceProjects = {
             },
             action(){
                 if (payCosts($(this)[0].cost)){
-                    messageQueue(loc('space_hell_mission_action',[races[global.race.species].solar.hell]),'info');
+                    messageQueue(loc('space_hell_mission_action',[races[global.race.species].solar.hell]),'info',false,['progress']);
                     global.space['geothermal'] = { count: 0, on: 0 };
                     return true;
                 }
@@ -1239,7 +1240,7 @@ const spaceProjects = {
             },
             action(){
                 if (payCosts($(this)[0].cost)){
-                    messageQueue(loc('space_gas_mission_action',[races[global.race.species].solar.gas]),'info');
+                    messageQueue(loc('space_gas_mission_action',[races[global.race.species].solar.gas]),'info',false,['progress']);
                     global.settings.space.gas_moon = true;
                     global.settings.space.belt = true;
                     global.space['space_station'] = { count: 0, on: 0, support: 0, s_max: 0 };
@@ -1362,7 +1363,7 @@ const spaceProjects = {
             },
             action(){
                 if (payCosts($(this)[0].cost)){
-                    messageQueue(loc('space_gas_moon_mission_action',[races[global.race.species].solar.gas_moon]),'info');
+                    messageQueue(loc('space_gas_moon_mission_action',[races[global.race.species].solar.gas_moon]),'info',false,['progress']);
                     global.space['outpost'] = { count: 0, on: 0 };
                     global.tech['gas_moon'] = 1;
                     return true;
@@ -1502,7 +1503,7 @@ const spaceProjects = {
             },
             action(){
                 if (payCosts($(this)[0].cost)){
-                    messageQueue(loc('space_belt_mission_action'),'info');
+                    messageQueue(loc('space_belt_mission_action'),'info',false,['progress']);
                     global.settings.space.dwarf = true;
                     return true;
                 }
@@ -1681,7 +1682,7 @@ const spaceProjects = {
             },
             action(){
                 if (payCosts($(this)[0].cost)){
-                    messageQueue(loc('space_dwarf_mission_action',[races[global.race.species].solar.dwarf]),'info');
+                    messageQueue(loc('space_dwarf_mission_action',[races[global.race.species].solar.dwarf]),'info',false,['progress']);
                     global.space['elerium_contain'] = { count: 0, on: 0 };
                     return true;
                 }
@@ -1852,7 +1853,7 @@ const interstellarProjects = {
             effect: loc('interstellar_alpha_mission_effect'),
             action(){
                 if (payCosts($(this)[0].cost)){
-                    messageQueue(loc('interstellar_alpha_mission_result'),'info');
+                    messageQueue(loc('interstellar_alpha_mission_result'),'info',false,['progress']);
                     global.interstellar['nexus'] = { count: 0, on: 0, support: 0, s_max: 0 };
                     global.interstellar['warehouse'] = { count: 0 };
                     return true;
@@ -2089,6 +2090,9 @@ const interstellarProjects = {
                 let banks = global.race['cataclysm'] ? p_on['spaceport'] : (global.city['bank'] ? global.city.bank.count : 0);
                 let b_vault = global.race['cataclysm'] ? (bank_vault() * 4) : bank_vault();
                 let vault = spatialReasoning(global.city['bank'] ? b_vault * banks / 18 : 0);
+                if (global.race['inflation']){
+                    vault *= 2;
+                }
                 if (global.tech.banking >= 13){
                     if (global.galaxy['freighter']){
                         vault *= 1 + (gal_on['freighter'] * 0.03);
@@ -2382,7 +2386,7 @@ const interstellarProjects = {
             action(){
                 if (payCosts($(this)[0].cost)){
                     global.interstellar['xfer_station'] = { count: 0, on: 0 };
-                    messageQueue(loc('interstellar_proxima_mission_result'),'info');
+                    messageQueue(loc('interstellar_proxima_mission_result'),'info',false,['progress']);
                     return true;
                 }
                 return false;
@@ -2532,8 +2536,8 @@ const interstellarProjects = {
                         if (global.interstellar.dyson.count >= 100){
                             drawTech();
                         }
+                        return true;
                     }
-                    return true;
                 }
                 return false;
             }
@@ -2578,9 +2582,9 @@ const interstellarProjects = {
                         incrementStruct('dyson_sphere','interstellar');
                         if (global.interstellar.dyson_sphere.count >= 100){
                             drawTech();
-                        }                        
+                        }
+                        return true;
                     }
-                    return true;
                 }
                 return false;
             }
@@ -2624,8 +2628,8 @@ const interstellarProjects = {
                         if (global.interstellar.orichalcum_sphere.count >= 100){
                             unlockAchieve('blacken_the_sun');
                         }
+                        return true;
                     }
-                    return true;
                 }
                 return false;
             }
@@ -2650,7 +2654,7 @@ const interstellarProjects = {
             effect: loc('interstellar_nebula_mission_effect'),
             action(){
                 if (payCosts($(this)[0].cost)){
-                    messageQueue(loc('interstellar_nebula_mission_result'),'info');
+                    messageQueue(loc('interstellar_nebula_mission_result'),'info',false,['progress']);
                     return true;
                 }
                 return false;
@@ -2778,7 +2782,7 @@ const interstellarProjects = {
             action(){
                 if (payCosts($(this)[0].cost)){
                     global.interstellar['neutron_miner'] = { count: 0, on: 0 };
-                    messageQueue(loc('interstellar_neutron_mission_result'),'info');
+                    messageQueue(loc('interstellar_neutron_mission_result'),'info',false,['progress']);
                     return true;
                 }
                 return false;
@@ -2944,7 +2948,7 @@ const interstellarProjects = {
             action(){
                 if (payCosts($(this)[0].cost)){
                     global.interstellar['far_reach'] = { count: 0, on: 0 };
-                    messageQueue(loc('interstellar_blackhole_mission_result'),'info');
+                    messageQueue(loc('interstellar_blackhole_mission_result'),'info',false,['progress']);
                     return true;
                 }
                 return false;
@@ -3036,8 +3040,8 @@ const interstellarProjects = {
                             global.tech['blackhole'] = 4;
                             drawTech();
                         }
+                        return true;
                     }
-                    return true;
                 }
                 return false;
             }
@@ -3070,7 +3074,7 @@ const interstellarProjects = {
             action(){
                 if (payCosts($(this)[0].cost)){
                     if (global.interstellar.mass_ejector.count === 0){
-                        messageQueue(loc('interstellar_mass_ejector_msg'),'info');
+                        messageQueue(loc('interstellar_mass_ejector_msg'),'info',false,['progress']);
                     }
                     global.settings.showEjector = true;
                     incrementStruct('mass_ejector','interstellar');
@@ -3127,7 +3131,7 @@ const interstellarProjects = {
                 if (payCosts($(this)[0].cost)){ 
                     global.interstellar['stargate'] = { count: 0 };
                     global.galaxy['gateway_station'] = { count: 0, on: 0 };
-                    messageQueue(loc('interstellar_wormhole_mission_result'),'info');
+                    messageQueue(loc('interstellar_wormhole_mission_result'),'info',false,['progress']);
                     return true;
                 }
                 return false;
@@ -3181,8 +3185,8 @@ const interstellarProjects = {
                             deepSpace();
                             clearPopper();
                         }
+                        return true;
                     }
-                    return true;
                 }
                 return false;
             }
@@ -3296,8 +3300,8 @@ const interstellarProjects = {
                             deepSpace();
                             clearPopper();
                         }
+                        return true;
                     }
-                    return true;
                 }
                 return false;
             }
@@ -3345,8 +3349,8 @@ const interstellarProjects = {
                             deepSpace();
                             clearPopper();
                         }
+                        return true;
                     }
-                    return true;
                 }
                 return false;
             }
@@ -3396,8 +3400,8 @@ const interstellarProjects = {
                             deepSpace();
                             clearPopper();
                         }
+                        return true;
                     }
-                    return true;
                 }
                 return false;
             }
@@ -4110,7 +4114,7 @@ const galaxyProjects = {
                     let s1desc = races[global.galaxy.alien1.id].entity;
                     let s2name = races[global.galaxy.alien2.id].name;
                     let s2desc = races[global.galaxy.alien2.id].entity;
-                    messageQueue(loc('galaxy_gorddon_mission_result',[s1desc,s1name,s2desc,s2name]),'info');
+                    messageQueue(loc('galaxy_gorddon_mission_result',[s1desc,s1name,s2desc,s2name]),'info',false,['progress']);
                     return true;
                 }
                 return false;
@@ -4153,7 +4157,7 @@ const galaxyProjects = {
                         global.galaxy['trade'] = { max: 0, cur: 0, f0: 0, f1: 0, f2: 0, f3: 0, f4: 0, f5: 0, f6: 0, f7: 0, f8: 0 };
                         clearElement($('#resources'));
                         defineResources();
-                        messageQueue(loc('galaxy_embassy_complete',[races[global.galaxy.alien1.id].name,races[global.galaxy.alien2.id].name]),'info');
+                        messageQueue(loc('galaxy_embassy_complete',[races[global.galaxy.alien1.id].name,races[global.galaxy.alien2.id].name]),'info',false,['progress']);
                     }
                     return true;
                 }
@@ -4303,8 +4307,8 @@ const galaxyProjects = {
                         global.galaxy['resort'] = { count: 0, on: 0 };
                         global.galaxy['super_freighter'] = { count: 0, on: 0, crew: 0 };
                         global.tech.xeno = 9;
+                        return true;
                     }
-                    return true;
                 }
                 return false;
             }
@@ -4471,7 +4475,7 @@ const galaxyProjects = {
                         total += galaxyProjects.gxy_gateway[ship].ship.rating() * global.galaxy.defense.gxy_alien2[ship];
                     });
                     if (total >= 400){
-                        messageQueue(loc('galaxy_alien2_mission_result2',[races[global.galaxy.alien2.id].home]),'info');
+                        messageQueue(loc('galaxy_alien2_mission_result2',[races[global.galaxy.alien2.id].home]),'info',false,['progress']);
                         if (total < 650){
                             let wreck = 80;
                             if (global.race['instinct']){
@@ -4486,7 +4490,7 @@ const galaxyProjects = {
                                     }
                                 }
                             });
-                            messageQueue(loc('galaxy_chthonian_mission_result_losses',[ loss.map( v => loc(`galaxy_${v}`) ).join(', ') ]),'danger');
+                            messageQueue(loc('galaxy_chthonian_mission_result_losses',[ loss.map( v => loc(`galaxy_${v}`) ).join(', ') ]),'danger',false,['progress']);
                             for (let i=0; i<loss.length; i++){
                                 let ship = loss[i];
                                 global.galaxy.defense.gxy_alien2[ship]--;
@@ -4704,7 +4708,7 @@ const galaxyProjects = {
                     if (total >= 1250){
                         let wreck = 500;
                         let loss = [];
-                        messageQueue(loc('galaxy_chthonian_mission_result'),'info');
+                        messageQueue(loc('galaxy_chthonian_mission_result'),'info',false,['progress']);
 
                         if (total >= 2500){
                             wreck = total >= 4500 ? 80 : 160;
@@ -4722,7 +4726,7 @@ const galaxyProjects = {
                             }
                         });
 
-                        messageQueue(loc('galaxy_chthonian_mission_result_losses',[ loss.map( v => loc(`galaxy_${v}`) ).join(', ') ]),'danger');
+                        messageQueue(loc('galaxy_chthonian_mission_result_losses',[ loss.map( v => loc(`galaxy_${v}`) ).join(', ') ]),'danger',false,['progress']);
 
                         for (let i=0; i<loss.length; i++){
                             let ship = loss[i];

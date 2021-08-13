@@ -127,6 +127,9 @@ if (global.lastMsg){
     });
 }
 
+$(`#msgQueue`).height(global.settings.msgQueueHeight);
+$(`#buildQueue`).height(global.settings.buildQueueHeight);
+
 if (global.queue.rename === true){
     updateQueueNames(true);
     global.queue.rename = false;
@@ -3041,7 +3044,7 @@ function fastLoop(){
                     delta *= 1.1;
                 }
                 if (global.race['inflation']){
-                    delta *= 1 + (global.race.inflation / 1000);
+                    delta *= 1 + (global.race.inflation / 1250);
                 }
 
                 FactoryMoney = delta * hunger;
@@ -4946,7 +4949,7 @@ function fastLoop(){
                 cash *= 0.8;
             }
             if (global.race['inflation']){
-                cash *= 1 + (global.race.inflation / 1000);
+                cash *= 1 + (global.race.inflation / 1250);
             }
             let racVal = govActive('racketeer',1);
             if (racVal){
@@ -7375,8 +7378,8 @@ function midLoop(){
                 let label = global.queue.queue[idx].label;
                 let id = global.queue.queue[idx].id;
                 if (buildArpa(global.queue.queue[idx].type,100,true)){
-                    messageQueue(loc('build_success',[label]),'success');
-                    if (id !== 'arpalaunch_facility',false,['queue','building_queue']) {
+                    messageQueue(loc('build_success',[label]),'success',false,['queue','building_queue']);
+                    if (id !== 'arpalaunch_facility') {
                         if (global.queue.queue[idx].q > 1){
                             global.queue.queue[idx].q--;
                         }
@@ -7527,11 +7530,45 @@ function midLoop(){
         });
     });
 
-    if ($(`#buildQueue.right`).length > 0){
-        $(`#msgQueue.right`).css('height',`calc(100vh - 6.5rem - ${$(`#buildQueue.right`).height()}px)`);
-    }
-    else {
-        $(`#msgQueue`).css('height',`5rem`);
+    {
+        let msgHeight = $(`#msgQueue`).height();
+        let buildHeight = $(`#buildQueue`).height();
+        let totHeight = $(`.leftColumn`).height();
+        
+        if (msgHeight + buildHeight > totHeight - 100){
+            msgHeight -= (msgHeight + buildHeight) - (totHeight - 100);
+            if (msgHeight < 10) {
+                msgHeight = 10;
+            }
+            if (msgHeight + buildHeight > totHeight - 100){
+                buildHeight -= (msgHeight + buildHeight) - (totHeight - 100);
+                if (buildHeight < 10) {
+                    buildHeight = 10;
+                }
+                $(`#buildQueue`).height(buildHeight);
+            }
+        }
+
+        if ($(`#msgQueue`).hasClass('right')){
+            $(`#resources`).height(`calc(100vh - 5rem)`);
+            if ($(`#msgQueue`).hasClass('vscroll')){
+                $(`#msgQueue`).removeClass('vscroll');
+                $(`#msgQueue`).addClass('sticky');
+            }
+            msgHeight = `calc(100vh - ${buildHeight}px - 6rem)`;
+        }
+        else {
+            $(`#resources`).height(`calc(100vh - 5rem - ${buildHeight}px - ${msgHeight}px)`);
+            if ($(`#msgQueue`).hasClass('sticky')){
+                $(`#msgQueue`).removeClass('sticky');
+                $(`#msgQueue`).addClass('vscroll');
+                msgHeight = 100;
+            }
+        }
+
+        $(`#msgQueue`).height(msgHeight);
+        global.settings.msgQueueHeight = msgHeight;
+        global.settings.buildQueueHeight = buildHeight;
     }
 
     if ($(`#mechList`).length > 0){

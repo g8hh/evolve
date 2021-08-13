@@ -1053,6 +1053,11 @@ if (!global.settings['msgFilters']){
     }
 }
 
+if (!global.settings['msgQueueHeight']){
+    global.settings['msgQueueHeight'] = $(`#msgQueue`).outerHeight();
+    global.settings['buildQueueHeight'] = $(`#buildQueue`).outerHeight();
+}
+
 if (!global['space']){
     global['space'] = {};
 }
@@ -1723,7 +1728,6 @@ export function resizeGame(){
         let build = $('#buildQueue').detach();
         build.addClass('right');
         build.removeClass('has-text-info');
-        build.find('h2').removeClass('is-sr-only');
 
         let queue = $('#msgQueue').detach();
         queue.addClass('right');
@@ -1739,7 +1743,6 @@ export function resizeGame(){
         let build = $('#buildQueue').detach();
         build.removeClass('right');
         build.addClass('has-text-info');
-        build.find('h2').addClass('is-sr-only');
 
         let queue = $('#msgQueue').detach();
         queue.removeClass('right');

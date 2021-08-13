@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Evolve
 // @namespace    http://tampermonkey.net/
-// @version      3.3.1.79
+// @version      3.3.1.80
 // @description  try to take over the world!
 // @downloadURL  https://gitee.com/likexia/Evolve/raw/master/scripts/evolve.js
 // @author       Fafnir
@@ -2354,7 +2354,7 @@
           () => settings.buildingWeightingNeedfulPowerPlant
       ],[
           () => resources.Power.isUnlocked() && resources.Power.currentQuantity > resources.Power.maxQuantity,
-          (building) => building !== buildings.Mill && building.powered < 0,
+          (building) => building !== buildings.Mill && (building === buildings.LakeCoolingTower || building.powered < 0),
           () => "No need for more energy",
           () => settings.buildingWeightingUselessPowerPlant
       ],[
@@ -5478,6 +5478,7 @@
         addSetting("autoGalaxyMarket", false);
 
         addSetting("logEnabled", true);
+        addSetting(GameLog.Types.mercenary.settingKey, false);
         addSetting(GameLog.Types.arpa.settingKey, false);
         Object.values(GameLog.Types).forEach(log => addSetting(log.settingKey, true));
         addSetting("logFilter", "");
@@ -5630,8 +5631,8 @@
         addSetting("fleetChthonianLoses", "frigate");
 
         addSetting("mechScrap", "mixed");
-        addSetting("mechScrapEfficiency", 2);
-        addSetting("mechCollectorValue", 1);
+        addSetting("mechScrapEfficiency", 1.5);
+        addSetting("mechCollectorValue", 0.5);
         addSetting("mechBuild", "random");
         addSetting("mechSize", "titan");
         addSetting("mechSizeGravity", "auto");
@@ -8055,7 +8056,9 @@
 
             // Build building
             if (building.click()) {
-                if (building.consumption.length > 0) { // Only one building with consumption per tick, so we won't build few red buildings having just 1 extra support, and such
+                // Only one building with consumption per tick, so we won't build few red buildings having just 1 extra support, and such
+                // Same for gems when we're saving them
+                if (building.consumption.length > 0 || (settings.prestigeWhiteholeSaveGems && settings.prestigeType === "whitehole" && resourceCost(building, resources.Soul_Gem) > 0)) {
                     return;
                 }
                 // Mark all processed building as unaffordable for remaining loop, so they won't appear as conflicting
@@ -9633,6 +9636,7 @@
     }
 
     function requiestStorageFor(list) {
+        // Required amount increased by 3% from actual numbers, as other logic of script can and will try to prevent overflowing by selling\ejecting\building projects, and that might cause an issues if we'd need 100% of storage
         let bufferMult = settings.storageAssignExtra ? 1.03 : 1;
         for (let i = 0; i < list.length; i++) {
             let obj = list[i];
@@ -9646,17 +9650,15 @@
     }
 
     function calculateRequiredStorages() {
-        // Get list of all unlocked techs, and find biggest numbers for each resource
-        // Required amount increased by 3% from actual numbers, as other logic of script can and will try to prevent overflowing by selling\ejecting\building projects, and that might cause an issues if we'd need 100% of storage
-        requiestStorageFor(state.techTargets);
 
         // We need to preserve amount of knowledge required by techs only, while amount still not polluted
         // by buildings - wardenclyffe, labs, etc. This way we can determine what's our real demand is.
         // Otherwise they might start build up knowledge cap just to afford themselves, increasing required
         // cap further, so we'll need more labs, and they'll demand even more knowledge for next level and so on.
-        state.knowledgeRequiredByTechs = resources.Knowledge.storageRequired;
+        state.knowledgeRequiredByTechs = Math.max(0, ...state.techTargets.map(tech => resourceCost(tech, resources.Knowledge)));
 
-        // Now we can do same for other things
+        // Get list of all objects techs, and find biggest numbers for each resource
+        requiestStorageFor(state.techTargets);
         requiestStorageFor(state.queuedTargetsAll);
         requiestStorageFor(BuildingManager.priorityList.filter((b) => b.isUnlocked() && b.autoBuildEnabled));
         requiestStorageFor(ProjectManager.priorityList.filter((p) => p.isUnlocked() && p.autoBuildEnabled));
@@ -12083,8 +12085,8 @@
 
     function resetMechSettings() {
         settings.mechScrap = "mixed";
-        settings.mechScrapEfficiency = 2;
-        settings.mechCollectorValue = 1;
+        settings.mechScrapEfficiency = 1.5;
+        settings.mechCollectorValue = 0.5;
         settings.mechBuild = "random";
         settings.mechSize = "titan";
         settings.mechSizeGravity = "auto";

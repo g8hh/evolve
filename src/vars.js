@@ -843,7 +843,13 @@ if (convertVersion(global['version']) < 101011){
     }
 }
 
-global['version'] = '1.1.11';
+if (convertVersion(global['version']) < 101012){
+    if (global.civic['garrison']){
+        global.civic.garrison['rate'] = 0;
+    }
+}
+
+global['version'] = '1.1.12';
 delete global['beta'];
 
 if (!global.hasOwnProperty('power')){

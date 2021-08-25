@@ -1252,7 +1252,7 @@
   "tech_artisans": "工匠",
   "tech_artisans_effect": "工匠使铸造厂的加成 +3%",
   "tech_apprentices": "学徒",
-  "tech_apprentices_effect": "被指派第一位工匠后，每额外指派一位工匠，该制品的产量 +3%",
+  "tech_apprentices_effect": "被指派第一位工匠后，每额外指派一位工匠，该制品的工具加成 +3%",
   "tech_carpentry": "木工",
   "tech_carpentry_effect": "每座锯木厂提升胶合板产量 +2%",
   "tech_master_craftsman": "大师工匠",

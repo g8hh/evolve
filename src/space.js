@@ -1,4 +1,4 @@
-import { save, global, webWorker, clearStates, keyMultiplier, sizeApproximation, p_on, moon_on, red_on, belt_on, int_on, gal_on, quantum_level } from './vars.js';
+import { save, global, webWorker, clearSavedMessages, clearStates, keyMultiplier, sizeApproximation, p_on, moon_on, red_on, belt_on, int_on, gal_on, quantum_level } from './vars.js';
 import { vBind, messageQueue, clearElement, popover, clearPopper, flib, tagEvent, powerModifier, powerCostMod, calcPrestige, spaceCostMultiplier, darkEffect, eventActive, updateResetStats, calcGenomeScore, randomKey } from './functions.js';
 import { unlockAchieve, checkAchievements, unlockFeat, universeAffix } from './achieve.js';
 import { races, traits, genus_traits, planetTraits } from './races.js';
@@ -484,6 +484,32 @@ const spaceProjects = {
                             global.civic.colonist.workers++;
                         }
                     }
+                    return true;
+                }
+                return false;
+            }
+        },
+        pylon: {
+            id: 'space-pylon',
+            title: loc('space_red_pylon'),
+            desc: loc('space_red_pylon'),
+            reqs: { magic: 2 },
+            trait: ['cataclysm'],
+            cost: {
+                Money(offset){ return spaceCostMultiplier('pylon', offset, 10, 1.48); },
+                Stone(offset){ return spaceCostMultiplier('pylon', offset, 12, 1.42); },
+                Crystal(offset){ return spaceCostMultiplier('pylon', offset, 8, 1.42) - 3; }
+            },
+            effect(){
+                let max = spatialReasoning(2);
+                let mana = +(0.005 * darkEffect('magic')).toFixed(3);
+                return `<div>${loc('gain',[mana,global.resource.Mana.name])}</div><div>${loc('plus_max_resource',[max,global.resource.Mana.name])}</div>`;
+            },
+            special(){ return global.tech['magic'] && global.tech.magic >= 3 ? true : false; },
+            action(){
+                if (payCosts($(this)[0].cost)){
+                    global.space['pylon'].count++;
+                    global.resource.Mana.max += spatialReasoning(2);
                     return true;
                 }
                 return false;
@@ -6100,7 +6126,7 @@ export function ascendLab(wiki){
 }
 
 function ascend(){
-    global.lastMsg = false;
+    clearSavedMessages();
 
     tagEvent('reset',{
         'end': 'ascend'

@@ -3,6 +3,27 @@ import { clearElement } from './../functions.js';
 
 const changeList = [
     {
+        version: `1.1.15`,
+        date: `10/20/2021`,
+        changes: [
+            `Added buttons to pause queues.`,
+            `Cracked Pylons now correctly add to Mana cap.`,
+            `Pillar of Bones will no longer be rolled with the Smoldering trait.`,
+            `Fixed bugs with removing Terrifying trait.`,
+            `Fixed bug with items in queue blocking the next item when it couldn't be completed due to negative production of a resource.`,
+            `The Tax-Morale governor task is now slightly smarter.`
+        ]
+    },
+    {
+        version: `1.1.14`,
+        revision: `a`,
+        date: `9/30/2021`,
+        changes: [
+            `Fixed Pylon bug with upgraded save games in Magic Cataclysm runs.`,
+            `Fixed a Message Log filtering problem where some players might not unlock some options.`
+        ]
+    },
+    {
         version: `1.1.14`,
         date: `9/29/2021`,
         changes: [
@@ -2598,7 +2619,8 @@ export function changeLog(){
         let change = $(`<div class="infoBox"></div>`);
         content.append(change);
 
-        change.append(`<div class="type"><h2 class="has-text-warning">v${changeList[i].version}</h2><span class="has-text-caution">${changeList[i].date}</span></div>`);
+        let revision = changeList[i].hasOwnProperty('revision') ? changeList[i].revision : '';
+        change.append(`<div class="type"><h2 class="has-text-warning">v${changeList[i].version}${revision}</h2><span class="has-text-caution">${changeList[i].date}</span></div>`);
 
         for (let j=0; j<changeList[i].changes.length; j++){
             change.append(`<div class="desc">${changeList[i].changes[j]}</div>`);
@@ -2607,9 +2629,16 @@ export function changeLog(){
 }
 
 export function getTopChange(elm){
-    elm.append(`<div class="type"><h2 class="has-text-warning">v${changeList[0].version}</h2><span class="has-text-caution">${changeList[0].date}</span></div>`);
-    for (let i=0; i<changeList[0].changes.length; i++){
-        elm.append(`<div class="desc">${changeList[0].changes[i]}</div>`);
+    let index = 0;
+    for (index=0; index<changeList.length; index++){
+        if (!changeList[index].hasOwnProperty('revision')){
+            break;
+        }
+    }
+
+    elm.append(`<div class="type"><h2 class="has-text-warning">v${changeList[index].version}</h2><span class="has-text-caution">${changeList[index].date}</span></div>`);
+    for (let i=0; i<changeList[index].changes.length; i++){
+        elm.append(`<div class="desc">${changeList[index].changes[i]}</div>`);
     }
     return elm;
 }

@@ -3,6 +3,16 @@ import { clearElement } from './../functions.js';
 
 const changeList = [
     {
+        version: `1.1.16`,
+        date: `10/30/2021`,
+        changes: [
+            `Ghost #3 can now be captured with Smoldering.`,
+            `Ghost #7 can now be captured in Cataclysm mode.`,
+            `Updated description of Trick or Treat feat.`,
+            `Llamas will no longer harass carnivores, detritivores, and soul eaters by grazing their fields.`
+        ]
+    },
+    {
         version: `1.1.15`,
         date: `10/20/2021`,
         changes: [

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Evolve
 // @namespace    http://tampermonkey.net/
-// @version      3.3.1.86
+// @version      3.3.1.89
 // @description  try to take over the world!
 // @downloadURL  https://gitee.com/likexia/Evolve/raw/master/scripts/evolve.js
 // @author       Fafnir
@@ -21,7 +21,7 @@
 //
 // Here's some tips about non-intuitive features:
 //   Ctrl+Click on almost any script option brings up advanced configurations, which allows to overide setting under certain conditions and set more advanced logic.
-//     Triggers, evolution queue, log filters, smart powering for interlinked buildings(like transport and bireme), prioritirs(draggables), and overrides itself - cannot be overridden.
+//     Triggers, evolution queue, log filters, smart powering for interlinked buildings(like transport and bireme), priorities(draggables), and overrides itself - cannot be overridden.
 //     Overrides affects only script behaviour, GUI(outside of overrides modal) always show and changes default values.
 //   autoMarket, autoGalaxyMarket, autoFactory, and autoMiningDroid use weightings and priorities to determine their tasks. Resources split by groups of same priority, and then resources within group having the best priority distributed according to their weights. If there's still some more unused routes\factories\drones after assigning, script moves to next group with lower priority, etc. In most cases only one group with highest priority is active and working, while other groups serve as fallback for cases when all resources with better priority are either capped, or, in case of factory, unaffordable. There's few special values for finer configuration:
 //     Prioritization(queue, trigger, etc) does temporarily change priority of resource to 100, thus resources with priority above 100 won't be affected by prioritization.
@@ -235,13 +235,11 @@
             this.currentQuantity = 0;
             this.maxQuantity = 0;
             this.rateOfChange = 0;
-            this.currentEject = 0;
-            this.currentSupply = 0;
-            this.currentDecay = 0;
+            this.rateMods = {};
             this.tradeBuyPrice = 0;
             this.tradeSellPrice = 0;
             this.tradeRoutes = 0;
-            this.tradeIncome = 0;
+            this.incomeAdusted = false;
 
             this.storageRequired = 1;
             this.requestedQuantity = 0;
@@ -249,13 +247,9 @@
 
             this._vueBinding = "res" + id;
             this._stackVueBinding = "stack-" + id;
-            this._ejectorVueBinding = "eject" + id;
-            this._supplyVueBinding = "supply" + id;
             this._marketVueBinding = "market-" + id;
         }
 
-        get ejectEnabled() { return settings['res_eject' + this.id] }
-        get supplyEnabled() { return settings['res_supply' + this.id] }
         get autoCraftEnabled() { return settings['craft' + this.id] }
         get craftWeighting() { return settings['foundry_w_' + this.id] }
         get craftPreserve() { return settings['foundry_p_' + this.id] }
@@ -305,6 +299,8 @@
             this.currentQuantity = instance.amount;
             this.maxQuantity = instance.max >= 0 ? instance.max : Number.MAX_SAFE_INTEGER;
             this.rateOfChange = instance.diff;
+            this.rateMods = {};
+            this.incomeAdusted = false;
         }
 
         finalizeData() {
@@ -317,53 +313,28 @@
                 this.tradeRoutes = this.instance.trade;
                 this.tradeBuyPrice = game.tradeBuyPrice(this._id);
                 this.tradeSellPrice = game.tradeSellPrice(this._id);
-                this.tradeIncome = game.breakdown.p.consume[this._id].Trade || 0;
-                this.rateOfChange -= this.tradeIncome;
-            } else {
-                this.tradeIncome = 0;
-            }
-
-            // Exclude ejected resources, so we can reuse it
-            if ((settings.autoEject || haveTask("trash")) && this.isEjectable() && buildings.BlackholeMassEjector.count > 0) {
-                this.currentEject = game.global.interstellar.mass_ejector[this._id];
-                this.rateOfChange += this.currentEject;
-            } else {
-                this.currentEject = 0;
-            }
-
-            // Same for supply
-            if (settings.autoSupply && this.isSupply() && buildings.LakeTransport.count > 0) {
-                this.currentSupply = game.global.portal.transport.cargo[this._id] * this.supplyVolume;
-                this.rateOfChange += this.currentSupply;
-            } else {
-                this.currentSupply = 0;
+                let tradeDiff = game.breakdown.p.consume[this._id].Trade || 0;
+                if (tradeDiff > 0) {
+                    this.rateMods['buy'] = tradeDiff * -1;
+                } else if (tradeDiff < 0) {
+                    this.rateMods['sell'] = tradeDiff * -1;
+                    this.rateOfChange += this.rateMods['sell'];
+                }
             }
 
             // Restore decayed rate
             if (game.global.race['decay'] && this.tradeRouteQuantity > 0 && this.currentQuantity >= 50) {
-                this.currentDecay = (this.currentQuantity - 50) * (0.001 * this.tradeRouteQuantity);
-                this.rateOfChange += this.currentDecay;
-            } else {
-                this.currentDecay = 0;
+                this.rateMods['decay'] = (this.currentQuantity - 50) * (0.001 * this.tradeRouteQuantity);
+                this.rateOfChange += this.rateMods['decay'];
             }
         }
 
         calculateRateOfChange(apply) {
             let value = this.rateOfChange;
-            if ((apply.buy || apply.all) && this.tradeIncome > 0) {
-                value += this.tradeIncome;
-            }
-            if ((apply.sell || apply.all) && this.tradeIncome < 0) {
-                value += this.tradeIncome;
-            }
-            if (apply.eject || apply.all) {
-                value -= this.currentEject;
-            }
-            if (apply.supply || apply.all) {
-                value -= this.currentSupply;
-            }
-            if (apply.decay || apply.all) {
-                value -= this.currentDecay;
+            for (let mod in this.rateMods) {
+                if (apply[mod] ?? apply.all) {
+                    value -= this.rateMods[mod];
+                }
             }
             return value;
         }
@@ -385,39 +356,23 @@
         }
 
         isRoutesUnlocked() {
-            return this.isUnlocked() && ((game.global.race['banana'] && this === resources.Food) || (game.global.tech['trade'] && !game.global.race['terrifying']));
+            return this.isUnlocked() && (!game.global.race['artifical'] || this !== resources.Food) && ((game.global.race['banana'] && this === resources.Food) || (game.global.tech['trade'] && !game.global.race['terrifying']));
         }
 
         isManagedStorage() {
             return this.hasStorage() && this.autoStorageEnabled;
         }
 
-        isEjectable() {
-            return game.atomic_mass.hasOwnProperty(this.id);
-        }
-
         get atomicMass() {
             return game.atomic_mass[this.id] ?? 0;
         }
 
-        isSupply() {
-            return poly.supplyValue.hasOwnProperty(this.id);
-        }
-
-        get supplyValue() {
-            return poly.supplyValue[this.id]?.in ?? 0;
-        }
-
-        get supplyVolume() {
-            return poly.supplyValue[this.id]?.out ?? 0;
-        }
-
         isUseful() {
             // Spending accumulated resources
-            if (!this.storeOverflow && this.currentQuantity > this.storageRequired && this.currentCrates + this.currentContainers > 0 && this.calculateRateOfChange({all: true}) < 0) {
+            if (!this.storeOverflow && this.currentQuantity > this.storageRequired && this.currentCrates + this.currentContainers > 0 && this.calculateRateOfChange({buy: false, all: true}) < 0) {
                 return false;
             }
-            return this.storageRatio < 0.99 || this.isDemanded() || this.currentEject > 0 || this.currentSupply > 0 || (this.storeOverflow && (this.currentCrates < this.autoCratesMax || this.currentContainers < this.autoContainersMax));
+            return this.storageRatio < 0.99 || this.isDemanded() || this.rateMods['eject'] > 0 || this.rateMods['supply'] > 0 || (this.storeOverflow && (this.currentCrates < this.autoCratesMax || this.currentContainers < this.autoContainersMax));
         }
 
         getProduction(source, locArg) {
@@ -439,67 +394,28 @@
         }
 
         getBusyWorkers(workersSource, workersCount, locArg) {
+            if (this.incomeAdusted) { // Don't reduce workers of same resource more than once per tick to avoid flickering
+                return workersCount;
+            }
+
+            let newWorkers = 0;
             if (workersCount > 0) {
                 let totalIncome = this.getProduction(workersSource, locArg);
                 let resPerWorker = totalIncome / workersCount;
-                let usedIncome = totalIncome - this.calculateRateOfChange({all: true});
+                let usedIncome = totalIncome - this.calculateRateOfChange({buy: false, all: true});
                 if (usedIncome > 0) {
-                    return Math.ceil(usedIncome / resPerWorker);
+                    newWorkers = Math.ceil(usedIncome / resPerWorker);
                 }
+            } else if (this.calculateRateOfChange({buy: false, all: true}) < 0) {
+                newWorkers = 1;
             }
-            return 0;
-        }
+            this.incomeAdusted = newWorkers !== workersCount;
 
-        increaseEjection(count) {
-            let vue = getVueById(this._ejectorVueBinding);
-            if (vue === undefined) { return false; }
-
-            this.currentEject += count;
-
-            resetMultiplier();
-            for (let i = 0; i < count; i++) {
-                vue.ejectMore(this.id);
-            }
-        }
-
-        decreaseEjection(count) {
-            let vue = getVueById(this._ejectorVueBinding);
-            if (vue === undefined) { return false; }
-
-            this.currentEject -= count;
-
-            resetMultiplier();
-            for (let i = 0; i < count; i++) {
-                vue.ejectLess(this.id);
-            }
-        }
-
-        increaseSupply(count) {
-            let vue = getVueById(this._supplyVueBinding);
-            if (vue === undefined) { return false; }
-
-            this.currentSupply += (count * this.supplyVolume);
-
-            resetMultiplier();
-            for (let i = 0; i < count; i++) {
-                vue.supplyMore(this.id);
-            }
-        }
-
-        decreaseSupply(count) {
-            let vue = getVueById(this._supplyVueBinding);
-            if (vue === undefined) { return false; }
-
-            this.currentSupply -= (count * this.supplyVolume);
-
-            resetMultiplier();
-            for (let i = 0; i < count; i++) {
-                vue.supplyLess(this.id);
-            }
+            return newWorkers;
         }
 
         isTradable() {
-            return game.tradeRatio.hasOwnProperty(this.id) && (this.instance ? this.instance.hasOwnProperty("trade") : false);
+            return game.tradeRatio.hasOwnProperty(this.id) && (this.instance?.hasOwnProperty("trade") ?? false);
         }
 
         isCraftable() {
@@ -507,7 +423,7 @@
         }
 
         hasStorage() {
-            return this.instance ? this.instance.stackable : false;
+            return this.instance?.stackable ?? false;
         }
 
         get tradeRouteQuantity() {
@@ -523,20 +439,14 @@
         }
 
         get usefulRatio() {
-            if (this.maxQuantity === 0) {
-                return 0;
-            }
-            if (this.storageRequired <= 1) {
-                return 1;
-            }
-            return this.currentQuantity / Math.min(this.maxQuantity, this.storageRequired);
+            return this.maxQuantity > 0 && this.storageRequired > 0 ? this.currentQuantity / Math.min(this.maxQuantity, this.storageRequired) : 1;
         }
 
         get timeToFull() {
             if (this.storageRatio > 0.98) {
                 return Number.MIN_SAFE_INTEGER; // Already full.
             }
-            let totalRateOfCharge = this.calculateRateOfChange({all: true});
+            let totalRateOfCharge = this.calculateRateOfChange({buy: false, all: true});
             if (totalRateOfCharge <= 0) {
                 return Number.MAX_SAFE_INTEGER; // Won't ever fill with current rate.
             }
@@ -550,7 +460,7 @@
             if (this.storageRequired <= 1) {
                 return 0;
             }
-            let totalRateOfCharge = this.calculateRateOfChange({all: true});
+            let totalRateOfCharge = this.calculateRateOfChange({buy: false, all: true});
             if (totalRateOfCharge <= 0) {
                 return Number.MAX_SAFE_INTEGER; // Won't ever fill with current rate.
             }
@@ -597,8 +507,13 @@
             }
 
             this.currentQuantity = game.global.city.power;
-            this.maxQuantity = Object.values(buildings).reduce((net, b) => net + (b === buildings.NeutronCitadel ? getCitadelConsumption(b.count) - getCitadelConsumption(b.stateOnCount) : b.stateOffCount * b.powered), 0);
+            let missingPopEnergy = (resources.Population.maxQuantity - resources.Population.currentQuantity) * traitVal('powered', 0);
+            this.maxQuantity = Object.values(buildings).reduce((net, b) => net + (b === buildings.NeutronCitadel ? getCitadelConsumption(b.count) - getCitadelConsumption(b.stateOnCount) : b.stateOffCount * b.powered), missingPopEnergy);
             this.rateOfChange = game.global.city.power;
+        }
+
+        get usefulRatio() { // Could be useful for satisfied check in override
+            return this.currentQuantity >= this.maxQuantity ? 1 : 0;
         }
 
         isUnlocked() {
@@ -711,6 +626,19 @@
 
         isUnlocked() {
             return haveTech("star_forge", 2);
+        }
+    }
+
+    class Morale extends Resource {
+        updateData() {
+            this.currentQuantity = game.global.city.morale.current;
+            this.maxQuantity = game.global.city.morale.cap;
+            this.rateOfChange = game.global.city.morale.potential;
+            this.incomeAdusted = false;
+        }
+
+        isUnlocked() {
+            return true;
         }
     }
 
@@ -834,7 +762,7 @@
             }
 
             this.cost = {};
-            let adjustedCosts = poly.adjustCosts(this.definition.cost);
+            let adjustedCosts = poly.adjustCosts(this.definition);
             for (let resourceName in adjustedCosts) {
                 if (resources[resourceName]) {
                     let resourceAmount = Number(adjustedCosts[resourceName]());
@@ -914,8 +842,8 @@
                     consumptionRate = game.int_fuel_adjust(consumptionRate);
                 }
 
-                // Now let's actually check it
-                if (resource.storageRatio < 0.95 && consumptionRate > 0 && resource.rateOfChange < consumptionRate) {
+                // Now let's actually check it, bought resources excluded from rateOfChange, to prevent losing resources after switching routes
+                if (resource.storageRatio < 0.95 && consumptionRate > 0 && resource.calculateRateOfChange({buy: true}) < consumptionRate) {
                     return resource;
                 }
             }
@@ -1028,6 +956,12 @@
     class ForgeHorseshoe extends Action {
         get count() {
             return resources.Horseshoe.currentQuantity;
+        }
+    }
+
+    class Assembly extends Action {
+        get count() {
+            return resources.Population.currentQuantity;
         }
     }
 
@@ -1248,7 +1182,7 @@
 
             this.cost = {};
 
-            let adjustedCosts = poly.adjustCosts(this.definition.cost);
+            let adjustedCosts = poly.adjustCosts(this.definition);
             for (let resourceName in adjustedCosts) {
                 if (resources[resourceName]) {
                     let resourceAmount = Number(adjustedCosts[resourceName]());
@@ -1271,7 +1205,10 @@
         }
 
         get desc() {
-            return game.races[this.id].desc ?? "Custom";
+            let nameRef = game.races[this.id].desc;
+            return typeof nameRef === "function" ? nameRef() :
+                   typeof nameRef === "string" ? nameRef :
+                   "Custom"; // Nonexistent custom
         }
 
         get genus() {
@@ -1313,11 +1250,6 @@
                 checkAchievement(100, "extinct_" + this.id);
             }
 
-            // Same race for Second Evolution
-            if (this.id === game.global.race.gods) {
-                checkAchievement(10, "second_evolution");
-            }
-
             // Blood War
             if (this.genus === "demonic" && settings.prestigeType !== "mad" && settings.prestigeType !== "bioseed") {
                 checkAchievement(50, "blood_war");
@@ -1349,6 +1281,11 @@
             // Increase weight for suited conditional races with achievements
             if (weighting > 0 && habitability === 1 && this.getCondition() !== '' && this.id !== "junker") {
                 weighting += 500;
+            }
+
+            // Same race for Second Evolution
+            if (this.id === game.global.race.gods) {
+                checkAchievement(10, "second_evolution");
             }
 
             // Madagascar Tree, Godwin's law, Infested Terrans - God race
@@ -1389,6 +1326,7 @@
                             checkFeat("garbage_pie");
                         case "whitehole":
                         case "vacuum":
+                        case "apocalypse":
                             checkFeat("the_misery");
                             break;
                     }
@@ -1436,6 +1374,8 @@
                     return game.global.city.biome === 'hellscape' ? 1 : game.global.blood.unbound >= 3 ? getUnsuitedMod() : 0;
                 case "angelic":
                     return game.global.city.biome === 'eden' ? 1 : game.global.blood.unbound >= 3 ? getUnsuitedMod() : 0;
+                case "synthetic":
+                    return game.global.stats.achieve[`obsolete`]?.l >= 5 ? 1 : 0;
                 case undefined: // Nonexistent custom
                     return 0;
                 default:
@@ -1463,8 +1403,10 @@
                     return "Hellscape planet";
                 case "angelic":
                     return "Eden planet";
+                case "synthetic":
+                    return game.loc('achieve_obsolete_desc');
                 case undefined: // Nonexistent custom
-                    return "Custom designed race";
+                    return game.loc('achieve_ascended_desc');
                 default:
                     return "";
             }
@@ -1683,9 +1625,6 @@
         Y: 1000000000000000000000000,
     }
 
-    // All minor traits and the currently two special traits
-    const minorTraits = ["tactical", "analytical", "promiscuous", "resilient", "cunning", "hardy", "ambidextrous", "industrious", "content", "fibroblast", "metallurgist", "gambler", "persuasive", "fortify", "mastery"];
-
     const universes = ['standard','heavy','antimatter','evil','micro','magic'];
 
     // Biomes, traits and geologies in natural order
@@ -1704,9 +1643,9 @@
     const challenges = [
         [{id:"plasmid", trait:"no_plasmid"},
          {id:"mastery", trait:"weak_mastery"},
-       /*{id:"nerfed", trait:"nerfed"}*/],
+         {id:"nerfed", trait:"nerfed"}],
         [{id:"crispr", trait:"no_crispr"},
-       /*{id:"badgenes", trait:"badgenes"}*/],
+         {id:"badgenes", trait:"badgenes"}],
         [{id:"trade", trait:"no_trade"}],
         [{id:"craft", trait:"no_craft"}],
         [{id:"joyless", trait:"joyless"}],
@@ -1717,14 +1656,14 @@
         [{id:"junker", trait:"junker"}],
         [{id:"cataclysm", trait:"cataclysm"}],
         [{id:"banana", trait:"banana"}],
-      //[{id:"truepath", trait:"truepath"}],
+        [{id:"truepath", trait:"truepath"}],
     ];
     const governors = ["soldier", "criminal", "entrepreneur", "educator", "spiritual", "bluecollar", "noble", "media", "sports", "bureaucrat"];
     const evolutionSettingsToStore = ["userEvolutionTarget", "prestigeType", ...challenges.map(c => "challenge_" + c[0].id)];
-    const prestigeNames = {mad: "MAD", bioseed: "Bioseed", cataclysm: "Cataclysm", vacuum: "Vacuum", whitehole: "Whitehole", ascension: "Ascension", demonic: "Infusion"};
-    const logIgnore = ["food", "lumber", "stone", "chrysotile", "slaughter", "s_alter", "slave_market", "horseshoe"];
+    const prestigeNames = {mad: "MAD", bioseed: "Bioseed", cataclysm: "Cataclysm", vacuum: "Vacuum", whitehole: "Whitehole", apocalypse: "AI Apocalypse", ascension: "Ascension", demonic: "Infusion"};
+    const logIgnore = ["food", "lumber", "stone", "chrysotile", "slaughter", "s_alter", "slave_market", "horseshoe", "assembly"];
     const galaxyRegions = ["gxy_stargate", "gxy_gateway", "gxy_gorddon", "gxy_alien1", "gxy_alien2", "gxy_chthonian"];
-    const settingsSections = ["general", "prestige", "evolution", "research", "market", "storage", "production", "war", "hell", "fleet", "job", "building", "project", "government", "logging", "minorTrait", "weighting", "ejector", "planet", "mech"];
+    const settingsSections = ["general", "prestige", "evolution", "research", "market", "storage", "production", "war", "hell", "fleet", "job", "building", "project", "government", "logging", "minorTrait", "weighting", "ejector", "planet", "mech", "magic"];
     const unlimitedJobs = ["unemployed", "hunter", "farmer", "lumberjack", "quarry_worker", "crystal_miner", "scavenger", "forager"]; // this.definition.max holds zero at evolution stage, and that can mess with settings gui
 
     // Lookup tables, will be filled on init
@@ -1734,8 +1673,6 @@
     var jobIds = {};
     var evolutions = {};
     var races = {};
-    var resourcesByAtomicMass = [];
-    var resourcesBySupplyValue = [];
     var craftablesList = [];
     var foundryList = [];
 
@@ -1746,15 +1683,9 @@
         multiplierTick: 0,
         buildingToggles: 0,
         evolutionAttempts: 0,
+        tabHash: 0,
 
         lastWasteful: null,
-        lastLumber: null,
-        lastShowMarket: null,
-        lastShowRoutes: null,
-        lastShowEjector: null,
-        lastShowCargo: null,
-        lastHaveCrate: null,
-        lastHaveContainer: null,
         lastPopulationCount: 0,
         lastFarmerCount: 0,
 
@@ -1765,8 +1696,9 @@
         queuedTargets: [],
         queuedTargetsAll: [],
         triggerTargets: [],
-        techTargets: [],
-        otherTargets: [],
+        unlockedTechs: [],
+        unlockedBuildings: [],
+        conflictTargets: [],
 
         maxSpaceMiners: Number.MAX_SAFE_INTEGER,
         globalProductionModifier: 1,
@@ -1822,7 +1754,7 @@
         Helium_3: new Resource("Helium-3", "Helium_3"),
 
         // Advanced resources
-        //Water: new Resource("Water", "Water"),
+        Water: new Resource("Water", "Water"),
         Deuterium: new Resource("Deuterium", "Deuterium"),
         Neutronium: new Resource("Neutronium", "Neutronium"),
         Adamantite: new Resource("Adamantite", "Adamantite"),
@@ -1836,6 +1768,7 @@
         Orichalcum: new Resource("Orichalcum", "Orichalcum"),
 
         Horseshoe: new Resource("Horseshoe", "Horseshoe"),
+        Nanite: new Resource("Nanite", "Nanite"),
         Genes: new Resource("Genes", "Genes"),
         Soul_Gem: new Resource("Soul Gem", "Soul_Gem"),
 
@@ -1848,12 +1781,12 @@
         Aerogel: new Resource("Aerogel", "Aerogel"),
         Nanoweave: new Resource("Nanoweave", "Nanoweave"),
         Scarletite: new Resource("Scarletite", "Scarletite"),
-        //Quantium: new Resource("Quantium", "Quantium"),
+        Quantium: new Resource("Quantium", "Quantium"),
 
         // Special resources
         Corrupt_Gem: new Resource("Corrupt Gem", "Corrupt_Gem"),
         Codex: new Resource("Codex", "Codex"),
-        //Cipher: new Resource("Cipher", "Cipher"),
+        Cipher: new Resource("Encrypted Data", "Cipher"),
         Demonic_Essence: new Resource("Demonic Essence", "Demonic_Essence"),
 
         // Prestige resources
@@ -1864,21 +1797,21 @@
         Phage: new SpecialResource("Phage", "Phage"),
         Dark: new SpecialResource("Dark", "Dark"),
         Harmony: new SpecialResource("Harmony", "Harmony"),
+        AICore: new SpecialResource("AI Core", "AICore"),
 
         // Special not-really-resources-but-we'll-treat-them-like-resources resources
         Supply: new Supply("Supplies", "Supply"),
         Power: new Power("Power", "Power"),
         StarPower: new StarPower("Star Power", "StarPower"),
+        Morale: new Morale("Morale", "Morale"),
         Moon_Support: new Support("Moon Support", "Moon_Support", "space", "spc_moon"),
         Red_Support: new Support("Red Support", "Red_Support", "space", "spc_red"),
         Sun_Support: new Support("Sun Support", "Sun_Support", "space", "spc_sun"),
         Belt_Support: new BeltSupport("Belt Support", "Belt_Support", "space", "spc_belt"),
-        /*
         Titan_Support: new Support("Titan Support", "Titan_Support", "space", "spc_titan"),
         Electrolysis_Support: new ElectrolysisSupport("Electrolysis Plant", "Electrolysis_Support", "", ""),
         Enceladus_Support: new Support("Enceladus Support", "Enceladus_Support", "space", "spc_enceladus"),
         Eris_Support: new Support("Eris Support", "Eris_Support", "space", "spc_eris"),
-        */
         Alpha_Support: new Support("Alpha Support", "Alpha_Support", "interstellar", "int_alpha"),
         Nebula_Support: new Support("Nebula Support", "Nebula_Support", "interstellar", "int_nebula"),
         Gateway_Support: new Support("Gateway Support", "Gateway_Support", "galaxy", "gxy_gateway"),
@@ -1898,7 +1831,7 @@
         Scavenger: new Job("scavenger", "Scavenger"),
 
         Colonist: new Job("colonist", "Colonist"),
-        //TitanColonist: new Job("titan_colonist", "Titan Colonist"),
+        TitanColonist: new Job("titan_colonist", "Titan Colonist"),
         Miner: new Job("miner", "Miner"),
         CoalMiner: new Job("coal_miner", "Coal Miner"),
         CementWorker: new Job("cement_worker", "Cement Worker"),
@@ -1920,7 +1853,7 @@
         Aerogel: new CraftingJob("Aerogel", "Aerogel Crafter", resources.Aerogel),
         Nanoweave: new CraftingJob("Nanoweave", "Nanoweave Crafter", resources.Nanoweave),
         Scarletite: new CraftingJob("Scarletite", "Scarletite Crafter", resources.Scarletite),
-        //Quantium: new CraftingJob("Quantium", "Quantium Crafter", resources.Quantium),
+        Quantium: new CraftingJob("Quantium", "Quantium Crafter", resources.Quantium),
     }
 
     var buildings = {
@@ -1930,58 +1863,60 @@
         Chrysotile: new Action("Chrysotile", "city", "chrysotile", ""),
         Slaughter: new Action("Slaughter", "city", "slaughter", ""),
         ForgeHorseshoe: new ForgeHorseshoe("Horseshoe", "city", "horseshoe", "", {housing: true, garrison: true}),
+        SlaveMarket: new Action("Slave Market", "city", "slave_market", ""),
         SacrificialAltar: new Action("Sacrificial Altar", "city", "s_alter", ""),
-        MeditationChamber: new Action("Meditation Chamber", "city", "meditation", ""),
-
-        University: new Action("University", "city", "university", "", {knowledge: true}),
-        Wardenclyffe: new Action("Wardenclyffe", "city", "wardenclyffe", "", {knowledge: true}),
-        Mine: new Action("Mine", "city", "mine", "", {smart: true}),
-        CoalMine: new Action("Coal Mine", "city", "coal_mine", "", {smart: true}),
-        Smelter: new Action("Smelter", "city", "smelter", ""),
-        CoalPower: new Action("Coal Powerplant", "city", "coal_power", ""),
-        Temple: new Action("Temple", "city", "temple", ""),
-        OilWell: new Action("Oil Derrick", "city", "oil_well", ""),
-        BioLab: new Action("Bioscience Lab", "city", "biolab", "", {knowledge: true}),
-        StorageYard: new Action("Freight Yard", "city", "storage_yard", ""),
-        Warehouse: new Action("Container Port", "city", "warehouse", ""),
-        OilPower: new Action("Oil Powerplant", "city", "oil_power", ""),
-        Bank: new Action("Bank", "city", "bank", ""),
-        Barracks: new Action("Barracks", "city", "garrison", "", {garrison: true, smart: true}),
-        Hospital: new Action("Hospital", "city", "hospital", ""),
-        BootCamp: new Action("Boot Camp", "city", "boot_camp", ""),
         House: new Action("Cabin", "city", "basic_housing", "", {housing: true}),
         Cottage: new Action("Cottage", "city", "cottage", "", {housing: true}),
         Apartment: new Action("Apartment", "city", "apartment", "", {housing: true}),
-        Farm: new Action("Farm", "city", "farm", "", {housing: true}),
+        Lodge: new Action("Lodge", "city", "lodge", "", {housing: true}),
+        Smokehouse: new Action("Smokehouse", "city", "smokehouse", ""),
         SoulWell: new Action("Soul Well", "city", "soul_well", ""),
+        SlavePen: new Action("Slave Pen", "city", "slave_pen", ""),
+        Transmitter: new Action("Transmitter", "city", "transmitter", "", {housing: true}),
+        Farm: new Action("Farm", "city", "farm", "", {housing: true}),
+        CompostHeap: new Action("Compost Heap", "city", "compost", ""),
         Mill: new Action("Windmill", "city", "mill", "", {smart: true}),
         Windmill: new Action("Windmill (Evil)", "city", "windmill", ""),
         Silo: new Action("Grain Silo", "city", "silo", ""),
+        Assembly: new Assembly("Assembly", "city", "assembly", "", {housing: true}),
+        Barracks: new Action("Barracks", "city", "garrison", "", {garrison: true, smart: true}),
+        Hospital: new Action("Hospital", "city", "hospital", ""),
+        BootCamp: new Action("Boot Camp", "city", "boot_camp", ""),
         Shed: new Action("Shed", "city", "shed", ""),
+        StorageYard: new Action("Freight Yard", "city", "storage_yard", ""),
+        Warehouse: new Action("Container Port", "city", "warehouse", ""),
+        Bank: new Action("Bank", "city", "bank", ""),
+        Pylon: new Action("Pylon", "city", "pylon", ""),
+        Graveyard: new Action ("Graveyard", "city", "graveyard", ""),
         LumberYard: new Action("Lumber Yard", "city", "lumber_yard", ""),
+        Sawmill: new Action("Sawmill", "city", "sawmill", ""),
         RockQuarry: new Action("Rock Quarry", "city", "rock_quarry", ""),
         CementPlant: new Action("Cement Plant", "city", "cement_plant", "", {smart: true}),
         Foundry: new Action("Foundry", "city", "foundry", ""),
         Factory: new Action("Factory", "city", "factory", ""),
+        NaniteFactory: new Action("Nanite Factory", "city", "nanite_factory", ""),
+        Smelter: new Action("Smelter", "city", "smelter", ""),
+        MetalRefinery: new Action("Metal Refinery", "city", "metal_refinery", ""),
+        Mine: new Action("Mine", "city", "mine", "", {smart: true}),
+        CoalMine: new Action("Coal Mine", "city", "coal_mine", "", {smart: true}),
+        OilWell: new Action("Oil Derrick", "city", "oil_well", ""),
         OilDepot: new Action("Fuel Depot", "city", "oil_depot", ""),
         Trade: new Action("Trade Post", "city", "trade", ""),
-        Amphitheatre: new Action("Amphitheatre", "city", "amphitheatre", ""),
-        Library: new Action("Library", "city", "library", "", {knowledge: true}),
-        Sawmill: new Action("Sawmill", "city", "sawmill", ""),
-        FissionPower: new Action("Fission Reactor", "city", "fission_power", ""),
-        Lodge: new Action("Lodge", "city", "lodge", "", {housing: true}),
-        Smokehouse: new Action("Smokehouse", "city", "smokehouse", ""),
-        Casino: new Action("Casino", "city", "casino", ""),
-        TouristCenter: new Action("Tourist Center", "city", "tourist_center", "", {smart: true}),
-        MassDriver: new Action("Mass Driver", "city", "mass_driver", "", {knowledge: () => haveTech("mass", 2)}),
         Wharf: new Action("Wharf", "city", "wharf", ""),
-        MetalRefinery: new Action("Metal Refinery", "city", "metal_refinery", ""),
-        SlavePen: new Action("Slave Pen", "city", "slave_pen", ""),
-        SlaveMarket: new Action("Slave Market", "city", "slave_market", ""),
-        Graveyard: new Action ("Graveyard", "city", "graveyard", ""),
+        TouristCenter: new Action("Tourist Center", "city", "tourist_center", "", {smart: true}),
+        Amphitheatre: new Action("Amphitheatre", "city", "amphitheatre", ""),
+        Casino: new Action("Casino", "city", "casino", ""),
+        Temple: new Action("Temple", "city", "temple", ""),
         Shrine: new Action ("Shrine", "city", "shrine", ""),
-        CompostHeap: new Action("Compost Heap", "city", "compost", ""),
-        Pylon: new Action("Pylon", "city", "pylon", ""),
+        MeditationChamber: new Action("Meditation Chamber", "city", "meditation", ""),
+        University: new Action("University", "city", "university", "", {knowledge: true}),
+        Library: new Action("Library", "city", "library", "", {knowledge: true}),
+        Wardenclyffe: new Action("Wardenclyffe", "city", "wardenclyffe", "", {knowledge: true}),
+        BioLab: new Action("Bioscience Lab", "city", "biolab", "", {knowledge: true}),
+        CoalPower: new Action("Coal Powerplant", "city", "coal_power", ""),
+        OilPower: new Action("Oil Powerplant", "city", "oil_power", ""),
+        FissionPower: new Action("Fission Reactor", "city", "fission_power", ""),
+        MassDriver: new Action("Mass Driver", "city", "mass_driver", "", {knowledge: () => haveTech("mass", 2)}),
 
         SpaceTestLaunch: new Action("Space Test Launch", "space", "test_launch", "spc_home"),
         SpaceSatellite: new Action("Space Satellite", "space", "satellite", "spc_home", {knowledge: true}),
@@ -1998,22 +1933,24 @@
         RedMission: new Action("Red Mission", "space", "red_mission", "spc_red"),
         RedSpaceport: new Action("Red Spaceport", "space", "spaceport", "spc_red"),
         RedTower: new Action("Red Space Control", "space", "red_tower", "spc_red"),
+        RedAssembly: new Assembly("Red Assembly (Cataclysm)", "space", "assembly", "spc_red", {housing: true}),
         RedLivingQuarters: new Action("Red Living Quarters", "space", "living_quarters", "spc_red", {housing: true}),
+        RedPylon: new Action("Red Pylon (Cataclysm)", "space", "pylon", "spc_red"),
         RedVrCenter: new Action("Red VR Center", "space", "vr_center", "spc_red"),
         RedGarage: new Action("Red Garage", "space", "garage", "spc_red"),
         RedMine: new Action("Red Mine", "space", "red_mine", "spc_red"),
         RedFabrication: new Action("Red Fabrication", "space", "fabrication", "spc_red"),
         RedFactory: new Action("Red Factory", "space", "red_factory", "spc_red"),
+        RedNaniteFactory: new Action("Red Nanite Factory (Cataclysm)", "space", "nanite_factory", "spc_red"),
         RedBiodome: new Action("Red Biodome", "space", "biodome", "spc_red"),
         RedExoticLab: new Action("Red Exotic Materials Lab", "space", "exotic_lab", "spc_red", {knowledge: true}),
         RedZiggurat: new Action("Red Ziggurat", "space", "ziggurat", "spc_red"),
         RedSpaceBarracks: new Action("Red Marine Barracks", "space", "space_barracks", "spc_red", {garrison: true}),
         RedForgeHorseshoe: new ForgeHorseshoe("Red Horseshoe (Cataclysm)", "space", "horseshoe", "spc_red", {housing: true, garrison: true}),
-        RedPylon: new Action("Red Pylon (Cataclysm)", "space", "pylon", "spc_red"),
 
         HellMission: new Action("Hell Mission", "space", "hell_mission", "spc_hell"),
         HellGeothermal: new Action("Hell Geothermal Plant", "space", "geothermal", "spc_hell"),
-        //HellSmelter: new Action("Hell Smelter", "space", "hell_smelter", "spc_hell"),
+        HellSmelter: new Action("Hell Smelter", "space", "hell_smelter", "spc_hell"),
         HellSpaceCasino: new Action("Hell Space Casino", "space", "spc_casino", "spc_hell"),
         HellSwarmPlant: new Action("Hell Swarm Plant", "space", "swarm_plant", "spc_hell"),
 
@@ -2025,10 +1962,10 @@
         GasMining: new Action("Gas Helium-3 Collector", "space", "gas_mining", "spc_gas", {smart: true}),
         GasStorage: new Action("Gas Fuel Depot", "space", "gas_storage", "spc_gas"),
         GasSpaceDock: new SpaceDock("Gas Space Dock", "space", "star_dock", "spc_gas"),
-        GasSpaceDockProbe: new ModalAction("Gas Space Probe", "starDock", "probes", ""),
-        GasSpaceDockShipSegment: new ModalAction("Gas Bioseeder Ship Segment", "starDock", "seeder", ""),
-        GasSpaceDockPrepForLaunch: new ModalAction("Gas Prep Ship", "starDock", "prep_ship", ""),
-        GasSpaceDockLaunch: new ModalAction("Gas Launch Ship", "starDock", "launch_ship", ""),
+        GasSpaceDockProbe: new ModalAction("Space Dock Probe", "starDock", "probes", ""),
+        GasSpaceDockShipSegment: new ModalAction("Space Dock Bioseeder Ship", "starDock", "seeder", ""),
+        GasSpaceDockPrepForLaunch: new ModalAction("Space Dock Prep Ship", "starDock", "prep_ship", ""),
+        GasSpaceDockLaunch: new ModalAction("Space Dock Launch Ship", "starDock", "launch_ship", ""),
 
         GasMoonMission: new Action("Gas Moon Mission", "space", "gas_moon_mission", "spc_gas_moon"),
         GasMoonOutpost: new Action("Gas Moon Mining Outpost", "space", "outpost", "spc_gas_moon"),
@@ -2046,11 +1983,10 @@
         DwarfEleriumReactor: new Action("Dwarf Elerium Reactor", "space", "e_reactor", "spc_dwarf"),
         DwarfWorldCollider: new Action("Dwarf World Collider", "space", "world_collider", "spc_dwarf"),
         DwarfWorldController: new Action("Dwarf World Collider (Complete)", "space", "world_controller", "spc_dwarf", {knowledge: true}),
-        /*
-
         DwarfShipyard: new Action("Dwarf Ship Yard", "space", "shipyard", "spc_dwarf"),
         DwarfMassRelay: new Action("Dwarf Mass Relay", "space", "mass_relay", "spc_dwarf"),
         DwarfMassRelayComplete: new Action("Dwarf Mass Relay (Complete)", "space", "m_relay", "spc_dwarf"),
+
         TitanMission: new Action("Titan Mission", "space", "titan_mission", "spc_titan"),
         TitanSpaceport: new Action("Titan Spaceport", "space", "titan_spaceport", "spc_titan"),
         TitanElectrolysis: new Action("Titan Electrolysis", "space", "electrolysis", "spc_titan"),
@@ -2084,7 +2020,6 @@
         ErisTrooper: new Action("Eris Android Trooper", "space", "shock_trooper", "spc_eris"),
         ErisTank: new Action("Eris Tank", "space", "tank", "spc_eris"),
         ErisDigsite: new Action("Eris Digsite", "space", "digsite", "spc_eris"),
-        */
 
         AlphaMission: new Action("Alpha Centauri Mission", "interstellar", "alpha_mission", "int_alpha"),
         AlphaStarport: new Action("Alpha Starport", "interstellar", "starport", "int_alpha"),
@@ -2110,7 +2045,7 @@
 
         NebulaMission: new Action("Nebula Mission", "interstellar", "nebula_mission", "int_nebula"),
         NebulaNexus: new Action("Nebula Nexus", "interstellar", "nexus", "int_nebula"),
-        NebulaHarvestor: new Action("Nebula Harvester", "interstellar", "harvester", "int_nebula"),
+        NebulaHarvester: new Action("Nebula Harvester", "interstellar", "harvester", "int_nebula", {smart: true}),
         NebulaEleriumProspector: new Action("Nebula Elerium Prospector", "interstellar", "elerium_prospector", "int_nebula"),
 
         NeutronMission: new Action("Neutron Mission", "interstellar", "neutron_mission", "int_neutron"),
@@ -2221,7 +2156,7 @@
         SpireSurveyTower: new Action("Spire Survey Tower", "portal", "spire_survey", "prtl_spire"),
         SpireMechBay: new Action("Spire Mech Bay", "portal", "mechbay", "prtl_spire", {smart: true}),
         SpireTower: new Action("Spire Tower", "portal", "spire", "prtl_spire"),
-        SpireWaygate: new Action("Portal Waygate", "portal", "waygate", "prtl_spire", {smart: true}),
+        SpireWaygate: new Action("Spire Waygate", "portal", "waygate", "prtl_spire", {smart: true}),
     }
 
     var linkedBuildings = [
@@ -2238,7 +2173,7 @@
         Nexus: new Project("Nexus", "nexus"),
         RoidEject: new Project("Asteroid Redirect", "roid_eject"),
         ManaSyphon: new Project("Mana Syphon", "syphon"),
-        //Depot: new Project("Depot", "tp_depot"),
+        Depot: new Project("Depot", "tp_depot"),
     }
 
     const wrGlobalCondition = 0; // Generic condition will be checked once per tick. Takes nothing and return bool - whether following rule is applicable, or not
@@ -2248,8 +2183,33 @@
     var weightingRules = [[
           () => !settings.autoBuild,
           () => true,
-          () => "AutoBuild disabled",
+          () => "",
           () => 0 // Set weighting to zero right away, and skip all checks if autoBuild is disabled
+      ],[
+          () => !game.global.settings.showCity,
+          (building) => building._tab === "city",
+          () => "Locked",
+          () => 0
+      ],[
+          () => !game.global.settings.showSpace && !game.global.settings.showOuter,
+          (building) => building._tab === "space",
+          () => "Locked",
+          () => 0
+      ],[
+          () => !game.global.settings.showDeep,
+          (building) => building._tab === "interstellar",
+          () => "Locked",
+          () => 0
+      ],[
+          () => !game.global.settings.showPortal,
+          (building) => building._tab === "portal",
+          () => "Locked",
+          () => 0
+      ],[
+          () => !game.global.settings.showGalactic,
+          (building) => building._tab === "galaxy",
+          () => "Locked",
+          () => 0
       ],[
           () => true,
           (building) => !building.isUnlocked(),
@@ -2278,7 +2238,7 @@
       ],[
           () => true,
           (building) => !building.isAffordable(true),
-          () => "Not enough storage",
+          () => "",
           () => 0 // Red buildings need to be filtered out, so they won't prevent affordable buildings with lower weight from building
       ],[
           () => game.global.race['truepath'] && buildings.SpaceTestLaunch.isUnlocked() && !haveTech('world_control'),
@@ -2310,15 +2270,18 @@
           () => settings.autoMech && settings.mechBuild !== "none" && settings.buildingMechsFirst && buildings.SpireMechBay.count > 0 && buildings.SpireMechBay.stateOffCount === 0,
           (building) => {
               if (building.cost["Supply"]) {
+                  if (MechManager.isActive) {
+                      return "Building mechs...";
+                  }
                   let mechBay = game.global.portal.mechbay;
                   let newSize = !haveTask("mech") ? settings.mechBuild === "random" ? MechManager.getPreferredSize()[0] : mechBay.blueprint.size : "titan";
                   let [newGems, newSupply, newSpace] = MechManager.getMechCost({size: newSize});
                   if (newSpace <= mechBay.max - mechBay.bay && newSupply <= resources.Supply.maxQuantity && newGems <= resources.Soul_Gem.currentQuantity) {
-                      return true;
+                      return "Saving supplies for new mech";
                   }
               }
           },
-          () => "Saving resources for new mech",
+          (note) => note,
           () => 0
       ],[
           () => buildings.GateEastTower.isUnlocked() && buildings.GateWestTower.isUnlocked() && poly.hellSupression("gate").supress < settings.buildingTowerSuppression / 100,
@@ -2381,18 +2344,23 @@
       ],[
           () => buildings.SpireWaygate.isUnlocked() && haveTech("waygate", 2),
           (building) => building === buildings.SpireWaygate,
-          () => "Not available",
+          () => "",
           () => 0 // We can't limit waygate using gameMax, as max here doesn't constant. It's start with 10, but after building count reduces down to 1
       ],[
           () => buildings.SpireSphinx.isUnlocked() && haveTech("hell_spire", 8),
           (building) => building === buildings.SpireSphinx,
-          () => "Not available",
+          () => "",
           () => 0 // Sphinx not usable after solving
       ],[
           () => buildings.RuinsAncientPillars.isUnlocked() && (game.global.tech.pillars !== 1 || game.global.race.universe === 'micro'),
           (building) => building === buildings.RuinsAncientPillars,
-          () => "Not available",
+          () => "",
           () => 0 // Pillars can't be activated in micro, and without tech.
+      ],[
+          () => game.global.race['artifical'],
+          (building) => building instanceof Assembly && resources.Population.storageRatio === 1,
+          () => "",
+          () => 0 // No empty housings
       ],[
           () => buildings.GorddonEmbassy.count === 0 && resources.Knowledge.maxQuantity < settings.fleetEmbassyKnowledge,
           (building) => building === buildings.GorddonEmbassy,
@@ -2442,7 +2410,7 @@
           () => game.global.race['cannibalize'],
           (building) => {
               if (building === buildings.SacrificialAltar && building.count > 0) {
-                  if (resources.Population.currentQuantity < 20) {
+                  if (resources.Population.currentQuantity < 1) {
                       return "Too low population";
                   }
                   if (resources.Population.currentQuantity !== resources.Population.maxQuantity) {
@@ -2486,12 +2454,18 @@
           () => settings.buildingWeightingNonOperatingCity
       ],[
           () => true,
-          (building) => building._tab !== "city" && building.stateOffCount > 0
-            && (building !== buildings.SpirePort || !buildings.SpirePort.isSmartManaged() || (buildings.SpirePort.count + buildings.SpireBaseCamp.count + 1) > resources.Spire_Support.maxQuantity)
-            && (building !== buildings.SpireBaseCamp || !buildings.SpireBaseCamp.isSmartManaged() || (buildings.SpirePort.count + buildings.SpireBaseCamp.count + 1) > resources.Spire_Support.maxQuantity)
-            && (building !== buildings.SpireMechBay || !buildings.SpireMechBay.isSmartManaged())
-            && (building !== buildings.RuinsGuardPost || !buildings.RuinsGuardPost.isSmartManaged() || isHellSupressUseful())
-            && (building !== buildings.BadlandsAttractor || !buildings.BadlandsAttractor.isSmartManaged()),
+          (building) => {
+              if (building._tab !== "city" && building.stateOffCount > 0) {
+                  if (building === buildings.RuinsGuardPost && building.isSmartManaged() && !isHellSupressUseful() 
+                    && building.count < Math.ceil(5000 / (game.armyRating(1, "hellArmy", 0) * traitVal('holy', 1, '+')))) { return false; }
+                  if (building === buildings.BadlandsAttractor && building.isSmartManaged()) { return false; }
+                  if (building === buildings.SpireMechBay && building.isSmartManaged()) { return false; }
+                  let supplyIndex = building === buildings.SpirePort ? 1 : building === buildings.SpireBaseCamp ? 2 : -1;
+                  if ((supplyIndex > 0 && (buildings.SpireMechBay.isSmartManaged() || buildings.SpirePurifier.isSmartManaged()))
+                    && (building.count < getBestSupplyRatio(resources.Spire_Support.maxQuantity, buildings.SpirePort.autoMax, buildings.SpireBaseCamp.autoMax)[supplyIndex])) { return false; }
+                  return true;
+              };
+          },
           () => "Still have some non operating buildings",
           () => settings.buildingWeightingNonOperating
       ],[
@@ -2515,12 +2489,12 @@
           () => "Not needed for Vacuum Collapse prestige",
           () => 0
       ],[
-          () => settings.prestigeBioseedConstruct && settings.prestigeType === "ascension",
-          (building) => building === buildings.GateMission || ((building === buildings.PitMission || building === buildings.RuinsMission) && isPillarFinished()),
+          () => settings.prestigeBioseedConstruct && settings.prestigeType === "ascension" && isPillarFinished(),
+          (building) => building === buildings.PitMission || building === buildings.RuinsMission,
           () => "Not needed for Ascension prestige",
           () => 0
       ],[
-          () => settings.prestigeType === "mad" && (haveTech("mad") || (techIds['tech-mad'].isUnlocked() && techIds['tech-mad'].isAffordable(true) && Object.keys(techIds['tech-mad'].cost).every(res => resources[res].isUnlocked()))),
+          () => settings.prestigeType === "mad" && (haveTech("mad") || (techIds['tech-mad'].isUnlocked() && techIds['tech-mad'].isAffordable(true))),
           (building) => !building.is.housing && !building.is.garrison && !building.cost["Knowledge"] && (building !== buildings.OilWell || !game.global.race.terrifying), // Terrifying can't buy oil, keep building rigs
           () => "Awaiting MAD prestige",
           () => settings.buildingWeightingMADUseless
@@ -2596,7 +2570,7 @@
           () => settings.buildingWeightingNeedStorage
       ],[
           () => resources.Population.maxQuantity > 50 && resources.Population.storageRatio < 0.9,
-          (building) => building.is.housing,
+          (building) => building.is.housing && building instanceof Assembly,
           () => "No more houses needed",
           () => settings.buildingWeightingUselessHousing
     ]];
@@ -2628,7 +2602,7 @@
         _industryVue: undefined,
 
         initIndustry() {
-            if (buildings.RockQuarry.count < 1 || !game.global.race['smoldering']) {
+            if (!game.global.race['smoldering'] || buildings.RockQuarry.count < 1) {
                 return false;
             }
 
@@ -2673,12 +2647,380 @@
         }
     }
 
+    var NaniteManager = {
+        _industryVueBinding: "iNFactory",
+        _industryVue: undefined,
+        storageShift: 1.005,
+        priorityList: [],
+
+        // export const nf_resources from industry.js
+        Resources: [
+            'Lumber', 'Chrysotile', 'Stone', 'Crystal', 'Furs', 'Copper', 'Iron', 'Aluminium',
+            'Cement', 'Coal', 'Oil', 'Uranium', 'Steel', 'Titanium', 'Alloy', 'Polymer',
+            'Iridium', 'Helium_3', 'Water', 'Deuterium', 'Neutronium', 'Adamantite', 'Bolognium', 'Orichalcum',
+        ],
+
+        resEnabled: (id) => settings['res_nanite' + id],
+
+        isUnlocked() {
+            return game.global.race['deconstructor'] && (buildings.NaniteFactory.count > 0 || buildings.RedNaniteFactory.count > 0);
+        },
+
+        isUseful() {
+            return resources.Nanite.storageRatio < 1;
+        },
+
+        initIndustry() {
+            if (!this.isUnlocked()) {
+                return false;
+            }
+
+            this._industryVue = getVueById(this._industryVueBinding);
+            if (this._industryVue === undefined) {
+                return false;
+            }
+
+            return true;
+        },
+
+        isConsumable(res) {
+            return this.Resources.includes(res.id);
+        },
+
+        updateResources() {
+            if (!this.isUnlocked() || !settings.autoNanite) {
+                return;
+            }
+            for (let resource of this.priorityList) {
+                if (resource.isUnlocked()) {
+                    resource.rateMods['nanite'] = this.currentConsume(resource.id);
+                    resource.rateOfChange += resource.rateMods['nanite'];
+                }
+            }
+        },
+
+        managedPriorityList() {
+            return this.priorityList;
+        },
+
+        maxConsume() {
+            return game.global.city.nanite_factory.count * 50;
+        },
+
+        currentConsume(id) {
+            return game.global.city.nanite_factory[id];
+        },
+
+        useRatio() {
+            switch (settings.naniteMode) {
+                case "cap":
+                    return [0.965];
+                case "excess":
+                    return [-1];
+                case "all":
+                    return [0.035];
+                case "mixed":
+                    return [0.965, -1];
+                case "full":
+                    return [0.965, -1, 0.035];
+                default:
+                    return [];
+            }
+        },
+
+        maxConsumeCraftable(resource) {
+            return resource.currentQuantity - (resource.storageRequired * this.storageShift);
+        },
+
+        maxConsumeForRatio(resource, keepRatio) {
+            let extraIncome = resource.rateOfChange;
+            let extraStore = (resource.storageRatio - keepRatio) * resource.maxQuantity;
+            return Math.max(extraIncome, extraStore);
+        },
+
+        consumeMore(id, count) {
+            resources[id].rateMods['nanite'] += count;
+
+            resetMultiplier();
+            for (let i = 0; i < count; i++) {
+                this._industryVue.addItem(id);
+            }
+        },
+
+        consumeLess(id, count) {
+            resources[id].rateMods['nanite'] -= count;
+
+            resetMultiplier();
+            for (let i = 0; i < count; i++) {
+                this._industryVue.subItem(id);
+            }
+        }
+    }
+
+    var SupplyManager = {
+        _supplyVuePrefix: "supply",
+        storageShift: 1.010,
+        priorityList: [],
+
+        resEnabled: (id) => settings['res_supply' + id],
+
+        isUnlocked() {
+            return buildings.LakeTransport.isUnlocked();
+        },
+
+        isUseful() {
+            return resources.Supply.storageRatio < 1 && buildings.LakeTransport.stateOnCount > 0 && buildings.LakeBireme.stateOnCount > 0;
+        },
+
+        initIndustry() {
+            return this.isUnlocked();
+        },
+
+        isConsumable(res) {
+            return poly.supplyValue.hasOwnProperty(res.id);
+        },
+
+        updateResources() {
+            if (!this.isUnlocked() || !settings.autoSupply) {
+                return;
+            }
+            for (let resource of this.priorityList) {
+                if (resource.isUnlocked()) {
+                    resource.rateMods['supply'] = this.currentConsume(resource.id) * this.supplyOut(resource.id);
+                    resource.rateOfChange += resource.rateMods['supply'];
+                }
+            }
+        },
+
+        supplyIn(id) {
+            return poly.supplyValue[id]?.in ?? 0;
+        },
+
+        supplyOut(id) {
+            return poly.supplyValue[id]?.out ?? 0;
+        },
+
+        managedPriorityList() {
+            return this.priorityList;
+        },
+
+        maxConsume() {
+            return game.global.portal.transport.cargo.max;
+        },
+
+        currentConsume(id) {
+            return game.global.portal.transport.cargo[id];
+        },
+
+        useRatio() {
+            switch (settings.supplyMode) {
+                case "cap":
+                    return [0.975];
+                case "excess":
+                    return [-1];
+                case "all":
+                    return [0.045];
+                case "mixed":
+                    return [0.975, -1];
+                case "full":
+                    return [0.975, -1, 0.045];
+                default:
+                    return [];
+            }
+        },
+
+        maxConsumeCraftable(resource) {
+            return (resource.currentQuantity - (resource.storageRequired * this.storageShift)) / this.supplyOut(resource.id);
+        },
+
+        maxConsumeForRatio(resource, keepRatio) {
+            let extraIncome = resource.calculateRateOfChange({buy: false, nanite: true}) / this.supplyOut(resource.id);
+            let extraStore = (resource.storageRatio - keepRatio) * resource.maxQuantity / this.supplyOut(resource.id);
+            return Math.max(extraIncome, extraStore);
+        },
+
+        consumeMore(id, count) {
+            let vue = getVueById(this._supplyVuePrefix + id);
+            if (vue === undefined) { return false; }
+
+            resources[id].rateMods['supply'] += (count * this.supplyOut(id));
+
+            resetMultiplier();
+            for (let i = 0; i < count; i++) {
+                vue.supplyMore(id);
+            }
+        },
+
+        consumeLess(id, count) {
+            let vue = getVueById(this._supplyVuePrefix + id);
+            if (vue === undefined) { return false; }
+
+            resources[id].rateMods['supply'] -= (count * this.supplyOut(id));
+
+            resetMultiplier();
+            for (let i = 0; i < count; i++) {
+                vue.supplyLess(id);
+            }
+        }
+    }
+
+    var EjectManager = {
+        _ejectVuePrefix: "eject",
+        storageShift: 1.015,
+        priorityList: [],
+
+        resEnabled: (id) => settings['res_eject' + id],
+
+        isUnlocked() {
+            return buildings.BlackholeMassEjector.count > 0;
+        },
+
+        isUseful() {
+            return true; // Never stop ejecting
+        },
+
+        initIndustry() {
+            return this.isUnlocked() && !haveTask("trash");
+        },
+
+        isConsumable(res) {
+            return game.atomic_mass.hasOwnProperty(res.id);
+        },
+
+        updateResources() {
+            if (!this.isUnlocked() || (!settings.autoEject && !haveTask("trash"))) {
+                return;
+            }
+            for (let resource of this.priorityList) {
+                if (resource.isUnlocked()) {
+                    resource.rateMods['eject'] = this.currentConsume(resource.id);
+                    resource.rateOfChange += resource.rateMods['eject'];
+                }
+            }
+        },
+
+        managedPriorityList() {
+            return !game.global.race['artifical'] ? this.priorityList
+              : this.priorityList.filter(r => r !== resources.Food);
+        },
+
+        maxConsume() {
+            return game.global.interstellar.mass_ejector.on * 1000;
+        },
+
+        currentConsume(id) {
+            return game.global.interstellar.mass_ejector[id];
+        },
+
+        useRatio() {
+            switch (settings.ejectMode) {
+                case "cap":
+                    return [0.985];
+                case "excess":
+                    return [-1];
+                case "all":
+                    return [0.055];
+                case "mixed":
+                    return [0.985, -1];
+                case "full":
+                    return [0.985, -1, 0.055];
+                default:
+                    return [];
+            }
+        },
+
+        maxConsumeCraftable(resource) {
+            return resource.currentQuantity - (resource.storageRequired * this.storageShift);
+        },
+
+        maxConsumeForRatio(resource, keepRatio) {
+            let extraIncome = resource.calculateRateOfChange({buy: false, supply: true, nanite: true});
+            let extraStore = (resource.storageRatio - keepRatio) * resource.maxQuantity;
+            return Math.max(extraIncome, extraStore);
+        },
+
+        consumeMore(id, count) {
+            let vue = getVueById(this._ejectVuePrefix + id);
+            if (vue === undefined) { return false; }
+
+            resources[id].rateMods['eject'] += count;
+
+            resetMultiplier();
+            for (let i = 0; i < count; i++) {
+                vue.ejectMore(id);
+            }
+        },
+
+        consumeLess(id, count) {
+            let vue = getVueById(this._ejectVuePrefix + id);
+            if (vue === undefined) { return false; }
+
+            resources[id].rateMods['eject'] -= count;
+
+            resetMultiplier();
+            for (let i = 0; i < count; i++) {
+                vue.ejectLess(id);
+            }
+        }
+    }
+
+    var AlchemyManager = {
+        _alchemyVuePrefix: "alchemy",
+        priorityList: [],
+
+        resEnabled: id => settings['res_alchemy_' + id],
+        resWeighting: id => settings['res_alchemy_w_' + id],
+
+        isUnlocked() {
+            return haveTech('alchemy');
+        },
+
+        managedPriorityList() {
+            return this.priorityList.filter(res => this.resEnabled(res.id) && res.isUnlocked() && this.transmuteTier(res) <= game.global.tech.alchemy && (!game.global.race['artifical'] || res !== resources.Food));
+        },
+
+        transmuteTier(res) {
+            return !game.tradeRatio.hasOwnProperty(res.id) || res === resources.Crystal ? 0 :
+                   res.instance?.hasOwnProperty("trade") ? 1 : 2;
+        },
+
+        currentCount(id) {
+            return game.global.race.alchemy[id];
+        },
+
+        transmuteMore(id, count) {
+            let vue = getVueById(this._alchemyVuePrefix + id);
+            if (vue === undefined) { return false; }
+
+            resources.Mana.rateOfChange -= count * 1;
+            resources.Crystal.rateOfChange -= count * 0.5;
+
+            resetMultiplier();
+            for (let i = 0; i < count; i++) {
+                vue.addSpell(id);
+            }
+        },
+
+        transmuteLess(id, count) {
+            let vue = getVueById(this._alchemyVuePrefix + id);
+            if (vue === undefined) { return false; }
+
+            resources.Mana.rateOfChange += count * 1;
+            resources.Crystal.rateOfChange += count * 0.5;
+
+            resetMultiplier();
+            for (let i = 0; i < count; i++) {
+                vue.subSpell(id);
+            }
+        }
+    }
+
     var RitualManager = {
         _industryVueBinding: "iPylon",
         _industryVue: undefined,
 
         Productions: addProps({
-            Farmer: {id: 'farmer', isUnlocked: () => !game.global.race['cataclysm'] && !game.global.race['carnivore'] && !game.global.race['soul_eater']},
+            Farmer: {id: 'farmer', isUnlocked: () => !game.global.race['cataclysm'] && !game.global.race['carnivore'] && !game.global.race['soul_eater'] && !game.global.race['artifical']},
             Miner: {id: 'miner', isUnlocked: () => !game.global.race['cataclysm']},
             Lumberjack: {id: 'lumberjack', isUnlocked: () => !game.global.race['cataclysm'] && isLumberRace() && !game.global.race['evil']},
             Science: {id: 'science', isUnlocked: () => true},
@@ -2705,9 +3047,21 @@
             return game.global.race.casting[spell.id];
         },
 
+        spellCost(spell) {
+            return this.manaCost(this.currentSpells(spell));
+        },
+
+        costStep(level) {
+            if (level === 0) {
+                return 0.0025;
+            }
+            let cost = this.manaCost(level);
+            return ((cost / level * 1.0025 + 0.0025) * (level + 1)) - cost;
+        },
+
         // export function manaCost(spell,rate) from industry.js
-        manaCost(spell) {
-            return spell * ((1.0025) ** spell - 1);
+        manaCost(level) {
+            return level * ((1.0025) ** level - 1);
         },
 
         increaseRitual(spell, count) {
@@ -2739,16 +3093,15 @@
         }
     }
 
-    // TODO: Iridium smelting
     var SmelterManager = {
         _industryVueBinding: "iSmelter",
         _industryVue: undefined,
 
         Productions: normalizeProperties({
-            Iron: {id: "Iron", unlocked: () => true, resource: resources.Iron, add: "ironSmelting", cost: []},
-            Steel: {id: "Steel", unlocked: () => resources.Steel.isUnlocked() && haveTech("smelting", 2), resource: resources.Steel, add: "steelSmelting",
+            Iron: {id: "Iron", unlocked: () => true, resource: resources.Iron, cost: []},
+            Steel: {id: "Steel", unlocked: () => resources.Steel.isUnlocked() && haveTech("smelting", 2), resource: resources.Steel,
                     cost: [new ResourceProductionCost(resources.Coal, 0.25, 1.25), new ResourceProductionCost(resources.Iron, 2, 6)]},
-            Iridium: {id: "Iridium", unlocked: () => resources.Iridium.isUnlocked() && haveTech("m_smelting", 2), resource: resources.Iridium, add: "iridiumSmelting", cost: []},
+            Iridium: {id: "Iridium", unlocked: () => resources.Iridium.isUnlocked() && haveTech("m_smelting", 2), resource: resources.Iridium, cost: []},
         }, [ResourceProductionCost]),
 
         Fuels: addProps(normalizeProperties({
@@ -2820,19 +3173,40 @@
             }
         },
 
-        increaseSmelting(production, count) {
-            if (count === 0 || !production.unlocked) {
+        increaseSmelting(id, count) {
+            if (count === 0 || !this.Productions[id].unlocked) {
                 return false;
+            }
+            if (count < 0) {
+                return this.decreaseSmelting(id, count * -1);
             }
 
             resetMultiplier();
             for (let i = 0; i < count; i++) {
-                this._industryVue[production.add]();
+                this._industryVue.addMetal(id);
+            }
+        },
+
+        decreaseSmelting(id, count) {
+            if (count === 0 || !this.Productions[id].unlocked) {
+                return false;
+            }
+            if (count < 0) {
+                return this.increaseSmelting(id, count * -1);
+            }
+
+            resetMultiplier();
+            for (let i = 0; i < count; i++) {
+                this._industryVue.subMetal(id);
             }
         },
 
         maxOperating() {
             return game.global.city.smelter.cap;
+        },
+
+        currentFueled() {
+            return this._industryVue.$options.filters.on();
         }
     }
 
@@ -3209,27 +3583,21 @@
         getUnitBuyPrice(resource) {
             // marketItem > vBind > purchase from resources.js
             let price = game.global.resource[resource.id].value;
-            if (game.global.race['arrogant']){
-                price *= 1.1;
-            }
-            if (game.global.race['conniving']){
-                price *= 0.95;
-            }
+
+            price *= traitVal('arrogant', 0, '+');
+            price *= traitVal('conniving', 0, '-');
+
             return price;
         },
 
         getUnitSellPrice(resource) {
             // marketItem > vBind > sell from resources.js
             let divide = 4;
-            if (game.global.race['merchant']){
-                divide *= 0.75;
-            }
-            if (game.global.race['asymmetrical']){
-                divide *= 1.2;
-            }
-            if (game.global.race['conniving']){
-                divide *= 0.95;
-            }
+
+            divide *= traitVal('merchant', 0, '-');
+            divide *= traitVal('asymmetrical', 0, '+');
+            divide *= traitVal('conniving', 1, '-');
+
             return game.global.resource[resource.id].value / divide;
         },
 
@@ -3413,15 +3781,16 @@
         _foreignVue: undefined,
 
         purchaseMoney: 0,
+        purchaseForeigngs: [],
         foreignActive: [],
         foreignTarget: null,
 
         Types: {
-            Influence: {id: "influence", rival: true},
-            Sabotage: {id: "sabotage", rival: true},
-            Incite: {id: "incite", rival: false},
-            Annex: {id: "annex", rival: false},
-            Purchase: {id: "purchase", rival: false},
+            Influence: {id: "influence"},
+            Sabotage: {id: "sabotage"},
+            Incite: {id: "incite"},
+            Annex: {id: "annex"},
+            Purchase: {id: "purchase"},
         },
 
         spyCost(govIndex, spy) {
@@ -3437,6 +3806,7 @@
 
         updateForeigns() {
             this.purchaseMoney = 0;
+            this.purchaseForeigngs = [];
             this._foreignVue = getVueById("foreign");
             let foreignUnlocked = this._foreignVue?.vis();
             if (foreignUnlocked) {
@@ -3473,7 +3843,7 @@
                 }
 
                 // Adjust for fight
-                if (!settings.foreignPacifist) {
+                if (activeForeigns.length > 0 && !settings.foreignPacifist) {
                     // Try to attacks last uncontrolled inferior, or first occupied, or just first, in this order.
                     currentTarget = currentTarget ?? activeForeigns.find(f => f.gov.occ) ?? activeForeigns[0];
 
@@ -3490,7 +3860,7 @@
                     }
 
                     // Set last foreign to sabotage only, and then switch to occupy once we're ready to unify
-                    if (settings.foreignOccupyLast && !haveTech('world_control')) {
+                    if (settings.foreignUnification && settings.foreignOccupyLast && !haveTech('world_control')) {
                         let lastTarget = ["Occupy", "Sabotage"].includes(settings.foreignPolicySuperior) ? 2 : currentTarget.id;
                         activeForeigns[lastTarget].policy = readyToUnify ? "Occupy" : "Sabotage";
                     }
@@ -3502,11 +3872,12 @@
                 }
 
                 // Request money for unify, make sure we have autoFight and autoResearch
-                if (game.global.tech['unify'] === 1 && settings.foreignUnification && settings.unificationRequest && settings.autoFight) {
+                if (game.global.tech['unify'] === 1 && settings.foreignUnification && settings.autoFight) {
                     for (let foreign of activeForeigns) {
                         if (foreign.policy === "Purchase" && !foreign.gov.buy && foreign.gov.act !== "purchase") {
                             let moneyNeeded = Math.max(poly.govPrice(foreign.id), (foreign.gov.spy < 3 ? this.spyCost(foreign.id, 3) : 0));
                             if (moneyNeeded <= resources.Money.maxQuantity) {
+                                this.purchaseForeigngs.push(foreign.id);
                                 this.purchaseMoney = Math.max(moneyNeeded, this.purchaseMoney);
                             }
                         }
@@ -3571,7 +3942,7 @@
                 case this.Types.Incite.id:
                     return gov.spy < 3 || gov.unrest < (gov.spy > 3 ? 100 : 76);
                 case this.Types.Annex.id:
-                    return gov.hstl <= 50 && gov.unrest >= 50 && game.global.city.morale.current >= (200 + gov.hstl - gov.unrest);
+                    return gov.hstl <= 50 && gov.unrest >= 50 && resources.Morale.currentQuantity >= (200 + gov.hstl - gov.unrest);
                 case this.Types.Purchase.id:
                     return gov.spy >= 3 && resources.Money.currentQuantity >= poly.govPrice(govIndex);
             }
@@ -3582,8 +3953,6 @@
     var WarManager = {
         _garrisonVue: undefined,
         _hellVue: undefined,
-
-        hellAttractorMax: 0,
 
         workers: 0,
         wounded: 0,
@@ -3639,7 +4008,7 @@
         },
 
         get currentCityGarrison() {
-            return this.currentSoldiers - this.hellSoldiers;
+            return this.currentSoldiers - this.hellSoldiers - (game.global.space.fob?.troops ?? 0);
         },
 
         get maxCityGarrison() {
@@ -3647,7 +4016,7 @@
         },
 
         get availableGarrison() {
-            return game.global.race['rage'] ? Math.min(this.maxCityGarrison, this.currentSoldiers - this.wounded) : this.currentCityGarrison - this.wounded;
+            return this.currentCityGarrison - this.wounded;
         },
 
         get hellGarrison()  {
@@ -3680,9 +4049,7 @@
             if (this.m_use > 0){
                 cost *= 1.1 ** this.m_use;
             }
-            if (game.global.race['brute']){
-                cost *= 0.5;
-            }
+            cost *= traitVal('brute', 0, '-');
             if (game.global.race['inflation']){
                 cost *= 1 + (game.global.race.inflation / 500);
             }
@@ -3707,7 +4074,20 @@
 
         getHellReservedSoldiers(){
             let soldiers = 0;
-            if (buildings.PitSoulForge.count > 0 || buildings.PitAssaultForge.isAutoBuildable()) {
+
+            // Assign soldiers to assault forge once other requirements are met
+            if (buildings.PitAssaultForge.isUnlocked() && buildings.PitAssaultForge.isAutoBuildable()) {
+                let missingRes = Object.entries(buildings.PitAssaultForge.cost).find(([id, amount]) => resources[id].currentQuantity < amount);
+                if (!missingRes) {
+                    soldiers = Math.round(650 / game.armyRating(1, "hellArmy"));
+                    if (game.global.race['smoldering']) {
+                        soldiers = Math.round(soldiers * 0.9);
+                    }
+                }
+            }
+
+            // Reserve soldiers operating forge
+            if (buildings.PitSoulForge.count > 0) {
                 // export function soulForgeSoldiers() from portal.js
                 soldiers = Math.round(650 / game.armyRating(1, "hellArmy"));
                 if (game.global.portal.gun_emplacement) {
@@ -3782,12 +4162,8 @@
             if (!targetRating || targetRating <= 0) {
                 return 0;
             }
-            // Getting the rating for 100 soldiers and dividing it by number of soldiers, to get more accurate value after rounding
-            // If requested number is bigger than amount of healthy soldiers, returned value will be spoiled
-            // To avoid that we're explicitly passing zero number of wounded soldiers as string(!)
-            // "0" casts to true boolean, and overrides real amount of wounded soldiers, yet still acts as 0 in math
-            // TODO: Fixed in 1.2, change "0" to 0
-            let singleSoldierAttackRating = game.armyRating(10, "army", "0") / 10;
+            // Getting the rating for 10 soldiers and dividing it by number of soldiers, to get more accurate value after rounding
+            let singleSoldierAttackRating = game.armyRating(10, "army", 0) / 10;
             let maxSoldiers = Math.ceil(targetRating / singleSoldierAttackRating);
             if (!game.global.race['hivemind']) {
                 return maxSoldiers;
@@ -3796,14 +4172,14 @@
             // Ok, we've done no hivemind. Hivemind is trickier because each soldier gives attack rating and a bonus to all other soldiers.
             // I'm sure there is an exact mathematical calculation for this but...
             // Just loop through and remove 1 at a time until we're under the max rating.
-
             // At 10 soldiers there's no hivemind bonus or malus, and the malus gets up to 50%, so start with up to 2x soldiers below 10
-            if (maxSoldiers < 10) {
-                maxSoldiers = Math.min(10, maxSoldiers * 2);
+
+            let hiveSize = traitVal('hivemind', 0);
+            if (maxSoldiers < hiveSize) {
+                maxSoldiers = Math.min(hiveSize, maxSoldiers / (1 - (hiveSize * 0.05)));
             }
 
-            // TODO: Fixed in 1.2, change "0" to 0
-            while (maxSoldiers > 1 && game.armyRating(maxSoldiers - 1, "army", "0") > targetRating) {
+            while (maxSoldiers > 1 && game.armyRating(maxSoldiers - 1, "army", 0) > targetRating) {
                 maxSoldiers--;
             }
 
@@ -3878,6 +4254,235 @@
         }
     }
 
+    var FleetManagerOuter = {
+        _fleetVueBinding: "shipPlans",
+        _fleetVue: undefined,
+
+        nextShipCost: null,
+
+        WeaponPower: {railgun: 36, laser: 64, p_laser: 54, plasma: 90, phaser: 114, disruptor: 156},
+        SensorRange: {visual: 1, radar: 20, lidar: 35, quantum: 60},
+        ClassPower: {corvette: 1, frigate: 1.3, destroyer: 2.75, cruiser: 5.5, battlecruiser: 10, dreadnought: 22},
+        ClassCrew: {corvette: 2, frigate: 3, destroyer: 4, cruiser: 6, battlecruiser: 8, dreadnought: 10},
+
+        Regions: [
+            {id: "spc_home", dist: 1, orbit: -1, dest: false},
+            {id: "spc_moon", dist: 1.01, orbit: -1, dest: true, moon: true},
+            {id: "spc_red", dist: 1.524, orbit: 687, dest: true},
+            {id: "spc_hell", dist: 0.4, orbit: 88, dest: true},
+            {id: "spc_gas", dist: 5.203, orbit: 4330, dest: true},
+            {id: "spc_gas_moon", dist: 5.204, orbit: 4330, dest: true, moon: true},
+            {id: "spc_belt", dist: 2.7, orbit: 1642, dest: true},
+            {id: "spc_dwarf", dist: 2.77, orbit: 1682, dest: true},
+            {id: "spc_saturn", dist: 9.539, orbit: 10751, dest: false},
+            {id: "spc_titan", dist: 9.536, orbit: 10751, dest: true, moon: true},
+            {id: "spc_enceladus", dist: 9.542, orbit: 10751, dest: true, moon: true},
+            {id: "spc_neptune", dist: 30.08, orbit: 60152, dest: false},
+            {id: "spc_triton", dist: 30.1, orbit: 60152, dest: true, moon: true},
+            {id: "spc_kuiper", dist: 39.5, orbit: 90498, dest: true},
+            {id: "spc_eris", dist: 68, orbit: 204060, dest: true},
+          //{id: "tauceti", dist: 752568.8, orbit: -2, dest: true},
+        ],
+
+        ShipConfig: {
+            class: ['corvette','frigate','destroyer','cruiser','battlecruiser','dreadnought'],
+            power: ['solar','diesel','fission','fusion','elerium'],
+            weapon: ['railgun','laser','p_laser','plasma','phaser','disruptor'],
+            armor : ['steel','alloy','neutronium'],
+            engine: ['ion','tie','pulse','photon','vacuum'],
+            sensor: ['visual','radar','lidar','quantum'],
+        },
+
+        getWeighting(id) {
+            return settings["fleet_outer_pr_" + id];
+        },
+
+        isUnlocked(id) {
+            return game.actions.space[id].info.syndicate?.() ?? false;
+        },
+
+        updateShipCost() {
+            this.nextShipCost = null;
+            if (game.global.space.shipyard?.hasOwnProperty('blueprint')) {
+                let cost = poly.shipCosts(game.global.space.shipyard.blueprint);
+                for (let res in cost) {
+                    if (resources[res].maxQuantity < cost[res]) {
+                        return false;
+                    }
+                }
+                this.nextShipCost = cost;
+            }
+        },
+
+        initFleet() {
+            if (!game.global.tech.syndicate || !game.global.space.shipyard?.hasOwnProperty('blueprint')) {
+                return false;
+            }
+
+            this._fleetVue = getVueById(this._fleetVueBinding);
+            if (this._fleetVue === undefined) {
+                return false;
+            }
+
+            return true;
+        },
+
+        getBlueprint() {
+            return Object.fromEntries(Object.keys(this.ShipConfig).map(type => ([type, settings["fleet_outer_" + type]])));
+        },
+
+        isShipAffordable(ship) {
+            let cost = poly.shipCosts(ship);
+            for (let res in cost) {
+                if (resources[res].currentQuantity < cost[res]) {
+                    return false;
+                }
+            }
+            return true;
+        },
+
+        build(ship, region) {
+            let yard = game.global.space.shipyard;
+            for (let [type, part] of Object.entries(ship)) {
+                if (type !== 'name' && yard.blueprint[type] !== part) {
+                    if (this._fleetVue.avail(type, part)) {
+                        this._fleetVue.setVal(type, part);
+                    } else {
+                        return false;
+                    }
+                }
+            }
+            if (this._fleetVue.powerText().includes("danger")) {
+                return false;
+            }
+
+            let cost = poly.shipCosts(ship);
+            for (let res in cost) {
+                resources[res].currentQuantity -= cost[res];
+            }
+
+            if (yard.sort) {
+                $("#shipPlans .b-checkbox").eq(1).click()
+                this._fleetVue.build();  
+                getVueById('shipReg0')?.setLoc(region, yard.ships.length);
+                $("#shipPlans .b-checkbox").eq(1).click()
+            } else {
+                this._fleetVue.build();  
+                getVueById('shipReg0')?.setLoc(region, yard.ships.length);
+            }
+            return true;
+        },
+
+        getShipAttackPower(ship) {
+            return Math.round(this.WeaponPower[ship.weapon] * this.ClassPower[ship.class]);
+        },
+
+        // export function syndicate(region,extra) from truepath.js
+        syndicate(region, extra, all) {
+            if (!game.global.tech['syndicate'] || !game.global.race['truepath'] || !game.global.space.syndicate?.hasOwnProperty(region)){
+                return extra ? {p: 1, r: 0, s: 0} : 1;
+            }
+            let rivalRel = game.global.civic.foreign.gov3.hstl;
+            let rival = rivalRel < 10 ? (250 - (25 * rivalRel)) :
+                        rivalRel > 60 ? (-13 * (rivalRel - 60)) : 0;
+
+            let divisor = 1000;
+            switch (region){
+                case 'spc_home':
+                case 'spc_moon':
+                case 'spc_red':
+                case 'spc_hell':
+                    divisor = 1250 + rival;
+                    break;
+                case 'spc_gas':
+                case 'spc_gas_moon':
+                case 'spc_belt':
+                    divisor = 1020 + rival;
+                    break;
+                case 'spc_titan':
+                case 'spc_enceladus':
+                    divisor = !haveTech('triton') ? 600 :
+                      game.actions.space[region].info.syndicate_cap();
+                    break;
+                case 'spc_triton':
+                case 'spc_kuiper':
+                case 'spc_eris':
+                    divisor = game.actions.space[region].info.syndicate_cap();
+                    break;
+            }
+
+            let piracy = game.global.space.syndicate[region];
+            let patrol = 0;
+            let sensor = 0;
+            if (game.global.space.shipyard?.hasOwnProperty('ships')){
+                for (let ship of game.global.space.shipyard.ships) {
+                    if (ship.location === region && ((ship.transit === 0 && ship.fueled) || all)){
+                        let rating = this.getShipAttackPower(ship);
+                        patrol += ship.damage > 0 ? Math.round(rating * (100 - ship.damage) / 100) : rating;
+                        sensor += this.SensorRange[ship.sensor];
+                    }
+                }
+
+                if (region === 'spc_enceladus'){
+                    patrol += buildings.EnceladusBase.stateOnCount * 50;
+                } else if (region === 'spc_titan'){
+                    patrol += buildings.TitanSAM.stateOnCount * 25;
+                } else if (region === 'spc_triton' && buildings.TritonFOB.stateOnCount > 0){
+                    patrol += 500;
+                    sensor += 10;
+                }
+                
+                if (sensor > 100){
+                    sensor = Math.round((sensor - 100) / ((sensor - 100) + 200) * 100) + 100;
+                }
+
+                patrol = Math.round(patrol * ((sensor + 25) / 125));
+                piracy = piracy - patrol > 0 ? piracy - patrol : 0;
+            }
+            if (extra) {
+                return {
+                    p: 1 - +(piracy / divisor).toFixed(4),
+                    r: piracy,
+                    s: sensor
+                };
+            } else {
+                return 1 - +(piracy / divisor).toFixed(4);
+            }
+        }
+    }
+
+    var FleetManager = {
+        _fleetVueBinding: "fleet",
+        _fleetVue: undefined,
+
+        initFleet() {
+            if (!game.global.tech.piracy) {
+                return false;
+            }
+
+            this._fleetVue = getVueById(this._fleetVueBinding);
+            if (this._fleetVue === undefined) {
+                return false;
+            }
+
+            return true;
+        },
+
+        addShip(region, ship, count) {
+            resetMultiplier();
+            for (let i = 0; i < count; i++) {
+                this._fleetVue.add(region, ship);
+            }
+        },
+
+        subShip(region, ship, count) {
+            resetMultiplier();
+            for (let i = 0; i < count; i++) {
+                this._fleetVue.sub(region, ship);
+            }
+        }
+    }
+
     var MechManager = {
         _assemblyVueBinding: "mechAssembly",
         _assemblyVue: undefined,
@@ -3891,12 +4496,7 @@
         isActive: false,
         saveSupply: false,
 
-        lastLevel: -1,
-        lastPrepared: -1,
-        lastWrath: -1,
-        lastScouts: -1,
-        lastSpecial: "",
-        lastInfernal: null,
+        stateHash: 0,
         bestSize: [],
         bestGems: [],
         bestSupply: [],
@@ -3960,6 +4560,19 @@
             createMechInfo();
         }),
 
+        updateSpire() {
+            let oldHash = this.stateHash;
+            this.stateHash = 0
+              + game.global.portal.spire.count
+              + game.global.blood.prepared
+              + game.global.blood.wrath
+              + game.global.portal.mechbay.scouts * 1e7
+              + (settings.mechSpecial ? 1e14 : 0)
+              + (settings.mechInfernalCollector ? 1e15 : 0);
+
+              return this.stateHash !== oldHash;
+        },
+
         initLab() {
             if (buildings.SpireMechBay.count < 1) {
                 return false;
@@ -3977,32 +4590,20 @@
             this.inactiveMechs = [];
             this.mechsPower = 0;
 
-            let spaceUsed = 0;
-            let currentScouts = 0;
             let mechBay = game.global.portal.mechbay;
             for (let i = 0; i < mechBay.mechs.length; i++) {
                 let mech = {id: i, ...mechBay.mechs[i], ...this.getMechStats(mechBay.mechs[i])};
-                spaceUsed += this.getMechSpace(mech);
-                if (spaceUsed <= mechBay.max) {
+                if (i < mechBay.active) {
                     this.activeMechs.push(mech);
                     if (mech.size !== 'collector') {
                         this.mechsPower += mech.power;
-                    }
-                    if (mech.size === 'small') {
-                        currentScouts++;
                     }
                 } else {
                     this.inactiveMechs.push(mech);
                 }
             }
 
-            if (this.lastLevel !== game.global.portal.spire.count || this.lastPrepared !== game.global.blood.prepared || this.lastWrath !== game.global.blood.wrath || this.lastScouts !== currentScouts || this.lastSpecial !== settings.mechSpecial || this.lastInfernal !== settings.mechInfernalCollector) {
-                this.lastLevel = game.global.portal.spire.count;
-                this.lastPrepared = game.global.blood.prepared;
-                this.lastWrath = game.global.blood.wrath;
-                this.lastScouts = currentScouts;
-                this.lastSpecial = settings.mechSpecial;
-                this.lastInfernal = settings.mechInfernalCollector
+            if (this.updateSpire()) {
                 this.isActive = true;
 
                 this.updateBestWeapon();
@@ -4084,7 +4685,7 @@
         getPreferredSize() {
             let mechBay = game.global.portal.mechbay;
             if (settings.mechFillBay && mechBay.max % 1 === 0 && (game.global.blood.prepared >= 2 ? mechBay.bay % 2 !== mechBay.max % 2 : mechBay.max - mechBay.bay === 1)) {
-                return ['collector', false]; // One collector to fill odd bay
+                return ['collector', true]; // One collector to fill odd bay
             }
 
             if (resources.Supply.storageRatio < 0.9 && resources.Supply.rateOfChange < settings.mechMinSupply) {
@@ -4094,7 +4695,7 @@
                 }
             }
 
-            if ((this.lastScouts * 2) / mechBay.max < settings.mechScouts) {
+            if (mechBay.scouts * 2 / mechBay.max < settings.mechScouts) {
                 return ['small', true]; // Build scouts up to configured ratio
             }
 
@@ -4164,10 +4765,8 @@
             }
             /* TODO: Not really sure how to utilize it for good: it does find good and bad mech compositions, but using only good ones can backfire on some floors, and there won't big enough amount of mech to use weighted random
             currentBestBodyList.forEach(mech => {
-                mech.weigthing = 0;
-                for (let mod in this.StatusMod) {
-                    mech.weigthing += this.StatusMod[mod](mech);
-                }
+                mech.weigthing = Object.values(this.StatusMod)
+                  .reduce((sum, mod) => sum + mod(mech), 0);
             });
             */
             this.bestBody[size] = currentBestBodyList;
@@ -4195,29 +4794,29 @@
             return {...mech, ...this.getMechStats(mech)};
         },
 
-        getMechSpace(mech) {
+        getMechSpace(mech, prep) {
             switch (mech.size){
                 case 'small':
                     return 2;
                 case 'medium':
-                    return game.global.blood.prepared >= 2 ? 4 : 5;
+                    return (prep ?? game.global.blood.prepared) >= 2 ? 4 : 5;
                 case 'large':
-                    return game.global.blood.prepared >= 2 ? 8 : 10;
+                    return (prep ?? game.global.blood.prepared) >= 2 ? 8 : 10;
                 case 'titan':
-                    return game.global.blood.prepared >= 2 ? 20 : 25;
+                    return (prep ?? game.global.blood.prepared) >= 2 ? 20 : 25;
                 case 'collector':
                     return 1;
             }
             return Number.MAX_SAFE_INTEGER;
         },
 
-        getMechCost(mech) {
-            let {s, c} = poly.mechCost(mech.size, mech.infernal);
-            return [s, c, this.getMechSpace(mech)];
+        getMechCost(mech, prep) {
+            let {s, c} = poly.mechCost(mech.size, mech.infernal, prep);
+            return [s, c, this.getMechSpace(mech, prep)];
         },
 
-        getMechRefund(mech) {
-            let {s, c} = poly.mechCost(mech.size, mech.infernal);
+        getMechRefund(mech, prep) {
+            let {s, c} = poly.mechCost(mech.size, mech.infernal, prep);
             return [Math.floor(s / 2), Math.floor(c / 3)];
         },
 
@@ -4247,9 +4846,9 @@
 
         dragMech(oldId, newId) {
             if (typeof unsafeWindow !== 'undefined') { // Yet another FF fix
-                win.Sortable.get(this._listVue.$el).options.onEnd(cloneInto({oldDraggableIndex: oldId, newDraggableIndex: newId}, unsafeWindow));
+                win.Sortable.get(this._listVue.$el).options.onEnd(cloneInto({oldDraggableIndex: oldId, newDraggableIndex: newId, from: {querySelectorAll: () => [], insertBefore: () => false}}, unsafeWindow, {cloneFunctions: true}));
             } else {
-                Sortable.get(this._listVue.$el).options.onEnd({oldDraggableIndex: oldId, newDraggableIndex: newId});
+                Sortable.get(this._listVue.$el).options.onEnd({oldDraggableIndex: oldId, newDraggableIndex: newId, from: {querySelectorAll: () => [], insertBefore: () => false}});
             }
         }
     }
@@ -4327,7 +4926,10 @@
                     let result = activeRules[j][wrIndividualCondition](building);
                     // Rule passed
                     if (result) {
-                        building.extraDescription += activeRules[j][wrDescription](result, building) + "<br>";
+                        let note = activeRules[j][wrDescription](result, building);
+                        if (note !== "") {
+                            building.extraDescription += note + "<br>";
+                        }
                         building.weighting *= activeRules[j][wrMultiplier](result);
 
 
@@ -4338,6 +4940,7 @@
                     }
                 }
                 if (building.weighting > 0) {
+                    building.weighting = Math.max(Number.MIN_VALUE, building.weighting - 1e-7 * building.count);
                     building.extraDescription = "AutoBuild weighting: " + getNiceNumber(building.weighting) + "<br>" + building.extraDescription;
                 }
             }
@@ -4561,6 +5164,7 @@
             mercenary: "Mercenaries",
             mech_build: "Mech Build",
             mech_scrap: "Mech Scrap",
+            outer_fleet: "True Path Fleet"
         },
 
         logSuccess(loggingType, text, tags) {
@@ -4613,14 +5217,13 @@
     // Gui & Init functions
     function initialiseState() {
         updateCraftCost();
-        state.lastLumber = isLumberRace();
         updateTabs();
 
         // Lets set our crate / container resource requirements
         Object.defineProperty(resources.Crates, "cost", {get: () => isLumberRace() ? {Plywood: 10} : {Stone: 200}});
         resources.Containers.cost["Steel"] = 125;
 
-        //JobManager.addCraftingJob(jobs.Quantium); // Non-foundry should be on top
+        JobManager.addCraftingJob(jobs.Quantium); // Non-foundry should be on top
         JobManager.addCraftingJob(jobs.Scarletite);
         JobManager.addCraftingJob(jobs.Plywood);
         JobManager.addCraftingJob(jobs.Brick);
@@ -4638,12 +5241,11 @@
         buildings.ProximaDyson.gameMax = 100;
         buildings.BlackholeStellarEngine.gameMax = 100;
         buildings.DwarfWorldCollider.gameMax = 1859;
-        /*
         buildings.DwarfShipyard.gameMax = 1;
         buildings.DwarfMassRelayComplete.gameMax = 1;
         buildings.TitanAIComplete.gameMax = 1;
         buildings.TritonFOB.gameMax = 1;
-        */
+
         buildings.ProximaDysonSphere.gameMax = 100;
         buildings.ProximaOrichalcumSphere.gameMax = 100;
         buildings.BlackholeStargate.gameMax = 200;
@@ -4721,7 +5323,7 @@
         buildings.ProximaCruiser.addResourceConsumption(resources.Helium_3, 6);
 
         buildings.NebulaNexus.addResourceConsumption(resources.Nebula_Support, -2);
-        buildings.NebulaHarvestor.addResourceConsumption(resources.Nebula_Support, 1);
+        buildings.NebulaHarvester.addResourceConsumption(resources.Nebula_Support, 1);
         buildings.NebulaEleriumProspector.addResourceConsumption(resources.Nebula_Support, 1);
 
         buildings.NeutronMiner.addResourceConsumption(resources.Helium_3, 3);
@@ -4779,7 +5381,6 @@
         buildings.SpireBaseCamp.addResourceConsumption(resources.Spire_Support, 1);
         buildings.SpireMechBay.addResourceConsumption(resources.Spire_Support, 1);
 
-        /*
         buildings.TitanSpaceport.addResourceConsumption(resources.Enceladus_Support, -2);
         buildings.TitanElectrolysis.addResourceConsumption(resources.Titan_Support, () => haveTech("titan_ai_core", 2) && buildings.TitanAIComplete.stateOnCount > 0 ? -3 : -2);
 
@@ -4813,7 +5414,6 @@
         buildings.ErisDrone.addResourceConsumption(resources.Uranium, 5);
         buildings.ErisTrooper.addResourceConsumption(resources.Eris_Support, 1);
         buildings.ErisTank.addResourceConsumption(resources.Eris_Support, 1);
-        */
 
         // These are buildings which are specified as powered in the actions definition game code but aren't actually powered in the main.js powered calculations
         Object.values(buildings).forEach(building => {
@@ -4824,6 +5424,8 @@
                 }
             }
         });
+        //Object.defineProperty(buildings.Assembly, "overridePowered", {get: () => traitVal('powered', 0)});
+        //Object.defineProperty(buildings.RedAssembly, "overridePowered", {get: () => traitVal('powered', 0)});
         buildings.Windmill.overridePowered = -1;
         buildings.SunSwarmSatellite.overridePowered = -0.35;
         buildings.ProximaDyson.overridePowered = -1.25;
@@ -4860,7 +5462,8 @@
             avian: [e.sentience, e.endothermic, e.eggshell, ...bilateralSymmetry],
             reptilian: [e.sentience, e.ectothermic, e.eggshell, ...bilateralSymmetry],
             plant: [e.sentience, e.bryophyte, e.poikilohydric, e.multicellular, e.chloroplasts, e.sexual_reproduction],
-            fungi: [e.sentience, e.bryophyte, e.spores, e.multicellular, e.chitin, e.sexual_reproduction]
+            fungi: [e.sentience, e.bryophyte, e.spores, e.multicellular, e.chitin, e.sexual_reproduction],
+            synthetic: [e.sentience, e.exterminate, e.sexual_reproduction],
         }
 
         for (let id in game.races) {
@@ -4870,7 +5473,9 @@
             }
 
             races[id] = new Race(id);
-            races[id].evolutionTree = [e.bunker, e[id], ...(genusEvolution[races[id].genus] ?? [])];
+            // Use fungi as default Valdi genus
+            let evolutionPath = id === "junker" ? genusEvolution.fungi : genusEvolution[races[id].genus];
+            races[id].evolutionTree = [e.bunker, e[id], ...(evolutionPath ?? [])];
         }
     }
 
@@ -4885,12 +5490,12 @@
 
         priorityList.push(buildings.RuinsHellForge);
         priorityList.push(buildings.RuinsInfernoPower);
-        /*
+
         priorityList.push(buildings.TitanElectrolysis);
         priorityList.push(buildings.TitanHydrogen);
         priorityList.push(buildings.TitanQuarters);
+
         priorityList.push(buildings.DwarfMassRelayComplete);
-        */
         priorityList.push(buildings.RuinsArcology);
         priorityList.push(buildings.Apartment);
         priorityList.push(buildings.Barracks);
@@ -4916,6 +5521,11 @@
         priorityList.push(buildings.Amphitheatre);
         priorityList.push(buildings.Library);
         priorityList.push(buildings.Wharf);
+        priorityList.push(buildings.NaniteFactory); // Deconstructor trait
+        priorityList.push(buildings.RedNaniteFactory); // Deconstructor trait & Cataclysm only
+        priorityList.push(buildings.Transmitter); // Artifical trait
+        priorityList.push(buildings.Assembly); // Artifical trait
+        priorityList.push(buildings.RedAssembly); // Artifical trait & Cataclysm only
         priorityList.push(buildings.Lodge); // Carnivore/Detritivore/Soul Eater trait
         priorityList.push(buildings.Smokehouse); // Carnivore trait
         priorityList.push(buildings.SoulWell); // Soul Eater trait
@@ -5060,7 +5670,7 @@
 
         priorityList.push(buildings.NebulaMission);
         priorityList.push(buildings.NebulaNexus);
-        priorityList.push(buildings.NebulaHarvestor);
+        priorityList.push(buildings.NebulaHarvester);
         priorityList.push(buildings.NebulaEleriumProspector);
 
         priorityList.push(buildings.BeltMission);
@@ -5117,7 +5727,7 @@
         priorityList.push(buildings.LakeHarbour);
         priorityList.push(buildings.LakeBireme);
         priorityList.push(buildings.LakeTransport);
-        /*
+
         priorityList.push(buildings.HellSmelter);
         priorityList.push(buildings.DwarfShipyard);
         priorityList.push(buildings.DwarfMassRelay);
@@ -5152,7 +5762,7 @@
         priorityList.push(buildings.ErisTrooper);
         priorityList.push(buildings.ErisTank);
         //priorityList.push(buildings.ErisDigsite);
-        */
+
         priorityList.push(buildings.StargateDepot);
         priorityList.push(buildings.DwarfEleriumContainer);
 
@@ -5206,8 +5816,6 @@
     function resetHellSettings(reset) {
         let def = {
             autoHell: false,
-            hellTurnOffLogMessages: true,
-            hellHandlePatrolCount: true,
             hellHomeGarrison: 10,
             hellMinSoldiers: 20,
             hellMinSoldiersPercent: 90,
@@ -5235,17 +5843,14 @@
             showSettings: true,
             tickRate: 4,
             autoAssembleGene: false,
-            triggerRequest: true,
-            queueRequest: true,
             researchRequest: true,
             researchRequestSpace: false,
             missionRequest: true,
-            unificationRequest: true,
             useDemanded: true,
-            buildingsConflictQueue: true,
-            buildingsConflictRQueue: true,
-            buildingsConflictPQueue: true,
-            genesAssembleGeneAlways: true,
+            prioritizeTriggers: "savereq",
+            prioritizeQueue: "savereq",
+            prioritizeUnify: "savereq",
+            prioritizeOuterFleet: "ignore",
             buildingAlwaysClick: false,
             buildingClickPerTick: 50,
         }
@@ -5347,7 +5952,7 @@
         }
 
         const setTradePriority = (priority, items) =>
-          items.forEach(item => def['res_trade_p_' + resources[item].id] = priority);
+          items.forEach(id => def['res_trade_p_' + id] = priority);
 
         setTradePriority(1, ["Food"]);
         setTradePriority(2, ["Helium_3", "Uranium", "Oil", "Coal"]);
@@ -5357,7 +5962,8 @@
         setTradePriority(6, ["Cement"]);
         setTradePriority(7, ["Steel"]);
         setTradePriority(8, ["Titanium"]);
-        setTradePriority(9, ["Iridium", "Polymer", "Alloy", "Crystal"]);
+        setTradePriority(9, ["Iridium", "Polymer", "Alloy"]);
+        setTradePriority(-1, ["Crystal"]);
 
         for (let i = 0; i < poly.galaxyOffers.length; i++) {
             let resource = resources[poly.galaxyOffers[i].buy.res];
@@ -5402,9 +6008,13 @@
     }
 
     function resetMinorTraitSettings(reset) {
-        MinorTraitManager.priorityList = minorTraits.map(trait => new MinorTrait(trait));
+        MinorTraitManager.priorityList = Object.entries(game.traits)
+          .filter(([id, trait]) => trait.type === 'minor' || id === 'mastery' || id === 'fortify')
+          .map(([id, trait]) => new MinorTrait(id));
+
         let def = {
             autoMinorTrait: false,
+            shifterGenus: "ignore",
         };
 
         for (let i = 0; i < MinorTraitManager.priorityList.length; i++) {
@@ -5456,8 +6066,8 @@
         setBreakpoints(jobs.CrystalMiner, 2, 5, 0);
         setBreakpoints(jobs.Scavenger, 0, 0, 0);
 
-        setBreakpoints(jobs.Colonist, 0, 0, -1);
-        //setBreakpoints(jobs.TitanColonist, 0, 0, -1);
+        setBreakpoints(jobs.Colonist, -1, -1, -1);
+        setBreakpoints(jobs.TitanColonist, -1, -1, -1);
         setBreakpoints(jobs.Miner, 3, 5, -1);
         setBreakpoints(jobs.CoalMiner, 2, 4, -1);
         setBreakpoints(jobs.CementWorker, 4, 8, -1);
@@ -5476,6 +6086,7 @@
 
     function resetWeightingSettings(reset) {
         let def = {
+            buildingBuildIfStorageFull: false,
             buildingWeightingNew: 3,
             buildingWeightingUselessPowerPlant: 0.01,
             buildingWeightingNeedfulPowerPlant: 3,
@@ -5506,7 +6117,6 @@
         let def = {
             autoBuild: false,
             autoPower: false,
-            buildingBuildIfStorageFull: false,
             buildingsIgnoreZeroRate: false,
             buildingsLimitPowered: false,
             buildingShrineType: "know",
@@ -5570,10 +6180,38 @@
         setProject("Nexus", true, -1, 1);
         setProject("RoidEject", true, -1, 1);
         setProject("ManaSyphon", false, 79, 1);
-        //setProject("Depot", true, -1, 1);
+        setProject("Depot", true, -1, 1);
 
         applySettings(def, reset);
         ProjectManager.sortByPriority();
+    }
+
+    function resetMagicSettings(reset) {
+        AlchemyManager.priorityList = Object.values(resources).filter(r => AlchemyManager.transmuteTier(r) > 0);
+        let def = {
+            autoAlchemy: false,
+            autoPylon: false,
+            magicAlchemyManaUse: 0.5,
+            productionRitualManaUse: 0.5,
+        }
+
+        // Alchemy
+        for (let i = 0; i < AlchemyManager.priorityList.length; i++) {
+            let resource = AlchemyManager.priorityList[i];
+            let id = resource.id;
+
+            def['res_alchemy_' + id] = true; // resEnabled
+            def['res_alchemy_w_' + id] = 0; // resWeighting
+        }
+
+        // Pylon
+        for (let spell of Object.values(RitualManager.Productions)) {
+            def['spell_w_' + spell.id] = 100; // weighting
+        }
+        def['spell_w_hunting'] = 10;
+        def['spell_w_farmer'] = 1;
+
+        applySettings(def, reset);
     }
 
     function resetProductionSettings(reset) {
@@ -5584,10 +6222,8 @@
             autoCraft: false,
             autoFactory: false,
             autoMiningDroid: false,
-            autoPylon: false,
             productionChrysotileWeight: 2,
             productionFoundryWeighting: "demanded",
-            productionRitualManaUse: 0.5,
             productionSmelting: "required",
             productionSmeltingIridium: 0.5,
             productionFactoryMinIngredients: 0.001,
@@ -5608,14 +6244,7 @@
         setFoundryProduct("Aerogel", true, 3, 0);
         setFoundryProduct("Nanoweave", true, 10, 0);
         setFoundryProduct("Scarletite", true, 1, 0);
-        //setFoundryProduct("Quantium", true, 1, 0);
-
-        // Pylon
-        for (let spell of Object.values(RitualManager.Productions)) {
-            def['spell_w_' + spell.id] = 100; // weighting
-        }
-        def['spell_w_hunting'] = 10;
-        def['spell_w_farmer'] = 1;
+        setFoundryProduct("Quantium", true, 1, 0);
 
         // Smelter
         Object.values(SmelterManager.Fuels).forEach((fuel, i) => {
@@ -5654,8 +6283,17 @@
         TriggerManager.priorityList = [];
     }
 
+    function resetTriggerSettings(reset) {
+        let def = {
+            autoTrigger: false,
+        }
+
+        applySettings(def, reset);
+    }
+
     function resetLoggingSettings(reset) {
         let def = {
+            hellTurnOffLogMessages: true,
             logFilter: "",
             logEnabled: true,
         }
@@ -5679,13 +6317,37 @@
     function resetFleetSettings(reset) {
         let def = {
             autoFleet: false,
+            fleetOuterShips: "custom",
+            fleetOuterCrew: 30,
             fleetMaxCover: true,
             fleetEmbassyKnowledge: 6000000,
             fleetAlienGiftKnowledge: 6500000,
             fleetAlien2Knowledge: 8500000,
             fleetChthonianLoses: "low",
 
-            // Default regions priority
+            // Default outer regions weighting
+            fleet_outer_pr_spc_moon: 1, // Iridium
+            fleet_outer_pr_spc_red: 3, // Titanium
+            fleet_outer_pr_spc_hell: 0,
+            fleet_outer_pr_spc_gas: 0,
+            fleet_outer_pr_spc_gas_moon: 0,
+            fleet_outer_pr_spc_belt: 1, // Iridium
+            fleet_outer_pr_spc_dwarf: 0,
+            fleet_outer_pr_spc_titan: 5, // Adamantite
+            fleet_outer_pr_spc_enceladus: 3, // Quantium
+            fleet_outer_pr_spc_triton: 10, // Encrypted data
+            fleet_outer_pr_spc_kuiper: 5, // Orichalcum
+            fleet_outer_pr_spc_eris: 0,
+
+            // Default outer ship
+            fleet_outer_class: 'corvette',
+            fleet_outer_armor: 'neutronium',
+            fleet_outer_weapon: 'plasma',
+            fleet_outer_engine: 'ion',
+            fleet_outer_power: 'fission',
+            fleet_outer_sensor: 'lidar',
+
+            // Default andromeda regions priority
             fleet_pr_gxy_stargate: 0,
             fleet_pr_gxy_alien2: 1,
             fleet_pr_gxy_alien1: 2,
@@ -5723,21 +6385,44 @@
     }
 
     function resetEjectorSettings(reset) {
+        if (game.global.race.universe === "magic") {
+            EjectManager.priorityList = Object.values(resources)
+              .filter(r => EjectManager.isConsumable(r))
+              .sort((a, b) => b.atomicMass - a.atomicMass);
+        } else {
+            EjectManager.priorityList = Object.values(resources)
+              .filter(r => EjectManager.isConsumable(r) && r !== resources.Elerium && r !== resources.Infernite)
+              .sort((a, b) => b.atomicMass - a.atomicMass);
+            EjectManager.priorityList.unshift(resources.Infernite);
+            EjectManager.priorityList.unshift(resources.Elerium);
+        }
+
+        SupplyManager.priorityList = Object.values(resources)
+          .filter(r => SupplyManager.isConsumable(r))
+          .sort((a, b) => SupplyManager.supplyIn(b.id) - SupplyManager.supplyIn(a.id));
+
+        NaniteManager.priorityList = Object.values(resources)
+          .filter(r => NaniteManager.isConsumable(r))
+          .sort((a, b) => b.atomicMass - a.atomicMass);
+
         let def = {
             autoEject: false,
             autoSupply: false,
+            autoNanite: false,
             ejectMode: "cap",
             supplyMode: "mixed",
+            naniteMode: "full",
             prestigeWhiteholeStabiliseMass: true,
         }
 
-        for (let i = 0; i < resourcesByAtomicMass.length; i++) {
-            let resource = resourcesByAtomicMass[i];
-            def['res_eject' + resource.id] = resource.isTradable(); // ejectEnabled
+        for (let resource of EjectManager.priorityList) {
+            def['res_eject' + resource.id] = resource.isTradable();
         }
-        for (let i = 0; i < resourcesBySupplyValue.length; i++) {
-            let resource = resourcesBySupplyValue[i];
-            def['res_supply' + resource.id] = resource.isTradable(); // supplyEnabled
+        for (let resource of SupplyManager.priorityList) {
+            def['res_supply' + resource.id] = resource.isTradable();
+        }
+        for (let resource of NaniteManager.priorityList) {
+            def['res_nanite' + resource.id] = resource.isTradable();
         }
 
         def['res_eject' + resources.Elerium.id] = true;
@@ -5802,6 +6487,7 @@
         resetResearchSettings(false);
         resetProjectSettings(false);
         resetJobSettings(false);
+        resetMagicSettings(false);
         resetProductionSettings(false);
         resetStorageSettings(false);
         resetGeneralSettings(false);
@@ -5809,6 +6495,7 @@
         resetEjectorSettings(false);
         resetPlanetSettings(false);
         resetLoggingSettings(false);
+        resetTriggerSettings(false);
         resetMinorTraitSettings(false);
 
         // Validate overrides types, and fix if needed
@@ -5852,20 +6539,34 @@
         migrateSetting("mechSaveSupply", "mechSaveSupplyRatio", (v) => v ? 1 : 0);
         migrateSetting("foreignProtectSoldiers", "foreignProtect", (v) => v ? "always" : "never");
         migrateSetting("prestigeWhiteholeEjectExcess", "ejectMode", (v) => v ? "mixed" : "cap");
-
+        migrateSetting("hellHandlePatrolCount", "autoHell", (v) => v, true);
+        migrateSetting("unificationRequest", "prioritizeUnify", (v) => v ? "savereq" : "ignore");
+        migrateSetting("queueRequest", "prioritizeQueue", (v) => v ? "savereq" : "ignore");
+        migrateSetting("triggerRequest", "prioritizeTriggers", (v) => v ? "savereq" : "ignore");
         // Migrate setting as override, in case if someone actualy use it
+        if (settingsRaw.hasOwnProperty("genesAssembleGeneAlways")) {
+            if (settingsRaw.overrides.genesAssembleGeneAlways) {
+                settingsRaw.overrides.autoAssembleGene = settingsRaw.overrides.genesAssembleGeneAlways.concat(settingsRaw.overrides.autoAssembleGene ?? []);
+            }
+            if (!settingsRaw.genesAssembleGeneAlways) {
+                settingsRaw.overrides.autoAssembleGene = settingsRaw.overrides.autoAssembleGene ?? [];
+                settingsRaw.overrides.autoAssembleGene.push({"type1":"ResearchComplete","arg1":"tech-dna_sequencer","type2":"Boolean","arg2":true,"cmp":"==","ret":false});
+            }
+        }
         if (settingsRaw.hasOwnProperty("prestigeWhiteholeEjectAllCount") && settingsRaw.prestigeWhiteholeEjectAllCount <= 20) {
             settingsRaw.overrides.ejectMode = settingsRaw.overrides.ejectMode ?? [];
             settingsRaw.overrides.ejectMode.push({"type1":"BuildingCount","arg1":"interstellar-mass_ejector","type2":"Number","arg2":settingsRaw.prestigeWhiteholeEjectAllCount,"cmp":">=","ret":"all"});
         }
         // Remove deprecated post-overrides settings
-        ["prestigeWhiteholeEjectAllCount", "prestigeWhiteholeDecayRate"]
+        ["prestigeWhiteholeEjectAllCount", "prestigeWhiteholeDecayRate", "genesAssembleGeneAlways", "buildingsConflictQueue", "buildingsConflictRQueue", "buildingsConflictPQueue"]
           .forEach(id => { delete settingsRaw[id], delete settingsRaw.overrides[id] });
     }
 
-    function migrateSetting(oldSetting, newSetting, mapCb) {
+    function migrateSetting(oldSetting, newSetting, mapCb, keepOldValue) {
         if (settingsRaw.hasOwnProperty(oldSetting)) {
-            settingsRaw[newSetting] = mapCb(settingsRaw[oldSetting]);
+            if (!keepOldValue) {
+                settingsRaw[newSetting] = mapCb(settingsRaw[oldSetting]);
+            }
             delete settingsRaw[oldSetting];
         }
         if (settingsRaw.overrides.hasOwnProperty(oldSetting)) {
@@ -5987,18 +6688,11 @@
         let maxDNA = 0;
 
         for (let i = 0; i < state.evolutionTarget.evolutionTree.length; i++) {
-            const evolution = state.evolutionTarget.evolutionTree[i];
-            const costs = evolution.definition.cost;
+            let evolution = state.evolutionTarget.evolutionTree[i];
+            let costs = poly.adjustCosts(evolution.definition);
 
-            if (costs["RNA"]) {
-                let rnaCost = poly.adjustCosts(Number(evolution.definition.cost["RNA"]()) || 0);
-                maxRNA = Math.max(maxRNA, rnaCost);
-            }
-
-            if (costs["DNA"]) {
-                let dnaCost = poly.adjustCosts(Number(evolution.definition.cost["DNA"]()) || 0);
-                maxDNA = Math.max(maxDNA, dnaCost);
-            }
+            maxRNA = Math.max(maxRNA, Number(costs["RNA"]?.() ?? 0));
+            maxDNA = Math.max(maxDNA, Number(costs["DNA"]?.() ?? 0));
         }
 
         // Gather some resources and evolve
@@ -6210,7 +6904,7 @@
                 let quantity = craftable.cost[res];
 
                 if (craftable.isDemanded()) { // Craftable demanded, get as much as we can
-                    afforableAmount = Math.min(afforableAmount, resource.currentQuantity / quantity);
+                    afforableAmount = Math.min(afforableAmount, resource.spareQuantity / quantity);
                 } else if (resource.isDemanded() || (!resource.isCapped() && resource.usefulRatio < craftable.usefulRatio)) { // Don't use demanded resources
                     continue craftLoop;
                 } else if (craftable.currentQuantity < craftable.storageRequired) { // Craftable is required, use all spare resources
@@ -6344,7 +7038,7 @@
             }
 
             // Don't kill spies doing other things if we already can purchase
-            if (m.purchaseMoney > 0 && espionageMission === m.Types.Purchase && foreign.gov.spy < 3 && !game.global.race['elusive']) {
+            if (m.purchaseMoney > 0 && m.purchaseForeigngs.includes(foreign.id) && espionageMission === m.Types.Purchase && foreign.gov.spy < 3 && !game.global.race['elusive']) {
                 continue;
             }
 
@@ -6389,7 +7083,7 @@
         let maxBattalion = new Array(5).fill(m.availableGarrison);
         let requiredBattalion = m.maxCityGarrison;
         if (protectSoldiers) {
-            let armor = ((game.global.race.scales ? 2 : 0) + (game.global.tech.armor ?? 0)) * (game.global.race.armored ? 4 : 1) - (game.global.race.frail ? 1 : 0);
+            let armor = (traitVal('scales', 0) + (game.global.tech.armor ?? 0)) / traitVal('armored', 0, '-') - traitVal('frail', 0);
             let protectedBattalion = [5, 10, 25, 50, 999].map((cap, tactic) => (armor >= cap ? Number.MAX_SAFE_INTEGER : ((5 - tactic) * (armor + (game.global.city.ptrait === 'rage' ? 1 : 2)) - 1)));
             maxBattalion = protectedBattalion.map(soldiers => Math.min(soldiers, m.availableGarrison));
             requiredBattalion = 0;
@@ -6412,8 +7106,8 @@
             }
         }
 
-        // Nothing to attack
-        if (!currentTarget) {
+        // Nothing to attack, or we want to occupy, and need more soldiers
+        if (!currentTarget || (requiredTactic === 4 && m.availableGarrison < getOccCosts() * 2 && m.availableGarrison < m.maxCityGarrison)) {
             return;
         }
 
@@ -6481,31 +7175,6 @@
         if (!m._garrisonVue || !m._hellVue) {
             return;
         }
-
-        if (settings.hellTurnOffLogMessages) {
-            if (game.global.portal.fortress.notify === "Yes") {
-                $("#fort .b-checkbox").eq(0).click();
-            }
-            if (game.global.portal.fortress.s_ntfy === "Yes") {
-                $("#fort .b-checkbox").eq(1).click();
-            }
-        }
-
-        // Determine the number of powered attractors
-        // The goal is to keep threat in the desired range
-        // If threat is larger than the configured top value, turn all attractors off
-        // If threat is lower than the bottom value, turn all attractors on
-        // Linear in between
-        m.hellAttractorMax = 0;
-        if (buildings.BadlandsAttractor.isSmartManaged() && game.global.portal.attractor && game.global.portal.fortress.threat < settings.hellAttractorTopThreat && m.hellAssigned > 0) {
-            m.hellAttractorMax = game.global.portal.attractor.count;
-            if (game.global.portal.fortress.threat > settings.hellAttractorBottomThreat && settings.hellAttractorTopThreat > settings.hellAttractorBottomThreat) {
-                m.hellAttractorMax = Math.floor(m.hellAttractorMax * (settings.hellAttractorTopThreat - game.global.portal.fortress.threat)
-                                                    / (settings.hellAttractorTopThreat - settings.hellAttractorBottomThreat));
-            }
-        }
-
-        if (!settings.hellHandlePatrolCount) { return; }
 
         // Determine Patrol size and count
         let targetHellSoldiers = 0;
@@ -6616,7 +7285,7 @@
             return;
         }
 
-        let farmerIndex = isDemonRace() || isHunterRace() ? jobList.indexOf(jobs.Hunter) : jobList.indexOf(jobs.Farmer);
+        let farmerIndex = Math.max(jobList.indexOf(jobs.Hunter), jobList.indexOf(jobs.Farmer));
         let lumberjackIndex = isDemonRace() && isLumberRace() ? farmerIndex : jobList.indexOf(jobs.Lumberjack);
         let quarryWorkerIndex = jobList.indexOf(jobs.QuarryWorker);
         let crystalMinerIndex = jobList.indexOf(jobs.CrystalMiner);
@@ -6634,13 +7303,13 @@
         // First figure out how many farmers are required
         let minFarmers = 0;
         if (farmerIndex !== -1) {
-            let foodRateOfChange = resources.Food.calculateRateOfChange({buy: true});
+            let foodRateOfChange = resources.Food.rateOfChange;
             let minFoodStorage = resources.Food.maxQuantity * 0.2;
             let maxFoodStorage = resources.Food.maxQuantity * 0.6;
             if (game.global.race['ravenous']) { // Ravenous hunger
                 minFoodStorage = resources.Population.currentQuantity * 1.5;
                 maxFoodStorage = resources.Population.currentQuantity * 3;
-                foodRateOfChange += Math.max(resources.Food.currentQuantity / 3, 0);
+                foodRateOfChange += Math.max(resources.Food.currentQuantity / traitVal('ravenous', 1), 0);
             }
             if (game.global.race['carnivore']) { // Food spoilage
                 minFoodStorage = resources.Population.currentQuantity;
@@ -6701,8 +7370,7 @@
         if (settings.autoCraftsmen){
             // Taken from game source, no idea what this "140" means.
             let speed = game.global.genes['crafty'] ? 2 : 1;
-            let craft_costs = game.global.race['resourceful'] ? 0.9 : 1;
-            let costMod = speed * craft_costs / 140;
+            let costMod = speed * traitVal('resourceful', 0, '-') / 140;
 
             // Get list of craftabe resources
             let availableJobs = [];
@@ -6721,7 +7389,7 @@
                         afforableAmount = 0;
                         break;
                     } else {
-                        afforableAmount = Math.min(afforableAmount, reqResource.currentQuantity / (resource.cost[res] * costMod) / 2 * ticksPerSecond());
+                        afforableAmount = Math.min(afforableAmount, (resource.rateOfChange + reqResource.currentQuantity) / (resource.cost[res] * costMod) / 2 * ticksPerSecond());
                     }
                 }
 
@@ -6752,8 +7420,8 @@
                 }
             }
 
-            if (settings.productionFoundryWeighting === "buildings" && state.otherTargets.length > 0) {
-                let scaledWeightings = Object.fromEntries(availableJobs.map(job => [job.id, (state.otherTargets.find(building => building.cost[job.resource.id] > job.resource.currentQuantity)?.weighting ?? 0) * job.resource.craftWeighting]));
+            if (settings.productionFoundryWeighting === "buildings" && state.unlockedBuildings.length > 0) {
+                let scaledWeightings = Object.fromEntries(availableJobs.map(job => [job.id, (state.unlockedBuildings.find(building => building.cost[job.resource.id] > job.resource.currentQuantity)?.weighting ?? 0) * job.resource.craftWeighting]));
                 availableJobs.sort((a, b) => (a.resource.currentQuantity / scaledWeightings[a.id]) - (b.resource.currentQuantity / scaledWeightings[b.id]));
             } else {
                 availableJobs.sort((a, b) => (a.resource.currentQuantity / a.resource.craftWeighting) - (b.resource.currentQuantity / b.resource.craftWeighting));
@@ -6823,8 +7491,8 @@
 
                 if (job === jobs.Entertainer && !haveTech("superstar")) {
                     let taxBuffer = (settings.autoTax || haveTask("tax")) && game.global.civic.taxes.tax_rate < poly.taxCap(false) ? 1 : 0;
-                    let entertainerMorale = game.global.tech['theatre'] + (game.global.race['musical'] ? 1 : 0);
-                    let moraleExtra = game.global.city.morale.potential - game.global.city.morale.cap - taxBuffer;
+                    let entertainerMorale = (game.global.tech['theatre'] + traitVal('musical', 0)) * traitVal('emotionless', 0, '-');
+                    let moraleExtra = resources.Morale.rateOfChange - resources.Morale.maxQuantity - taxBuffer;
                     let entertainersDelta = Math.floor(moraleExtra / entertainerMorale);
                     jobsToAssign = Math.min(jobsToAssign, job.count - entertainersDelta);
                 }
@@ -6858,9 +7526,9 @@
                     jobsToAssign = Math.min(jobsToAssign, resources.Crystal.getBusyWorkers("job_crystal_miner", jobs.CrystalMiner.count));
                 }
                 if (job === jobs.CementWorker) {
-                    let stoneRateOfChange = resources.Stone.calculateRateOfChange({buy: true}) + (job.count * 3) - 5;
+                    let stoneRateOfChange = resources.Stone.rateOfChange + (job.count * 3) - 5;
                     if (game.global.race['smoldering'] && settings.autoQuarry) {
-                        stoneRateOfChange += resources.Chrysotile.calculateRateOfChange({buy: true});
+                        stoneRateOfChange += resources.Chrysotile.rateOfChange;
                     }
                     jobsToAssign = Math.min(jobsToAssign, Math.floor(stoneRateOfChange / 3));
                     if (!resources.Cement.isUseful()) {
@@ -6882,6 +7550,12 @@
             if (availableEmployees <= 0) {
                 break;
             }
+        }
+
+        // Avoid adjusting both tax and entertainers at same tick, it can cause flickering
+        let entertainerIndex = jobList.indexOf(jobs.Entertainer);
+        if (entertainerIndex !== -1 && jobAdjustments[entertainerIndex] !== 0) {
+            resources.Morale.incomeAdusted = true;
         }
 
         let splitJobs = [];
@@ -6972,7 +7646,7 @@
     }
 
     function autoTax() {
-        if (haveTask("tax")) {
+        if (resources.Morale.incomeAdusted || haveTask("tax")) {
             return;
         }
 
@@ -6982,9 +7656,9 @@
         }
 
         let currentTaxRate = game.global.civic.taxes.tax_rate;
-        let currentMorale = game.global.city.morale.current;
-        let realMorale = game.global.city.morale.potential;
-        let maxMorale = game.global.city.morale.cap;
+        let currentMorale = resources.Morale.currentQuantity;
+        let realMorale = resources.Morale.rateOfChange;
+        let maxMorale = resources.Morale.maxQuantity;
         let minMorale = settings.generalMinimumMorale;
 
         let maxTaxRate = poly.taxCap(false);
@@ -7013,14 +7687,44 @@
               (currentTaxRate < optimalTax || currentMorale >= maxMorale + 1 || (realMorale >= currentMorale + 1 && optimalTax >= 20))) {
             resetMultiplier();
             taxVue.add();
+            resources.Morale.incomeAdusted = true;
         }
 
         if (currentTaxRate > minTaxRate && currentMorale < maxMorale &&
               (currentTaxRate > optimalTax || currentMorale < minMorale)) {
             resetMultiplier();
             taxVue.sub();
+            resources.Morale.incomeAdusted = true;
         }
 
+    }
+
+    function autoAlchemy() {
+        let m = AlchemyManager;
+        if (!m.isUnlocked()) {
+            return;
+        }
+
+        let fullList = m.managedPriorityList();
+        let adjustAlchemy = Object.fromEntries(fullList.map(res => [res.id, m.currentCount(res.id) * -1]));
+
+        // Calculate required transmutations
+        if (!resources.Crystal.isDemanded()) {
+            let activeList = fullList.filter(res => m.resWeighting(res.id) > 0 && res.isUseful());
+            let totalWeigthing = 0, currentTransmute = 0;
+            for (let res of activeList) {
+                totalWeigthing += m.resWeighting(res.id);
+                currentTransmute += m.currentCount(res.id);
+            }
+            let manaAvailable = (currentTransmute + resources.Mana.rateOfChange) * settings.magicAlchemyManaUse;
+            let crystalAvailable = currentTransmute / 2 + resources.Crystal.currentQuantity + resources.Crystal.rateOfChange;
+            let maxTransmute = Math.floor(Math.min(manaAvailable, crystalAvailable * 2));
+            activeList.forEach(res => adjustAlchemy[res.id] += Math.floor(maxTransmute * (m.resWeighting(res.id) / totalWeigthing)));
+        }
+
+        // Apply adjustment
+        Object.entries(adjustAlchemy).forEach(([id, delta]) => delta < 0 && m.transmuteLess(id, delta * -1));
+        Object.entries(adjustAlchemy).forEach(([id, delta]) => delta > 0 && m.transmuteMore(id, delta));
     }
 
     function autoPylon() {
@@ -7033,13 +7737,8 @@
         let spells = Object.values(m.Productions).filter(spell => spell.isUnlocked());
 
         // Init adjustment, and sort groups by priorities
-        let pylonAdjustments = {};
-        for (let spell of spells) {
-            pylonAdjustments[spell.id] = 0;
-            resources.Mana.rateOfChange += m.manaCost(m.currentSpells(spell));
-        }
+        let pylonAdjustments = Object.fromEntries(spells.map(spell => [spell.id, 0]));
         let manaToUse = resources.Mana.rateOfChange * (resources.Mana.storageRatio > 0.99 ? 1 : settings.productionRitualManaUse);
-
         let usableMana = manaToUse;
 
         let spellSorter = (a, b) => ((pylonAdjustments[a.id] / a.weighting) - (pylonAdjustments[b.id] / b.weighting)) || b.weighting - a.weighting;
@@ -7048,11 +7747,12 @@
         while(remainingSpells.length > 0) {
             let spell = remainingSpells.shift();
             let amount = pylonAdjustments[spell.id];
-            let cost = m.manaCost(amount + 1) - m.manaCost(amount);
+            let cost = m.costStep(amount);
 
             if (cost <= manaToUse) {
                 pylonAdjustments[spell.id] = amount + 1;
                 manaToUse -= cost;
+                // Insert spell back to array keeping it sorted
                 for (let i = remainingSpells.length - 1; i >= 0; i--) {
                     if (spellSorter(spell, remainingSpells[i]) > 0) {
                         remainingSpells.splice(i + 1, 0, spell);
@@ -7092,21 +7792,18 @@
 
     function autoSmelter() {
         // No smelter; no auto smelter. No soup for you.
-        if (game.global.race['steelen'] || !SmelterManager.initIndustry()) {
+        let m = SmelterManager;
+        if (game.global.race['steelen'] || !m.initIndustry()) {
             return;
         }
 
-        let smelterIronCount = SmelterManager.smeltingCount(SmelterManager.Productions.Iron);
-        let smelterSteelCount = SmelterManager.smeltingCount(SmelterManager.Productions.Steel);
-        let maxAllowedSteel = SmelterManager.maxOperating();
-
-        let steelAdjust = 0;
-
         // Only adjust fuels if race does not have forge trait which means they don't require smelter fuel
+        let totalSmelters = m.maxOperating();
+        let fuelRemoved = 0;
         if (!game.global.race['forge']) {
-            let remainingSmelters = SmelterManager.maxOperating();
+            let remainingSmelters = totalSmelters;
 
-            let fuels = SmelterManager.managedFuelPriorityList();
+            let fuels = m.managedFuelPriorityList();
             let fuelAdjust = {};
             for (let i = 0; i < fuels.length; i++) {
                 let fuel = fuels[i];
@@ -7117,62 +7814,80 @@
                 let maxAllowedUnits = remainingSmelters;
 
                 // Adjust Inferno to Oil ratio for better efficiency and cost
-                if (fuel === SmelterManager.Fuels.Inferno && fuels[i+1] === SmelterManager.Fuels.Oil && remainingSmelters > 75) {
+                if (fuel === m.Fuels.Inferno && fuels[i+1] === m.Fuels.Oil && remainingSmelters > 75) {
                     maxAllowedUnits = Math.floor(0.5 * remainingSmelters + 37.5);
                 }
 
-                fuel.cost.forEach(productionCost => {
+                for (let productionCost of fuel.cost) {
                     let resource = productionCost.resource;
-
-                    let remainingRateOfChange = resource.calculateRateOfChange({buy: true}) + (SmelterManager.fueledCount(fuel) * productionCost.quantity);
-                    // No need to preserve minimum income when storage is full
-                    if (resource.storageRatio < 0.98) {
-                        remainingRateOfChange -= productionCost.minRateOfChange;
-                    }
-
                     if (resource.storageRatio < 0.8 || resource === resources.StarPower){
+                        let remainingRateOfChange = resource.rateOfChange + (m.fueledCount(fuel) * productionCost.quantity);
+                        // No need to preserve minimum income when storage is full
+                        if (resource.storageRatio < 0.98) {
+                            remainingRateOfChange -= productionCost.minRateOfChange;
+                        }
+
                         let affordableAmount = Math.max(0, Math.floor(remainingRateOfChange / productionCost.quantity));
                         maxAllowedUnits = Math.min(maxAllowedUnits, affordableAmount);
                     }
-                });
+                }
 
                 remainingSmelters -= maxAllowedUnits;
-                fuelAdjust[fuel.id] = maxAllowedUnits - SmelterManager.fueledCount(fuel);
+                fuelAdjust[fuel.id] = maxAllowedUnits - m.fueledCount(fuel);
             }
 
-            for (let i = 0; i < fuels.length; i++) {
-                let fuel = fuels[i];
+            for (let fuel of fuels) {
                 if (fuelAdjust[fuel.id] < 0) {
-                    steelAdjust += fuelAdjust[fuel.id] * -1;
-                    SmelterManager.decreaseFuel(fuel, fuelAdjust[fuel.id] * -1);
+                    fuelRemoved += fuelAdjust[fuel.id] * -1;
+                    m.decreaseFuel(fuel, fuelAdjust[fuel.id] * -1);
                 }
             }
 
-            for (let i = 0; i < fuels.length; i++) {
-                let fuel = fuels[i];
+            for (let fuel of fuels) {
                 if (fuelAdjust[fuel.id] > 0) {
-                    SmelterManager.increaseFuel(fuel, fuelAdjust[fuel.id]);
+                    m.increaseFuel(fuel, fuelAdjust[fuel.id]);
                 }
             }
+            totalSmelters -= remainingSmelters;
+        }
 
-            // Adjusting fuel can move production from iron to steel, we need to account that
-            steelAdjust = Math.max(0, steelAdjust - smelterIronCount);
+        let smelterIronCount = m.smeltingCount(m.Productions.Iron);
+        let smelterSteelCount = m.smeltingCount(m.Productions.Steel);
+        let smelterIridiumCount = m.smeltingCount(m.Productions.Iridium);
+
+        let maxAllowedIridium = m.Productions.Iridium.unlocked && !resources.Iridium.isCapped()
+          ? Math.floor(settings.productionSmeltingIridium * totalSmelters) : 0;
+        let maxAllowedSteel = totalSmelters - smelterIridiumCount;
+
+        let smeltAdjust = {
+            Iridium: maxAllowedIridium - smelterIridiumCount,
+            Steel: smelterIridiumCount - maxAllowedIridium,
+        };
+
+        // Adjusting fuel can move production from steel to iron, we need to account that
+        if (fuelRemoved > smelterIronCount) {
+            let steelRemoved = fuelRemoved - smelterIronCount;
+            if (steelRemoved <= smelterSteelCount) {
+                smeltAdjust.Steel += steelRemoved;
+            } else {
+                smeltAdjust.Steel += smelterSteelCount;
+                //smeltAdjust.Iridium += steelRemoved - smelterSteelCount;
+            }
         }
 
         // We only care about steel. It isn't worth doing a full generic calculation here
         // Just assume that smelters will always be fueled so Iron smelting is unlimited
         // We want to work out the maximum steel smelters that we can have based on our resource consumption
-        let steelSmeltingConsumption = SmelterManager.Productions.Steel.cost;
-        for (let i = 0; i < steelSmeltingConsumption.length; i++) {
-            let productionCost = steelSmeltingConsumption[i];
+        let steelSmeltingConsumption = m.Productions.Steel.cost;
+        for (let productionCost of steelSmeltingConsumption) {
             let resource = productionCost.resource;
-
-            let remainingRateOfChange = resource.calculateRateOfChange({buy: true}) + (smelterSteelCount * productionCost.quantity);
-            // No need to preserve minimum income when storage is full
-            if (resource.storageRatio < 0.98) {
-                remainingRateOfChange -= productionCost.minRateOfChange;
-            }
             if (resource.storageRatio < 0.8){
+                let remainingRateOfChange = resource.rateOfChange + (smelterSteelCount * productionCost.quantity);
+                // No need to preserve minimum income when storage is full
+                if (resource.storageRatio < 0.98) {
+                    remainingRateOfChange -= productionCost.minRateOfChange;
+                }
+
                 let affordableAmount = Math.max(0, Math.floor(remainingRateOfChange / productionCost.quantity));
                 maxAllowedSteel = Math.min(maxAllowedSteel, affordableAmount);
             }
@@ -7212,25 +7927,19 @@
 
         // We have more steel than we can afford OR iron income is too low
         if (smelterSteelCount > maxAllowedSteel || smelterSteelCount > 0 && ironWeighting > steelWeighting) {
-            steelAdjust--;
+            smeltAdjust.Steel--;
         }
 
         // We can afford more steel AND either steel income is too low OR both steel and iron full, but we can use steel smelters to increase titanium income
         if (smelterSteelCount < maxAllowedSteel && smelterIronCount > 0 &&
              ((steelWeighting > ironWeighting) ||
               (steelWeighting === 0 && ironWeighting === 0 && resources.Titanium.storageRatio < 0.99 && haveTech("titanium")))) {
-            steelAdjust++;
+            smeltAdjust.Steel++;
         }
 
-        if (steelAdjust > 0) {
-            SmelterManager.increaseSmelting(SmelterManager.Productions.Steel, steelAdjust);
-        }
-        if (steelAdjust < 0) {
-            SmelterManager.increaseSmelting(SmelterManager.Productions.Iron, steelAdjust * -1);
-        }
-
-        // It's possible to also remove steel smelters when when we have nothing to produce, to save some coal
-        // Or even disable them completely. But it doesn't worth it. Let it stay as it is, without jerking around
+        smeltAdjust.Iron = totalSmelters - (smelterIronCount + smelterSteelCount + smeltAdjust.Steel + smelterIridiumCount + smeltAdjust.Iridium);
+        Object.entries(smeltAdjust).forEach(([id, delta]) => delta < 0 && m.decreaseSmelting(id, delta * -1));
+        Object.entries(smeltAdjust).forEach(([id, delta]) => delta > 0 && m.increaseSmelting(id, delta));
     }
 
     function autoFactory() {
@@ -7281,31 +7990,28 @@
                         actualRequiredFactories = 0;
                     }
 
-                    production.cost.forEach(resourceCost => {
+                    for (let resourceCost of production.cost) {
                         if (!resourceCost.resource.isUnlocked()) {
-                            return;
-                        }
-
-                        let previousCost = FactoryManager.currentProduction(production) * resourceCost.quantity;
-                        let currentCost = factoryAdjustments[production.id] * resourceCost.quantity;
-                        let rate = resourceCost.resource.calculateRateOfChange({buy: true}) + previousCost - currentCost;
-                        if (resourceCost.resource.storageRatio < 0.98) {
-                            rate -= resourceCost.minRateOfChange;
-                        }
-                        if (production.resource.isDemanded()) {
-                            rate += resourceCost.resource.currentQuantity;
-                        }
-
-                        // If we can't afford it (it's above our minimum rate of change) then remove a factory
-                        // UNLESS we've got over 80% storage full. In that case lets go wild!
-                        if (resourceCost.resource.storageRatio < 0.8){
-                            let affordableAmount = Math.floor(rate / resourceCost.quantity);
-                            actualRequiredFactories = Math.min(actualRequiredFactories, affordableAmount);
+                            continue;
                         }
                         if (!production.resource.isDemanded() && ((!settings.useDemanded && resourceCost.resource.isDemanded()) || resourceCost.resource.storageRatio < settings.productionFactoryMinIngredients)) {
                             actualRequiredFactories = 0;
+                            break;
                         }
-                    });
+                        if (resourceCost.resource.storageRatio < 0.8){
+                            let previousCost = FactoryManager.currentProduction(production) * resourceCost.quantity;
+                            let currentCost = factoryAdjustments[production.id] * resourceCost.quantity;
+                            let rate = resourceCost.resource.rateOfChange + previousCost - currentCost;
+                            if (resourceCost.resource.storageRatio < 0.98) {
+                                rate -= resourceCost.minRateOfChange;
+                            }
+                            if (production.resource.isDemanded()) {
+                                rate += resourceCost.resource.currentQuantity;
+                            }
+                            let affordableAmount = Math.floor(rate / resourceCost.quantity);
+                            actualRequiredFactories = Math.min(actualRequiredFactories, affordableAmount);
+                        }
+                    }
 
                     // If we're going for bioseed - try to balance neutronium\nanotubes ratio
                     if (settings.prestigeBioseedConstruct && settings.prestigeType === "bioseed" && production === FactoryManager.Productions.NanoTube && resources.Neutronium.currentQuantity < (game.global.race['truepath'] ? 500 : 250)) {
@@ -7450,30 +8156,26 @@
 
         let sortedFuel = Object.values(GrapheneManager.Fuels).sort((a, b) => b.cost.resource.storageRatio < 0.995 || a.cost.resource.storageRatio < 0.995 ? b.cost.resource.storageRatio - a.cost.resource.storageRatio : b.cost.resource.rateOfChange - a.cost.resource.rateOfChange);
         for (let fuel of sortedFuel) {
-            let resource = fuel.cost.resource;
-
             if (remainingPlants === 0) {
                 return;
             }
+
+            let resource = fuel.cost.resource;
             if (!resource.isUnlocked()) {
                 continue;
             }
 
             let currentFuelCount = GrapheneManager.fueledCount(fuel);
-            let rateOfChange = resource.calculateRateOfChange({buy: true}) + fuel.cost.quantity * GrapheneManager.fueledCount(fuel);
-            if (resource.storageRatio < 0.98) {
-                rateOfChange -= fuel.cost.minRateOfChange;
-            }
-
             let maxFueledForConsumption = remainingPlants;
-            if (resource.storageRatio < 0.8){
-                let affordableAmount = Math.floor(rateOfChange / fuel.cost.quantity);
-                maxFueledForConsumption = Math.max(Math.min(maxFueledForConsumption, affordableAmount), 0);
-            }
-
-            // Only produce graphene above cap if there's working BlackholeMassEjector, otherwise there's no use for excesses for sure, and we don't need to waste fuel
             if (!resources.Graphene.isUseful()) {
                 maxFueledForConsumption = 0;
+            } else if (resource.storageRatio < 0.8){
+                let rateOfChange = resource.rateOfChange + fuel.cost.quantity * currentFuelCount;
+                if (resource.storageRatio < 0.98) {
+                    rateOfChange -= fuel.cost.minRateOfChange;
+                }
+                let affordableAmount = Math.floor(rateOfChange / fuel.cost.quantity);
+                maxFueledForConsumption = Math.max(Math.min(maxFueledForConsumption, affordableAmount), 0);
             }
 
             let deltaFuel = maxFueledForConsumption - currentFuelCount;
@@ -7485,140 +8187,66 @@
         }
     }
 
-    const supplyRatios = {
-        cap: [0.975],
-        excess: [-1],
-        all: [0.045],
-        mixed: [0.975, -1],
-        full: [0.975, -1, 0.045],
-    }
-    function autoSupply() {
-        if (buildings.LakeTransport.stateOnCount < 1 || buildings.LakeBireme.stateOnCount < 1) {
+    // TODO: Allow configuring priorities between eject\supply\nanite
+    function autoConsume(m) {
+        if (!m.initIndustry()) {
             return;
         }
 
-        let transportAdjustments = {};
-        for (let i = 0; i < resourcesBySupplyValue.length; i++) {
-            transportAdjustments[resourcesBySupplyValue[i].id] = 0;
-        }
+        let consumeList = m.managedPriorityList();
+        let consumeAdjustments = Object.fromEntries(consumeList.map(res => [res.id, 0]));
 
-        if (resources.Supply.storageRatio < 1) {
-            let remaining = buildings.LakeTransport.stateOnCount * 5;
-            for (let supplyRatio of supplyRatios[settings.supplyMode]) {
-                for (let i = 0; i < resourcesBySupplyValue.length; i++) {
+        if (m.isUseful()) {
+            let remaining = m.maxConsume();
+            for (let consumeRatio of m.useRatio()) {
+                for (let resource of consumeList) {
                     if (remaining <= 0) {
                         break;
                     }
 
-                    let resource = resourcesBySupplyValue[i];
-                    if (!resource.supplyEnabled || resource.isDemanded()) {
+                    if (!m.resEnabled(resource.id) || resource.isDemanded()) {
                         continue;
                     }
 
-                    let keepRatio = supplyRatio;
+                    let keepRatio = consumeRatio;
                     if (keepRatio === -1) { // Excess resources
                         if (resource.storageRequired <= 1) { // Resource not used, can't determine excess
                             continue;
                         }
-                        keepRatio = Math.max(keepRatio, resource.storageRequired / resource.maxQuantity + 0.005);
+                        keepRatio = Math.max(keepRatio, resource.storageRequired / resource.maxQuantity * m.storageShift);
                     }
-                    keepRatio = Math.max(keepRatio, resource.requestedQuantity / resource.maxQuantity + 0.005);
+                    if (resource === resources.Food && !isHungryRace()) { // Preserve food
+                        keepRatio = Math.max(keepRatio, 0.25);
+                    }
+                    keepRatio = Math.max(keepRatio, resource.requestedQuantity / resource.maxQuantity * m.storageShift);
 
-                    let allowedSupply = transportAdjustments[resource.id];
-                    remaining += transportAdjustments[resource.id];
+                    let allowedConsume = consumeAdjustments[resource.id];
+                    remaining += consumeAdjustments[resource.id];
 
                     if (resource.isCraftable()) {
-                        if (resource.currentQuantity > (resource.storageRequired * 1.005)) {
-                            allowedSupply = Math.max(0, allowedSupply, Math.floor((resource.currentQuantity - (resource.storageRequired * 1.005)) / resource.supplyVolume));
+                        if (resource.currentQuantity > (resource.storageRequired * m.storageShift)) {
+                            let maxConsume = Math.floor(m.maxConsumeCraftable(resource));
+                            allowedConsume = Math.max(0, allowedConsume, maxConsume);
                         }
                     } else {
                         if (resource.storageRatio > keepRatio + 0.01) {
-                            allowedSupply = Math.max(1, allowedSupply, Math.ceil(resource.calculateRateOfChange({buy: true}) / resource.supplyVolume), Math.ceil((resource.storageRatio - keepRatio) * resource.maxQuantity / resource.supplyVolume));
+                            let maxConsume = Math.ceil(m.maxConsumeForRatio(resource, keepRatio));
+                            allowedConsume = Math.max(1, allowedConsume, maxConsume);
                         } else if (resource.storageRatio > keepRatio) {
-                            allowedSupply = Math.max(0, allowedSupply, Math.floor(resource.calculateRateOfChange({buy: true}) / resource.supplyVolume));
+                            let maxConsume = Math.floor(m.maxConsumeForRatio(resource, keepRatio));
+                            allowedConsume = Math.max(0, allowedConsume, maxConsume);
                         }
                     }
 
-                    transportAdjustments[resource.id] = Math.min(remaining, allowedSupply);
-                    remaining -= transportAdjustments[resource.id];
+                    consumeAdjustments[resource.id] = Math.min(remaining, allowedConsume);
+                    remaining -= consumeAdjustments[resource.id];
                 }
             }
         }
 
-        let transportDeltas = Object.entries(transportAdjustments).map(([id, adjust]) => ({res: resources[id], delta: adjust - game.global.portal.transport.cargo[id]}));
-
-        transportDeltas.forEach(item => item.delta < 0 && item.res.decreaseSupply(item.delta * -1));
-        transportDeltas.forEach(item => item.delta > 0 && item.res.increaseSupply(item.delta));
-    }
-
-    const ejectRatios = {
-        cap: [0.985],
-        excess: [-1],
-        all: [0.055],
-        mixed: [0.985, -1],
-        full: [0.985, -1, 0.055],
-    }
-    function autoEject() {
-        let enabledEjectors = buildings.BlackholeMassEjector.stateOnCount;
-        if (enabledEjectors < 1 || haveTask("trash")) {
-            return;
-        }
-
-        let ejectorAdjustments = {};
-        for (let i = 0; i < resourcesByAtomicMass.length; i++) {
-            ejectorAdjustments[resourcesByAtomicMass[i].id] = 0;
-        }
-
-
-        let remaining = enabledEjectors * 1000;
-
-        for (let ejectRatio of ejectRatios[settings.ejectMode]) {
-            for (let i = 0; i < resourcesByAtomicMass.length; i++) {
-                if (remaining <= 0) {
-                    break;
-                }
-
-                let resource = resourcesByAtomicMass[i];
-                if (!resource.ejectEnabled || resource.isDemanded()) {
-                    continue;
-                }
-
-                let keepRatio = ejectRatio;
-                if (keepRatio === -1) { // Excess resources
-                    if (resource.storageRequired <= 1) { // Resource not used, can't determine excess
-                        continue;
-                    }
-                    keepRatio = Math.max(keepRatio, resource.storageRequired / resource.maxQuantity + 0.015);
-                }
-                if (resource === resources.Food && !isHungryRace()) { // Preserve food
-                    keepRatio = Math.max(keepRatio, 0.25);
-                }
-                keepRatio = Math.max(keepRatio, resource.requestedQuantity / resource.maxQuantity + 0.015);
-
-                let allowedEject = ejectorAdjustments[resource.id];
-                remaining += ejectorAdjustments[resource.id];
-
-                if (resource.isCraftable()) {
-                    if (resource.currentQuantity > (resource.storageRequired * 1.015)) {
-                        allowedEject = Math.max(0, allowedEject, Math.floor(resource.currentQuantity - (resource.storageRequired * 1.015)));
-                    }
-                } else {
-                    if (resource.storageRatio > keepRatio + 0.01) {
-                        allowedEject = Math.max(1, allowedEject, Math.ceil(resource.calculateRateOfChange({buy: true, supply: true})), Math.ceil((resource.storageRatio - keepRatio) * resource.maxQuantity));
-                    } else if (resource.storageRatio > keepRatio) {
-                        allowedEject = Math.max(0, allowedEject, Math.floor(resource.calculateRateOfChange({buy: true, supply: true})));
-                    }
-                }
-
-                ejectorAdjustments[resource.id] = Math.min(remaining, allowedEject);
-                remaining -= ejectorAdjustments[resource.id];
-            }
-        }
-
-        let ejectorDeltas = Object.entries(ejectorAdjustments).map(([id, adjust]) => ({res: resources[id], delta: adjust - game.global.interstellar.mass_ejector[id]}));
-
-        ejectorDeltas.forEach(item => item.delta < 0 && item.res.decreaseEjection(item.delta * -1));
-        ejectorDeltas.forEach(item => item.delta > 0 && item.res.increaseEjection(item.delta));
+        Object.keys(consumeAdjustments).forEach((id) => consumeAdjustments[id] -= m.currentConsume(id));
+        Object.entries(consumeAdjustments).forEach(([id, delta]) => delta < 0 && m.consumeLess(id, delta * -1));
+        Object.entries(consumeAdjustments).forEach(([id, delta]) => delta > 0 && m.consumeMore(id, delta));
     }
 
     function autoPrestige() {
@@ -7684,6 +8312,15 @@
                     ["tech-infusion_confirm", "tech-infusion_check", "tech-exotic_infusion"].forEach(id => techIds[id].click());
                 }
                 return;
+            case 'apocalypse':
+                if (isApocalypsePrestigeAvailable()) {
+                    if (state.goal !== 'Reset') {
+                        state.goal = 'Reset';
+                        return;
+                    }
+                    ["tech-protocol66", "tech-protocol66a"].forEach(id => techIds[id].click());
+                }
+                return;
             case 'ascension':
                 if (isAscensionPrestigeAvailable()) {
                     if (state.goal !== 'Reset') {
@@ -7713,6 +8350,10 @@
         return getBlackholeMass() >= settings.prestigeWhiteholeMinMass && (techIds["tech-exotic_infusion"].isUnlocked() || techIds["tech-infusion_check"].isUnlocked() || techIds["tech-infusion_confirm"].isUnlocked());
     }
 
+    function isApocalypsePrestigeAvailable() {
+        return techIds["tech-protocol66"].isUnlocked() || techIds["tech-protocol66a"].isUnlocked();
+    }
+
     function isAscensionPrestigeAvailable() {
         return settings.prestigeAscensionSkipCustom && buildings.SiriusAscend.isUnlocked() && isPillarFinished();
     }
@@ -7730,13 +8371,17 @@
         return engine ? engine.mass + engine.exotic : 0;
     }
 
-    function autoAssembleGene() {
-        if (!settings.genesAssembleGeneAlways && haveTech("genetics", 7)) {
-            return;
+    function autoShapeshift() {
+        if (!game.global.race['shapeshifter'] || game.global.race.ss_genus === settings.shifterGenus) {
+            return false;
         }
 
+        getVueById('sshifter')?.setShape(settings.shifterGenus);
+    }
+
+    function autoAssembleGene() {
         // If we haven't got the assemble gene button or don't have full knowledge then return
-        if (!haveTech("genetics", 6) || resources.Knowledge.currentQuantity < 200000) {
+        if (!haveTech("genetics", 6) || resources.Knowledge.currentQuantity < 200000 || resources.Knowledge.isDemanded()) {
             return;
         }
 
@@ -7793,7 +8438,7 @@
                 if (resource.storageRatio > resource.autoSellRatio) {
                     maxAllowedUnits = Math.min(maxAllowedUnits, Math.floor(resource.currentQuantity - (resource.autoSellRatio * resource.maxQuantity))); // If not full sell up to our sell ratio
                 } else {
-                    maxAllowedUnits = Math.min(maxAllowedUnits, Math.floor(resource.calculateRateOfChange({all: true}) * 2 / ticksPerSecond())); // If resource is full then sell up to 2 ticks worth of production
+                    maxAllowedUnits = Math.min(maxAllowedUnits, Math.floor(resource.calculateRateOfChange({buy: false, all: true}) * 2 / ticksPerSecond())); // If resource is full then sell up to 2 ticks worth of production
                 }
 
                 if (maxAllowedUnits <= maxMultiplier) {
@@ -7993,19 +8638,11 @@
         BuildingManager.updateWeighting();
         ProjectManager.updateWeighting();
 
-        // Check for active build triggers, and click if possible
-        for (let i = 0; i < state.triggerTargets.length; i++) {
-            let building = state.triggerTargets[i];
-            if (building instanceof Action && building.click() && building.consumption.length > 0) {
-                return;
-            }
-        }
-
         let ignoredList = [...state.queuedTargets, ...state.triggerTargets];
         let buildingList = [...BuildingManager.managedPriorityList(), ...ProjectManager.managedPriorityList()];
 
         // Sort array so we'll have prioritized buildings on top. We'll need that below to avoid deathlocks, when building 1 waits for building 2, and building 2 waits for building 3. That's something we don't want to happen when building 1 and building 3 doesn't conflicts with each other.
-        state.otherTargets = buildingList.sort((a, b) => b.weighting - a.weighting);
+        state.unlockedBuildings = buildingList.sort((a, b) => b.weighting - a.weighting);
 
         let estimatedTime = {};
         let affordableCache = {};
@@ -8024,7 +8661,7 @@
             // Check queue and trigger conflicts
             let conflict = getCostConflict(building);
             if (conflict) {
-                building.extraDescription += `Conflicts with ${conflict.target.title} for ${conflict.res.name} (${conflict.cause})<br>`;
+                building.extraDescription += `Conflicts with ${conflict.obj.name} for ${conflict.res.name} (${conflict.obj.cause})<br>`;
                 continue;
             }
 
@@ -8059,7 +8696,7 @@
                                 continue;
                             }
 
-                            let totalRateOfCharge = resource.calculateRateOfChange({buy: true});
+                            let totalRateOfCharge = resource.rateOfChange;
                             if (totalRateOfCharge > 0) {
                                 estimation[resource.id] = (quantity - resource.currentQuantity) / totalRateOfCharge;
                             } else if (settings.buildingsIgnoreZeroRate && resource.storageRatio < 0.975 && resource.currentQuantity < quantity) {
@@ -8096,7 +8733,7 @@
 
                         // We can use up to this amount of resources without delaying competing building
                         // Not very accurate, as income can fluctuate wildly for foundry, factory, and such, but should work as bottom line
-                        if (thisQuantity <= (estimation.total - estimation[resource.id]) * resource.calculateRateOfChange({buy: true})) {
+                        if (thisQuantity <= (estimation.total - estimation[resource.id]) * resource.rateOfChange) {
                             continue;
                         }
 
@@ -8128,91 +8765,95 @@
         }
     }
 
-    function isTechAllowed(tech) {
+    function getTechConflict(tech) {
         let itemId = tech._vueBinding;
 
         // Skip ignored techs
         if (settings.researchIgnore.includes(itemId)) {
-            return false;
+            return "Ignored research";
         }
 
         // Save soul gems for reset
         if (settings.prestigeType === "whitehole" && settings.prestigeWhiteholeSaveGems &&
             tech.cost["Soul_Gem"] > resources.Soul_Gem.currentQuantity - 10) {
-            return false;
+            return "Saving up Soul Gems for prestige";
         }
 
         // Don't click any reset options without user consent... that would be a dick move, man.
         if (itemId === "tech-exotic_infusion" || itemId === "tech-infusion_check" || itemId === "tech-infusion_confirm" ||
             itemId === "tech-dial_it_to_11" || itemId === "tech-limit_collider" || itemId === "tech-demonic_infusion" ||
             itemId === "tech-protocol66" || itemId === "tech-protocol66a") {
-            return false;
+            return "Reset research";
         }
 
         // Don't use Dark Bomb if not enabled
         if (itemId == "tech-dark_bomb" && !settings.prestigeDemonicBomb) {
-            return false;
+            return "Dark Bomb disabled";
         }
 
         // Don't waste phage and plasmid on ascension techs if we're not going there
         if ((itemId === "tech-incorporeal" || itemId === "tech-tech_ascension") && settings.prestigeType !== "ascension") {
-            return false;
+            return "Not needed for current prestige";
         }
 
         // Alien Gift
         if (itemId === "tech-xeno_gift" && resources.Knowledge.maxQuantity < settings.fleetAlienGiftKnowledge) {
-            return false;
+            return `${getNumberString(settings.fleetAlienGiftKnowledge)} Max Knowledge required`;
         }
 
         // Unification
         if ((itemId === "tech-unification2" || itemId === "tech-unite") && !settings.foreignUnification) {
-            return false;
+            return "Unification disabled";
         }
 
         // If user wants to stabilize blackhole then do it, unless we're on blackhole run
-        if (itemId === "tech-stabilize_blackhole" && (!settings.prestigeWhiteholeStabiliseMass || settings.prestigeType === "whitehole")) {
-            return false;
+        if (itemId === "tech-stabilize_blackhole") {
+            if (!settings.prestigeWhiteholeStabiliseMass) {
+                return "Blackhole stabilization disabled";
+            }
+            if (settings.prestigeType === "whitehole") {
+                return "Disabled during whilehole reset";
+            }
         }
 
         if (itemId !== settings.userResearchTheology_1) {
             const isFanatRace = () => Object.values(fanatAchievements).reduce((result, combo) => result || (game.global.race.species === combo.race && game.global.race.gods === combo.god && !isAchievementUnlocked(combo.achieve, game.alevel())), false);
             if (itemId === "tech-anthropology" && !(settings.userResearchTheology_1 === "auto" && settings.prestigeType === "mad" && !isFanatRace())) {
-                return false;
+                return "Undesirable theology path";
             }
             if (itemId === "tech-fanaticism" && !(settings.userResearchTheology_1 === "auto" && (settings.prestigeType !== "mad" || isFanatRace()))) {
-                return false;
+                return "Undesirable theology path";
             }
         }
 
         if (itemId !== settings.userResearchTheology_2) {
             if (itemId === "tech-deify" && !(settings.userResearchTheology_2 === "auto" && (settings.prestigeType === "ascension" || settings.prestigeType === "demonic"))) {
-                return false;
+                return "Undesirable theology path";
             }
             if (itemId === "tech-study" && !(settings.userResearchTheology_2 === "auto" && settings.prestigeType !== "ascension" && settings.prestigeType !== "demonic")) {
-                return false;
+                return "Undesirable theology path";
             }
         }
-        return true;
+        return false;
+    }
+
+    function autoTrigger() {
+        let triggerActive = false;
+        for (let trigger of state.triggerTargets) {
+            if (trigger.click()) {
+                triggerActive = true;
+            }
+        }
+        return triggerActive;
     }
 
     function autoResearch() {
         // Check if we have something researchable
-        if (state.techTargets.length === 0){
+        if (state.unlockedTechs.length === 0){
             return;
         }
 
-        // Check for active triggers, and click if possible
-        for (let i = 0; i < state.triggerTargets.length; i++) {
-            let tech = state.triggerTargets[i];
-            if (tech instanceof Technology && tech.click()) {
-                BuildingManager.updateBuildings();
-                ProjectManager.updateProjects();
-                return;
-            }
-        }
-
-        for (let i = 0; i < state.techTargets.length; i++) {
-            let tech = state.techTargets[i];
+        for (let tech of state.unlockedTechs) {
             if (tech.isAffordable() && !getCostConflict(tech) && tech.click()) {
                 BuildingManager.updateBuildings(); // Cache cost if we just unlocked some building
                 ProjectManager.updateProjects();
@@ -8280,9 +8921,13 @@
             let maxStateOn = building.count;
             let currentStateOn = building.stateOnCount;
 
+            if (!game.global.settings.showGalactic && building._tab === "galaxy") {
+                maxStateOn = 0;
+            }
             if (settings.buildingsLimitPowered) {
                 maxStateOn = Math.min(maxStateOn, building.autoMax);
             }
+
             // Max powered amount
             if (building === buildings.NeutronCitadel) {
                 while (maxStateOn > 0) {
@@ -8360,11 +9005,11 @@
                     if (buildings.TritonFOB.stateOnCount < 1) { // Does not work with no FOB
                         maxStateOn = 0;
                     } else {
-                        let protectedSoldiers = (game.global.race['armored'] ? 1 : 0) + (game.global.race['scales'] ? 1 : 0) + (game.global.tech['armor'] ?? 0);
-                        let woundCap = Math.ceil((game.global.space.fob.enemy + (game.global.tech.outer >= 4 ? 75 : 62.5)) / 5) - protectedSoldiers;
-                        let maxLanders = getHealingRate() < woundCap ? Math.floor((getHealingRate() + protectedSoldiers) / 1.5) : Number.MAX_SAFE_INTEGER;
+                        //let protectedSoldiers = (game.global.race['armored'] ? 1 : 0) + (game.global.race['scales'] ? 1 : 0) + (game.global.tech['armor'] ?? 0);
+                        //let woundCap = Math.ceil((game.global.space.fob.enemy + (game.global.tech.outer >= 4 ? 75 : 62.5)) / 5) - protectedSoldiers;
+                        //let maxLanders = getHealingRate() < woundCap ? Math.floor((getHealingRate() + protectedSoldiers) / 1.5) : Number.MAX_SAFE_INTEGER;
                         let healthySquads = Math.floor((WarManager.currentSoldiers - WarManager.wounded) / 3);
-                        maxStateOn = Math.min(maxStateOn, healthySquads, maxLanders);
+                        maxStateOn = Math.min(maxStateOn, healthySquads /*, maxLanders*/ );
                     }
                 }
                 // Do not enable Ascension Machine whire we're waiting for pillar
@@ -8375,16 +9020,22 @@
                 if (building === buildings.Barracks && settings.prestigeEnabledBarracks < 100 && !SpyManager._foreignVue && buildings.GasSpaceDockShipSegment.count < 90 && buildings.DwarfWorldController.count < 1) {
                     maxStateOn = Math.ceil(maxStateOn * settings.prestigeEnabledBarracks / 100);
                 }
-                // Max attractors configured by autoHell
-                if (building === buildings.BadlandsAttractor && settings.autoHell) {
-                    let attractorAdjust = currentStateOn;
-                    if (currentStateOn > WarManager.hellAttractorMax) {
-                        attractorAdjust--;
+                // Determine the number of powered attractors
+                // The goal is to keep threat in the desired range
+                // If threat is larger than the configured top value, turn all attractors off
+                // If threat is lower than the bottom value, turn all attractors on
+                // Linear in between
+                if (building === buildings.BadlandsAttractor) {
+                    let attractorsBest = 0;
+                    if (game.global.portal.fortress.threat < settings.hellAttractorTopThreat && WarManager.hellAssigned > 0) {
+                        if (game.global.portal.fortress.threat > settings.hellAttractorBottomThreat && settings.hellAttractorTopThreat > settings.hellAttractorBottomThreat) {
+                            attractorsBest = Math.floor(maxStateOn * (settings.hellAttractorTopThreat - game.global.portal.fortress.threat) / (settings.hellAttractorTopThreat - settings.hellAttractorBottomThreat));
+                        } else {
+                            attractorsBest = maxStateOn;
+                        }
                     }
-                    if (currentStateOn < WarManager.hellAttractorMax) {
-                        attractorAdjust++;
-                    }
-                    maxStateOn = Math.min(maxStateOn, attractorAdjust);
+
+                    maxStateOn = Math.min(maxStateOn, currentStateOn + 1, Math.max(currentStateOn - 1, attractorsBest));
                 }
                 // Disable tourist center with full money
                 if (building === buildings.TouristCenter && !isHungryRace() && resources.Food.storageRatio < 0.7 && !resources.Money.isUseful()) {
@@ -8406,7 +9057,7 @@
                 // Disable useless Guard Post
                 if (building === buildings.RuinsGuardPost) {
                     if (isHellSupressUseful()) {
-                        let postRating = game.armyRating(1, "hellArmy", 0) * (game.global.race['holy'] ? 1.25 : 1);
+                        let postRating = game.armyRating(1, "hellArmy", 0) * traitVal('holy', 1, '+');
                         // 1 extra power to compensate rounding errors, 100 extra to compensate heling drinf of rage races
                         let postAdjust = ((game.global.race['rage'] ? 5100 : 5001) - poly.hellSupression("ruins").rating) / postRating;
                         if (haveTech('hell_gate')) {
@@ -8466,6 +9117,11 @@
                 if (building === buildings.EnceladusWaterFreighter && !resources.Water.isUseful()) {
                     maxStateOn = Math.min(maxStateOn, resources.Water.getBusyWorkers("space_water_freighter_title", currentStateOn));
                 }
+                if (building === buildings.NebulaHarvester && !resources.Deuterium.isUseful() && !resources.Helium_3.isUseful()) {
+                    let minShips = Math.max(resources.Deuterium.getBusyWorkers("interstellar_harvester_title", currentStateOn),
+                                            resources.Helium_3.getBusyWorkers("interstellar_harvester_title", currentStateOn));
+                    maxStateOn = Math.min(maxStateOn, minShips);
+                }
             }
 
 
@@ -8491,7 +9147,7 @@
                         continue;
                     }
 
-                    maxStateOn = Math.min(maxStateOn, resourceType.resource.calculateRateOfChange({buy: true}) / resourceType.rate);
+                    maxStateOn = Math.min(maxStateOn, resourceType.resource.rateOfChange / resourceType.rate);
                 }
             }
 
@@ -8555,8 +9211,7 @@
             // Try to prevent building bays when they won't have enough time to work out used supplies. It assumes that time to build new bay ~= time to clear floor.
             // Make sure we have some transports, so we won't stuck with 0 supply income after disabling collectors, and also let mech manager finish rebuilding after switching floor
             // And also let autoMech do minimum preparation, so we won't stuck with near zero potential
-            let buildAllowed = (!settings.autoMech || !MechManager.isActive)
-              && (settings.prestigeType !== "demonic" || settings.prestigeDemonicFloor - buildings.SpireTower.count > buildings.SpireMechBay.count);
+            let buildAllowed = (!settings.autoMech || !MechManager.isActive) && (settings.prestigeType !== "demonic" || settings.prestigeDemonicFloor - buildings.SpireTower.count > buildings.SpireMechBay.count);
 
             // Check is we allowed to build specific building, and have money for it
             const canBuild = (building, checkSmart) => buildAllowed && building.isAutoBuildable() && resources.Money.maxQuantity >= (building.cost["Money"] ?? 0) && (!checkSmart || building.isSmartManaged());
@@ -8600,7 +9255,7 @@
                     break;
                 }
 
-                if (targetMech === maxBay && resources.Supply.currentQuantity >= targetSupplies) {
+                if (resources.Supply.currentQuantity >= targetSupplies) {
                     assignStorage = true;
                 }
                 if (!assignStorage || bestSupplies < nextCost || targetSupplies >= nextCost) {
@@ -8638,19 +9293,23 @@
     }
 
     function getBestSupplyRatio(support, maxPorts, maxCamps) {
-        let bestSupplies = 0;
-        let bestPort = support;
-        let bestBaseCamp = 0;
-        for (let i = 0; i < support; i++) {
-            let maxSupplies = Math.min(support - i, maxPorts) * (1 + Math.min(i, maxCamps) * 0.4);
-            if (maxSupplies <= bestSupplies) {
-                break;
-            }
-            bestSupplies = maxSupplies;
-            bestPort = Math.min(support - i, maxPorts);
-            bestBaseCamp = Math.min(i, maxCamps);
+        let bestPort = 0;
+        let bestCamp = 0;
+
+        let optPort = Math.ceil(support / 2 + 1);
+        let optCamp = Math.floor(support / 2 - 1);
+        if (support <= 3 || optPort > maxPorts) {
+            bestPort = Math.min(maxPorts, support);
+            bestCamp = Math.min(maxCamps, support - bestPort);
+        } else if (optCamp > maxCamps) {
+            bestCamp = Math.min(maxCamps, support);
+            bestPort = Math.min(maxPorts, support - bestCamp);
+        } else if (optPort <= maxPorts && optCamp <= maxCamps) {
+            bestPort = optPort;
+            bestCamp = optCamp;
         }
-        return [Math.round(bestSupplies * 10000 + 100), bestPort, bestBaseCamp];
+        let supplies = Math.round(bestPort * (1 + bestCamp * 0.4) * 10000 + 100);
+        return [supplies, bestPort, bestCamp];
     }
 
     function expandStorage(storageToBuild) {
@@ -8719,6 +9378,20 @@
             return;
         }
 
+        // Set storage multiplier for resources, for market goods, overflow, and buffer
+        let resMods = {};
+        let marketEnabled = !game.global.race['no_trade'] && settings.autoMarket;
+        for (let resource of storageList){
+            let res = resource.id;
+
+            if (!settings.storageAssignExtra) {
+                resMods[res] = resource.storeOverflow ? 1.03 : 1;
+            } else {
+                let sellAllowed = marketEnabled && resource.autoSellEnabled && resource.autoSellRatio > 0;
+                resMods[res] = sellAllowed ? 1.03 / resource.autoSellRatio : 1.03;
+            }
+        }
+
         let buildingsList = [];
         const addList = list => {
             let resGroups = Object.fromEntries(storageList.map((res) => [res.id, []]));
@@ -8729,28 +9402,26 @@
 
         addList(state.queuedTargetsAll);
         addList(state.triggerTargets);
-        addList(state.techTargets);
+        addList(state.unlockedTechs);
         addList(ProjectManager.priorityList.filter(b => b.isUnlocked() && b.autoBuildEnabled));
         addList(BuildingManager.priorityList.filter(p => p.isUnlocked() && p.autoBuildEnabled));
 
         let totalCrates = resources.Crates.currentQuantity;
         let totalContainers = resources.Containers.currentQuantity;
-        let bufferMult = settings.storageAssignExtra ? 1.03 : 1;
-        let overMult = 1.02;
         let storageAdjustments = {};
-        for (let i = 0; i < storageList.length; i++){
-            let resource = storageList[i];
+        for (let resource of storageList){
+            let res = resource.id;
 
             // Overflow enables safe reassign for resource, otherwise all extra resources will be just dumped away
             if (settings.storageSafeReassign || resource.storeOverflow) {
-                storageAdjustments[resource.id] = {crate: resource.currentCrates, container: resource.currentContainers, amount: resource.maxQuantity};
-                let freeStorage = resource.maxQuantity - resource.currentQuantity * (resource.storeOverflow ? overMult : bufferMult);
+                storageAdjustments[res] = {crate: resource.currentCrates, container: resource.currentContainers, amount: resource.maxQuantity};
+                let freeStorage = resource.maxQuantity - resource.currentQuantity * resMods[res];
                 // Check for minimum containers here
                 if (resource.currentContainers > 0 && (freeStorage > containerVolume || resource.currentContainers > resource.autoContainersMax)){
                     let extraContainers = Math.max(resource.currentContainers - resource.autoContainersMax, Math.min(resource.currentContainers, Math.floor(freeStorage / containerVolume)));
 
-                    storageAdjustments[resource.id].amount -= extraContainers * containerVolume;
-                    storageAdjustments[resource.id].container -= extraContainers;
+                    storageAdjustments[res].amount -= extraContainers * containerVolume;
+                    storageAdjustments[res].container -= extraContainers;
                     totalContainers += extraContainers;
                     freeStorage -= extraContainers * containerVolume;
                 }
@@ -8758,12 +9429,12 @@
                 if (resource.currentCrates > 0 && (freeStorage > crateVolume || resource.currentCrates > resource.autoCratesMax)){
                     let extraCrates = Math.max(resource.currentCrates - resource.autoCratesMax, Math.min(resource.currentCrates, Math.floor(freeStorage / crateVolume)));
 
-                    storageAdjustments[resource.id].amount -= extraCrates * crateVolume;
-                    storageAdjustments[resource.id].crate -= extraCrates;
+                    storageAdjustments[res].amount -= extraCrates * crateVolume;
+                    storageAdjustments[res].crate -= extraCrates;
                     totalCrates += extraCrates;
                 }
             } else {
-                storageAdjustments[resource.id] = {crate: 0, container: 0, amount: resource.maxQuantity - (resource.currentCrates * crateVolume + resource.currentContainers * containerVolume)};
+                storageAdjustments[res] = {crate: 0, container: 0, amount: resource.maxQuantity - (resource.currentCrates * crateVolume + resource.currentContainers * containerVolume)};
                 totalCrates += resource.currentCrates;
                 totalContainers += resource.currentContainers;
             }
@@ -8773,9 +9444,7 @@
 
         // Calculate required storages
         nextBuilding:
-        for (let i = 0; i < buildingsList.length; i++) {
-            let building = buildingsList[i];
-
+        for (let building of buildingsList) {
             let currentAssign = {};
             let remainingCrates = totalCrates;
             let remainingContainers = totalContainers;
@@ -8784,7 +9453,7 @@
                 let resource = resources[res];
                 let quantity = building.cost[res];
 
-                if (!storageAdjustments[resource.id]) {
+                if (!storageAdjustments[res]) {
                     if (resource.maxQuantity >= quantity) {
                         // Non-expandable, storage met - we're good
                         continue;
@@ -8792,28 +9461,28 @@
                         // Non-expandable, storage not met - ignore building
                         continue nextBuilding;
                     }
-                } else if (storageAdjustments[resource.id].amount >= quantity * bufferMult) {
+                } else if (storageAdjustments[res].amount >= quantity * resMods[res]) {
                     // Expandable, storage met - we're good
                     continue;
                 }
                 // Expandable, storage not met - try to assign
-                let missingStorage = quantity * bufferMult - storageAdjustments[resource.id].amount;
-                currentAssign[resource.id] = {crate: 0, container: 0};
+                let missingStorage = quantity * resMods[res] - storageAdjustments[res].amount;
+                currentAssign[res] = {crate: 0, container: 0};
                 if (remainingCrates > 0) {
-                    let assignCrates = Math.min(Math.ceil(missingStorage / crateVolume), remainingCrates, resource.autoCratesMax - storageAdjustments[resource.id].crate);
+                    let assignCrates = Math.min(Math.ceil(missingStorage / crateVolume), remainingCrates, resource.autoCratesMax - storageAdjustments[res].crate);
                     remainingCrates -= assignCrates;
                     missingStorage -= assignCrates * crateVolume;
-                    currentAssign[resource.id].crate = assignCrates;
+                    currentAssign[res].crate = assignCrates;
                 }
                 if (missingStorage > 0 && remainingContainers > 0) {
-                    let assignContainer = Math.min(Math.ceil(missingStorage / containerVolume), remainingContainers, resource.autoContainersMax - storageAdjustments[resource.id].container);
+                    let assignContainer = Math.min(Math.ceil(missingStorage / containerVolume), remainingContainers, resource.autoContainersMax - storageAdjustments[res].container);
                     remainingContainers -= assignContainer;
                     missingStorage -= assignContainer * containerVolume;
-                    currentAssign[resource.id].container = assignContainer;
+                    currentAssign[res].container = assignContainer;
                 }
                 if (missingStorage > 0) {
                     // Not enough storage, skip building
-                    if (storageAdjustments[resource.id].crate < resource.autoCratesMax || storageAdjustments[resource.id].container < resource.autoContainersMax) {
+                    if (storageAdjustments[res].crate < resource.autoCratesMax || storageAdjustments[res].container < resource.autoContainersMax) {
                         storageToBuild = Math.max(storageToBuild, missingStorage);
                     }
                     continue nextBuilding;
@@ -8831,21 +9500,21 @@
 
         for (let id in storageAdjustments) {
             let resource = resources[id];
-            if (resource.storeOverflow && Math.max(1, resource.currentQuantity) * overMult > storageAdjustments[id].amount) {
-                let missingStorage = Math.max(1, resource.currentQuantity) * overMult - storageAdjustments[id].amount;
+            if (resource.storeOverflow && Math.max(1, resource.currentQuantity) * resMods[id] > storageAdjustments[id].amount) {
+                let missingStorage = Math.max(1, resource.currentQuantity) * resMods[id] - storageAdjustments[id].amount;
                 if (totalCrates > 0) {
-                    let assignCrates = Math.min(Math.ceil(missingStorage / crateVolume), totalCrates, resource.autoCratesMax - storageAdjustments[resource.id].crate);
+                    let assignCrates = Math.min(Math.ceil(missingStorage / crateVolume), totalCrates, resource.autoCratesMax - storageAdjustments[id].crate);
                     totalCrates -= assignCrates;
                     missingStorage -= assignCrates * crateVolume;
-                    storageAdjustments[resource.id].crate += assignCrates;
+                    storageAdjustments[id].crate += assignCrates;
                 }
                 if (missingStorage > 0 && totalContainers > 0) {
-                    let assignContainer = Math.min(Math.ceil(missingStorage / containerVolume), totalContainers, resource.autoContainersMax - storageAdjustments[resource.id].container);
+                    let assignContainer = Math.min(Math.ceil(missingStorage / containerVolume), totalContainers, resource.autoContainersMax - storageAdjustments[id].container);
                     totalContainers -= assignContainer;
                     missingStorage -= assignContainer * containerVolume;
-                    storageAdjustments[resource.id].container += assignContainer;
+                    storageAdjustments[id].container += assignContainer;
                 }
-                if (missingStorage > 0 && (storageAdjustments[resource.id].crate < resource.autoCratesMax || storageAdjustments[resource.id].container < resource.autoContainersMax)) {
+                if (missingStorage > 0 && (storageAdjustments[id].crate < resource.autoCratesMax || storageAdjustments[id].container < resource.autoContainersMax)) {
                     storageToBuild = Math.max(storageToBuild, missingStorage);
                 }
             }
@@ -8895,7 +9564,7 @@
             return;
         }
 
-        let storageList = StorageManager.priorityList.filter(r => r.isUnlocked() && r.isManagedStorage());
+        let storageList = StorageManager.priorityList.filter(r => r.isUnlocked() && r.isManagedStorage() && (r !== resources.Food || !game.global.race['artifical']));
         if (storageList.length === 0) {
             return;
         }
@@ -8931,7 +9600,7 @@
 
             // If we're overflowing, and want to store more - just request one more crate volume
             if (resource.storeOverflow) {
-                extraStorageRequired = Math.max(1, extraStorageRequired, resource.currentQuantity * 1.02 - rawStorage);
+                extraStorageRequired = Math.max(1, extraStorageRequired, resource.currentQuantity * 1.03 - rawStorage);
             }
 
             // We don't need any extra storage here, and don't care about wasting, just remove everything and go to next resource
@@ -9296,35 +9965,31 @@
         resources.Money.rateOfChange = currentMoneyPerSecond;
     }
 
-    var FleetManager = {
-        _fleetVueBinding: "fleet",
-        _fleetVue: undefined,
+    function autoFleetOuter() {
+        let m = FleetManagerOuter;
+        if (!m.initFleet() || settings.fleetOuterShips === "none") {
+            return;
+        }
 
-        initFleet() {
-            if (!game.global.tech.piracy) {
-                return false;
-            }
+        let yard = game.global.space.shipyard
+        let newShip = settings.fleetOuterShips === "user" ? yard.blueprint : m.getBlueprint();
+        if (!m.isShipAffordable(newShip) || WarManager.currentCityGarrison - m.ClassCrew[newShip.class] < settings.fleetOuterCrew) {
+            return;
+        }
 
-            this._fleetVue = getVueById(this._fleetVueBinding);
-            if (this._fleetVue === undefined) {
-                return false;
-            }
+        let regionsToProtect = m.Regions
+          .filter(reg => reg.dest && m.isUnlocked(reg.id) && m.getWeighting(reg.id) > 0 && m.syndicate(reg.id, false, true) < 1)
+          .sort((a, b) => ((1 - m.syndicate(b.id, false, true)) * m.getWeighting(b.id))
+                        - ((1 - m.syndicate(a.id, false, true)) * m.getWeighting(a.id)));
+        if (regionsToProtect.length < 1) {
+            return;
+        }
 
-            return true;
-        },
-
-        addShip(region, ship, count) {
-            resetMultiplier();
-            for (let i = 0; i < count; i++) {
-                this._fleetVue.add(region, ship);
-            }
-        },
-
-        subShip(region, ship, count) {
-            resetMultiplier();
-            for (let i = 0; i < count; i++) {
-                this._fleetVue.sub(region, ship);
-            }
+        if (m.build(newShip, regionsToProtect[0].id)) {
+            let name = game.loc(`outer_shipyard_class_${newShip.class}`);
+            let targetRef = game.actions.space[regionsToProtect[0].id].info.name;
+            let targetName = typeof targetRef === 'function' ? targetRef() : targetRef;
+            GameLog.logSuccess("outer_fleet", `${name} mech has been assembled, and dispatched to ${targetName}.`, ['combat']);
         }
     }
 
@@ -9526,13 +10191,13 @@
 
     function autoMech() {
         let m = MechManager;
-        if (!m.initLab()) {
+        if (!m.initLab() || $(`#mechList .mechRow[draggable=true]`).length > 0) {
             return;
         }
         let mechBay = game.global.portal.mechbay;
         let prolongActive = m.isActive;
         m.isActive = false;
-        let savingSupply = m.saveSupply;
+        let savingSupply = m.saveSupply && settings.mechBaysFirst;
         m.saveSupply = false;
 
         // Rearrange mechs for best efficiency if some of the bays are disabled
@@ -9578,8 +10243,8 @@
             savingSupply = false;
         }
 
-        // Save up supply for next floor when, unless our supply income only from collectors, thet aren't built yet
-        if (settings.mechSaveSupplyRatio > 0 && !lastFloor && !prolongActive && !forceBuild && ((buildings.LakeBireme.stateOnCount > 0 && buildings.LakeTransport.stateOnCount > 0) || resources.Supply.rateOfChange >= settings.mechMinSupply)) {
+        // Save up supply for next floor
+        if (settings.mechSaveSupplyRatio > 0 && !lastFloor && !forceBuild) {
             let missingSupplies = (resources.Supply.maxQuantity * settings.mechSaveSupplyRatio) - resources.Supply.currentQuantity;
             if (baySpace < newSpace) {
                 missingSupplies -= m.getMechRefund({size: "titan"})[1];
@@ -9640,7 +10305,7 @@
                 return costRatio / powerRatio > scrapEfficiency;
             }).sort((a, b) => a.efficiency - b.efficiency);
 
-            let extraScouts = settings.mechScoutsRebuild ? Number.MAX_SAFE_INTEGER : m.lastScouts - (mechBay.max * settings.mechScouts / 2);
+            let extraScouts = settings.mechScoutsRebuild ? Number.MAX_SAFE_INTEGER : mechBay.scouts - (mechBay.max * settings.mechScouts / 2);
 
             // Remove worst mechs untill we have enough room for new mech
             let trashMechs = [];
@@ -9671,9 +10336,7 @@
                 trashMechs.forEach(mech => m.scrapMech(mech));
                 resources.Supply.currentQuantity = Math.min(resources.Supply.currentQuantity + supplyGained, resources.Supply.maxQuantity);
                 resources.Soul_Gem.currentQuantity += gemsGained;
-                // TODO: Workaround for scrap vue bug - it doesn't update used space in callback. Remove when fixed.
                 baySpace += spaceGained;
-                m._assemblyVue.m.bay -= spaceGained;
             } else if (baySpace + spaceGained >= newSpace) {
                 return; // We have scrapable mechs, but don't want to scrap them right now. Waiting for more supplies for instant replace.
             }
@@ -9717,16 +10380,28 @@
 
     function finalizeScriptData() {
         SpyManager.updateForeigns();
+        FleetManagerOuter.updateShipCost();
         for (let id in resources) {
             resources[id].finalizeData();
         }
+        EjectManager.updateResources();
+        SupplyManager.updateResources();
+        NaniteManager.updateResources();
+
         // Money is special. They aren't defined as tradable, but still affected by trades
         if (settings.autoMarket) {
-            let moneyDiff = game.breakdown.p.consume["Money"];
-            if (moneyDiff.Trade){
-                resources.Money.tradeIncome = moneyDiff.Trade;
-                resources.Money.rateOfChange -= moneyDiff.Trade;
+            let tradeDiff = game.breakdown.p.consume["Money"].Trade || 0;
+            if (tradeDiff > 0) {
+                resources.Money.rateMods['buy'] = tradeDiff * -1;
+            } else if (tradeDiff < 0) {
+                resources.Money.rateMods['sell'] = tradeDiff * -1;
+                resources.Money.rateOfChange += resources.Money.rateMods['sell'];
             }
+        }
+        if (settings.autoPylon && RitualManager.initIndustry()) {
+            Object.values(RitualManager.Productions)
+              .filter(spell => spell.isUnlocked())
+              .forEach(spell => resources.Mana.rateOfChange += RitualManager.spellCost(spell));
         }
 
         // Add clicking to rate of change, so we can sell or eject it.
@@ -9756,7 +10431,7 @@
         }
     }
 
-    function requiestStorageFor(list) {
+    function requestStorageFor(list) {
         // Required amount increased by 3% from actual numbers, as other logic of script can and will try to prevent overflowing by selling\ejecting\building projects, and that might cause an issues if we'd need 100% of storage
         let bufferMult = settings.storageAssignExtra ? 1.03 : 1;
         listLoop:
@@ -9778,16 +10453,19 @@
         // by buildings - wardenclyffe, labs, etc. This way we can determine what's our real demand is.
         // Otherwise they might start build up knowledge cap just to afford themselves, increasing required
         // cap further, so we'll need more labs, and they'll demand even more knowledge for next level and so on.
-        state.knowledgeRequiredByTechs = Math.max(0, ...state.techTargets.map(tech => tech.cost["Knowledge"] ?? 0));
+        state.knowledgeRequiredByTechs = Math.max(0, ...state.unlockedTechs.map(tech => tech.cost["Knowledge"] ?? 0));
 
-        // Get list of all objects techs, and find biggest numbers for each resource
-        requiestStorageFor(state.techTargets);
-        requiestStorageFor(state.queuedTargetsAll);
-        requiestStorageFor(BuildingManager.priorityList.filter((b) => b.isUnlocked() && b.autoBuildEnabled));
-        requiestStorageFor(ProjectManager.priorityList.filter((p) => p.isUnlocked() && p.autoBuildEnabled));
+        // Get list of all objects and techs, and find biggest numbers for each resource
+        if (settings.prioritizeOuterFleet !== "ignore" && game.global.space.shipyard?.hasOwnProperty('blueprint')) {
+            requestStorageFor([{cost: poly.shipCosts(game.global.space.shipyard.blueprint)}]);
+        }
+        requestStorageFor(state.unlockedTechs);
+        requestStorageFor(state.queuedTargetsAll);
+        requestStorageFor(BuildingManager.priorityList.filter((b) => b.isUnlocked() && b.autoBuildEnabled));
+        requestStorageFor(ProjectManager.priorityList.filter((p) => p.isUnlocked() && p.autoBuildEnabled));
 
         // Increase storage for sellable resources, to make sure we'll have required amount before they'll be sold
-        if (!game.global.race['no_trade'] && settings.autoMarket) {
+        if (settings.storageAssignExtra && !game.global.race['no_trade'] && settings.autoMarket) {
             for (let id in resources) {
                 if (resources[id].autoSellEnabled && resources[id].autoSellRatio > 0) {
                     resources[id].storageRequired /= resources[id].autoSellRatio;
@@ -9799,11 +10477,11 @@
     function prioritizeDemandedResources() {
         let prioritizedTasks = [];
         // Building and research queues
-        if (settings.queueRequest) {
+        if (settings.prioritizeQueue.includes("req")) {
             prioritizedTasks.push(...state.queuedTargets);
         }
         // Active triggers
-        if (settings.triggerRequest) {
+        if (settings.prioritizeTriggers.includes("req")) {
             prioritizedTasks.push(...state.triggerTargets);
         }
         // Unlocked missions
@@ -9819,8 +10497,8 @@
         }
 
         // Unlocked and affordable techs, but only if we don't have anything more important
-        if (prioritizedTasks.length === 0 && (haveTech("mad") ? settings.researchRequestSpace : settings.researchRequest)) {
-            prioritizedTasks = state.techTargets.filter(t => t.isAffordable());
+        if (prioritizedTasks.length === 0 && ((game.global.race['cataclysm'] || haveTech("mad")) ? settings.researchRequestSpace : settings.researchRequest)) {
+            prioritizedTasks = state.unlockedTechs.filter(t => t.isAffordable());
         }
 
         if (prioritizedTasks.length > 0) {
@@ -9839,7 +10517,16 @@
         }
 
         // Request money for unification
-        resources.Money.requestedQuantity = Math.max(SpyManager.purchaseMoney, resources.Money.requestedQuantity);
+        if (SpyManager.purchaseMoney && settings.prioritizeUnify.includes("req")) {
+            resources.Money.requestedQuantity = Math.max(resources.Money.requestedQuantity, SpyManager.purchaseMoney);
+        }
+
+        if (FleetManagerOuter.nextShipCost && settings.prioritizeOuterFleet.includes("req")) {
+            for (let res in FleetManagerOuter.nextShipCost) {
+                let resource = resources[res];
+                resource.requestedQuantity = Math.max(resource.requestedQuantity, FleetManagerOuter.nextShipCost[res]);              
+            }
+        }
 
         // Prioritize material for craftables
         for (let id in resources) {
@@ -9872,67 +10559,75 @@
     }
 
     function updatePriorityTargets() {
+        state.conflictTargets = [];
         state.queuedTargets = [];
         state.queuedTargetsAll = [];
         state.triggerTargets = [];
-        state.techTargets = [];
-        state.otherTargets = [];
+        state.unlockedTechs = [];
+        state.unlockedBuildings = [];
 
-        // Buildings queue
-        if (game.global.queue.display) {
-            for (let i = 0; i < game.global.queue.queue.length; i++) {
-                let id = game.global.queue.queue[i].id;
-                let obj = buildingIds[id] || arpaIds[id];
+        // Building and research queues
+        let queueSave = settings.prioritizeQueue.includes("save");
+        [{type: "queue", noorder: "qAny", map: (id) => buildingIds[id] || arpaIds[id]},
+         {type: "r_queue", noorder: "qAny_res", map: (id) => techIds[id]}].forEach(queue => {
+            if (game.global[queue.type].display) {
+                for (let item of game.global[queue.type].queue) {
+                    let obj = queue.map(item.id);
+                    if (obj) {
+                        state.queuedTargetsAll.push(obj);
+                        if (obj.isAffordable(true)) {
+                            state.queuedTargets.push(obj);
+                            if (queueSave) {
+                                state.conflictTargets.push({name: obj.title, cause: "Queue", cost: obj.cost});
+                            }
+                        }
+                    }
+                    if (!game.global.settings[queue.noorder]) {
+                        break;
+                    }
+                }
+            }
+        });
+
+        if (SpyManager.purchaseMoney && settings.prioritizeUnify.includes("save")) {
+            state.conflictTargets.push({name: techIds["tech-unification"].title, cause: "Purchase", cost: {Money: SpyManager.purchaseMoney}});
+        }
+
+        if (FleetManagerOuter.nextShipCost && settings.prioritizeOuterFleet.includes("save")) {
+            state.conflictTargets.push({name: game.global.space.shipyard.blueprint.name ?? "Unnamed ship", cause: "Ship", cost: FleetManagerOuter.nextShipCost});
+        }
+
+        if (settings.autoTrigger) {
+            TriggerManager.resetTargetTriggers();
+            let triggerSave = settings.prioritizeTriggers.includes("save");
+
+            // Fake trigger for Embassy, not same as real ones, but should be good enough
+            if (buildings.GorddonEmbassy.isAutoBuildable() && resources.Knowledge.maxQuantity >= settings.fleetEmbassyKnowledge) {
+                let obj = buildings.GorddonEmbassy;
+                state.triggerTargets.push(obj);
+                if (triggerSave) {
+                    state.conflictTargets.push({name: obj.title, cause: "Fleet", cost: obj.cost});
+                }
+            }
+
+            // Active triggers
+            for (let trigger of TriggerManager.targetTriggers) {
+                let id = trigger.actionId;
+                let obj = arpaIds[id] || buildingIds[id] || techIds[id];
                 if (obj) {
-                    state.queuedTargetsAll.push(obj);
+                    state.triggerTargets.push(obj);
+                    if (triggerSave) {
+                        state.conflictTargets.push({name: obj.title, cause: "Trigger", cost: obj.cost});
+                    }
                 }
-                if (!game.global.settings.qAny) {
-                    break;
-                }
-            }
-        }
-        // Research queue
-        if (game.global.r_queue.display) {
-            for (let i = 0; i < game.global.r_queue.queue.length; i++) {
-                let id = game.global.r_queue.queue[i].id;
-                let obj = techIds[id];
-                if (obj) {
-                    state.queuedTargetsAll.push(obj);
-                }
-                if (!game.global.settings.qAny_res) {
-                    break;
-                }
-            }
-        }
-
-        state.queuedTargets = state.queuedTargetsAll.filter(obj => obj.isAffordable(true));
-        TriggerManager.resetTargetTriggers();
-
-        // Fake trigger for Embassy, not same as real ones, but should be good enough
-        if (buildings.GorddonEmbassy.isAutoBuildable() && resources.Knowledge.maxQuantity >= settings.fleetEmbassyKnowledge) {
-            state.triggerTargets.push(buildings.GorddonEmbassy);
-        }
-
-        // Active triggers
-        // TODO: Make list of unaffordable triggers, and try to request storage
-        for (let i = 0; i < TriggerManager.targetTriggers.length; i++) {
-            let trigger = TriggerManager.targetTriggers[i];
-            if (trigger.actionType === "research" && techIds[trigger.actionId]) {
-                state.triggerTargets.push(techIds[trigger.actionId]);
-            }
-            if (trigger.actionType === "build" && buildingIds[trigger.actionId]) {
-                state.triggerTargets.push(buildingIds[trigger.actionId]);
-            }
-            if (trigger.actionType === "arpa" && arpaIds[trigger.actionId]) {
-                state.triggerTargets.push(arpaIds[trigger.actionId]);
             }
         }
 
         $("#tech .action").each(function() {
             let tech = techIds[this.id];
-            if (isTechAllowed(tech) || state.triggerTargets.includes(tech) || state.queuedTargetsAll.includes(tech)) {
+            if (!getTechConflict(tech) || state.triggerTargets.includes(tech) || state.queuedTargetsAll.includes(tech)) {
                 tech.updateResourceRequirements();
-                state.techTargets.push(tech);
+                state.unlockedTechs.push(tech);
             }
         });
     }
@@ -9981,12 +10676,41 @@
     }
 
     function updateTabs() {
-        state.lastShowMarket = game.global.settings.showMarket;
-        state.lastShowRoutes = game.global.tech.trade;
-        state.lastShowEjector = game.global.settings.showEjector;
-        state.lastShowCargo = game.global.settings.showCargo;
-        state.lastHaveCrate = resources.Crates.isUnlocked();
-        state.lastHaveContainer = resources.Containers.isUnlocked();
+        let oldHash = state.tabHash;
+        state.tabHash = 0 // Not really a hash, but it should never go down, that's enough to track unlocks. (Except market after mutation in terrifying, 1000 weight should prevent all possible issues)
+          + (game.global.race['smoldering'] && $("#iQuarry").length === 0 ? buildings.RockQuarry.count : 0) // Chrysotile production
+          + (game.global.race['shapeshifter'] ? 1 : 0) // Shifter UI
+          + (game.global.settings.showMarket ? 1000 : 0) // Market tab unlocked
+          + (game.global.galaxy.trade ? 1 : 0) // Galaxy trades unlocked
+          + (game.global.settings.showEjector ? 1 : 0) // Ejector tab unlocked
+          + (game.global.settings.showCargo ? 1 : 0) // Supply tab unlocked
+          + (game.global.tech.alchemy ?? 0) // Basic & advanced transmutations
+          + (game.global.tech.queue ? 1 : 0) // Queue unlocked
+          + (game.global.tech.r_queue ? 1 : 0) // Research queue unlocked
+          + (game.global.tech.govern ? 1 : 0) // Government unlocked
+          + (game.global.tech.trade ? 1 : 0) // Trade Routes unlocked
+          + (resources.Crates.isUnlocked() ? 1 : 0) // Crates in storage tab
+          + (resources.Containers.isUnlocked() ? 1 : 0); // Containers in storage tab
+
+        if (game.global.settings.showShipYard) { // TP Ship Yard
+          state.tabHash += 1
+            + (game.global.tech.syard_class ?? 0) // Tiers of unlocked components
+            + (game.global.tech.syard_power ?? 0)
+            + (game.global.tech.syard_weapon ?? 0)
+            + (game.global.tech.syard_armor ?? 0)
+            + (game.global.tech.syard_engine ?? 0)
+            + (game.global.tech.syard_sensor ?? 0)
+            + (haveTech('titan', 3) && haveTech('enceladus', 2) ? 1 : 0) // Enceladus syndicate
+            + (haveTech('triton', 2) ? 1 : 0) // Triton syndicate
+            + (haveTech('kuiper') ? 1 : 0) // Kuiper syndicate
+            + (haveTech('eris') ? 1 : 0); // Eris syndicate
+        }
+
+        if (game.global.race['shapeshifter']){
+            state.tabHash += (game.global.race.ss_genus ?? 'none').split('').reduce((a,b)=>{a=((a<<5)-a)+b.charCodeAt(0);return a&a},0);
+        }
+
+        return state.tabHash !== oldHash; // Return true if something changed since last check, and we need to redraw preloaded tabs
     }
 
     function updateState() {
@@ -10003,21 +10727,8 @@
             }
         }
 
-        // TODO:Some object doesn't updates when needed. Forcing page reload when it happens. Remove me once it's fixed in game.
-        if ((state.lastLumber !== isLumberRace() && game.global.galaxy.trade)) { // Outdated galaxyOffers
-            state.goal = "GameOverMan";
-            setTimeout(()=> window.location.reload(), 5000);
-            return;
-        }
         // Redraw tabs once they unlocked
-        if ((game.global.race['smoldering'] && buildings.RockQuarry.count > 0 && $("#iQuarry").length === 0)
-              || state.lastShowMarket !== game.global.settings.showMarket
-              || state.lastShowRoutes !== game.global.tech.trade
-              || state.lastShowEjector !== game.global.settings.showEjector
-              || state.lastShowCargo !== game.global.settings.showCargo
-              || (!state.lastHaveCrate && resources.Crates.isUnlocked())
-              || (!state.lastHaveContainer && resources.Containers.isUnlocked())) {
-            updateTabs();
+        if (updateTabs()) {
             let mainVue = $('#mainColumn > div:first-child')[0].__vue__;
             mainVue.s.civTabs = 7;
             $(".settings11").click().click();
@@ -10139,25 +10850,6 @@
             verifyGameActions();
         }
 
-        // Set up our sorted resource atomic mass array
-        for (let id in resources) {
-            let resource = resources[id];
-
-            if (resource.isSupply()) {
-                resourcesBySupplyValue.push(resource);
-            }
-
-            // We'll add these exotic resources to the front of the list after sorting as these should always come first
-            if (resource.isEjectable() && resource !== resources.Elerium && resource !== resources.Infernite) {
-                resourcesByAtomicMass.push(resource);
-            }
-        }
-        resourcesBySupplyValue.sort((a, b) => b.supplyValue - a.supplyValue);
-        resourcesByAtomicMass.sort((a, b) => b.atomicMass - a.atomicMass);
-        // Elerium and infernite are always first as they are the exotic resources which are worth the most DE
-        resourcesByAtomicMass.unshift(resources.Infernite);
-        resourcesByAtomicMass.unshift(resources.Elerium);
-
         // Normal popups
         new MutationObserver(tooltipObserverCallback).observe(document.getElementById("main"), {childList: true});
 
@@ -10231,19 +10923,78 @@
         if ((obj instanceof Technology || (!settings.autoARPA && obj._tab === "arpa") || (!settings.autoBuild && obj._tab !== "arpa")) && !state.queuedTargetsAll.includes(obj) && !state.triggerTargets.includes(obj)) {
             let conflict = getCostConflict(obj);
             if (conflict) {
-                notes.push(`Conflicts with ${conflict.target.title} for ${conflict.res.name} (${conflict.cause})`);
+                notes.push(`Conflicts with ${conflict.obj.name} for ${conflict.res.name} (${conflict.obj.cause})`);
             }
         }
 
-        if (obj instanceof Technology && !state.queuedTargetsAll.includes(obj) && !state.triggerTargets.includes(obj)) {
-            if (settings.prestigeType === "whitehole" && settings.prestigeWhiteholeSaveGems &&
-                obj.cost["Soul_Gem"] > resources.Soul_Gem.currentQuantity - 10) {
-                notes.push("Saving up Soul Gems for prestige");
+        if (obj instanceof Technology) {
+            if (state.queuedTargetsAll.includes(obj)) {
+                notes.push("Queued research, processing...");
+            } else if (state.triggerTargets.includes(obj)) {
+                notes.push("Active trigger, processing...");
+            } else {
+                let conflict = getTechConflict(obj);
+                if (conflict) {
+                    notes.push(conflict);
+                }
             }
-            if (settings.researchIgnore.includes(obj._vueBinding)) {
-                notes.push("Ignored research");
+        }
+
+        if (obj === buildings.GorddonFreighter && haveTech('banking', 13)) {
+            let count = obj.stateOnCount;
+            let total = (((1 + ((count + 1) * 0.03)) / (1 + ((count) * 0.03))) - 1) * 100;
+            let crew = total / 3;
+            notes.push(`Next level will increase ${buildings.AlphaExchange.title} storage by +${getNiceNumber(total)}% (+${getNiceNumber(crew)}% per crew)`);
+        }
+        if (obj === buildings.Alien1SuperFreighter && haveTech('banking', 13)) {
+            let count = obj.stateOnCount;
+            let total = (((1 + ((count + 1) * 0.08)) / (1 + ((count) * 0.08))) - 1) * 100;
+            let crew = total / 5;
+            notes.push(`Next level will increase ${buildings.AlphaExchange.title} storage by +${getNiceNumber(total)}% (+${getNiceNumber(crew)}% per crew)`);
+        }
+        if (obj === buildings.Hospital) {
+            let heal = 1 / (getHealingRate() / 5); // Long loop, once per 5 seconds
+            notes.push(`~${getNiceNumber(heal)} seconds to heal soldier`);
+            let growth = 1 / (getGrowthRate() * 4); // Fast loop, 4 times per second
+            notes.push(`~${getNiceNumber(growth)} seconds to increase population`);
+        }
+        if (obj === buildings.PortalCarport && jobs.HellSurveyor.count > 0) {
+            let influx = 5 * (1 + (buildings.BadlandsAttractor.stateOnCount * 0.22));
+            let demons = (influx * 10 + influx * 50) / 2;
+            let divisor = getGovernor() === 'sports' ? 1100 : 1000;
+            divisor *= traitVal('blurry', 0, '+');
+            divisor *= traitVal('instinct', 0, '+');
+            divisor += haveTech('infernite', 5) ? 250 : 0;
+            let danger = demons / divisor;
+            let risk = 10 - Math.min(10, jobs.HellSurveyor.count) / 2;
+            let rate = (danger / 2 * Math.min(1, danger / risk));
+            let wreck = 1 / (rate / 5); // Long loop, once per 5 seconds
+            notes.push(`Up to ~${getNiceNumber(wreck)} seconds to break car (with full supression)`);
+        }
+        if (obj === buildings.PortalRepairDroid) {
+            let wallRepair = Math.round(200 * (0.95 ** obj.stateOnCount)) / 4;
+            let carRepair = Math.round(180 * (0.95 ** obj.stateOnCount)) / 4;
+            notes.push(`${getNiceNumber(wallRepair)} seconds to repair 1% of wall`);
+            notes.push(`${getNiceNumber(carRepair)} seconds to repair car`);
+        }
+        if (obj === buildings.BadlandsAttractor) {
+            let influx = 5 * (1 + (obj.stateOnCount * 0.22));
+            let gem_chance = game.global.stats.achieve.technophobe?.l >= 5 ? 9000 : 10000;
+            if (game.global.race.universe === 'evil' && resources.Dark.currentQuantity > 1){
+                let de = resources.Dark.currentQuantity * (1 + resources.Harmony.currentQuantity * 0.01);
+                gem_chance -= Math.round(Math.log2(de) * 2);
             }
-            // TODO: Other disabled techs
+            for (let i = obj.stateOnCount; i > 0; i--){
+                gem_chance = Math.round(gem_chance * 0.92);
+            }
+            gem_chance = Math.round(gem_chance * traitVal('ghostly', 2, '-'));
+            let drop = (1 / gem_chance) * 100;
+            notes.push(`~${getNiceNumber(drop)}% chance to find ${resources.Soul_Gem.title} in encounter (Pity ignored)`);
+            notes.push(`Up to ~${getNiceNumber(influx*10)}-${getNiceNumber(influx*50)} demons spawned per day`);
+        }
+        if (obj === buildings.Smokehouse) {
+            let spoilage = 50 * (0.9 ** obj.count);
+            notes.push(`${getNiceNumber(spoilage)}% of stored ${resources.Food.title} spoiled per second`);
         }
 
         if (obj.extraDescription) {
@@ -10289,7 +11040,7 @@
         let obj = null;
         if (match = dataId.match(/^popArpa([a-z_-]+)\d*$/)) { // "popArpa[id-with-no-tab][quantity]" for projects
             obj = arpaIds["arpa" + match[1]];
-        } else if (match = dataId.match(/^q([a-z_-]+)\d*$/)) { // "q[id][order]" for buildings in queue
+        } else if (match = dataId.match(/^q([A-Za-z_-]+)\d*$/)) { // "q[id][order]" for buildings in queue
             obj = buildingIds[match[1]] || arpaIds[match[1]];
         } else { // "[id]" for buildings and researches
             obj = buildingIds[dataId] || techIds[dataId];
@@ -10337,8 +11088,9 @@
                         throw `Expected type: ${typeof settingsRaw[key]}; Override type: ${typeof check.ret}`;
                     }
                 } catch (error) {
-                    if (!WindowManager.isOpen()) { // Don't spam with errors during configuring
-                        GameLog.logDanger("special", `Condition ${i+1} for setting ${key} invalid! Fix or remove it. (${error})`, ['events', 'major_events']);
+                    let msg = `Condition ${i+1} for setting ${key} invalid! Fix or remove it. (${error})`;
+                    if (!WindowManager.isOpen() && !game.global.lastMsg.all.find(log => log.m === msg)) { // Don't spam with errors
+                        GameLog.logDanger("special", msg, ['events', 'major_events']);
                     }
                     continue; // Some argument not valid, skip condition
                 }
@@ -10408,9 +11160,6 @@
         if (settings.autoMarket) {
             autoMarket(); // Invalidates values of resources, changes are random and can't be predicted, but we won't need values anywhere else
         }
-        if (settings.autoResearch) {
-            autoResearch(); // Called before autoBuild and autoAssembleGene - knowledge goes to techs first
-        }
         if (settings.autoHell) {
             autoHell();
         }
@@ -10425,6 +11174,9 @@
         }
         if (settings.autoGraphenePlant) {
             autoGraphenePlant();
+        }
+        if (settings.autoAlchemy) {
+            autoAlchemy();
         }
         if (settings.autoPylon) {
             autoPylon();
@@ -10443,14 +11195,23 @@
                 autoStorage();
             }
         }
-        if (settings.autoBuild || settings.autoARPA) {
-            autoBuild(); // Called after autoStorage to compensate fluctuations of quantum(caused by previous tick's adjustments) levels before weightings
+        if (!settings.autoTrigger || !autoTrigger()) {
+            if (settings.autoResearch) {
+                autoResearch(); // Called before autoBuild and autoAssembleGene - knowledge goes to techs first
+            }
+            if (settings.autoBuild || settings.autoARPA) {
+                autoBuild(); // Called after autoStorage to compensate fluctuations of quantum(caused by previous tick's adjustments) levels before weightings
+            }
         }
         if (settings.autoJobs) {
             autoJobs();
         }
         if (settings.autoFleet) {
-            autoFleet(); // Need to know Mine Layers stateOnCount, called before autoPower while it's still valid
+            if (game.global.race['truepath']) {
+                autoFleetOuter();
+            } else {
+                autoFleet(); // Need to know Mine Layers stateOnCount, called before autoPower while it's still valid
+            }
         }
         if (settings.autoMech) {
             autoMech(); // Called after autoBuild, to prevent stealing supplies from mechs
@@ -10475,17 +11236,23 @@
         if (settings.govManage) {
             manageGovernment();
         }
+        if (settings.autoNanite) {
+            autoConsume(NaniteManager); // Purge remaining rateOfChange, should be called when it won't be needed anymore
+        }
         if (settings.autoSupply) {
-            autoSupply(); // Purge remaining rateOfChange, should be called when it won't be needed anymore
+            autoConsume(SupplyManager);
         }
         if (settings.autoEject) {
-            autoEject(); // Purge remaining rateOfChange, should be called after autoSupply
+            autoConsume(EjectManager);
         }
         if (settings.autoPower) { // Called after purging of rateOfChange, to know useless resources
             autoPower();
         }
         if (settings.prestigeType !== "none") {
             autoPrestige(); // Called after autoBattle to not launch attacks right before reset, killing soldiers
+        }
+        if (settings.shifterGenus !== "ignore") {
+            autoShapeshift(); // Shifting genus can remove techs, bildings, resoruces, etc. Leaving roken preloaded buttons behind. This thing need to be at the very end, to prevent clicking anything before redrawing tabs
         }
 
         state.soulGemLast = resources.Soul_Gem.currentQuantity;
@@ -10735,7 +11502,6 @@
             /* Fixes for game styles */
             .main .resources .resource :first-child { white-space: nowrap; }
             #popTimer { margin-bottom: 0.1rem }
-            #powerStatus { white-space: nowrap; } // TODO: Remove in 1.2
             .barracks { white-space: nowrap; }
             .area { width: calc(100% / 6) !important; max-width: 8rem; }
             .offer-item { width: 15% !important; max-width: 7.5rem; }
@@ -10782,6 +11548,7 @@
         buildEjectorSettings();
         buildMarketSettings();
         buildStorageSettings();
+        buildMagicSettings();
         buildProductionSettings();
         buildJobSettings();
         buildBuildingSettings();
@@ -10853,7 +11620,7 @@
                     updateStateFromSettings();
                     updateSettingsFromState();
                     removeScriptSettings();
-                    stopMechObserver();
+                    removeMechInfo();
                     removeStorageToggles();
                     removeMarketToggles();
                     removeArpaToggles();
@@ -10951,6 +11718,7 @@
         {val: "cataclysm", label: "Cataclysm", hint: "Perform cataclysm reset by researching Dial It To 11 once available"},
         {val: "whitehole", label: "Whitehole", hint: "Infuses the blackhole with exotic materials to perform prestige"},
         {val: "vacuum", label: "Vacuum Collapse", hint: "Build Mana Syphons until the end"},
+        {val: "apocalypse", label: "AI Apocalypse", hint: "Perform AI Apocalypse reset by researching Protocol 66 once available"},
         {val: "ascension", label: "Ascension", hint: "Allows research of Incorporeal Existence and Ascension. Ascension Machine managed by autoPower. User input still required to trigger reset, and create custom race."},
         {val: "demonic", label: "Demonic Infusion", hint: "Sacrifice your entire civilization to absorb the essence of a greater demon lord"}]);
 
@@ -10969,38 +11737,50 @@
         "NAND": (a, b) => !(a && b),
         "XOR": (a, b) => !a != !b,
         "XNOR": (a, b) => !a == !b,
+        "AND!": (a, b) => a && !b,
+        "OR!": (a, b) => a || !b,
     }
 
     const argType = {
         building: {def: "city-farm", arg: "list", options: {list: buildingIds, name: "name", id: "_vueBinding"}},
         research: {def: "tech-mad", arg: "list", options: {list: techIds, name: "name", id: "_vueBinding"}},
 
-        trait: {def: "kindling_kindred", arg: "list_cb", options: () => Object.fromEntries(Object.values(game.races)
-          .flatMap(r => Object.keys(r.traits ?? {})).filter((t, i, a) => a.indexOf(t) === i)
-          .concat(minorTraits).map(t => [t, {name: game.loc(`trait_${t}_name`), id: t}]))},
+        trait: {def: "kindling_kindred", arg: "list_cb", options: () =>
+          Object.fromEntries(Object.entries(evolve.traits).map(([id, trait]) => [id, {name: trait.name, id: id}]))},
 
-        genus: {def: "humanoid", arg: "select_cb", options: () => Object.values(game.races)
-          .map(r => r.type).filter((g, i, a) => g && a.indexOf(g) === i).map(g =>
-          ({val: g, label: g === "organism" ? game.loc(`race_protoplasm`) : game.loc(`genelab_genus_${g}`)}))},
+        genus: {def: "humanoid", arg: "select_cb", options: () =>
+          [{val: "organism", label: game.loc(`race_protoplasm`)},
+           ...Object.values(game.races).map(r => r.type).filter((g, i, a) => g && g !== "organism" && a.indexOf(g) === i).map(g =>
+          ({val: g, label: game.loc(`genelab_genus_${g}`)}))]},
+        genus_ss: {def: "humanoid", arg: "select_cb", options: () =>
+          [{val: "none", label: game.loc(`genelab_genus_none`)},
+           ...Object.values(game.races).map(r => r.type).filter((g, i, a) => g && g !== "organism" && g !== "synthetic" && a.indexOf(g) === i).map(g =>
+          ({val: g, label: game.loc(`genelab_genus_${g}`)}))]},
         project: {def: "arpalaunch_facility", arg: "select_cb", options: () => Object.values(arpaIds).map(p =>
           ({val: p._vueBinding, label: p.name}))},
         job: {def: "unemployed", arg: "select_cb", options: () => Object.values(jobIds).map(j =>
           ({val: j._originalId, label: j._originalName}))},
         resource: {def: "Food", arg: "select_cb", options: () => Object.values(resources).map(r =>
           ({val: r._id, label: r.name}))},
-        race: {def: "junker", arg: "select_cb", options: () =>
-          [{val: "protoplasm", label: "Protoplasm", hint: "Race is not chosen yet"},
-           ...Object.values(races).map(race => ({val: race.id, label: race.name, hint: race.desc}))]},
+        race: {def: "species", arg: "select_cb", options: () =>
+          [{val: "species", label: "Current Race", hint: "Current race"},
+           {val: "gods", label: "Fanaticism Race", hint: "Gods race"},
+           {val: "old_gods", label: "Deify Race", hint: "Old gods race"},
+           {val: "protoplasm", label: "Protoplasm", hint: "Race is not chosen yet"},
+           ...Object.values(races).map(race =>
+          ({val: race.id, label: race.name, hint: race.desc}))]},
         challenge: {def: "junker", arg: "select_cb", options: () => challenges.flat().map(c =>
           ({val: c.trait, label: game.loc(`evo_challenge_${c.id}`), hint: game.loc(`evo_challenge_${c.id}_effect`)}))},
         universe: {def: "standard", arg: "select_cb", options: () =>
           [{val: "bigbang", label: "Big Bang", hint: "Universe is not chosen yet"},
-           ...universes.map(u => ({val: u, label: game.loc(`universe_${u}`), hint: game.loc(`universe_${u}_desc`)}))]},
+           ...universes.map(u =>
+          ({val: u, label: game.loc(`universe_${u}`), hint: game.loc(`universe_${u}_desc`)}))]},
         government: {def: "anarchy", arg: "select_cb", options: () => Object.keys(GovernmentManager.Types).map(g =>
           ({val: g, label: game.loc(`govern_${g}`), hint: game.loc(`govern_${g}_desc`)}))},
         governor: {def: "none", arg: "select_cb", options: () =>
           [{val: "none", label: "None", hint: "No governor selected"},
-           ...governors.map(id => ({val: id, label: game.loc(`governor_${id}`), hint: game.loc(`governor_${id}_desc`)}))]},
+           ...governors.map(id =>
+          ({val: id, label: game.loc(`governor_${id}`), hint: game.loc(`governor_${id}_desc`)}))]},
         queue: {def: "queue", arg: "select_cb", options: () =>
           [{val: "queue", label: "Building", hint: "Buildings and projects queue"},
            {val: "r_queue", label: "Research", hint: "Research queue"},
@@ -11023,11 +11803,24 @@
            {val: "wounded", label: "Wounded Soldiers"},
            {val: "deadSoldiers", label: "Dead Soldiers"},
            {val: "crew", label: "Ship Crew"}]},
+        tab: {def: "civTabs1", arg: "select_cb", options: () =>
+          [{val: "civTabs0", label: game.loc('tab_evolve')},
+           {val: "civTabs1", label: game.loc('tab_civil')},
+           {val: "civTabs2", label: game.loc('tab_civics')},
+           {val: "civTabs3", label: game.loc('tab_research')},
+           {val: "civTabs4", label:  game.loc('tab_resources')},
+           {val: "civTabs5", label:  game.loc('tech_arpa')},
+           {val: "civTabs6", label:  game.loc('mTabStats')},
+           {val: "civTabs7", label:  game.loc('tab_settings')}]},
         biome: {def: "grassland", arg: "select_cb", options: () => biomeList.map(b =>
           ({val: b, label: game.loc(`biome_${b}_name`)}))},
         ptrait: {def: "", arg: "select_cb", options: () =>
           [{val: "", label: "None", hint: "Planet have no trait"},
-           ...traitList.slice(1).map(t => ({val: t, label: game.loc(`planet_${t}`)}))]},
+           ...traitList.slice(1).map(t =>
+          ({val: t, label: game.loc(`planet_${t}`)}))]},
+    }
+    const argMap = {
+        race: (r) => r === "species" || r === "gods" || r === "old_gods" ? game.global.race[r] : r,
     }
     // TODO: Make trigger use all this checks, migration will be a bit tedius, but doable
     const checkTypes = {
@@ -11038,11 +11831,11 @@
         SettingCurrent: { fn: (s) => settings[s], arg: "string", def: "masterScriptToggle", desc: "Returns current value of setting, types varies" },
         Eval: { fn: (s) => eval(s), arg: "string", def: "Math.PI", desc: "Returns result of evaluating code" },
         BuildingUnlocked: { fn: (b) => buildingIds[b].isUnlocked(), ...argType.building, desc: "Return true when building is unlocked" },
-        BuildingClickable: { fn: (b) => buildingIds[b].isClickable(), ...argType.building, desc: "Return true when building is clickable" },
-        BuildingAffordable: { fn: (b) => buildingIds[b].isAffordable(true), ...argType.building, desc: "Return true when building is affordable" },
+        BuildingClickable: { fn: (b) => buildingIds[b].isClickable(), ...argType.building, desc: "Return true when building have all required resources, and can be purchased" },
+        BuildingAffordable: { fn: (b) => buildingIds[b].isAffordable(true), ...argType.building, desc: "Return true when building is affordable, i.e. costs of all resources below storage caps" },
         BuildingCount: { fn: (b) => buildingIds[b].count, ...argType.building, desc: "Returns amount of buildings as number" },
-        BuildingEnabled: { fn: (b) => buildingIds[b].stateOnCount, ...argType.building, desc: "Returns amount of enabled buildings as number" },
-        BuildingDisabled: { fn: (b) => buildingIds[b].stateOffCount, ...argType.building, desc: "Returns amount of disabled buildings as number" },
+        BuildingEnabled: { fn: (b) => buildingIds[b].stateOnCount, ...argType.building, desc: "Returns amount of powered buildings as number" },
+        BuildingDisabled: { fn: (b) => buildingIds[b].stateOffCount, ...argType.building, desc: "Returns amount of unpowered buildings as number" },
         ProjectUnlocked: { fn: (p) => arpaIds[p].isUnlocked(), ...argType.project, desc: "Return true when project is unlocked" },
         ProjectCount: { fn: (p) => arpaIds[p].count, ...argType.project, desc: "Returns amount of projects as number" },
         ProjectProgress: { fn: (p) => arpaIds[p].progress, ...argType.project, desc: "Returns progress of projects as number" },
@@ -11056,12 +11849,13 @@
         ResourceStorage: { fn: (r) => resources[r].maxQuantity, ...argType.resource, desc: "Returns maximum amount of resource or support as number" },
         ResourceIncome: { fn: (r) => resources[r].rateOfChange, ...argType.resource, desc: "Returns current income of resource or unused support as number" }, // rateOfChange holds full diff of resource at the moment when overrides checked
         ResourceRatio: { fn: (r) => resources[r].storageRatio, ...argType.resource, desc: "Returns storage ratio of resource as number. Number 0.5 means that storage is 50% full, and such." },
-        ResourceSatisfied: { fn: (r) => resources[r].usefulRatio, ...argType.resource, desc: "Returns satisfied ratio of resource as number. Number above 1 means than current amount of resource above maximum costs" },
-        RaceGenus: { fn: (g) => races[game.global.race.species].genus === g, ...argType.genus, desc: "Returns true when playing selected genus" },
-        RaceCurrent: { fn: (r) => game.global.race.species === r, ...argType.race, desc: "Returns true when playing selected race" },
-        RaceFanaticism: { fn: (r) => game.global.race.gods === r, ...argType.race, desc: "Returns true when selected race can be inherited with fanaticism" },
-        RaceDeify: { fn: (r) => game.global.race.old_gods === r, ...argType.race, desc: "Returns true when selected race can be inherited with deify" },
-        TraitLevel: { fn: (t) => game.global.race[t] ?? 0, ...argType.trait, desc: "Returns trait level as number, for major and genus traits return value is either 1 or 0, minor traits can be increased above that" },
+        ResourceSatisfied: { fn: (r) => resources[r].usefulRatio >= 1, ...argType.resource, desc: "Returns true when current amount of resource above maximum costs" },
+        ResourceDemanded: { fn: (r) => resources[r].isDemanded(), ...argType.resource, desc: "Returns true when resource is demanded, i.e. missed by some prioritized task, such as queue or trigger" },
+        RaceId: { fn: (r) => argMap.race(r), ...argType.race, desc: "Returns ID of selected race as string" },
+        RacePillared: { fn: (r) => game.global.pillars[argMap.race(r)] >= game.alevel(), ...argType.race, desc: "Returns true when selected race pillared at current star level" },
+        RaceGenus: { fn: (g) => races[game.global.race.species]?.genus === g, ...argType.genus, desc: "Returns true when playing selected genus" },
+        MimicGenus: { fn: (g) => (game.global.race.ss_genus ?? 'none') === g, ...argType.genus_ss, desc: "Returns true when mimicking selected genus" },
+        TraitLevel: { fn: (t) => game.global.race[t] ?? 0, ...argType.trait, desc: "Returns trait level as number" },
         ResetType: { fn: (r) => settings.prestigeType === r, arg: "select", options: prestigeOptions, def: "mad", desc: "Returns true when selected reset is active" },
         Challenge: { fn: (c) => game.global.race[c] ? true : false, ...argType.challenge, desc: "Returns true when selected challenge is active" },
         Universe: { fn: (u) => game.global.race.universe === u, ...argType.universe, desc: "Returns true when playing in selected universe" },
@@ -11254,7 +12048,7 @@
     }
 
     function buildConditionComparator(override) {
-        let types = Object.keys(checkCompare).map(type => `<option value="${type}">${type}</option>`).join();
+        let types = Object.entries(checkCompare).map(([id, fn]) => `<option value="${id}" title="${fn.toString().substr(10)}">${id}</option>`).join();
         return $(`<select style="width: 100%">${types}</select>`)
         .val(override.cmp)
         .on('change', function() {
@@ -11553,22 +12347,23 @@
 
         addSettingsNumber(currentNode, "tickRate", "Script tick rate", "Script runs once per this amount of game ticks. Game tick every 250ms, thus with rate 4 script will run once per second. You can set it lower to make script act faster, or increase it if you have performance issues. Tick rate should be a positive integer.");
 
-        addSettingsHeader1(currentNode, "Production");
-        addSettingsToggle(currentNode, "triggerRequest", "Prioritize resources for triggers", "Readjust trade routes and production to resources required for active triggers. Missing resources will have 100 priority where applicable(autoMarket, autoGalaxyMarket, autoFactory, autoMiningDroid), or just 'top priority' where not(autoTax, autoCraft, autoCraftsmen, autoQuarry, autoSmelter).");
-        addSettingsToggle(currentNode, "queueRequest", "Prioritize resources for queue", "Readjust trade routes and production to resources required for buildings and researches in queue. Missing resources will have 100 priority where applicable(autoMarket, autoGalaxyMarket, autoFactory, autoMiningDroid), or just 'top priority' where not(autoTax, autoCraft, autoCraftsmen, autoQuarry, autoSmelter).");
+        addSettingsHeader1(currentNode, "Prioritization");
+        let priority = [{val: "ignore", label: "Ignore", hint: "Does nothing"},
+                        {val: "save", label: "Save", hint: "Missing resources preserved from using."},
+                        {val: "req", label: "Request", hint: "Production and buying of missing resources will be prioritized."},
+                        {val: "savereq", label: "Request & Save", hint: "Missing resources will be prioritized, and preserved from using."}];
+
+        addSettingsToggle(currentNode, "useDemanded", "Allow using prioritized resources for crafting", "When disabled script won't make craftables out of prioritized resources in foundry and factory.");
         addSettingsToggle(currentNode, "researchRequest", "Prioritize resources for Pre-MAD researches", "Readjust trade routes and production to resources required for unlocked and affordable researches. Works only with no active triggers, or queue. Missing resources will have 100 priority where applicable(autoMarket, autoGalaxyMarket, autoFactory, autoMiningDroid), or just 'top priority' where not(autoTax, autoCraft, autoCraftsmen, autoQuarry, autoSmelter).");
         addSettingsToggle(currentNode, "researchRequestSpace", "Prioritize resources for Space+ researches", "Readjust trade routes and production to resources required for unlocked and affordable researches. Works only with no active triggers, or queue. Missing resources will have 100 priority where applicable(autoMarket, autoGalaxyMarket, autoFactory, autoMiningDroid), or just 'top priority' where not(autoTax, autoCraft, autoCraftsmen, autoQuarry, autoSmelter).");
         addSettingsToggle(currentNode, "missionRequest", "Prioritize resources for missions", "Readjust trade routes and production to resources required for unlocked and affordable missions. Missing resources will have 100 priority where applicable(autoMarket, autoGalaxyMarket, autoFactory, autoMiningDroid), or just 'top priority' where not(autoTax, autoCraft, autoCraftsmen, autoQuarry, autoSmelter).");
-        addSettingsToggle(currentNode, "unificationRequest", "Prioritize money for unification", "Prioritize money to buy spies and purchase foreign, when unification enabled and avaialble");
-        addSettingsToggle(currentNode, "useDemanded", "Allow using prioritized resources for crafting", "When disabled script won't make craftables out of prioritized resources in foundry and factory.");
 
-        addSettingsHeader1(currentNode, "Queue");
-        addSettingsToggle(currentNode, "buildingsConflictQueue", "Save resources for queued buildings", "Script won't use resources needed for queued buildings. 'No Queue Order' game setting switches whether it save resources for next item, or whole queue.");
-        addSettingsToggle(currentNode, "buildingsConflictRQueue", "Save resources for queued researches", "Script won't use resources needed for queued researches. 'No Queue Order' game setting switches whether it save resources for next item, or whole queue.");
-        addSettingsToggle(currentNode, "buildingsConflictPQueue", "Save resources for queued projects", "Script won't use resources needed for queued projects. 'No Queue Order' game setting switches whether it save resources for next item, or whole queue.");
+        addSettingsSelect(currentNode, "prioritizeQueue", "Queue", "Alter script behaviour to speed up queued items, prioritizing missing resources.", priority);
+        addSettingsSelect(currentNode, "prioritizeTriggers", "Triggers", "Alter script behaviour to speed up triggers, prioritizing missing resources.", priority);
+        addSettingsSelect(currentNode, "prioritizeUnify", "Unification", "Alter script behaviour to speed up unification, prioritizing money required to purchase foreign cities.", priority);
+        addSettingsSelect(currentNode, "prioritizeOuterFleet", "Ship (The True Path)", "Alter script behaviour to assist fleet building, prioritizing resources required for current design of ship.", priority);
 
         addSettingsHeader1(currentNode, "Auto clicker");
-        addSettingsToggle(currentNode, "genesAssembleGeneAlways", "Always assemble genes", "Will continue assembling genes even after De Novo Sequencing is researched");
         addSettingsToggle(currentNode, "buildingAlwaysClick", "Always autoclick resources", "By default script will click only during early stage of autoBuild, to bootstrap production. With this toggled on it will continue clicking forever");
         addSettingsNumber(currentNode, "buildingClickPerTick", "Maximum clicks per tick", "Number of clicks performed at once, each script tick. Will not ever click more than needed to fill storage.");
 
@@ -11755,7 +12550,8 @@
 
         // Target evolution
         let raceOptions = [{val: "auto", label: "Auto Achievements", hint: "Picks race giving most achievements upon completing run. Tracks all achievements limited to specific races and resets. Races unique to current planet biome are prioritized, when available."},
-                           ...Object.values(races).map(race => ({val: race.id, label: race.name, hint: race.desc}))];
+                           ...Object.values(races).map(race => (
+                           {val: race.id, label: race.name, hint: race.desc}))];
         addSettingsSelect(currentNode, "userEvolutionTarget", "Target Race", "Chosen race will be automatically selected during next evolution", raceOptions)
           .on('change', 'select', function() {
             state.evolutionTarget = null;
@@ -12010,9 +12806,12 @@
         let sectionName = "Trigger";
 
         let resetFunction = function() {
+            resetTriggerSettings(true);
             resetTriggerState();
             updateSettingsFromState();
             updateTriggerSettingsContent();
+
+            resetCheckbox("autoTrigger");
         };
 
         buildSettingsSection(sectionId, sectionName, resetFunction, updateTriggerSettingsContent);
@@ -12378,18 +13177,18 @@
 
         addSettingsNumber(currentNode, "foreignPowerRequired", "Military Power to switch target", "Switches to attack next foreign power once its power lowered down to this number. When exact numbers not know script tries to approximate it.");
 
-        const spyMap = ([name, task]) => ({val: name, label: game.loc("civics_spy_" + task.id), hint: ""});
         let policyOptions = [{val: "Ignore", label: "Ignore", hint: ""},
-                             ...Object.entries(SpyManager.Types).map(spyMap),
+                             ...Object.entries(SpyManager.Types).map(([name, task]) => (
+                             {val: name, label: game.loc("civics_spy_" + task.id), hint: ""})),
                              {val: "Occupy", label: "Occupy", hint: ""}];
         addSettingsSelect(currentNode, "foreignPolicyInferior", "Inferior Power", "Perform this against inferior foreign power, with military power equal or below given threshold. Complex actions includes required preparation - Annex and Purchase will incite and influence, Occupy will sabotage, until said options will be available.", policyOptions);
         addSettingsSelect(currentNode, "foreignPolicySuperior", "Superior Power", "Perform this against superior foreign power, with military power above given threshold. Complex actions includes required preparation - Annex and Purchase will incite and influence, Occupy will sabotage, until said options will be available.", policyOptions);
 
-        /*
         let rivalOptions = [{val: "Ignore", label: "Ignore", hint: ""},
-                             ...Object.entries(SpyManager.Types).filter(([name, task]) => task.rival).map(spyMap)];
+                            {val: "Influence", label: "Aliance", hint: ""},
+                            {val: "Sabotage", label: "War", hint: ""}];
         addSettingsSelect(currentNode, "foreignPolicyRival", "Rival Power (The True Path)", "Perform this against rival foreign power.", rivalOptions);
-        */
+
         // Campaign panel
         addSettingsHeader1(currentNode, "Campaigns");
         addSettingsNumber(currentNode, "foreignAttackLivingSoldiersPercent", "Minimum percentage of alive soldiers for attack", "Only attacks if you ALSO have the target battalion size of healthy soldiers available, so this setting will only take effect if your battalion does not include all of your soldiers");
@@ -12433,8 +13232,6 @@
 
         // Entering Hell
         addSettingsHeader1(currentNode, "Entering Hell");
-        addSettingsToggle(currentNode, "hellTurnOffLogMessages", "Turn off patrol and surveyor log messages", "Automatically turns off the hell patrol and surveyor log messages");
-        addSettingsToggle(currentNode, "hellHandlePatrolCount", "Automatically enter hell and adjust patrol count and hell garrison size", "Sets patrol count according to required garrison and patrol size");
         addSettingsNumber(currentNode, "hellHomeGarrison", "Soldiers to stay out of hell", "Home garrison maximum");
         addSettingsNumber(currentNode, "hellMinSoldiers", "Minimum soldiers to be available for hell (pull out if below)", "Don't enter hell if not enough soldiers, or get out if already in");
         addSettingsNumber(currentNode, "hellMinSoldiersPercent", "Alive soldier percentage for entering hell", "Don't enter hell if too many soldiers are dead, but don't get out");
@@ -12485,8 +13282,68 @@
         let currentNode = $(`#script_${secondaryPrefix}fleetContent`);
         currentNode.empty().off("*");
 
+        updateFleetAndromeda(currentNode, secondaryPrefix);
+        updateFleetOuter(currentNode, secondaryPrefix);
+
+        document.documentElement.scrollTop = document.body.scrollTop = currentScrollPosition;
+    }
+
+    function updateFleetOuter(currentNode, secondaryPrefix) {
+        addStandardHeading(currentNode, "Outer Solar");
+        let shipOptions = [{val: "none", label: "None", hint: "Ship buildign disabled"},
+                           {val: "user", label: "Current design", hint: "Build whatever currently set in Ship Yard"},
+                           {val: "custom", label: "Preset", hint: "Build ships with components configured below. All components need to be unlocked, and resulting design should have enough power"}];
+        addSettingsNumber(currentNode, "fleetOuterCrew", "Mininum idle soldiers", "Only build ships when amount of idle soldiers, including wounded ones, above give number.");
+        addSettingsSelect(currentNode, "fleetOuterShips", "Ships to build", "Once avalable and affordable script will build ship of selected design, and send it to region with most piracy * weighting", shipOptions);
+
+        for (let [type, parts] of Object.entries(FleetManagerOuter.ShipConfig)) {
+            let partOptions = parts.map(id => ({val: id, label: game.loc(`outer_shipyard_${type}_${id}`)}));
+            addSettingsSelect(currentNode, `fleet_outer_${type}`, game.loc(`outer_shipyard_${type}`), "Preset ship component", partOptions);
+        }
+
+        currentNode.append(`
+          <table style="width:100%">
+            <tr>
+              <th class="has-text-warning" style="width:55%">Region</th>
+              <th class="has-text-warning" style="width:20%">Weighting</th>
+              <th style="width:25%"></th>
+            </tr>
+            <tbody id="script_${secondaryPrefix}fleetOuterTable"></tbody>
+          </table>`);
+
+        let tableBodyNode = $(`#script_${secondaryPrefix}fleetOuterTable`);
+        let newTableBodyText = "";
+
+        let outerRegions = FleetManagerOuter.Regions.filter(r => r.dest);
+
+        for (let reg of outerRegions) {
+            newTableBodyText += `<tr><td id="script_fleet_${reg.id}" style="width:55%"></td><td style="width:20%"></td><td style="width:25%"></td></tr>`;
+        }
+        tableBodyNode.append($(newTableBodyText));
+
+        // Build all other productions settings rows
+        for (let reg of outerRegions) {
+            let fleetElement = $('#script_fleet_' + reg.id);
+
+            let nameRef = game.actions.space[reg.id].info.name;
+            let gameName = typeof nameRef === 'function' ? nameRef() : nameRef;
+            let label = reg.id.split("_").slice(1)
+              .map(n => n.charAt(0).toUpperCase() + n.slice(1)).join(" ");
+            if (label !== gameName) {
+                label += ` (${gameName})`;
+            }
+
+            fleetElement.append(buildTableLabel(label));
+
+            fleetElement = fleetElement.next();
+            addTableInput(fleetElement, "fleet_outer_pr_" + reg.id);
+        }
+    }
+
+    function updateFleetAndromeda(currentNode, secondaryPrefix) {
+        addStandardHeading(currentNode, "Andromeda");
         addSettingsToggle(currentNode, "fleetMaxCover", "Maximize protection of prioritized systems", "Adjusts ships distribution to fully supress piracy in prioritized regions. Some potential defence will be wasted, as it will use big ships to cover small holes, when it doesn't have anything fitting better. This option is not required: all your dreadnoughts still will be used even without this option.");
-        addSettingsNumber(currentNode, "fleetEmbassyKnowledge", "Mininum knowledge for Embassy", "Building Embassy increases maximum piracy up to 100, script won't Auto Build it until this knowledge cap is reached. ");
+        addSettingsNumber(currentNode, "fleetEmbassyKnowledge", "Mininum knowledge for Embassy", "Building Embassy increases maximum piracy up to 100, script won't Auto Build it until this knowledge cap is reached.");
         addSettingsNumber(currentNode, "fleetAlienGiftKnowledge", "Mininum knowledge for Alien Gift", "Researching Alien Gift increases maximum piracy up to 250, script won't Auto Research it until this knowledge cap is reached.");
         addSettingsNumber(currentNode, "fleetAlien2Knowledge", "Mininum knowledge for Alien 2 Assault", "Assaulting Alien 2 increases maximum piracy up to 500, script won't do it until this knowledge cap is reached. Regardless of set value it won't ever try to assault until you have big enough fleet to do it without loses.");
 
@@ -12519,7 +13376,9 @@
         // Build all other productions settings rows
         for (let i = 0; i < galaxyRegions.length; i++) {
             let fleetElement = $(`#script_${secondaryPrefix}fleet_${galaxyRegions[i]}`);
-            let nameRef = galaxyRegions[i] === "gxy_alien1" ? "Alien 1 System" : galaxyRegions[i] === "gxy_alien2" ? "Alien 2 System" : game.actions.galaxy[galaxyRegions[i]].info.name;
+            let nameRef = galaxyRegions[i] === "gxy_alien1" ? "Alien 1 System"
+                        : galaxyRegions[i] === "gxy_alien2" ? "Alien 2 System"
+                        : game.actions.galaxy[galaxyRegions[i]].info.name;
 
             fleetElement.append(buildTableLabel(typeof nameRef === "function" ? nameRef() : nameRef));
         }
@@ -12539,8 +13398,6 @@
                 }
             },
         });
-
-        document.documentElement.scrollTop = document.body.scrollTop = currentScrollPosition;
     }
 
     function buildMechSettings() {
@@ -12553,7 +13410,7 @@
             updateMechSettingsContent();
 
             resetCheckbox("autoMech");
-            stopMechObserver();
+            removeMechInfo();
         };
 
         buildSettingsSection(sectionId, sectionName, resetFunction, updateMechSettingsContent);
@@ -12578,7 +13435,7 @@
                             {val: "user", label: "Current design", hint: "Build whatever currently set in Mech Lab"}];
         addSettingsSelect(currentNode, "mechBuild", "Build mechs", "Configures what will be build. Infernal mechs won't ever be build.", buildOptions);
 
-        //TODO: Make auto truly auto - some way to pick best "per x", depends on current bottleneck
+        // TODO: Make auto truly auto - some way to pick best "per x", depends on current bottleneck
         let sizeOptions = [{val: "auto", label: "Damage Per Size", hint: "Select affordable mech with most damage per size on current floor"},
                            {val: "gems", label: "Damage Per Gems", hint: "Select affordable mech with most damage per gems on current floor"},
                            {val: "supply", label: "Damage Per Supply", hint: "Select affordable mech with most damage per supply on current floor"},
@@ -12625,9 +13482,6 @@
     }
 
     function calculateMechStats() {
-        let realBay = game.global.portal.mechbay // Ugly hack, and also won't work once(if) poly will be replaced with exposed function. But for now - it just works.
-        let realPrepared = game.global.blood.prepared;
-
         let cellInfo = '<td><span class="has-text-info">';
         let cellWarn = '<td><span class="has-text-warning">';
         let cellAdv = '<td><span class="has-text-advanced">';
@@ -12638,9 +13492,7 @@
         let gravity = document.getElementById('script_mechStatsGravity').checked;
         let efficient = document.getElementById('script_mechStatsEfficient').checked;
         let scouts = parseInt(document.getElementById("script_mechStatsScouts").value) || 0;
-
-        game.global.portal.mechbay = {max: Number.MAX_SAFE_INTEGER, mechs: new Array(Math.max(0, scouts)).fill({size: "small"})};
-        game.global.blood.prepared = document.getElementById('script_mechStatsCompact').checked ? 2 : 0;
+        let prepared = document.getElementById('script_mechStatsCompact').checked ? 2 : 0;
 
         let smallFactor = efficient ? 1 : average(Object.values(MechManager.SmallChassisMod).reduce((list, mod) => list.concat(Object.values(mod)), []));
         let largeFactor = efficient ? 1 : average(Object.values(MechManager.LargeChassisMod).reduce((list, mod) => list.concat(Object.values(mod)), []));
@@ -12652,12 +13504,12 @@
 
             let basePower = MechManager.getSizeMod(mech, false);
             let statusMod = gravity ? MechManager.StatusMod.gravity(mech) : 1;
-            let terrainMod = poly.terrainRating(mech, i < 2 ? smallFactor : largeFactor, gravity ? ['gravity'] : []);
+            let terrainMod = poly.terrainRating(mech, i < 2 ? smallFactor : largeFactor, gravity ? ['gravity'] : [], scouts);
             let weaponMod = poly.weaponPower(mech, weaponFactor) * MechManager.SizeWeapons[mech.size];
             let power = basePower * statusMod * terrainMod * weaponMod;
 
-            let [gems, cost, space] = MechManager.getMechCost(mech);
-            let [gemsRef, costRef] = MechManager.getMechRefund(mech);
+            let [gems, cost, space] = MechManager.getMechCost(mech, prepared);
+            let [gemsRef, costRef] = MechManager.getMechRefund(mech, prepared);
 
             rows[0].push(game.loc("portal_mech_size_" + mech.size));
             rows[1].push((power / space * 100).toFixed(4));
@@ -12668,21 +13520,18 @@
         }
         rows.forEach((line, index) => content += "<tr>" + (index === 0 ? cellWarn : cellAdv) + line.join("&nbsp;" + cellEnd + (index === 0 ? cellAdv : cellInfo)) + cellEnd + "</tr>");
         $("#script_mechStatsTable").html(content);
-
-        if (realBay) { game.global.portal.mechbay = realBay; }
-        if (realPrepared) { game.global.blood.prepared = realPrepared; }
     }
 
     function buildEjectorSettings() {
         let sectionId = "ejector";
-        let sectionName = "Ejector & Supply";
+        let sectionName = "Ejector, Supply & Nanite";
 
         let resetFunction = function() {
             resetEjectorSettings(true);
             updateSettingsFromState();
             updateEjectorSettingsContent();
 
-            resetCheckbox("autoEject", "autoSupply");
+            resetCheckbox("autoEject", "autoSupply", "autoNanite");
             removeEjectToggles();
             removeSupplyToggles();
         };
@@ -12704,14 +13553,16 @@
         let spendDesc = "Configures threshold when script will be allowed to use resources. With any option script will try to use most expensive of allowed resources within selected group. Craftables, when enabled, always use excess amount as threshold, having no cap.";
         addSettingsSelect(currentNode, "ejectMode", "Eject mode", spendDesc, spendOptions);
         addSettingsSelect(currentNode, "supplyMode", "Supply mode", spendDesc, spendOptions);
+        addSettingsSelect(currentNode, "naniteMode", "Nanite mode", spendDesc, spendOptions);
         addSettingsToggle(currentNode, "prestigeWhiteholeStabiliseMass", "Stabilize blackhole", "Stabilizes the blackhole with exotic materials, disabled on whitehole runs");
 
         currentNode.append(`
           <table style="width:100%">
             <tr>
-              <th class="has-text-warning" style="width:30%">Resource</th>
+              <th class="has-text-warning" style="width:20%">Resource</th>
               <th class="has-text-warning" style="width:20%">Atomic Mass</th>
               <th class="has-text-warning" style="width:10%">Eject</th>
+              <th class="has-text-warning" style="width:10%">Nanite</th>
               <th class="has-text-warning" style="width:30%">Supply Value</th>
               <th class="has-text-warning" style="width:10%">Supply</th>
             </tr>
@@ -12724,9 +13575,9 @@
         let tabResources = [];
         for (let id in resources) {
             let resource = resources[id];
-            if (resource.isEjectable() || resource.isSupply()) {
+            if (EjectManager.isConsumable(resource) || SupplyManager.isConsumable(resource) || NaniteManager.isConsumable(resource)) {
                 tabResources.push(resource);
-                newTableBodyText += `<tr><td id="script_eject_${resource.id}" style="width:30%"></td><td style="width:20%"></td><td style="width:10%"></td><td style="width:30%"></td><td style="width:10%"></td></tr>`;
+                newTableBodyText += `<tr><td id="script_eject_${resource.id}" style="width:20%"></td><td style="width:20%"></td><td style="width:10%"></td><td style="width:10%"></td><td style="width:30%"></td><td style="width:10%"></td></tr>`;
             }
         }
 
@@ -12742,20 +13593,25 @@
                 "has-text-info";
 
             ejectElement.append(buildTableLabel(resource.name, "", color));
+            ejectElement = ejectElement.next();
 
-            if (resource.isEjectable()) {
-                ejectElement = ejectElement.next();
+            if (resource.atomicMass > 0) {
                 ejectElement.append(`<span class="mass"><span class="has-text-warning">${resource.atomicMass}</span> kt</span>`);
+            }
+            ejectElement = ejectElement.next();
 
-                ejectElement = ejectElement.next();
+            if (EjectManager.isConsumable(resource)) {
                 addTableToggle(ejectElement, "res_eject" + resource.id);
-            } else {
-                ejectElement = ejectElement.next().next();
+            }
+            ejectElement = ejectElement.next();
+
+            if (NaniteManager.isConsumable(resource)) {
+                addTableToggle(ejectElement, "res_nanite" + resource.id);
             }
 
-            if (resource.isSupply()) {
+            if (SupplyManager.isConsumable(resource)) {
                 ejectElement = ejectElement.next();
-                ejectElement.append(`<span class="mass">Export <span class="has-text-caution">${resource.supplyVolume}</span>, Gain <span class="has-text-success">${resource.supplyValue}</span></span>`);
+                ejectElement.append(`<span class="mass">Export <span class="has-text-caution">${SupplyManager.supplyOut(resource.id)}</span>, Gain <span class="has-text-success">${SupplyManager.supplyIn(resource.id)}</span></span>`);
 
                 ejectElement = ejectElement.next();
                 addTableToggle(ejectElement, "res_supply" + resource.id);
@@ -12939,7 +13795,7 @@
 
         addSettingsToggle(currentNode, "storageLimitPreMad", "Limit Pre-MAD Storage", "Saves resources and shortens run time by limiting storage pre-MAD");
         addSettingsToggle(currentNode, "storageSafeReassign", "Reassign only empty storages", "Wait until storage is empty before reassigning containers to another resource, to prevent overflowing and wasting resources");
-        addSettingsToggle(currentNode, "storageAssignExtra", "Assign buffer storage", "Assigns 3% more resources above required amounts, ensuring that required quantity will be actually reached, even if other part of script trying to sell\\eject\\switch production, etc.");
+        addSettingsToggle(currentNode, "storageAssignExtra", "Assign buffer storage", "Assigns 3% extra strorage above required amounts, ensuring that required quantity will be actually reached, even if other part of script trying to sell\\eject\\switch production, etc. When manual trades enabled applies additional adjust derieved from selling threshold.");
         addSettingsToggle(currentNode, "storagePrioritizedOnly", "Assign per buildings", "Assign storage based on individual costs of each enabled buildings, instead of going for maximums. Allows to prioritize storages for queue and trigger, and skip assigning for unaffordable expensive buildings. Experimental feature.");
 
         currentNode.append(`
@@ -13003,7 +13859,7 @@
 
     function buildMinorTraitSettings() {
         let sectionId = "minorTrait";
-        let sectionName = "Minor Trait";
+        let sectionName = "Traits";
 
         let resetFunction = function() {
             resetMinorTraitSettings(true);
@@ -13021,6 +13877,12 @@
 
         let currentNode = $('#script_minorTraitContent');
         currentNode.empty().off("*");
+
+        let genusOptions = [{val: "ignore", label: "Ignore", hint: "Do not shift genus"},
+                            {val: "none", label: game.loc(`genelab_genus_none`)},
+                            ...Object.values(game.races).map(r => r.type).filter((g, i, a) => g && g !== "organism" && g !== "synthetic" && a.indexOf(g) === i).map(g => (
+                            {val: g, label: game.loc(`genelab_genus_${g}`)}))];
+        addSettingsSelect(currentNode, "shifterGenus", "Mimic genus", "Mimic selected genus, if avaialble. If you want to add some conditional overrides to this setting, keep in mind changing genus redraws game page, too frequent(every tick or few) changes can drastically harm game performance.", genusOptions);
 
         currentNode.append(`
           <table style="width:100%">
@@ -13073,6 +13935,70 @@
         document.documentElement.scrollTop = document.body.scrollTop = currentScrollPosition;
     }
 
+    function buildMagicSettings() {
+        let sectionId = "magic";
+        let sectionName = "Magic";
+
+        let resetFunction = function() {
+            resetMagicSettings(true);
+            updateSettingsFromState();
+            updateMagicSettingsContent();
+
+            resetCheckbox("autoAlchemy", "autoPylon");
+        };
+
+        buildSettingsSection(sectionId, sectionName, resetFunction, updateMagicSettingsContent);
+    }
+
+    function updateMagicSettingsContent() {
+        let currentScrollPosition = document.documentElement.scrollTop || document.body.scrollTop;
+
+        let currentNode = $('#script_magicContent');
+        currentNode.empty().off("*");
+
+        updateMagicAlchemy(currentNode);
+        updateMagicPylon(currentNode);
+
+        document.documentElement.scrollTop = document.body.scrollTop = currentScrollPosition;
+    }
+
+    function updateMagicAlchemy(currentNode) {
+        addStandardHeading(currentNode, "Alchemy");
+        addSettingsNumber(currentNode, "magicAlchemyManaUse", "Mana income used", "Income portion to use on alchemy. Setting to 1 is not recommended, leftover mana will be used for rituals.");
+
+        currentNode.append(`
+          <table style="width:100%">
+            <tr>
+              <th class="has-text-warning" style="width:20%">Resource</th>
+              <th class="has-text-warning" style="width:20%">Enabled</th>
+              <th class="has-text-warning" style="width:20%">Weighting</th>
+              <th class="has-text-warning" style="width:40%"></th>
+            </tr>
+            <tbody id="script_alchemyTableBody"></tbody>
+          </table>`);
+
+        let tableBodyNode = $('#script_alchemyTableBody');
+        let newTableBodyText = "";
+
+        for (let resource of AlchemyManager.priorityList) {
+            newTableBodyText += `<tr><td id="script_alchemy_${resource.id}" style="width:20%"></td><td style="width:20%"></td><td style="width:20%"></td><td style="width:40%"></td></tr>`;
+        }
+        tableBodyNode.append($(newTableBodyText));
+
+        for (let resource of AlchemyManager.priorityList) {
+            let node = $('#script_alchemy_' + resource.id);
+
+            let color = AlchemyManager.transmuteTier(resource) > 1 ? "has-text-advanced" : "has-text-info";
+            node.append(buildTableLabel(resource.name, "", color));
+
+            node = node.next();
+            addTableToggle(node, "res_alchemy_" + resource.id);
+
+            node = node.next();
+            addTableInput(node, "res_alchemy_w_" + resource.id);
+        }
+    }
+
     function buildProductionSettings() {
         let sectionId = "production";
         let sectionName = "Production";
@@ -13082,7 +14008,7 @@
             updateSettingsFromState();
             updateProductionSettingsContent();
 
-            resetCheckbox("autoQuarry", "autoGraphenePlant", "autoSmelter", "autoCraft", "autoFactory", "autoMiningDroid", "autoPylon");
+            resetCheckbox("autoQuarry", "autoGraphenePlant", "autoSmelter", "autoCraft", "autoFactory", "autoMiningDroid");
             removeCraftToggles();
         };
 
@@ -13100,7 +14026,6 @@
         updateProductionTableFoundry(currentNode);
         updateProductionTableFactory(currentNode);
         updateProductionTableMiningDrone(currentNode);
-        updateProductionTablePylon(currentNode);
 
         document.documentElement.scrollTop = document.body.scrollTop = currentScrollPosition;
     }
@@ -13113,6 +14038,7 @@
                               {val: "storage", label: "Up to full storages", hint: "Produce both Iron and Steel at ratio which will fill both storages at same time for both"},
                               {val: "required", label: "Up to required amounts", hint: "Produce both Iron and Steel at ratio which will produce maximum amount of resources required for buildings at same time for both"}];
         addSettingsSelect(currentNode, "productionSmelting", "Smelters production", "Distribution of smelters between iron and steel", smelterOptions);
+        addSettingsNumber(currentNode, "productionSmeltingIridium", "Iridium ratio (The True Path)", "Share of smelters dedicated to Iridium");
 
         currentNode.append(`
           <table style="width:100%">
@@ -13236,6 +14162,7 @@
 
             productionElement.append(buildTableLabel(resource.name));
 
+            // TODO: Make two toggles, for manual craft and foundry
             productionElement = productionElement.next();
             addTableToggle(productionElement, "craft" + resource.id);
 
@@ -13292,9 +14219,9 @@
         }
     }
 
-    function updateProductionTablePylon(currentNode) {
+    function updateMagicPylon(currentNode) {
         addStandardHeading(currentNode, "Pylon");
-        addSettingsNumber(currentNode, "productionRitualManaUse", "Mana income used", "Income portion to use on rituals. Setting to 1 is not recomended, as it will halt mana regeneration. Applied only when mana not capped - with capped mana script will always use all income.");
+        addSettingsNumber(currentNode, "productionRitualManaUse", "Mana income used", "Income portion to use on rituals. Setting to 1 is not recommended, as it will halt mana regeneration. Applied only when mana not capped - with capped mana script will always use all income.");
 
         currentNode.append(`
           <table style="width:100%">
@@ -13303,10 +14230,10 @@
               <th class="has-text-warning" style="width:20%">Weighting</th>
               <th style="width:25%"></th>
             </tr>
-            <tbody id="script_productionTableBodyPylon"></tbody>
+            <tbody id="script_magicTableBodyPylon"></tbody>
           </table>`);
 
-        let tableBodyNode = $('#script_productionTableBodyPylon');
+        let tableBodyNode = $('#script_magicTableBodyPylon');
         let newTableBodyText = "";
 
         let pylonProducts = Object.values(RitualManager.Productions);
@@ -13454,6 +14381,8 @@
         let currentNode = $('#script_weightingContent');
         currentNode.empty().off("*");
 
+        addSettingsToggle(currentNode, "buildingBuildIfStorageFull", "Ignore weighting and build if any storage is full", "Ignore weighting and immediately construct building if it uses any capped resource, preventing wasting them by overflowing. Weight still need to be positive(above zero) for this to happen.");
+
         currentNode.append(`
           <table style="width:100%">
             <tr>
@@ -13480,11 +14409,11 @@
         addWeightingRule(tableBodyNode, "All fuel depots", "Missing Oil or Helium for techs and missions", "buildingWeightingMissingFuel");
         addWeightingRule(tableBodyNode, "Not housing, barrack, or knowledge building", "MAD prestige enabled, and affordable", "buildingWeightingMADUseless");
         addWeightingRule(tableBodyNode, "Mass Ejector", "Existed ejectors not fully utilized", "buildingWeightingUnusedEjectors");
-        addWeightingRule(tableBodyNode, "Freight Yard, Container Port", "Have unused crates or containers", "buildingWeightingCrateUseless");
+        addWeightingRule(tableBodyNode, "Freight Yard, Container Port, Munitions Depot", "Have unused crates or containers", "buildingWeightingCrateUseless");
         addWeightingRule(tableBodyNode, "Horseshoes", "No more Horseshoes needed", "buildingWeightingHorseshoeUseless");
         addWeightingRule(tableBodyNode, "Meditation Chamber", "No more Meditation Space needed", "buildingWeightingZenUseless");
         addWeightingRule(tableBodyNode, "Gate Turret", "Gate demons fully supressed", "buildingWeightingGateTurret");
-        addWeightingRule(tableBodyNode, "Warehouses, Garage, Cargo Yard", "Need more storage", "buildingWeightingNeedStorage");
+        addWeightingRule(tableBodyNode, "Warehouses, Garage, Cargo Yard, Storehouse", "Need more storage", "buildingWeightingNeedStorage");
         addWeightingRule(tableBodyNode, "Housing", "Less than 90% of houses are used", "buildingWeightingUselessHousing");
 
         document.documentElement.scrollTop = document.body.scrollTop = currentScrollPosition;
@@ -13523,9 +14452,8 @@
         let currentNode = $('#script_buildingContent');
         currentNode.empty().off("*");
 
-        addSettingsToggle(currentNode, "buildingBuildIfStorageFull", "Ignore weighting and build if storage is full", "Ignore weighting and immediately construct building if it uses any capped resource, preventing wasting them by overflowing. Weight still need to be positive(above zero) for this to happen.");
         addSettingsToggle(currentNode, "buildingsIgnoreZeroRate", "Do not wait for resources without income", "Weighting checks will ignore resources without positive income(craftables, inactive factory goods, etc), buildings with such resources will not delay other buildings.");
-        addSettingsToggle(currentNode, "buildingsLimitPowered", "Limit amount of powered buildings", "With this option enabled Max Build will prevent powering extra building. Can be useful to disable buildigns with overrided settings.");
+        addSettingsToggle(currentNode, "buildingsLimitPowered", "Limit amount of powered buildings", "With this option enabled Max Build will prevent powering extra building. Can be useful to disable buildings with overrided settings.");
         addSettingsNumber(currentNode, "buildingTowerSuppression", "Minimum suppression for Towers", "East Tower and West Tower won't be built until minimum suppression is reached");
 
         let shrineOptions = [{val: "any", label: "Any", hint: "Build any Shrines, whenever have resources for it"},
@@ -13902,6 +14830,7 @@
         Object.entries(GameLog.Types).forEach(([id, label]) => addSettingsToggle(currentNode, "log_" + id, label, `If logging is enabled then logs ${label} actions`));
 
         addSettingsHeader1(currentNode, "Game Messages");
+        addSettingsToggle(currentNode, "hellTurnOffLogMessages", "Turn off patrol and surveyor log messages", "Automatically turns off the hell patrol and surveyor log messages");
         let stringsUrl = `strings/strings${game.global.settings.locale === "en-US" ? "" : "." + game.global.settings.locale}.json`
         currentNode.append(`
           <div>
@@ -14055,19 +14984,21 @@
             createSettingToggle(scriptNode, 'autoEvolution', 'Runs through the evolution part of the game through to founding a settlement. In Auto Achievements mode will target races that you don\'t have extinction\\greatness achievements for yet.');
             createSettingToggle(scriptNode, 'autoFight', 'Sends troops to battle whenever Soldiers are full and there are no wounded. Adds to your offensive battalion and switches attack type when offensive rating is greater than the rating cutoff for that attack type.');
             createSettingToggle(scriptNode, 'autoHell', 'Sends soldiers to hell and sends them out on patrols. Adjusts maximum number of powered attractors based on threat.');
-            createSettingToggle(scriptNode, 'autoMech', 'Builds most effective large mechs for current spire floor. Least effective will be scrapped to make room for new ones.', startMechObserver, stopMechObserver);
+            createSettingToggle(scriptNode, 'autoMech', 'Builds most effective large mechs for current spire floor. Least effective will be scrapped to make room for new ones.', createMechInfo, removeMechInfo);
             createSettingToggle(scriptNode, 'autoFleet', 'Manages Andromeda fleet to supress piracy');
             createSettingToggle(scriptNode, 'autoTax', 'Adjusts tax rates if your current morale is greater than your maximum allowed morale. Will always keep morale above 100%.');
             createSettingToggle(scriptNode, 'autoCraft', 'Automatically produce craftable resources, thresholds when it happens depends on current demands and stocks.', createCraftToggles, removeCraftToggles);
+            createSettingToggle(scriptNode, 'autoTrigger', 'Purchase triggered buildings, projects, and researches once conditions met');
             createSettingToggle(scriptNode, 'autoBuild', 'Construct buildings based on their weightings(user configured), and various rules(e.g. it won\'t build building which have no support to run)', createBuildingToggles, removeBuildingToggles);
+            createSettingToggle(scriptNode, 'autoARPA', 'Builds ARPA projects if user enables them to be built.', createArpaToggles, removeArpaToggles);
             createSettingToggle(scriptNode, 'autoPower', 'Manages power based on a priority order of buildings. Also disables currently useless buildings to save up resources.');
             createSettingToggle(scriptNode, 'autoStorage', 'Assigns crates and containers to resources needed for buildings enabled for Auto Build, queued buildings, researches, and enabled projects', createStorageToggles, removeStorageToggles);
             createSettingToggle(scriptNode, 'autoMarket', 'Allows for automatic buying and selling of resources once specific ratios are met. Also allows setting up trade routes until a minimum specified money per second is reached. The will trade in and out in an attempt to maximise your trade routes.', createMarketToggles, removeMarketToggles);
             createSettingToggle(scriptNode, 'autoGalaxyMarket', 'Manages galaxy trade routes');
             createSettingToggle(scriptNode, 'autoResearch', 'Performs research when minimum requirements are met.');
-            createSettingToggle(scriptNode, 'autoARPA', 'Builds ARPA projects if user enables them to be built.', createArpaToggles, removeArpaToggles);
             createSettingToggle(scriptNode, 'autoJobs', 'Assigns jobs in a priority order with multiple breakpoints. Starts with a few jobs each and works up from there. Will try to put a minimum number on lumber / stone then fill up capped jobs first.');
             createSettingToggle(scriptNode, 'autoCraftsmen', 'With this option autoJobs will also manage craftsmens.');
+            createSettingToggle(scriptNode, 'autoAlchemy', 'Manages alchemic transmutations');
             createSettingToggle(scriptNode, 'autoPylon', 'Manages pylon rituals');
             createSettingToggle(scriptNode, 'autoQuarry', 'Manages rock quarry stone to chrysotile ratio for smoldering races');
             createSettingToggle(scriptNode, 'autoSmelter', 'Manages smelter fuel and production.');
@@ -14078,6 +15009,7 @@
             createSettingToggle(scriptNode, 'autoMinorTrait', 'Purchase minor traits using genes according to their weighting settings.');
             createSettingToggle(scriptNode, 'autoEject', 'Eject excess resources to black hole. Normal resources ejected when they close to storage cap, craftables - when above requirements.', createEjectToggles, removeEjectToggles);
             createSettingToggle(scriptNode, 'autoSupply', 'Send excess resources to Spire. Normal resources sent when they close to storage cap, craftables - when above requirements. Takes priority over ejector.', createSupplyToggles, removeSupplyToggles);
+            createSettingToggle(scriptNode, 'autoNanite', 'Consume resources to produce Nanite. Normal resources sent when they close to storage cap, craftables - when above requirements. Takes priority over supplies and ejector.');
 
             createQuickOptions(scriptNode, "s-quick-prestige-options", "Prestige", buildPrestigeSettings);
 
@@ -14122,8 +15054,18 @@
             createArpaToggles();
         }
 
-        if (settingsRaw.autoMech && game.global.settings.showMechLab && $('#mechList .ea-mech-info').length === 0) {
-            startMechObserver();
+        if (settingsRaw.autoMech && game.global.settings.showMechLab && $('#mechList .ea-mech-info').length < $('#mechList .mechRow').length) {
+            createMechInfo();
+        }
+
+        // Hell messages
+        if (settings.hellTurnOffLogMessages) {
+            if (game.global.portal.fortress?.notify === "Yes") {
+                $("#fort .b-checkbox").eq(0).click();
+            }
+            if (game.global.portal.fortress?.s_ntfy === "Yes") {
+                $("#fort .b-checkbox").eq(1).click();
+            }
         }
 
         // Soul Gems income rate
@@ -14180,34 +15122,38 @@
     }
 
     function createMechInfo() {
+        if ((settings.masterScriptToggle && MechManager.isActive) || $(`#mechList .mechRow[draggable=true]`).length > 0) {
+            return;
+        }
         if (MechManager.initLab()) {
-            removeMechInfo();
-            $('#mechList .mechRow').each(function(index) {
-                let mech = game.global.portal.mechbay.mechs[index];
+            MechManager.mechObserver.disconnect();
+            let list = getVueById("mechList");
+            for (let i = 0; i < list._vnode.children.length; i++) {
+                let mech = game.global.portal.mechbay.mechs[i];
                 let stats = MechManager.getMechStats(mech);
                 let rating = stats.power / MechManager.bestMech[mech.size].power;
-                let info = mech.size === 'collector' ?
+                let info = (mech.size === 'collector' ?
                   `${Math.round(rating*100)}%, ${getNiceNumber(stats.power*MechManager.collectorValue)} /s`:
-                  `${Math.round(rating*100)}%, ${getNiceNumber(stats.power*100)}, ${getNiceNumber(stats.efficiency*100)}`;
-                $(this).prepend(`<span class="ea-mech-info">${info} | </span>`);
-            });
+                  `${Math.round(rating*100)}%, ${getNiceNumber(stats.power*100)}, ${getNiceNumber(stats.efficiency*100)}`)
+                  + " | ";
+
+                let mechNode = list._vnode.children[i].elm;
+                let firstNode = $(mechNode.childNodes[0]);
+                if (firstNode.hasClass("ea-mech-info")) {
+                    if (firstNode.text() !== "info") {
+                        firstNode.text(info);
+                    }
+                } else {
+                    $(mechNode).prepend(`<span class="ea-mech-info">${info}</span>`);
+                }
+            }
+            MechManager.mechObserver.observe(document.getElementById("mechList"), {childList: true});
         }
     }
 
     function removeMechInfo() {
-        $('#mechList .ea-mech-info').remove();
-    }
-
-    function startMechObserver() {
-        stopMechObserver();
-
-        createMechInfo();
-        MechManager.mechObserver.observe(document.getElementById("mechLab"), {childList: true});
-    }
-
-    function stopMechObserver() {
         MechManager.mechObserver.disconnect();
-        removeMechInfo();
+        $('#mechList .ea-mech-info').remove();
     }
 
     function createArpaToggles() {
@@ -14279,8 +15225,7 @@
         removeEjectToggles();
 
         $('#eject').append('<span id="script_eject_top_row" style="margin-left: auto; margin-right: 0.2rem; float: right;" class="has-text-danger">Auto Eject</span>');
-        for (let i = 0; i < resourcesByAtomicMass.length; i++) {
-            let resource = resourcesByAtomicMass[i];
+        for (let resource of EjectManager.priorityList) {
             let ejectElement = $('#eject' + resource.id);
             if (ejectElement.length) {
                 let settingKey = 'res_eject' + resource.id;
@@ -14303,8 +15248,7 @@
         removeSupplyToggles();
 
         $('#spireSupply').append('<span id="script_supply_top_row" style="margin-left: auto; margin-right: 0.2rem; float: right;" class="has-text-danger">Auto Supply</span>');
-        for (let i = 0; i < resourcesBySupplyValue.length; i++) {
-            let resource = resourcesBySupplyValue[i];
+        for (let resource of SupplyManager.priorityList) {
             let supplyElement = $('#supply' + resource.id);
             if (supplyElement.length) {
                 let settingKey = 'res_supply' + resource.id;
@@ -14346,6 +15290,9 @@
           </div>`);
 
         for (let resource of MarketManager.priorityList) {
+            if (resource === resources.Food && game.global.race['artifical']) {
+                continue;
+            }
             let marketElement = $('#market-' + resource.id);
             if (marketElement.length > 0) {
                 let marketRow = $('<span class="ea-market-toggle" style="margin-left: auto; margin-right: 0.2rem; float:right;"></span>');
@@ -14462,78 +15409,74 @@
 
     // main.js -> Soldier Healing
     function getHealingRate() {
-        let hc = (buildings.Hospital.count * game.global.tech['medic']) || 0;
+        let hc = game.global.race['artifical']
+          ? buildings.BootCamp.count
+          : buildings.Hospital.count;
+        hc *= game.global.tech['medic'] || 1;
         hc += (game.global.race['fibroblast'] * 2) || 0;
-        if (game.global.city['s_alter'] && game.global.city.s_alter.regen > 0){
-            hc += 3;
+        if (game.global.city.s_alter?.regen > 0){
+            if (hc >= 20) {
+                hc *= traitVal("cannibalize", 0, '+');
+            } else {
+                hc += Math.floor(traitVal("cannibalize", 0) / 5);
+            }
         }
         if (getGovernor() === 'sports') {
             hc *= 1.5;
         }
-        let healed = game.global.race['regenerative'] ? 4 : 1;
-        let max_bound = game.global.race['slow_regen'] ? 25 : 20;
-        return healed + Math.round(hc) / max_bound;
+        let max_bound = 20 * traitVal('slow_regen', 0, '+');
+
+        return traitVal('regenerative', 0, 1) + Math.round(hc) / max_bound;
+    }
+
+    // main.js -> Citizen Growth
+    function getGrowthRate() {
+        if (game.global.race['artifical'] || (game.global.race['spongy'] && game.global.city.calendar.weather === 0) ||
+           (game.global.race['parasite'] && game.global.city.calendar.wind === 0 && !game.global.race['cataclysm'])) {
+            return 0;
+        }
+        let date = new Date();
+        let lb = game.global.tech['reproduction'] ?? 0;
+        if (haveTech('reproduction') && date.getMonth() === 1 && date.getDate() === 14) {
+            lb += 5;
+        }
+        lb *= traitVal('fast_growth', 0, 1);
+        lb += traitVal('fast_growth', 1, 0);
+        if (game.global.race['spores'] && game.global.city.calendar.wind === 1){
+            if (game.global.race['parasite']) {
+                lb += traitVal('spores', 2);
+            } else {
+                lb += traitVal('spores', 0);
+                lb *= traitVal('spores', 1);
+            }
+        }
+        lb += buildings.Hospital.count * (haveTech('reproduction', 2) ? 1 : 0);
+        lb += game.global.genes['birth'] ?? 0;
+        lb += game.global.race['promiscuous'] ?? 0;
+        let base = resources.Population.currentQuantity * (game.global.city.ptrait === 'toxic' ? 1.25 : 1);
+        if (game.global.race['parasite'] && game.global.race['cataclysm']){
+            lb = Math.round(lb / 5);
+            base *= 3;
+        }
+        return lb / (base * 1.810792884997279 / 2);
     }
 
     function getResourcesPerClick() {
-        let amount = 1;
-        if (game.global.race['strong']) {
-            amount *= 5;
-        }
-        if (game.global.genes['enhance']) {
-            amount *= 2;
-        }
-        return amount;
+        return traitVal('strong', 0, 1) * (game.global.genes['enhance'] ? 2 : 1);
     }
 
     function getCostConflict(action) {
-        if (SpyManager.purchaseMoney > 0 && action.cost["Money"] > resources.Money.currentQuantity - SpyManager.purchaseMoney) {
-            return {res: resources.Money, target: techIds["tech-unification"], cause: "purchase"};
-        }
-        for (let i = 0; i < state.queuedTargets.length; i++) {
-            let otherObject = state.queuedTargets[i];
-            if (otherObject instanceof Technology) {
-                if (!settings.buildingsConflictRQueue) continue;
-            } else if (otherObject instanceof Project){
-                if (!settings.buildingsConflictPQueue) continue;
-            } else {
-                if (!settings.buildingsConflictQueue) continue;
-            }
-
+        for (let priorityTarget of state.conflictTargets) {
             let blockKnowledge = true;
-            for (let res in otherObject.cost) {
-                if (res !== "Knowledge" && resources[res].currentQuantity < otherObject.cost[res]) {
+            for (let res in priorityTarget.cost) {
+                if (res !== "Knowledge" && resources[res].currentQuantity < priorityTarget.cost[res]) {
                     blockKnowledge = false;
                     break;
                 }
             }
-            for (let res in otherObject.cost) {
-                if ((res !== "Knowledge" || blockKnowledge) && otherObject.cost[res] > resources[res].currentQuantity - action.cost[res]) {
-                    return {res: resources[res], target: otherObject, cause: "queue"};
-                }
-            }
-        }
-
-        for (let i = 0; i < state.triggerTargets.length; i++) {
-            let otherObject = state.triggerTargets[i];
-            // Unlike queue triggers won't be processed without respective script option enabled, no need to reserve resources for something that won't ever happen
-            if (!settings.autoBuild && !settings.autoARPA && otherObject instanceof Action) {
-                continue;
-            }
-            if (!settings.autoResearch && otherObject instanceof Technology) {
-                continue;
-            }
-
-            let blockKnowledge = true;
-            for (let res in otherObject.cost) {
-                if (res !== "Knowledge" && resources[res].currentQuantity < otherObject.cost[res]) {
-                    blockKnowledge = false;
-                    break;
-                }
-            }
-            for (let res in otherObject.cost) {
-                if ((res !== "Knowledge" || blockKnowledge) && otherObject.cost[res] > resources[res].currentQuantity - action.cost[res]) {
-                    return {res: resources[res], target: otherObject, cause: "trigger"};
+            for (let res in priorityTarget.cost) {
+                if ((res !== "Knowledge" || blockKnowledge) && priorityTarget.cost[res] > resources[res].currentQuantity - action.cost[res]) {
+                    return {res: resources[res], obj: priorityTarget};
                 }
             }
         }
@@ -14590,11 +15533,7 @@
     }
 
     function isHungryRace() {
-        return game.global.race['carnivore'] || game.global.race['ravenous'];
-    }
-
-    function isHunterRace() {
-        return game.global.race['carnivore'] || game.global.race['soul_eater'];
+        return (game.global.race['carnivore'] && !game.global.race['herbivore'] && !game.global.race['artifical']) || game.global.race['ravenous'];
     }
 
     function isDemonRace() {
@@ -14687,15 +15626,31 @@
         return list;
     }
 
-    // TODO: adjustCost refactored in 1.2
+    function traitVal(trait, idx, opt) {
+        if (game.global.race[trait]) {
+            let val = game.traits[trait].vars()[idx];
+            if (opt === "-") {
+                return 1 - val / 100;
+            } else if (opt === "+") {
+                return 1 + val / 100;
+            } else {
+                return val;
+            }
+        } else if (opt === '+' || opt === '-') {
+            return 1;
+        } else {
+            return opt ?? 0;
+        }
+    }
+
     var poly = {
     // Taken directly from game code with no functional changes, and minified.
         // export function arpaAdjustCosts(costs) from arpa.js
-        arpaAdjustCosts: function(t){return t=function(r){if(game.global.race.creative){var n={};return Object.keys(r).forEach(function(t){n[t]=function(){return.8*r[t]()}}),n}return r}(t),poly.adjustCosts(t)},
+        arpaAdjustCosts: function(t){return t=function(t){var r=traitVal('creative',1,'-');if(r<1){var a={};return Object.keys(t).forEach(function(e){a[e]=function(){return t[e]()*r}}),a}return t}(t),poly.adjustCosts({cost:t})},
         // function govPrice(gov) from civics.js
         govPrice: function(e){let o=game.global.civic.foreign[`gov${e}`],i=15384*o.eco;return i*=1+1.6*o.hstl/100,+(i*=1-.25*o.unrest/100).toFixed(0)},
         // export const galaxyOffers from resources.js
-        // This one does *not* work exactly like in game: game's function is bugged, and doesn't track mutationg out of kindling kindred, here it's fixed, and change of trait will take immediate effect, without reloading page. Reimplementing this bug would require additional efforts, as polyfills initialized before we have access to game state, and we don't know traits at this time. Players doesn't mutate out of kindled kindered daily, and even if someone will - he will also need to fix game bug by reloading, and that will also sync return values of this poly with game implementation again, so no big deal...
+        // This one does *not* work exactly like in game: game's function is bugged, and doesn't track mutation out of kindling kindred, here it's fixed, and change of trait will take immediate effect, without reloading page. Reimplementing this bug would require additional efforts, as polyfills initialized before we have access to game state, and we don't know traits at this time. Players doesn't mutate out of kindled kindered daily, and even if someone will - he will also need to fix game bug by reloading, and that will also sync return values of this poly with game implementation again, so no big deal...
         galaxyOffers: normalizeProperties([{buy:{res:"Deuterium",vol:5},sell:{res:"Helium_3",vol:25}},{buy:{res:"Neutronium",vol:2.5},sell:{res:"Copper",vol:200}},{buy:{res:"Adamantite",vol:3},sell:{res:"Iron",vol:300}},{buy:{res:"Elerium",vol:1},sell:{res:"Oil",vol:125}},{buy:{res:"Nano_Tube",vol:10},sell:{res:"Titanium",vol:20}},{buy:{res:"Graphene",vol:25},sell:{res:()=>game.global.race.kindling_kindred||game.global.race.smoldering?game.global.race.smoldering?"Chrysotile":"Stone":"Lumber",vol:1e3}},{buy:{res:"Stanene",vol:40},sell:{res:"Aluminium",vol:800}},{buy:{res:"Bolognium",vol:.75},sell:{res:"Uranium",vol:4}},{buy:{res:"Vitreloy",vol:1},sell:{res:"Infernite",vol:1}}]),
         // export const supplyValue from resources.js
         supplyValue: {Lumber:{in:.5,out:25e3},Chrysotile:{in:.5,out:25e3},Stone:{in:.5,out:25e3},Crystal:{in:3,out:25e3},Furs:{in:3,out:25e3},Copper:{in:1.5,out:25e3},Iron:{in:1.5,out:25e3},Aluminium:{in:2.5,out:25e3},Cement:{in:3,out:25e3},Coal:{in:1.5,out:25e3},Oil:{in:2.5,out:12e3},Uranium:{in:5,out:300},Steel:{in:3,out:25e3},Titanium:{in:3,out:25e3},Alloy:{in:6,out:25e3},Polymer:{in:6,out:25e3},Iridium:{in:8,out:25e3},Helium_3:{in:4.5,out:12e3},Deuterium:{in:4,out:1e3},Neutronium:{in:15,out:1e3},Adamantite:{in:12.5,out:1e3},Infernite:{in:25,out:250},Elerium:{in:30,out:250},Nano_Tube:{in:6.5,out:1e3},Graphene:{in:5,out:1e3},Stanene:{in:4.5,out:1e3},Bolognium:{in:18,out:1e3},Vitreloy:{in:14,out:1e3},Orichalcum:{in:10,out:1e3},Plywood:{in:10,out:250},Brick:{in:10,out:250},Wrought_Iron:{in:10,out:250},Sheet_Metal:{in:10,out:250},Mythril:{in:12.5,out:250},Aerogel:{in:16.5,out:250},Nanoweave:{in:18,out:250},Scarletite:{in:35,out:250}},
@@ -14704,17 +15659,19 @@
         // export function hellSupression(area, val) from portal.js
         hellSupression: function(t,e){switch(t){case"ruins":{let t=e||buildings.RuinsGuardPost.stateOnCount,r=75*buildings.RuinsArcology.stateOnCount,a=game.armyRating(t,"hellArmy",0);game.global.race.holy&&(a*=1.25);let l=(a+r)/5e3;return{supress:l>1?1:l,rating:a+r}}case"gate":{let t=poly.hellSupression("ruins",e),r=100*buildings.GateTurret.stateOnCount;game.global.race.holy&&(r*=1.25);let a=(t.rating+r)/7500;return{supress:a>1?1:a,rating:t.rating+r}}default:return 0}},
         // function taxCap(min) from civics.js
-        taxCap: function(e){let a=haveTech("currency",5);if(e)return!a&&!game.global.race.terrifying||game.global.race.noble?10:0;{let e=30;return game.global.race.noble?e="oligarchy"===game.global.civic.govern.type?40:20:(e="oligarchy"===game.global.civic.govern.type?50:30,(a||game.global.race.terrifying)&&(e+=20)),"noble"===getGovernor()&&(e+=10),e}},
+        taxCap: function(e){let a=(haveTech("currency",5)||game.global.race.terrifying)&&!game.global.race.noble;if(e)return a?0:traitVal("noble",0,10);{let e=traitVal("noble",1,30);return a&&(e+=20),"oligarchy"===game.global.civic.govern.type&&(e+=20),"noble"===getGovernor()&&(e+=10),e}},
         // export function mechCost(size,infernal) from portal.js
-        mechCost: function(e,a){let l=9999,r=1e7;switch(e){case"small":{let e=game.global.blood.prepared>=2?5e4:75e3;r=a?2.5*e:e,l=a?20:1}break;case"medium":r=a?45e4:18e4,l=a?100:4;break;case"large":r=a?925e3:375e3,l=a?500:20;break;case"titan":r=a?15e5:75e4,l=a?1500:75;break;case"collector":{let e=game.global.blood.prepared>=2?8e3:1e4;r=a?2.5*e:e,l=1}}return{s:l,c:r}},
+        mechCost: function(e,a,x){let l=9999,r=1e7;switch(e){case"small":{let e=(x??game.global.blood.prepared)>=2?5e4:75e3;r=a?2.5*e:e,l=a?20:1}break;case"medium":r=a?45e4:18e4,l=a?100:4;break;case"large":r=a?925e3:375e3,l=a?500:20;break;case"titan":r=a?15e5:75e4,l=a?1500:75;break;case"collector":{let e=(x??game.global.blood.prepared)>=2?8e3:1e4;r=a?2.5*e:e,l=1}}return{s:l,c:r}},
         // function terrainRating(mech,rating,effects) from portal.js
-        terrainRating: function(e,l,a){if(!e.equip.includes("special")||"small"!==e.size&&"medium"!==e.size&&"collector"!==e.size||l<1&&(l+=(1-l)*(a.includes("gravity")?.1:.2)),"small"!==e.size&&l<1){let e=0,i={small:0,medium:0,large:0,titan:0,collector:0};for(let l=0;l<game.global.portal.mechbay.mechs.length;l++){let a=game.global.portal.mechbay.mechs[l];(e+=MechManager.getMechSpace(a))<=game.global.portal.mechbay.max&&i[a.size]++}(l+=(a.includes("fog")||a.includes("dark")?.005:.01)*i.small)>1&&(l=1)}return l},
+        terrainRating: function(e,i,s,x){return!e.equip.includes("special")||"small"!==e.size&&"medium"!==e.size&&"collector"!==e.size||i<1&&(i+=(1-i)*(s.includes("gravity")?.1:.2)),"small"!==e.size&&i<1&&(i+=(s.includes("fog")||s.includes("dark")?.005:.01)*(x??game.global.portal.mechbay.scouts))>1&&(i=1),i},
         // function weaponPower(mech,power) from portal.js
         weaponPower: function(e,i){return i<1&&0!==i&&e.equip.includes("special")&&"titan"===e.size&&(i+=.25*(1-i)),e.equip.includes("special")&&"large"===e.size&&(i*=1.02),i},
         // export function timeFormat(time) from functions.js
         timeFormat: function(e){let i;if(e<0)i=game.loc("time_never");else if((e=+e.toFixed(0))>60){let l=e%60,s=(e-l)/60;if(s>=60){let e=s%60,l=(s-e)/60;if(l>24){i=`${(l-(e=l%24))/24}d ${e}h`}else i=`${l}h ${e=("0"+e).slice(-2)}m`}else i=`${s=("0"+s).slice(-2)}m ${l=("0"+l).slice(-2)}s`}else i=`${e=("0"+e).slice(-2)}s`;return i},
         // export universeAffix(universe) from achieve.js
         universeAffix: function(e){switch(e=e||game.global.race.universe){case"evil":return"e";case"antimatter":return"a";case"heavy":return"h";case"micro":return"m";case"magic":return"mg";default:return"l"}},
+        // function shipCosts(bp) from truepath.js
+        shipCosts: function(e){let a={},r=1,u=1,n=1;switch(e.class){case"corvette":a.Money=25e5,a.Aluminium=5e5,r=1,u=1,n=2;break;case"frigate":a.Money=5e6,a.Aluminium=125e4,r=1.1,u=1.09,n=1.5;break;case"destroyer":a.Money=15e6,a.Aluminium=35e5,r=1.2,u=1.18,n=1.2;break;case"cruiser":a.Money=5e7,a.Adamantite=1e6,r=1.3,u=1.25;break;case"battlecruiser":a.Money=125e6,a.Adamantite=26e5,r=1.35,u=1.3,n=.8;break;case"dreadnought":a.Money=5e8,a.Adamantite=8e6,r=1.4,u=1.35,n=.5}switch(e.armor){case"steel":a.Steel=Math.round(35e4**r);break;case"alloy":a.Alloy=Math.round(25e4**r);break;case"neutronium":a.Neutronium=Math.round(1e4**r)}switch(e.engine){case"ion":a.Titanium=Math.round(75e3**u);break;case"tie":a.Titanium=Math.round(15e4**u);break;case"pulse":a.Titanium=Math.round(125e3**u);break;case"photon":a.Titanium=Math.round(21e4**u);break;case"vacuum":a.Titanium=Math.round(3e5**u)}switch(e.power){case"solar":case"diesel":a["dreadnought"===e.class?"Orichalcum":"Copper"]=Math.round(4e4**r),a.Iridium=Math.round(15e3**u);break;case"fission":a["dreadnought"===e.class?"Orichalcum":"Copper"]=Math.round(5e4**r),a.Iridium=Math.round(3e4**u);break;case"fusion":a["dreadnought"===e.class?"Orichalcum":"Copper"]=Math.round(5e4**r),a.Iridium=Math.round(4e4**u);break;case"elerium":a["dreadnought"===e.class?"Orichalcum":"Copper"]=Math.round(6e4**r),a.Iridium=Math.round(55e3**u)}switch(e.sensor){case"radar":a.Money=Math.round(a.Money**1.05);break;case"lidar":a.Money=Math.round(a.Money**1.12);break;case"quantum":a.Money=Math.round(a.Money**1.25)}switch(e.weapon){case"railgun":a.Iron=Math.round(25e3**r);break;case"laser":a.Iridium=Math.round(a.Iridium**1.05),a.Nano_Tube=Math.round(12e3**r);break;case"p_laser":a.Iridium=Math.round(a.Iridium**1.035),a.Nano_Tube=Math.round(12e3**r);break;case"plasma":a.Iridium=Math.round(a.Iridium**1.1),a.Nano_Tube=Math.round(2e4**r);break;case"phaser":a.Iridium=Math.round(a.Iridium**1.15),a.Quantium=Math.round(18e3**r);break;case"disruptor":a.Iridium=Math.round(a.Iridium**1.2),a.Quantium=Math.round(35e3**r)}let i=0;game.global.space.shipyard.ships.forEach(function(a){a.class===e.class&&i++});let o=1+(i-2)/25*n;return Object.keys(a).forEach(function(e){i<2?a[e]=Math.ceil(a[e]*(0===i?.75:.9)):i>2&&(a[e]=Math.ceil(a[e]*o))}),a},
 
     // Reimplemented:
         // export function crateValue() from resources.js
@@ -14725,7 +15682,7 @@
         piracy: region => Number(getVueById(region)?.$options.filters.defense(region) ?? 0),
 
     // Firefox compatibility:
-        adjustCosts: (cost, wiki) => game.adjustCosts(cloneInto(cost, unsafeWindow, {cloneFunctions: true}), wiki),
+        adjustCosts: (c_action, wiki) => game.adjustCosts(cloneInto(c_action, unsafeWindow, {cloneFunctions: true}), wiki),
         loc: (key, variables) => game.loc(key, cloneInto(variables, unsafeWindow)),
         messageQueue: (msg, color, dnr, tags) => game.messageQueue(msg, color, dnr, cloneInto(tags, unsafeWindow)),
     };

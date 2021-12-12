@@ -1,7 +1,7 @@
 import { global, keyMultiplier, sizeApproximation, srSpeak } from './vars.js';
 import { clearElement, popover, clearPopper, flib, timeFormat, vBind, messageQueue, adjustCosts, removeFromQueue, calcQueueMax, calcRQueueMax, buildQueue, calcPrestige, calc_mastery, darkEffect, easterEgg } from './functions.js';
 import { actions, updateQueueNames, drawTech, drawCity, addAction, removeAction, wardenLabel, checkCosts } from './actions.js';
-import { races, traits, cleanAddTrait, cleanRemoveTrait } from './races.js';
+import { races, traits, cleanAddTrait, cleanRemoveTrait, setImitation } from './races.js';
 import { renderSpace } from './space.js';
 import { drawMechLab } from './portal.js';
 import { govActive } from './governor.js';
@@ -40,7 +40,7 @@ export const arpaProjects = {
         reqs: { high_tech: 6 },
         grant: 'supercollider',
         effect(){
-            let sc = global.tech['particles'] && global.tech['particles'] >= 3 ? (global.race['cataclysm'] ? 20 : 8) : (global.race['cataclysm'] ? 10 : 4);
+            let sc = global.tech['tp_particles'] || (global.tech['particles'] && global.tech['particles'] >= 3) ? (global.race['cataclysm'] ? 20 : 8) : (global.race['cataclysm'] ? 10 : 4);
             if (global.tech['storage'] >= 6){
                 if (global.tech['particles'] && global.tech['particles'] >= 4){
                     return global.race['cataclysm'] ? loc('arpa_projects_lhc_cataclysm3',[sc]) : loc('arpa_projects_lhc_effect3',[sc,wardenLabel()]);
@@ -86,6 +86,22 @@ export const arpaProjects = {
             Plywood(offset,wiki){ return costMultiplier('stock_exchange', offset, 25000, 1.06, wiki); },
             Brick(offset,wiki){ return costMultiplier('stock_exchange', offset, 20000, 1.06, wiki); },
             Wrought_Iron(offset,wiki){ return costMultiplier('stock_exchange', offset, 10000, 1.06, wiki); }
+        }
+    },
+    tp_depot: {
+        title: loc('galaxy_gateway_depot'),
+        desc: loc('arpa_projects_depot_desc'),
+        reqs: { high_tech: 6, storage: 4 },
+        grant: 'tp_depot',
+        path: ['truepath'],
+        effect(){
+            return loc('arpa_projects_depot_effect',[5,50]);
+        },
+        cost: {
+            Money(offset,wiki){ return costMultiplier('tp_depot', offset, 1800000, 1.08, wiki); },
+            Stone(offset,wiki){ return costMultiplier('tp_depot', offset, 750000, 1.08, wiki); },
+            Iron(offset,wiki){ return costMultiplier('tp_depot', offset, 250000, 1.08, wiki); },
+            Alloy(offset,wiki){ return costMultiplier('tp_depot', offset, 30000, 1.08, wiki); }
         }
     },
     launch_facility: {
@@ -1495,6 +1511,10 @@ function checkRequirements(tech){
     if (arpaProjects[tech]['condition'] && !arpaProjects[tech].condition()){
         return false;
     }
+    let c_path = global.race['truepath'] ? 'truepath' : 'standard';
+    if (arpaProjects[tech].hasOwnProperty('path') && !arpaProjects[tech].path.includes(c_path)){
+        return false;
+    }
     var isMet = true;
     Object.keys(arpaProjects[tech].reqs).forEach(function (req) {
         if (!global.tech[req] || global.tech[req] < arpaProjects[tech].reqs[req]){
@@ -1529,14 +1549,14 @@ function checkArpaCosts(costs){
 
 export function arpaAdjustCosts(costs,offset,wiki){
     costs = creativeAdjust(costs,offset,wiki);
-    return adjustCosts(costs,offset,wiki);
+    return adjustCosts({ 'cost': costs },offset,wiki);
 }
 
 function creativeAdjust(costs,offset,wiki){
     if ((wiki && wiki.creative) || (!wiki && global.race['creative'])){
         var newCosts = {};
         Object.keys(costs).forEach(function (res){
-            newCosts[res] = function(){ return costs[res](offset,wiki) * (1 - traits.creative.vars[1] / 100); }
+            newCosts[res] = function(){ return costs[res](offset,wiki) * (1 - traits.creative.vars()[1] / 100); }
         });
         return newCosts;
     }
@@ -1546,7 +1566,7 @@ function creativeAdjust(costs,offset,wiki){
 function costMultiplier(project,offset,base,mutiplier,wiki){
     var rank = global.arpa[project] ? global.arpa[project].rank : 0;
     if (((wiki && wiki.creative) || (!wiki && global.race['creative'])) && project !== 'syphon'){
-        mutiplier -= traits.creative.vars[0];
+        mutiplier -= traits.creative.vars()[0];
     }
     if (offset){
         rank += offset;
@@ -1620,11 +1640,17 @@ function genetics(){
         }
 
         let label = global.tech.genetics > 2 ? loc('arpa_gene_mutation') : loc('arpa_sequence_genome');
+        if (global.race['artifical']){
+            label = global.tech.genetics > 2 ? loc('arpa_code_modification') : loc('arpa_decompile_source');
+        }
         let sequence = $(`<div><span class="seqlbl has-text-warning">${label}</span> - ${loc('arpa_to_complete')} <span v-html="$options.filters.timer(time)"></span></div>`);
         genome.append(sequence);
         let progress = $(`<progress class="progress" :value="progress" max="${global.arpa.sequence.max}">{{ progress }}%</progress>`);
         genome.append(progress);
         let b_label = global.tech.genetics > 2 ? loc('arpa_mutate') : loc('arpa_sequence');
+        if (global.race['artifical']){
+            b_label = global.tech.genetics > 2 ? loc('arpa_modify') : loc('arpa_decompile');
+        }
         let button = $(`<button class="button seq" @click="toggle">${b_label}</button>`);
         genome.append(button);
 
@@ -1634,12 +1660,12 @@ function genetics(){
         }
 
         if (global.tech['genetics'] >= 6){
-            let boost = $(`<b-tooltip :label="novoLabel()" position="is-bottom" animated multilined><button class="button" @click="novo" :aria-label="novoLabel()">${loc('arpa_novo')}</button></b-tooltip>`);
+            let boost = $(`<b-tooltip :label="novoLabel()" position="is-bottom" animated multilined><button class="button" @click="novo" :aria-label="novoLabel()">${loc(global.race['artifical'] ? 'arpa_novo_artifical' : 'arpa_novo')}</button></b-tooltip>`);
             genome.append(boost);
         }
 
         if (global.tech['genetics'] >= 7){
-            let boost = $(`<b-tooltip :label="autoLabel(false)" position="is-bottom" animated multilined><button class="button auto" @click="auto_seq" :aria-label="autoLabel(true)">${loc('arpa_auto_sequence')}</button></b-tooltip>`);
+            let boost = $(`<b-tooltip :label="autoLabel(false)" position="is-bottom" animated multilined><button class="button auto" @click="auto_seq" :aria-label="autoLabel(true)">${loc(global.race['artifical'] ? 'arpa_auto_compile' : 'arpa_auto_sequence')}</button></b-tooltip>`);
             genome.append(boost);
         }
         
@@ -1680,7 +1706,7 @@ function genetics(){
                     }
                 },
                 boostLabel(sr){
-                    return loc('arpa_boost_label') + (sr ? (global.arpa.sequence.boost ? loc('city_on') : loc('city_off')) : '');
+                    return loc(global.race['artifical'] ? 'arpa_boost_artifical_label' : 'arpa_boost_label') + (sr ? (global.arpa.sequence.boost ? loc('city_on') : loc('city_off')) : '');
                 },
                 novo(){
                     let keyMult = keyMultiplier();
@@ -1695,7 +1721,7 @@ function genetics(){
                     }
                 },
                 novoLabel(){
-                    return loc('arpa_novo_label',['200k']);
+                    return loc(global.race['artifical'] ? 'arpa_novo_artifical_label' : 'arpa_novo_label',['200k']);
                 },
                 auto_seq(){
                     if (global.arpa.sequence.auto){
@@ -1708,7 +1734,7 @@ function genetics(){
                     }
                 },
                 autoLabel(sr){
-                    return loc('arpa_auto_seq_label') + (sr ? (global.arpa.sequence.boost ? loc('city_on') : loc('city_off')) : '');
+                    return loc(global.race['artifical'] ? 'arpa_auto_compile_label' : 'arpa_auto_seq_label') + (sr ? (global.arpa.sequence.boost ? loc('city_on') : loc('city_off')) : '');
                 }
             },
             filters: {
@@ -1734,10 +1760,10 @@ function genetics(){
 
         popover(`popArpaSeq`, function(){
             if (global.tech.genetics > 2){
-                return loc('arpa_mutate_desc');
+                return global.race['artifical'] ? loc('arpa_modify_desc') : loc('arpa_mutate_desc');
             }
             else {
-                return loc('arpa_sequence_desc');
+                return global.race['artifical'] ? loc('arpa_decompile_desc') : loc('arpa_sequence_desc');
             }
         },
         {
@@ -1789,8 +1815,12 @@ function genetics(){
         
         let remove_list = [];
         Object.keys(global.race).forEach(function (trait){
-            if (traits[trait] && traits[trait].type !== 'minor' && traits[trait].type !== 'special' && trait !== 'evil' && trait !== 'soul_eater'){
-                if ((traits[trait].type === 'major' && global.genes['mutation']) || (traits[trait].type === 'genus' && global.genes['mutation'] && global.genes['mutation'] >= 2)){
+            if (traits[trait] && traits[trait].type !== 'minor' && traits[trait].type !== 'special' && trait !== 'evil' && trait !== 'soul_eater' && trait !== 'artifical'){
+                let readOnly = false;
+                if ((global.race['ss_traits'] && global.race.ss_traits.includes(trait)) || (global.race['iTraits'] && global.race.iTraits.hasOwnProperty(trait))){
+                    readOnly = true;
+                }
+                if (!readOnly && ((traits[trait].type === 'major' && global.genes['mutation']) || (traits[trait].type === 'genus' && global.genes['mutation'] && global.genes['mutation'] >= 2))){
                     let major = $(`<div class="traitRow"></div>`);
                     let purge = $(`<span class="remove${trait} basic-button has-text-danger" role="button" :aria-label="removeCost('${trait}')" @click="purge('${trait}')">${loc('arpa_remove_button')}</span>`);
                     remove_list.push(trait);
@@ -1801,7 +1831,7 @@ function genetics(){
                     breakdown.append(major);
                 }
                 else {
-                    breakdown.append(`<div class="trait has-text-warning">${traits[trait].desc}</div>`);
+                    breakdown.append(`<div class="trait has-text-warning${global.genes['mutation'] ? ' indent' : ''}">${traits[trait].desc}</div>`);
                 }
             }
         });
@@ -1810,7 +1840,7 @@ function genetics(){
         if (global.genes['mutation'] && global.genes['mutation'] >= 3){
             breakdown.append(`<div class="trait major has-text-success">${loc('arpa_race_genetic_gain')}</div>`)
             
-            let conflict_traits = ['dumb','smart','carnivore','herbivore']; //Conflicting traits are paired together
+            let conflict_traits = ['dumb','smart']; //Conflicting traits are paired together
             Object.keys(races).forEach(function (race){
                 if (race !== 'junker' && race !== 'custom' && races[race].type === races[global.race.species].type){
                     Object.keys(races[race].traits).forEach(function (trait){
@@ -1883,13 +1913,13 @@ function genetics(){
         let mGeneCost = function(t){
             let cost = fibonacci(global.race.minor[t] ? global.race.minor[t] + 4 : 4);
             if (t === 'mastery'){ cost *= 5; }
-            return loc('arpa_gene_buy',[loc('trait_' + t + '_name'),sizeApproximation(cost)]);
+            return loc('arpa_gene_buy',[loc('trait_' + t + '_name'),sizeApproximation(cost),global.resource.Genes.name]);
         };
 
         let mPhageCost = function(t){
             let cost = fibonacci(global.genes.minor[t] ? global.genes.minor[t] + 4 : 4);
             if (t === 'mastery'){ cost *= 2; }
-            return loc('arpa_phage_buy',[loc('trait_' + t + '_name'),sizeApproximation(cost)]);
+            return loc('arpa_phage_buy',[loc('trait_' + t + '_name'),sizeApproximation(cost),loc(`resource_Phage_name`)]);
         };
 
         vBind({
@@ -2016,6 +2046,9 @@ function genetics(){
                         }
                         else {
                             global.race['modified']++;
+                        }
+                        if (t === 'imitation'){
+                            setImitation(true);
                         }
                         cleanAddTrait(t);
                         genetics();

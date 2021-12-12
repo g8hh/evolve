@@ -2,12 +2,15 @@ import { global } from './../vars.js';
 import { loc } from './../locale.js';
 import { universeAffix } from './../achieve.js';
 import { actions, housingLabel } from './../actions.js';
+import { techList } from './../tech.js';
 import { checkControlling } from './../civics.js';
 import { races, traits } from './../races.js';
-import { getHalloween } from './../functions.js';
+import { getHalloween, svgIcons, svgViewBox } from './../functions.js';
 import { actionDesc, sideMenu, getSolarName } from './functions.js';
 
 const isHalloween = getHalloween();
+const standard_tech = techList('standard');
+const truepath_tech = techList('truepath');
 
 const extraInformation = {
     club: global.race['soul_eater'] ? [
@@ -248,6 +251,9 @@ const extraInformation = {
     ],
     infernium_fuel: [
         loc(`wiki_tech_fuel_unlock`,[loc(`modal_smelter_inferno`)])
+    ],
+    iridium_smelting_perk: [
+        loc(`wiki_tech_iridium_smelting`)
     ],
     rotary_kiln: [
         loc(`wiki_tech_rotary_kiln`)
@@ -913,13 +919,13 @@ const extraInformation = {
         loc(`wiki_tech_building_unlock`,[loc(`city_hospital`)])
     ],
     bac_tanks: [
-        loc(`wiki_tech_bac_tanks`)
+        loc(`wiki_tech_bac_tanks`,[(races[global.race.species].type === 'synthetic' ? loc(`city_boot_camp_art`) : loc(`tech_hospital`)),10])
     ],
     boot_camp: [
         loc(`wiki_tech_building_unlock`,[loc(`city_boot_camp`)])
     ],
     vr_training: [
-        loc(`wiki_tech_vr_training`)
+        loc(`wiki_tech_vr_training`,[races[global.race.species].type === 'synthetic' ? loc(`city_boot_camp`) : loc(`tech_hospital`)])
     ],
     bows: [
         loc(`wiki_tech_bows`,[100])
@@ -1210,6 +1216,17 @@ const extraInformation = {
         loc(`wiki_tech_unification2h`),
         loc(`wiki_tech_unification2i`)
     ],
+    unite: [
+        loc(`wiki_tech_rival_unlock`),
+        loc(`wiki_tech_unite_a`),
+        loc(`wiki_tech_unification2b`),
+        loc(`wiki_tech_unite_b`),
+        loc(`wiki_tech_unification2d`),
+        loc(`wiki_tech_unification2e`),
+        loc(`wiki_tech_unite_c`),
+        loc(`wiki_tech_unite_d`),
+        loc(`wiki_tech_unite_e`)
+    ],
     star_dock: [
         loc(`wiki_tech_building_unlock`,[loc(`space_gas_star_dock_title`)])
     ],
@@ -1433,6 +1450,207 @@ const extraInformation = {
     ],
     bribe_sphinx: [
         loc(`wiki_tech_bribe_sphinx`)
+    ],
+    zero_g_lab: [
+        loc(`wiki_tech_building_unlock`,[loc('tech_zero_g_lab')])
+    ],
+    operating_base: [
+        loc(`wiki_tech_building_unlock`,[loc('tech_operating_base')])
+    ],
+    munitions_depot: [
+        loc(`wiki_tech_building_unlock`,[loc('tech_munitions_depot')])
+    ],
+    fob: [
+        loc(`wiki_tech_building_unlock`,[loc('space_fob_title')])
+    ],
+    bac_tanks_tp: [
+        loc(`wiki_tech_bac_tanks`,[(races[global.race.species].type === 'synthetic' ? loc(`city_boot_camp_art`) : loc(`tech_hospital`)),10])
+    ],
+    medkit: [
+        loc(`wiki_tech_bac_tanks`,[(races[global.race.species].type === 'synthetic' ? loc(`city_boot_camp_art`) : loc(`tech_hospital`)),15])
+    ],
+    sam_site: [
+        loc(`wiki_tech_building_unlock`,[loc('space_sam_title')])
+    ],
+    data_cracker: [
+        loc(`wiki_tech_building_unlock`,[loc('space_decoder_title')])
+    ],
+    ai_core_tp: [
+        loc(`wiki_tech_building_unlock`,[loc('space_ai_core')])
+    ],
+    ai_optimizations: [
+        loc(`wiki_tech_ai_optimizations`)
+    ],
+    synthetic_life: [
+        loc(`wiki_tech_building_unlock`,[loc('space_ai_colonist_title')])
+    ],
+    protocol66a: [
+        loc(`wiki_tech_protocol66a`)
+    ],
+    quantium: [
+        loc(`wiki_tech_resource_unlock`,[loc(`resource_Quantium_name`)]),
+        loc(`wiki_tech_quantium`)
+    ],
+    anitgrav_bunk: [
+        loc(`wiki_tech_hammocks`,[2,loc(`space_red_space_barracks_title`)])
+    ],
+    higgs_boson_tp: [
+        loc(`wiki_tech_higgs_boson`)
+    ],
+    strange_signal: [
+        loc(`wiki_tech_destination_unlock`,[loc(`space_mission_title`,[getSolarName('triton')]),getSolarName('triton')]),
+    ],
+    data_analysis: [
+        loc(`wiki_tech_data_analysis`,[getSolarName('triton')]),
+        loc(`wiki_tech_syndicate_increase`,[getSolarName('titan'),1000,500]),
+        loc(`wiki_tech_syndicate_increase`,[getSolarName('enceladus'),500,250]),
+        loc(`wiki_tech_syndicate_increase`,[getSolarName('triton'),2000,1000])
+    ],
+    mass_relay: [
+        loc(`wiki_tech_building_unlock`,[loc('space_dwarf_mass_relay_title')])
+    ],
+    nav_data: [
+        loc(`wiki_tech_destination_unlock`,[loc(`space_mission_title`,[getSolarName('eris')]),getSolarName('eris')]),
+        loc(`wiki_tech_destination_unlock`,[loc(`space_mission_title`,[loc(`space_kuiper_title`)]),loc(`space_kuiper_title`)]),
+    ],
+    dronewar: [
+        loc(`wiki_tech_building_unlock`,[loc('space_drone_control',[getSolarName('eris')])]),
+        loc(`wiki_tech_building_unlock`,[loc('space_shock_trooper_title')]),
+        loc(`wiki_tech_control_unlock`,[loc('space_digsite_title')])
+    ],
+    drone_tank: [
+        loc(`wiki_tech_building_unlock`,[loc('space_tank_title')])
+    ],
+    stanene_tp: [
+        loc(`wiki_tech_resource_unlock`,[loc(`resource_Stanene_name`)]),
+        loc(`wiki_tech_factory_unlock`,[loc(`resource_Stanene_name`)])
+    ],
+    graphene_tp: [
+        loc(`wiki_tech_building_unlock`,[loc('interstellar_g_factory_title')])
+    ],
+    virtual_reality_tp: [
+        loc(`wiki_tech_gov_upgrade`,[loc('govern_autocracy')]),
+        loc(`wiki_tech_gov_upgrade`,[loc('govern_democracy')]),
+        loc(`wiki_tech_gov_upgrade`,[loc('govern_oligarchy')]),
+        loc(`wiki_tech_gov_upgrade`,[loc('govern_theocracy')]),
+        loc(`wiki_tech_gov_upgrade`,[loc('govern_republic')]),
+        loc(`wiki_tech_gov_upgrade`,[loc('govern_socialist')]),
+        loc(`wiki_tech_gov_upgrade`,[loc('govern_corpocracy')]),
+        loc(`wiki_tech_gov_upgrade`,[loc('govern_technocracy')]),
+        loc(`wiki_tech_gov_upgrade`,[loc('govern_federation')]),
+        loc(`wiki_tech_gov_upgrade`,[loc('govern_magocracy')])
+    ],
+    electrolysis: [
+        loc(`wiki_tech_building_unlock`,[loc('space_electrolysis_title')])
+    ],
+    storehouse: [
+        loc(`wiki_tech_building_unlock`,[loc('space_storehouse_title')])
+    ],
+    adamantite_vault_tp: [
+        loc(`wiki_tech_vault`,[22500,30000])
+    ],
+    titan_bank: [
+        loc(`wiki_tech_building_unlock`,[loc('city_bank')])
+    ],
+    hydrogen_plant: [
+        loc(`wiki_tech_building_unlock`,[loc('space_hydrogen_plant_title')])
+    ],
+    water_mining: [
+        loc(`wiki_tech_building_unlock`,[loc('space_water_freighter_title')])
+    ],
+    mercury_smelting: [
+        loc(`wiki_tech_building_unlock`,[loc('space_hell_smelter_title',[getSolarName('hell')])])
+    ],
+    iridium_smelting: [
+        loc(`wiki_tech_iridium_smelting`)
+    ],
+    adamantite_crates: [
+        loc(`wiki_tech_containerized_upgrade`,[loc(`resource_Crates_name`),1500,1000])
+    ],
+    adamantite_containers_tp: [
+        loc(`wiki_tech_containerized_upgrade`,[loc(`resource_Containers_name`),2200,1600])
+    ],
+    quantium_containers: [
+        loc(`wiki_tech_containerized_upgrade`,[loc(`resource_Containers_name`),3200,2200])
+    ],
+    reinforced_shelving: [
+        loc(`wiki_tech_reinforced_shelving`)
+    ],
+    garage_shelving: [
+        loc(`wiki_tech_garage_shelving`)
+    ],
+    warehouse_shelving: [
+        loc(`wiki_tech_warehouse_shelving1`),
+        loc(`wiki_tech_warehouse_shelving2`)
+    ],
+    elerium_extraction: [
+        loc(`wiki_tech_building_unlock`,[loc('space_kuiper_mine',[global.resource.Elerium.name])])
+    ],
+    orichalcum_panels_tp: [
+        loc(`wiki_tech_perovskite_cell`,[0.8])
+    ],
+    shipyard: [
+        loc(`wiki_tech_building_unlock`,[loc('outer_shipyard_title')])
+    ],
+    ship_lasers: [
+        loc(`wiki_tech_ship_weapon_unlock`,[loc('outer_shipyard_weapon_laser')])
+    ],
+    pulse_lasers: [
+        loc(`wiki_tech_ship_weapon_unlock`,[loc('outer_shipyard_weapon_p_laser')])
+    ],
+    ship_plasma: [
+        loc(`wiki_tech_ship_weapon_unlock`,[loc('outer_shipyard_weapon_plasma')])
+    ],
+    ship_phaser: [
+        loc(`wiki_tech_ship_weapon_unlock`,[loc('outer_shipyard_weapon_phaser')])
+    ],
+    ship_disruptor: [
+        loc(`wiki_tech_ship_weapon_unlock`,[loc('outer_shipyard_weapon_disruptor')])
+    ],
+    destroyer_ship: [
+        loc(`wiki_tech_building_unlock`,[loc('outer_shipyard_class_destroyer')])
+    ],
+    cruiser_ship_tp: [
+        loc(`wiki_tech_ship_class_unlock`,[loc('outer_shipyard_class_cruiser')])
+    ],
+    h_cruiser_ship: [
+        loc(`wiki_tech_ship_class_unlock`,[loc('outer_shipyard_class_battlecruiser')])
+    ],
+    dreadnought_ship: [
+        loc(`wiki_tech_ship_class_unlock`,[loc('outer_shipyard_class_dreadnought')])
+    ],
+    pulse_engine: [
+        loc(`wiki_tech_ship_engine_unlock`,[loc('outer_shipyard_engine_pulse')])
+    ],
+    photon_engine: [
+        loc(`wiki_tech_ship_engine_unlock`,[loc('outer_shipyard_engine_photon')])
+    ],
+    vacuum_drive: [
+        loc(`wiki_tech_ship_engine_unlock`,[loc('outer_shipyard_engine_vacuum')])
+    ],
+    ship_fusion: [
+        loc(`wiki_tech_ship_power_unlock`,[loc('outer_shipyard_power_fusion')])
+    ],
+    ship_elerium: [
+        loc(`wiki_tech_ship_power_unlock`,[loc('outer_shipyard_power_elerium')])
+    ],
+    quantum_signatures: [
+        loc(`wiki_tech_ship_sensor_unlock`,[loc('outer_shipyard_sensor_quantum')])
+    ]
+};
+
+const extraInformationTP = {
+    rocketry: [
+        loc(`wiki_tech_project_unlock`,[loc(`arpa_projects_launch_facility_title`)]),
+        loc(`wiki_tech_rival_unlock`)
+    ],
+    merchandising: [
+        loc('tech_merchandising_effect_tp')
+    ],
+    starcharts: [
+        loc(`wiki_tech_destination_unlock`,[loc(`space_mission_title`,[loc(`space_sun_info_name`)]),loc(`space_sun_info_name`)]),
+        loc(`wiki_tech_destination_unlock`,[loc(`space_mission_title`,[getSolarName('gas')]),getSolarName('gas')]),
+        loc(`wiki_tech_subtab_unlock`,[loc(`outer_sol_system`,[getSolarName('home')]),loc(`tab_civil`)]),
     ]
 };
 
@@ -1454,6 +1672,10 @@ const extraRequirements = {
     },
     supercollider3 : {
         title: loc('wiki_tech_req_arpa',[loc('arpa_projects_lhc_title'),3]),
+        link: 'wiki.html#projects-arpa-lhc'
+    },
+    supercollider10 : {
+        title: loc('wiki_tech_req_arpa',[loc('arpa_projects_lhc_title'),10]),
         link: 'wiki.html#projects-arpa-lhc'
     },
     stock_exchange1 : {
@@ -1651,9 +1873,85 @@ const extraRequirements = {
         title: loc('wiki_tech_req_waygate3'),
         link: 'wiki.html#mechanics-gameplay-dlord'
     },
+    titan_ai_core1 : {
+        title: loc('wiki_tech_req_megabuilding',[loc('space_ai_core')]),
+        link: 'wiki.html#space-tp_structures-ai_core'
+    },
+    syard_class2 : {
+        title: loc('wiki_tech_req_building',[loc('outer_shipyard_title')]),
+        link: 'wiki.html#space-tp_structures-shipyard'
+    },
+    syard_armor3 : {
+        title: loc('wiki_tech_req_building',[loc('outer_shipyard_title')]),
+        link: 'wiki.html#space-tp_structures-shipyard'
+    },
+    syard_weapon1 : {
+        title: loc('wiki_tech_req_building',[loc('outer_shipyard_title')]),
+        link: 'wiki.html#space-tp_structures-shipyard'
+    },
+    syard_engine2 : {
+        title: loc('wiki_tech_req_building',[loc('outer_shipyard_title')]),
+        link: 'wiki.html#space-tp_structures-shipyard'
+    },
+    syard_power3 : {
+        title: loc('wiki_tech_req_building',[loc('outer_shipyard_title')]),
+        link: 'wiki.html#space-tp_structures-shipyard'
+    },
+    syard_sensor3 : {
+        title: loc('wiki_tech_req_building',[loc('outer_shipyard_title')]),
+        link: 'wiki.html#space-tp_structures-shipyard'
+    },
+    syndicate1 : {
+        title: loc('wiki_tech_req_syndicate1')
+    },
+    outer3 : {
+        title: loc('wiki_tech_req_outer3'),
+        link: 'wiki.html#space-tp_structures-crashed_ship'
+    },
+    outer6 : {
+        title: loc('wiki_tech_req_megabuilding',[loc('space_dwarf_mass_relay_title')]),
+        link: 'wiki.html#space-tp_structures-mass_relay'
+    },
+    titan1 : {
+        title: loc('wiki_tech_req_mission',[loc('space_mission_title',[getSolarName('titan')])]),
+        link: 'wiki.html#space-tp_structures-titan_mission'
+    },
+    titan2 : {
+        title: loc('wiki_tech_req_building',[loc('space_red_spaceport_title')]),
+        link: 'wiki.html#space-tp_structures-titan_spaceport'
+    },
+    titan4 : {
+        title: loc('wiki_tech_req_building',[loc('space_electrolysis_title')]),
+        link: 'wiki.html#space-tp_structures-electrolysis'
+    },
+    enceladus1 : {
+        title: loc('wiki_tech_req_mission',[loc('space_mission_title',[getSolarName('enceladus')])]),
+        link: 'wiki.html#space-tp_structures-enceladus_mission'
+    },
+    triton1 : {
+        title: loc('wiki_tech_req_mission',[loc('space_mission_title',[getSolarName('triton')])]),
+        link: 'wiki.html#space-tp_structures-triton_mission'
+    },
+    kuiper1 : {
+        title: loc('wiki_tech_req_mission',[loc('space_mission_title',[loc(`space_kuiper_title`)])]),
+        link: 'wiki.html#space-tp_structures-kuiper_mission'
+    },
+    eris2 : {
+        title: loc('wiki_tech_req_eris2',[getSolarName('eris')])
+    },
+    dig_control1 : {
+        title: loc('wiki_tech_req_dig_control1'),
+        link: 'wiki.html#space-tp_structures-digsite'
+    },
+    corrupted_ai1 : {
+        title: loc('wiki_tech_req_corrupted_ai1')
+    },
     decay1 : {
         title: loc('wiki_tech_req_decay1'),
         link: 'wiki.html#mechanics-gameplay-genome_decay'
+    },
+    locked1 : {
+        title: loc('unavailable_content')
     }
 };
 
@@ -1929,6 +2227,17 @@ const specialRequirements = {
                 },
                 {
                     name: 'detritivore'
+                }
+            ]
+        }
+    ],
+    iridium_smelting_perk: [
+        {
+            category: 'achieve',
+            subreqs: [
+                {
+                    name: 'pathfinder',
+                    val: 3
                 }
             ]
         }
@@ -2746,6 +3055,19 @@ const specialRequirements = {
             ]
         }
     ],
+    mad: [
+        {
+            truepath: true,
+            category: 'unique',
+            subreqs: [
+                {
+                    title: loc(`wiki_tech_special_unify`),
+                    color: global.tech['world_control'] ? true : false,
+                    link: 'wiki.html#globalized-tp_tech-unite'
+                }
+            ]
+        }
+    ],
     ancient_theology: [
         {
             category: 'crispr',
@@ -2989,77 +3311,95 @@ const extraTechPositions = {
     bribe_sphinx: 'miasma'
 };
 
-var techTrees = {};
-Object.keys(actions.tech).forEach(function (actionName){
-    let action = actions.tech[actionName];
-    if (!techTrees[action.grant[0]]){
-        techTrees[action.grant[0]] = {};
-    }
-    let text = typeof actions.tech[actionName].title === 'string' ? actions.tech[actionName].title : actions.tech[actionName].title();
-    techTrees[action.grant[0]][action.grant[1]] = [
+function getTechTrees(path){
+    let techTrees = {};
+    let techs = path === 'truepath' ? truepath_tech : standard_tech;
+    Object.keys(techs).forEach(function (actionName){
+        let action = actions.tech[actionName];
+        if (!techTrees[action.grant[0]]){
+            techTrees[action.grant[0]] = {};
+        }
+        let text = typeof actions.tech[actionName].title === 'string' ? actions.tech[actionName].title : actions.tech[actionName].title();
+        techTrees[action.grant[0]][action.grant[1]] = [
+            {
+                name: actionName,
+                title: text,
+                era: actions.tech[actionName].era
+            }
+        ];
+    });
+    //Anomalies
+    techTrees['primitive'][2] = [
         {
-            name: actionName,
-            title: text,
-            era: actions.tech[actionName].era
+            name: 'bone_tools',
+            title: loc('tech_bone_tools'),
+            era: 'primitive'
+        },
+        {
+            name: 'wooden_tools',
+            title: loc('tech_wooden_tools'),
+            era: 'primitive'
         }
     ];
-});
-//Anomalies
-techTrees['primitive'][2] = [
-    {
-        name: 'bone_tools',
-        title: loc('tech_bone_tools'),
-        era: 'primitive'
-    },
-    {
-        name: 'wooden_tools',
-        title: loc('tech_wooden_tools'),
-        era: 'primitive'
+    techTrees['theology'][3] = [
+        {
+            name: actions.tech['fanaticism'].wiki ? 'fanaticism' : 'alt_fanaticism',
+            title: loc('tech_fanaticism'),
+            era: 'civilized'
+        },
+        {
+            name: actions.tech['anthropology'].wiki ? 'anthropology' : 'alt_anthropology',
+            title: loc('tech_anthropology'),
+            era: 'civilized'
+        }
+    ];
+    techTrees['theology'][5] = [
+        {
+            name: 'deify',
+            title: loc('tech_deify'),
+            era: 'early_space'
+        },
+        {
+            name: 'study',
+            title: loc('tech_study'),
+            era: 'early_space'
+        }
+    ];
+    techTrees['ancient_study'][1] = [
+        {
+            name: 'study',
+            title: loc('tech_study'),
+            era: 'early_space'
+        }
+    ];
+    techTrees['ancient_deify'][1] = [
+        {
+            name: 'deify',
+            title: loc('tech_deify'),
+            era: 'early_space'
+        }
+    ];
+    if (path === 'truepath'){
+        techTrees['unify'][1] = [
+            {
+                name: 'arpa',
+                title: loc('tech_arpa'),
+                era: 'globalized'
+            }
+        ];
     }
-];
-techTrees['theology'][3] = [
-    {
-        name: actions.tech['fanaticism'].wiki ? 'fanaticism' : 'alt_fanaticism',
-        title: loc('tech_fanaticism'),
-        era: 'civilized'
-    },
-    {
-        name: actions.tech['anthropology'].wiki ? 'anthropology' : 'alt_anthropology',
-        title: loc('tech_anthropology'),
-        era: 'civilized'
-    }
-];
-techTrees['theology'][5] = [
-    {
-        name: 'deify',
-        title: loc('tech_deify'),
-        era: 'early_space'
-    },
-    {
-        name: 'study',
-        title: loc('tech_study'),
-        era: 'early_space'
-    }
-];
-techTrees['ancient_study'][1] = [
-    {
-        name: 'study',
-        title: loc('tech_study'),
-        era: 'early_space'
-    }
-];
-techTrees['ancient_deify'][1] = [
-    {
-        name: 'deify',
-        title: loc('tech_deify'),
-        era: 'early_space'
-    }
-];
+    return techTrees;
+}
 
-function addInformation(parent,key){
+function addInformation(parent,key,path){
     let extra = $(`<div class="extra"></div>`);
     parent.append(extra);
-    if (extraInformation.hasOwnProperty(key)){
+    if (extraInformationTP.hasOwnProperty(key) && path === 'truepath'){
+        for (let i=0; i<extraInformationTP[key].length; i++){
+            extra.append(`<div>${extraInformationTP[key][i]}</div>`);
+        }
+    }
+    else if (extraInformation.hasOwnProperty(key)){
         for (let i=0; i<extraInformation[key].length; i++){
             extra.append(`<div>${extraInformation[key][i]}</div>`);
         }
@@ -3069,7 +3409,8 @@ function addInformation(parent,key){
     }
 }
 
-function addRequirements(parent,key,keyName){
+function addRequirements(parent,key,keyName,path){
+    let techTrees = getTechTrees(path);
     if (Object.keys(key.reqs).length > 0){
         let techReqs = {};
         let otherReqs = {};
@@ -3108,7 +3449,7 @@ function addRequirements(parent,key,keyName){
                 let isOr = false;
                 let color = false;
                 techReqs[req].forEach(function (subReq){
-                    let subText = `<a href="wiki.html#${subReq.era}-tech-${subReq.name}" class="has-text-${subReq.color}" target="_blank">${subReq.title}</a>`;
+                    let subText = `<a href="wiki.html#${subReq.era}-${path === 'truepath' ? 'tp_tech' : 'tech'}-${subReq.name}" class="has-text-${subReq.color}" target="_blank">${subReq.title}</a>`;
                     color = subReq.color;
                     if (isOr){
                         reqText = loc('wiki_tech_req_or',[reqText,subText]);
@@ -3128,7 +3469,11 @@ function addRequirements(parent,key,keyName){
             let otherReq = $(`<div class="reqs"><span class="has-text-caution">${loc('wiki_tech_req_other')}</span></div>`);
             parent.append(otherReq);
             Object.keys(otherReqs).forEach(function (req){
-                let reqText = otherReqs[req].link ? `<a href="${otherReqs[req].link}" class="has-text-${otherReqs[req].color}" target="_blank">${otherReqs[req].title}</a>` : otherReqs[req].title;
+                let link = otherReqs[req].link;
+                if (link && path === 'truepath'){
+                    link = link.replace('-structures-','-tp_structures-');
+                }
+                let reqText = link ? `<a href="${link}" class="has-text-${otherReqs[req].color}" target="_blank">${otherReqs[req].title}</a>` : otherReqs[req].title;
                 otherReq.append(`${comma ? `, ` : ``}<span class="has-text-${otherReqs[req].color}">${reqText}</span>`);
                 comma = true;
             });
@@ -3138,8 +3483,12 @@ function addRequirements(parent,key,keyName){
     if (specialRequirements.hasOwnProperty(keyName)){
         let comma = false;
         let specialReq = $(`<div class="reqs"><span class="has-text-caution">${loc('wiki_tech_req_special')}</span></div>`);
-        parent.append(specialReq);
+        let hasReq = false;
         specialRequirements[keyName].forEach(function (req){
+            if (req.truepath && path !== 'truepath'){
+                return;
+            }
+            hasReq = true;
             let multi = false;
             let totalColor = false;
             let reqText = '';
@@ -3178,6 +3527,11 @@ function addRequirements(parent,key,keyName){
                         link = `wiki.html#crispr-prestige-${subreq.name}`;
                         color = global.genes[subreq.tree] && global.genes[subreq.tree] >= subreq.val;
                         break;
+                    case 'achieve':
+                        subText = subreq.val + ` <span class="flair" aria-label="star"><svg class="star${subreq.val}" version="1.1" x="0px" y="0px" width="16px" height="16px" viewBox="${svgViewBox('star')}" xml:space="preserve">${svgIcons('star')}</svg></span> ` + loc(`achieve_${subreq.name}_name`);
+                        link = `wiki.html#perks-prestige-${subreq.name}`;
+                        color = global.stats.achieve[subreq.name] && global.stats.achieve[subreq.name].l >= subreq.val;
+                        break;
                     case 'government':
                         subText = loc(`govern_${subreq.name}`);
                         link = `wiki.html#government-gameplay-${subreq.name}`;
@@ -3193,6 +3547,9 @@ function addRequirements(parent,key,keyName){
                         link = subreq.link;
                         color = subreq.color;
                         break;
+                }
+                if (link && path === 'truepath'){
+                    link = link.replace('-tech-','-tp_tech-');
                 }
                 totalColor = totalColor || color;
                 if (req.not){
@@ -3223,35 +3580,47 @@ function addRequirements(parent,key,keyName){
             specialReq.append(`${comma ? `, ` : ``}<span class="has-text-${totalColor}">${reqText}</span>`);
             comma = true;
         });
+        if (hasReq){
+            parent.append(specialReq);
+        }
     }
 }
 
-export function renderTechPage(era){
-    let content = sideMenu('create');;
-    let techList = [];
-    let otherTechs = [];
+const alt_era = {
+    solar: 'interstellar'
+};
+const alt_era_r = {
+    interstellar: 'solar'
+};
 
-    Object.keys(actions.tech).forEach(function (actionName){
-        let action = actions.tech[actionName];
-        if (action.hasOwnProperty('era') && action.era === era && (!action.hasOwnProperty('wiki') || action.wiki)){
-            let id = actions.tech[actionName].id.split('-');
+export function renderTechPage(era,path){
+    let content = sideMenu('create');;
+    let techListing = [];
+    let otherTechs = [];
+    let techs = path === 'truepath' ? truepath_tech : standard_tech;
+    let prefix = path === 'truepath' ? 'tp_tech' : 'tech';
+
+    Object.keys(techs).forEach(function (actionName){
+        let action = techs[actionName];
+        if (action.hasOwnProperty('era') && (action.era === era || action.era === alt_era[era]) && (!action.hasOwnProperty('wiki') || action.wiki)){
+            let id = techs[actionName].id.split('-');
             let info = $(`<div id="${id[1]}" class="infoBox"></div>`);
             actionDesc(info, action);
-            addInformation(info, actionName);
-            addRequirements(info, action, actionName);
+            addInformation(info, actionName, path);
+            addRequirements(info, action, actionName, path);
             if (action.cost['Knowledge']){
-                if (techList.length === 0){
-                    techList[0] = [action, info];
+                if (techListing.length === 0){
+                    techListing[0] = [action, info];
                 }
                 else {
                     let knowledgeCost = action.cost.Knowledge();
-                    let insertPos = techList.length - 1;
+                    let insertPos = techListing.length - 1;
                     
-                    while (insertPos >= 0 && techList[insertPos][0].cost.Knowledge() > knowledgeCost) { 
-                        techList[insertPos + 1] = techList[insertPos]; 
+                    while (insertPos >= 0 && techListing[insertPos][0].cost.Knowledge() > knowledgeCost) { 
+                        techListing[insertPos + 1] = techListing[insertPos]; 
                         insertPos--; 
                     } 
-                    techList[insertPos + 1] = [action, info]; 
+                    techListing[insertPos + 1] = [action, info]; 
                 }
             }
             else {
@@ -3263,28 +3632,29 @@ export function renderTechPage(era){
         for (let i=0; i<otherTechs.length; i++) {
             let sorted = false;
             Object.keys(extraTechPositions).forEach(function (extraTech){
-                if (!sorted && otherTechs[i][0].id === 'tech-' + extraTech) {
+                if (!sorted && otherTechs[i][0].id === `${prefix}-` + extraTech) {
                     let insertPos = -1;
-                    for (let i=0; i<techList.length; i++) {
-                        if (techList[i][0].id === 'tech-' + extraTechPositions[extraTech]) {
+                    for (let i=0; i<techListing.length; i++) {
+                        if (techListing[i][0].id === `${prefix}-` + extraTechPositions[extraTech]) {
                             insertPos = i + 1;
                             break;
                         }
                     }
-                    let tempArray = techList.slice(0, insertPos);
+                    let tempArray = techListing.slice(0, insertPos);
                     tempArray.push(otherTechs[i]);
-                    techList = tempArray.concat(techList.slice(insertPos));
+                    techListing = tempArray.concat(techListing.slice(insertPos));
                     sorted = true;
                 }
             });
             if (!sorted){
-                techList.push(otherTechs[i]);
+                techListing.push(otherTechs[i]);
             }
         }
     }
-    for (let i=0; i<techList.length; i++) {
-        content.append(techList[i][1]);
-        let id = techList[i][0].id.split('-');
-        sideMenu('add',`${techList[i][0].era}-tech`,id[1],typeof techList[i][0].title === 'function' ? techList[i][0].title() : techList[i][0].title);
+    for (let i=0; i<techListing.length; i++) {
+        let era = path === 'truepath' && alt_era_r[techListing[i][0].era] ? alt_era_r[techListing[i][0].era] : techListing[i][0].era;
+        content.append(techListing[i][1]);
+        let id = techListing[i][0].id.split('-');
+        sideMenu('add',`${era}-${prefix}`,id[1],typeof techListing[i][0].title === 'function' ? techListing[i][0].title() : techListing[i][0].title);
     }
 }

@@ -1,15 +1,17 @@
 import { global, tmp_vars, save, message_logs, message_filters, webWorker } from './vars.js';
 import { loc, locales } from './locale.js';
 import { setupStats, alevel } from './achieve.js';
-import { vBind, initMessageQueue, clearElement, flib, tagEvent, gameLoop, popover, powerGrid, easterEgg, trickOrTreat, drawIcon } from './functions.js';
+import { vBind, initMessageQueue, clearElement, flib, tagEvent, gameLoop, popover, clearPopper, powerGrid, easterEgg, trickOrTreat, drawIcon } from './functions.js';
 import { tradeRatio, atomic_mass, supplyValue, marketItem, containerItem, loadEjector, loadSupply, loadAlchemy, initResourceTabs, tradeSummery } from './resources.js';
 import { defineJobs, } from './jobs.js';
 import { clearSpyopDrag } from './governor.js';
 import { setPowerGrid, gridDefs, clearGrids } from './industry.js';
 import { defineGovernment, defineIndustry, defineGarrison, buildGarrison, commisionGarrison, foreignGov } from './civics.js';
+import { races, shapeShift } from './races.js';
 import { drawCity, drawTech, resQueue, clearResDrag } from './actions.js';
 import { renderSpace } from './space.js';
 import { renderFortress, buildFortress, drawMechLab, clearMechDrag } from './portal.js';
+import { drawShipYard, clearShipDrag } from './truepath.js';
 import { arpa, clearGeneticsDrag } from './arpa.js';
 import { playFabStats } from './playfab.js';
 
@@ -247,7 +249,9 @@ function tabLabel(lbl){
                 return loc('tab_city1');
             }
         case 'local_space':
-            return loc('sol_system',[flib('name')]);
+            return loc('sol_system',[global.race['truepath'] ? races[global.race.species].home : flib('name')]);
+        case 'outer_local_space':
+            return loc('outer_sol_system',[global.race['truepath'] ? races[global.race.species].home : flib('name')])
         case 'old':
             return loc('tab_old_res');
         case 'new':
@@ -282,6 +286,7 @@ export function loadTab(tab){
         clearMechDrag();
         clearGeneticsDrag();
         clearSpyopDrag();
+        clearShipDrag();
         clearElement($(`#mTabCivil`));
         clearElement($(`#mTabCivic`));
         clearElement($(`#mTabResearch`));
@@ -335,6 +340,12 @@ export function loadTab(tab){
                             <span aria-hidden="true">{{ 'tab_portal' | label }}</span>
                         </template>
                     </b-tab-item>
+                    <b-tab-item id="outerSol" :visible="s.showOuter">
+                        <template slot="header">
+                            <h2 class="is-sr-only">{{ 'outer_local_space' | label }}</h2>
+                            <span aria-hidden="true">{{ 'outer_local_space' | label }}</span>
+                        </template>
+                    </b-tab-item>
                 </b-tabs>`);
                 vBind({
                     el: `#mTabCivil`,
@@ -349,6 +360,7 @@ export function loadTab(tab){
                                 clearElement($(`#interstellar`));
                                 clearElement($(`#galaxy`));
                                 clearElement($(`#portal`));
+                                clearElement($(`#outerSol`));
                                 switch (tab){
                                     case 0:
                                         drawCity();
@@ -356,6 +368,7 @@ export function loadTab(tab){
                                     case 1:
                                     case 2:
                                     case 3:
+                                    case 5:
                                         renderSpace();
                                         break;
                                     case 4:
@@ -416,6 +429,12 @@ export function loadTab(tab){
                             <span aria-hidden="true">{{ 'tab_mech' | label }}</span>
                         </template>
                     </b-tab-item>
+                    <b-tab-item id="dwarfShipYard" class="ShipYardTab" :visible="s.showShipYard">
+                        <template slot="header">
+                            <h2 class="is-sr-only">{{ 'tab_shipyard' | label }}</h2>
+                            <span aria-hidden="true">{{ 'tab_shipyard' | label }}</span>
+                        </template>
+                    </b-tab-item>
                 </b-tabs>`);
                 vBind({
                     el: `#mTabCivic`,
@@ -428,11 +447,13 @@ export function loadTab(tab){
                                 clearGrids();
                                 clearSpyopDrag();
                                 clearMechDrag();
+                                clearShipDrag();
                                 clearElement($(`#civic`));
                                 clearElement($(`#industry`));
                                 clearElement($(`#powerGrid`));
                                 clearElement($(`#military`));
                                 clearElement($(`#mechLab`));
+                                clearElement($(`#dwarfShipYard`));
                                 switch (tab){
                                     case 0:
                                         {
@@ -444,6 +465,9 @@ export function loadTab(tab){
                                                 commisionGarrison();
                                                 buildGarrison($('#c_garrison'),false);
                                                 foreignGov();
+                                            }
+                                            if (global.race['shapeshifter']){
+                                                shapeShift(false,true);
                                             }
                                         }
                                         break;
@@ -467,6 +491,11 @@ export function loadTab(tab){
                                     case 4:
                                         if (global.race.species !== 'protoplasm' && !global.race['start_cataclysm']){
                                             drawMechLab();
+                                        }
+                                        break;
+                                    case 5:
+                                        if (global.race['truepath'] && global.race.species !== 'protoplasm' && !global.race['start_cataclysm']){
+                                            drawShipYard();
                                         }
                                         break;
                                 }
@@ -496,6 +525,12 @@ export function loadTab(tab){
                     buildFortress($('#fortress'),false);
                     foreignGov();
                     drawMechLab();
+                    if (global.race['truepath']){
+                        drawShipYard();
+                    }
+                }
+                if (global.race['shapeshifter']){
+                    shapeShift(false,true);
                 }
                 defineIndustry();
             }
@@ -718,7 +753,7 @@ export function loadTab(tab){
                 $(`#mTabArpa`).append(`<div id="apra" class="arpa">
                     <b-tabs class="resTabs" v-model="s.arpa.arpaTabs" :animated="s.animated">
                         <b-tab-item id="arpaPhysics" :visible="s.arpa.physics" label="${loc('tab_arpa_projects')}"></b-tab-item>
-                        <b-tab-item id="arpaGenetics" :visible="s.arpa.genetics" label="${loc('tab_arpa_genetics')}"></b-tab-item>
+                        <b-tab-item id="arpaGenetics" :visible="s.arpa.genetics" label="${loc(global.race['artifical'] ? 'tab_arpa_machine' : 'tab_arpa_genetics')}"></b-tab-item>
                         <b-tab-item id="arpaCrispr" :visible="s.arpa.crispr" label="${loc('tab_arpa_crispr')}"></b-tab-item>
                         <b-tab-item id="arpaBlood" :visible="s.arpa.blood" label="${loc('tab_arpa_blood')}"></b-tab-item>
                     </b-tabs>
@@ -782,6 +817,9 @@ export function loadTab(tab){
                 tagEvent('page_view',{ page_title: `Evolve - Settings` });
             }
             break;
+    }
+    if ($(`#popper`).length > 0 && $(`#${$(`#popper`).data('id')}`).length === 0){
+        clearPopper();
     }
 }
 
@@ -1114,28 +1152,29 @@ export function index(){
 
     let iconlist = '';
     let icons = [
-        {i: 'nuclear',      f: 'steelem',       r: 2 },
-        {i: 'zombie',       f: 'the_misery',    r: 2 },
-        {i: 'fire',         f: 'ill_advised',   r: 2 },
-        {i: 'mask',         f: 'friday',        r: 1 },
-        {i: 'skull',        f: 'demon_slayer',  r: 2 },
-        {i: 'taijitu',      f: 'equilibrium',   r: 2 },
-        {i: 'martini',      f: 'utopia',        r: 2 },
-        {i: 'lightbulb',    f: 'energetic',     r: 2 },
-        {i: 'trash',        f: 'garbage_pie',   r: 2 },
-        {i: 'banana',       f: 'banana',        r: 2 },
-        {i: 'turtle',       f: 'finish_line',   r: 2 },
-        {i: 'heart',        f: 'valentine',     r: 1 },
-        {i: 'clover',       f: 'leprechaun',    r: 1 },
-        {i: 'bunny',        f: 'easter',        r: 1 },
-        {i: 'egg',          f: 'egghunt',       r: 1 },
-        {i: 'rocket',       f: 'launch_day',    r: 1 },
-        {i: 'sun',          f: 'solstice',      r: 1 },
-        {i: 'firework',     f: 'firework',      r: 1 },
-        {i: 'ghost',        f: 'halloween',     r: 1 },
-        {i: 'candy',        f: 'trickortreat',  r: 1 },
-        {i: 'turkey',       f: 'thanksgiving',  r: 1 },
-        {i: 'present',      f: 'xmas',          r: 1 }
+        {i: 'nuclear',      f: 'steelem',           r: 2 },
+        {i: 'zombie',       f: 'the_misery',        r: 2 },
+        {i: 'fire',         f: 'ill_advised',       r: 2 },
+        {i: 'mask',         f: 'friday',            r: 1 },
+        {i: 'skull',        f: 'demon_slayer',      r: 2 },
+        {i: 'taijitu',      f: 'equilibrium',       r: 2 },
+        {i: 'martini',      f: 'utopia',            r: 2 },
+        {i: 'lightbulb',    f: 'energetic',         r: 2 },
+        {i: 'trash',        f: 'garbage_pie',       r: 2 },
+        {i: 'banana',       f: 'banana',            r: 2 },
+        {i: 'turtle',       f: 'finish_line',       r: 2 },
+        {i: 'floppy',       f: 'digital_ascension', r: 2 },
+        {i: 'heart',        f: 'valentine',         r: 1 },
+        {i: 'clover',       f: 'leprechaun',        r: 1 },
+        {i: 'bunny',        f: 'easter',            r: 1 },
+        {i: 'egg',          f: 'egghunt',           r: 1 },
+        {i: 'rocket',       f: 'launch_day',        r: 1 },
+        {i: 'sun',          f: 'solstice',          r: 1 },
+        {i: 'firework',     f: 'firework',          r: 1 },
+        {i: 'ghost',        f: 'halloween',         r: 1 },
+        {i: 'candy',        f: 'trickortreat',      r: 1 },
+        {i: 'turkey',       f: 'thanksgiving',      r: 1 },
+        {i: 'present',      f: 'xmas',              r: 1 }
     ];
 
     let irank = alevel();

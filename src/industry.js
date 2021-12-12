@@ -2,7 +2,7 @@ import { global, keyMultiplier, sizeApproximation, p_on } from './vars.js';
 import { loc } from './locale.js';
 import { vBind, popover, clearElement, powerGrid, easterEgg, trickOrTreat } from './functions.js';
 import { actions, checkCityRequirements, checkPowerRequirements } from './actions.js';
-import { races, traits } from './races.js';
+import { races, traits, genusVars } from './races.js';
 import { checkRequirements, checkSpaceRequirements } from './space.js';
 import { fortressTech } from './portal.js';
 
@@ -25,6 +25,12 @@ export function loadIndustry(industry,parent,bind){
             break;
         case 'rock_quarry':
             loadQuarry(parent,bind);
+            break;
+        case 'titan_mine':
+            loadTMine(parent,bind);
+            break;
+        case 'nanite_factory':
+            loadNFactory(parent,bind);
             break;
     }
 }
@@ -86,7 +92,7 @@ function loadSmelter(parent,bind){
         parent.append(fuelTypes);
 
         if ((!global.race['kindling_kindred'] && !global.race['smoldering']) || global.race['evil']){
-            let f_label = global.race['evil'] ? (global.race['soul_eater'] && global.race.species !== 'wendigo' ? global.resource.Food.name : global.resource.Furs.name) : global.resource.Lumber.name;
+            let f_label = global.race['evil'] ? (global.race['soul_eater'] && global.race.species !== 'wendigo' && !global.race['artifical'] ? global.resource.Food.name : global.resource.Furs.name) : global.resource.Lumber.name;
             let wood = $(`<span :aria-label="buildLabel('wood') + ariaCount('Wood')" class="current wood">${f_label} {{ s.Wood }}</span>`);
             let subWood = $(`<span role="button" class="sub" @click="subFuel('Wood')" aria-label="Remove lumber fuel"><span>&laquo;</span></span>`);
             let addWood = $(`<span role="button" class="add" @click="addFuel('Wood')" aria-label="Add lumber fuel"><span>&raquo;</span></span>`);
@@ -159,13 +165,40 @@ function loadSmelter(parent,bind){
         }
     }
 
-    if (global.resource.Steel.display && global.tech.smelting >= 2 && !global.race['steelen']){
+    let irid_smelt = global.tech['irid_smelting'] || (global.tech['m_smelting'] && global.tech.m_smelting >= 2) ? true : false;
+    if ((global.resource.Iridium.display && irid_smelt) || (global.resource.Steel.display && global.tech.smelting >= 2 && !global.race['steelen'])){
         let smelt = $(`<div id="${parent.hasClass('modalBody') ? `mSmelterMats` : `smelterMats`}" class="smelting"></div>`);
-        let ironSmelt = $(`<button class="button iron" :aria-label="ironLabel() + ariaProd('Iron')" @click="ironSmelting()">${loc('resource_Iron_name')} ${loc('modal_smelting')}: {{ s.Iron }}</button>`);
-        let steelSmelt = $(`<button class="button steel" :aria-label="steelLabel() + ariaProd('Steel')" @click="steelSmelting()">${loc('resource_Steel_name')} ${loc('modal_smelting')}: <span v-html="$options.filters.altspook(s.Steel)"></span></button>`);
         parent.append(smelt);
-        smelt.append(ironSmelt);
-        smelt.append(steelSmelt);
+
+        smelt.append(`<div><span class="has-text-warning">${loc('modal_smelter_type')}:</span> <span :class="level()">{{s.count | son}}/{{ s.cap | on }}</span></div>`);
+
+        let smeltTypes = $(`<div class="fuels"></div>`);
+        smelt.append(smeltTypes);
+
+        let iron = $(`<span :aria-label="ironLabel() + ariaProd('Iron')" class="current iron">${global.resource.Iron.name} {{ s.Iron }}</span>`);
+        let ironSub = $(`<span role="button" class="sub" @click="subMetal('Iron')" aria-label="Smelt less iron"><span>&laquo;</span></span>`);
+        let ironAdd = $(`<span role="button" class="add" @click="addMetal('Iron')" aria-label="Smelt more iron"><span>&raquo;</span></span>`);
+        smeltTypes.append(ironSub);
+        smeltTypes.append(iron);
+        smeltTypes.append(ironAdd);
+
+        if (global.resource.Steel.display && global.tech.smelting >= 2 && !global.race['steelen']){
+            let steel = $(`<span :aria-label="steelLabel() + ariaProd('Steel')" class="current steel">${global.resource.Steel.name} {{ s.Steel }}</span>`);
+            let steelSub = $(`<span role="button" class="sub" @click="subMetal('Steel')" aria-label="Smelt less steel"><span>&laquo;</span></span>`);
+            let steelAdd = $(`<span role="button" class="add" @click="addMetal('Steel')" aria-label="Smelt more steel"><span>&raquo;</span></span>`);
+            smeltTypes.append(steelSub);
+            smeltTypes.append(steel);
+            smeltTypes.append(steelAdd);
+        }
+
+        if (global.resource.Iridium.display && irid_smelt){
+            let iridium = $(`<span :aria-label="iridiumLabel() + ariaProd('Iridium')" class="current iridium">${global.resource.Iridium.name} {{ s.Iridium }}</span>`);
+            let iridiumSub = $(`<span role="button" class="sub" @click="subMetal('Iridium')" aria-label="Smelt less iridium"><span>&laquo;</span></span>`);
+            let iridiumAdd = $(`<span role="button" class="add" @click="addMetal('Iridium')" aria-label="Smelt more iridium"><span>&raquo;</span></span>`);
+            smeltTypes.append(iridiumSub);
+            smeltTypes.append(iridium);
+            smeltTypes.append(iridiumAdd);
+        }
     }
 
     vBind({
@@ -243,36 +276,26 @@ function loadSmelter(parent,bind){
             steelLabel(){
                 return matText('steel');
             },
-            ironSmelting(){
+            iridiumLabel(){
+                return matText('iridium');
+            },
+            addMetal(m){
                 let keyMult = keyMultiplier();
                 for (let i=0; i<keyMult; i++){
                     let count = global.city.smelter.Wood + global.city.smelter.Coal + global.city.smelter.Oil + global.city.smelter.Star + global.city.smelter.Inferno;
-                    if (global.city.smelter.Iron + global.city.smelter.Steel < count){
-                        global.city.smelter.Iron++;
-                    }
-                    else if (global.city.smelter.Iron < count && global.city.smelter.Steel > 0){
-                        global.city.smelter.Iron++;
-                        global.city.smelter.Steel--;
+                    if (global.city.smelter.Iron + global.city.smelter.Steel + global.city.smelter.Iridium < count){
+                        global.city.smelter[m]++;
                     }
                     else {
                         break;
                     }
                 }
             },
-            steelSmelting(){
+            subMetal(m){
                 let keyMult = keyMultiplier();
-                for (let i=0; i<keyMult; i++){
-                    let count = global.city.smelter.Wood + global.city.smelter.Coal + global.city.smelter.Oil + global.city.smelter.Star + global.city.smelter.Inferno;
-                    if (global.city.smelter.Iron + global.city.smelter.Steel < count){
-                        global.city.smelter.Steel++;
-                    }
-                    else if (global.city.smelter.Steel < count && global.city.smelter.Iron > 0){
-                        global.city.smelter.Steel++;
-                        global.city.smelter.Iron--;
-                    }
-                    else {
-                        break;
-                    }
+                global.city.smelter[m] -= keyMult;
+                if (global.city.smelter[m] < 0){
+                    global.city.smelter[m] = 0;
                 }
             },
             buildLabel(type){
@@ -295,6 +318,9 @@ function loadSmelter(parent,bind){
         filters: {
             on(c){
                 return global.city.smelter.Wood + global.city.smelter.Coal + global.city.smelter.Oil + global.city.smelter.Star + global.city.smelter.Inferno;
+            },
+            son(c){
+                return global.city.smelter.Iron + global.city.smelter.Steel + global.city.smelter.Iridium;
             },
             diffSize(value){
                 return value > 0 ? `+${sizeApproximation(value,2)}` : sizeApproximation(value,2);
@@ -323,7 +349,7 @@ function loadSmelter(parent,bind){
     function tooltip(type){
         switch(type){
             case 'wood':
-                return loc('modal_build_wood',[global.race['evil'] ? (global.race['soul_eater'] && global.race.species !== 'wendigo' ? global.resource.Food.name : global.resource.Furs.name) : global.resource.Lumber.name, global.race['evil'] && !global.race['soul_eater'] || global.race.species === 'wendigo' ? 1 : 3]);
+                return loc('modal_build_wood',[global.race['evil'] ? (global.race['soul_eater'] && global.race.species !== 'wendigo' && !global.race['artifical'] ? global.resource.Food.name : global.resource.Furs.name) : global.resource.Lumber.name, global.race['evil'] && !global.race['soul_eater'] || global.race.species === 'wendigo' ? 1 : 3]);
             case 'coal':
                 {
                     let coal_fuel = global.race['kindling_kindred'] ? 0.15 : 0.25;
@@ -365,6 +391,13 @@ function loadSmelter(parent,bind){
             }
             return loc('modal_smelter_steel',[+(boost).toFixed(3),loc('resource_Steel_name'),loc('resource_Coal_name'),loc('resource_Iron_name')]);
         }
+        else if (type === 'iridium'){
+            let boost = global.tech['smelting'] >= 7 ? 6.25 : 5;
+            if (global.race['pyrophobia']){
+                boost *= 0.9;
+            }
+            return loc('modal_smelter_iron',[+(boost).toFixed(3),loc('resource_Iridium_name')]);
+        }
         else {
             let boost = global.tech['smelting'] >= 3 ? (global.tech['smelting'] >= 7 ? 15 : 12) : 10;
             if (global.race['pyrophobia']){
@@ -386,9 +419,15 @@ function loadSmelter(parent,bind){
         });
     }
 
-    if (global.resource.Steel.display && global.tech.smelting >= 2 && !global.race['steelen']){
+    if ((global.resource.Steel.display && global.tech.smelting >= 2 && !global.race['steelen']) || (global.resource.Iridium.display && global.tech['m_smelting'] && global.tech.m_smelting >= 2)){
         let id = parent.hasClass('modalBody') ? `mSmelterMats` : `smelterMats`;
-        ['iron','steel'].forEach(function(mat){
+        ['iron','steel','iridium'].forEach(function(mat){
+            if (mat === 'steel' && (!global.resource.Steel.display || global.race['steelen'])){
+                return;
+            }
+            else if (mat === 'iridium' && !(global.resource.Iridium.display && global.tech['m_smelting'] && global.tech.m_smelting >= 2)){
+                return;
+            }
             popover(`${id}${mat}`,function(){
                 return matText(mat);
             }, {
@@ -550,7 +589,7 @@ function loadFactory(parent,bind){
             case 'Lux':{
                 let demand = +(global.resource[global.race.species].amount * (assembly ? f_rate.Lux.demand[global.tech['factory']] : f_rate.Lux.demand[0]));
                 if (global.race['toxic']){
-                    demand *= 1 + (traits.toxic.vars[0] / 100);
+                    demand *= 1 + (traits.toxic.vars()[0] / 100);
                 }
                 if (global.civic.govern.type === 'corpocracy'){
                     demand *= 2.5;
@@ -610,6 +649,83 @@ function loadFactory(parent,bind){
             elm: $(`#${id} .factory > .${type}`),
             attach: '#main',
         });
+    });
+}
+
+export const nf_resources = [
+    'Lumber', 'Chrysotile', 'Stone', 'Crystal', 'Furs', 'Copper', 'Iron', 'Aluminium',
+    'Cement', 'Coal', 'Oil', 'Uranium', 'Steel', 'Titanium', 'Alloy', 'Polymer',
+    'Iridium', 'Helium_3', 'Water', 'Deuterium', 'Neutronium', 'Adamantite', 'Bolognium', 'Orichalcum',
+];
+
+function loadNFactory(parent,bind){
+    let fuel = $(`<div><span class="has-text-warning">${loc('modal_factory_operate')}:</span> <span :class="level()">{{count | on}}/{{ count | max }}</span></div>`);
+    parent.append(fuel);
+
+    let rId = parent.hasClass('modalBody') ? `mNFactoryRes` : `NFactoryRes`;
+    let resTypes = $(`<div id="${rId}" class="fuels"></div>`);
+    parent.append(resTypes);
+
+    nf_resources.forEach(function(r){
+        if (global.resource[r].display){
+            let res = $(`<span :aria-label="eatLabel('${r}')" class="current ${r}">${global.resource[r].name} {{ ${r} }}</span>`);
+            let subRes = $(`<span role="button" class="sub" @click="subItem('${r}')" aria-label="Decrease ${r} destruction"><span>&laquo;</span></span>`);
+            let addRes = $(`<span role="button" class="add" @click="addItem('${r}')" aria-label="Increase ${r} destruction"><span>&raquo;</span></span>`);
+            resTypes.append(subRes);
+            resTypes.append(res);
+            resTypes.append(addRes);
+        }
+    });
+
+    vBind({
+        el: bind ? bind : '#specialModal',
+        data: global.city.nanite_factory,
+        methods: {
+            subItem: function(r){
+                let keyMult = keyMultiplier();
+                global.city.nanite_factory[r] -= keyMult;
+                if (global.city.nanite_factory[r] < 0){
+                    global.city.nanite_factory[r] = 0;
+                }
+            },
+            addItem: function(r){
+                let keyMult = keyMultiplier();
+                let on = 0;
+                nf_resources.forEach(function(r){
+                    on += global.city.nanite_factory[r];
+                });
+                let avail = global.city.nanite_factory.count * 50 - on;
+                if (keyMult > avail){
+                    keyMult = avail;
+                }
+                if (keyMult > 0){
+                    global.city.nanite_factory[r] += keyMult;
+                }
+            },
+            eatLabel(r){
+                return `Consume ${r} to produce ${global.resource.Nanite.name}`;
+            },
+            level(){
+                let on = 0;
+                nf_resources.forEach(function(r){
+                    on += global.city.nanite_factory[r];
+                });
+                let max = global.city.nanite_factory.count;
+                return colorRange(on,max);
+            }
+        },
+        filters: {
+            on(){
+                let on = 0;
+                nf_resources.forEach(function(r){
+                    on += global.city.nanite_factory[r];
+                });
+                return on;
+            },
+            max(){
+                return global.city.nanite_factory.count * 50;
+            }
+        }
     });
 }
 
@@ -726,6 +842,8 @@ function loadDroid(parent,bind){
 }
 
 function loadGraphene(parent,bind){
+    let graph_source = global.race['truepath'] ? 'space' : 'interstellar';
+
     let fuel = $(`<div><span class="has-text-warning">${loc('modal_smelter_fuel')}:</span> <span :class="level()">{{count | on}}/{{ on | max }}</span></div>`);
     parent.append(fuel);
 
@@ -762,13 +880,13 @@ function loadGraphene(parent,bind){
 
     vBind({
         el: bind ? bind : '#specialModal',
-        data: global.interstellar['g_factory'],
+        data: global[graph_source]['g_factory'],
         methods: {
             subWood(){
                 let keyMult = keyMultiplier();
                 for (let i=0; i<keyMult; i++){
-                    if (global.interstellar.g_factory.Lumber > 0){
-                        global.interstellar.g_factory.Lumber--;
+                    if (global[graph_source].g_factory.Lumber > 0){
+                        global[graph_source].g_factory.Lumber--;
                     }
                     else {
                         break;
@@ -778,17 +896,17 @@ function loadGraphene(parent,bind){
             addWood(){
                 let keyMult = keyMultiplier();
                 for (let i=0; i<keyMult; i++){
-                    if (global.interstellar.g_factory.Lumber + global.interstellar.g_factory.Coal + global.interstellar.g_factory.Oil < global.interstellar.g_factory.on){
-                        global.interstellar.g_factory.Lumber++;
+                    if (global[graph_source].g_factory.Lumber + global[graph_source].g_factory.Coal + global[graph_source].g_factory.Oil < global[graph_source].g_factory.on){
+                        global[graph_source].g_factory.Lumber++;
                     }
-                    else if (global.interstellar.g_factory.Coal + global.interstellar.g_factory.Oil > 0){
-                        if (global.interstellar.g_factory.Oil > global.interstellar.g_factory.Coal){
-                            global.interstellar.g_factory.Coal > 0 ? global.interstellar.g_factory.Coal-- : global.interstellar.g_factory.Oil--;
+                    else if (global[graph_source].g_factory.Coal + global[graph_source].g_factory.Oil > 0){
+                        if (global[graph_source].g_factory.Oil > global[graph_source].g_factory.Coal){
+                            global[graph_source].g_factory.Coal > 0 ? global[graph_source].g_factory.Coal-- : global[graph_source].g_factory.Oil--;
                         }
                         else {
-                            global.interstellar.g_factory.Oil > 0 ? global.interstellar.g_factory.Oil-- : global.interstellar.g_factory.Coal--;
+                            global[graph_source].g_factory.Oil > 0 ? global[graph_source].g_factory.Oil-- : global[graph_source].g_factory.Coal--;
                         }
-                        global.interstellar.g_factory.Lumber++;
+                        global[graph_source].g_factory.Lumber++;
                     }
                     else {
                         break;
@@ -798,8 +916,8 @@ function loadGraphene(parent,bind){
             subCoal(){
                 let keyMult = keyMultiplier();
                 for (let i=0; i<keyMult; i++){
-                    if (global.interstellar.g_factory.Coal > 0){
-                        global.interstellar.g_factory.Coal--;
+                    if (global[graph_source].g_factory.Coal > 0){
+                        global[graph_source].g_factory.Coal--;
                     }
                     else {
                         break;
@@ -809,17 +927,17 @@ function loadGraphene(parent,bind){
             addCoal(){
                 let keyMult = keyMultiplier();
                 for (let i=0; i<keyMult; i++){
-                    if (global.interstellar.g_factory.Lumber + global.interstellar.g_factory.Coal + global.interstellar.g_factory.Oil < global.interstellar.g_factory.on){
-                        global.interstellar.g_factory.Coal++;
+                    if (global[graph_source].g_factory.Lumber + global[graph_source].g_factory.Coal + global[graph_source].g_factory.Oil < global[graph_source].g_factory.on){
+                        global[graph_source].g_factory.Coal++;
                     }
-                    else if (global.interstellar.g_factory.Lumber + global.interstellar.g_factory.Oil > 0){
-                        if (global.interstellar.g_factory.Lumber > 0){
-                            global.interstellar.g_factory.Lumber--;
+                    else if (global[graph_source].g_factory.Lumber + global[graph_source].g_factory.Oil > 0){
+                        if (global[graph_source].g_factory.Lumber > 0){
+                            global[graph_source].g_factory.Lumber--;
                         }
                         else {
-                            global.interstellar.g_factory.Oil--;
+                            global[graph_source].g_factory.Oil--;
                         }
-                        global.interstellar.g_factory.Coal++;
+                        global[graph_source].g_factory.Coal++;
                     }
                     else {
                         break;
@@ -829,8 +947,8 @@ function loadGraphene(parent,bind){
             subOil(){
                 let keyMult = keyMultiplier();
                 for (let i=0; i<keyMult; i++){
-                    if (global.interstellar.g_factory.Oil > 0){
-                        global.interstellar.g_factory.Oil--;
+                    if (global[graph_source].g_factory.Oil > 0){
+                        global[graph_source].g_factory.Oil--;
                     }
                     else {
                         break;
@@ -840,17 +958,17 @@ function loadGraphene(parent,bind){
             addOil(){
                 let keyMult = keyMultiplier();
                 for (let i=0; i<keyMult; i++){
-                    if (global.interstellar.g_factory.Lumber + global.interstellar.g_factory.Coal + global.interstellar.g_factory.Oil < global.interstellar.g_factory.on){
-                        global.interstellar.g_factory.Oil++;
+                    if (global[graph_source].g_factory.Lumber + global[graph_source].g_factory.Coal + global[graph_source].g_factory.Oil < global[graph_source].g_factory.on){
+                        global[graph_source].g_factory.Oil++;
                     }
-                    else if (global.interstellar.g_factory.Lumber + global.interstellar.g_factory.Coal > 0){
-                        if (global.interstellar.g_factory.Lumber > 0){
-                            global.interstellar.g_factory.Lumber--;
+                    else if (global[graph_source].g_factory.Lumber + global[graph_source].g_factory.Coal > 0){
+                        if (global[graph_source].g_factory.Lumber > 0){
+                            global[graph_source].g_factory.Lumber--;
                         }
                         else {
-                            global.interstellar.g_factory.Coal--;
+                            global[graph_source].g_factory.Coal--;
                         }
-                        global.interstellar.g_factory.Oil++;
+                        global[graph_source].g_factory.Oil++;
                     }
                     else {
                         break;
@@ -861,20 +979,20 @@ function loadGraphene(parent,bind){
                 return tooltip(type);
             },
             ariaCount(fuel){
-                return ` ${global.interstellar.g_factory[fuel]} ${fuel} fueled.`;
+                return ` ${global[graph_source].g_factory[fuel]} ${fuel} fueled.`;
             },
             ariaProd(res){
-                return `. ${global.interstellar.g_factory[res]} producing ${res}.`;
+                return `. ${global[graph_source].g_factory[res]} producing ${res}.`;
             },
             level(){
-                let on = global.interstellar.g_factory.Lumber + global.interstellar.g_factory.Coal + global.interstellar.g_factory.Oil;
-                let max = global.interstellar.g_factory.on;
+                let on = global[graph_source].g_factory.Lumber + global[graph_source].g_factory.Coal + global[graph_source].g_factory.Oil;
+                let max = global[graph_source].g_factory.on;
                 return colorRange(on,max);
             }
         },
         filters: {
             on: function(c){
-                return global.interstellar.g_factory.Lumber + global.interstellar.g_factory.Coal + global.interstellar.g_factory.Oil;
+                return global[graph_source].g_factory.Lumber + global[graph_source].g_factory.Coal + global[graph_source].g_factory.Oil;
             }
         }
     });
@@ -912,7 +1030,12 @@ function loadPylon(parent,bind){
 
     if (global.tech['magic'] && global.tech.magic >= 3){
         ritualList.forEach(function (spell){
-            if ((spell !== 'crafting' && spell !== 'lumberjack' && spell !== 'farmer') || (spell === 'farmer' && !global.race['carnivore'] && !global.race['soul_eater']) || (spell === 'lumberjack' && !global.race['kindling_kindred'] && !global.race['smoldering'] && !global.race['evil']) || (spell === 'crafting' && global.tech.magic >= 4)){
+            if (
+                (spell !== 'crafting' && spell !== 'lumberjack' && spell !== 'farmer') ||
+                (spell === 'farmer' && !global.race['carnivore'] && !global.race['soul_eater'] && !global.race['artifical']) ||
+                (spell === 'lumberjack' && !global.race['kindling_kindred'] && !global.race['smoldering'] && !global.race['evil']) ||
+                (spell === 'crafting' && global.tech.magic >= 4)
+                ){
                 let cast = $(`<span :aria-label="buildLabel('${spell}') + ariaCount('${spell}')" class="current ${spell}">${loc(`modal_pylon_spell_${spell}`)} {{ ${spell} }}</span>`);
                 let sub = $(`<span role="button" class="sub" @click="subSpell('${spell}')" aria-label="Stop casting '${spell}' ritual"><span>&laquo;</span></span>`);
                 let add = $(`<span role="button" class="add" @click="addSpell('${spell}')" aria-label="Cast '${spell}' ritual"><span>&raquo;</span></span>`);
@@ -1023,6 +1146,38 @@ function loadQuarry(parent,bind){
                     global.city.rock_quarry.asbestos += keyMult;
                     if (global.city.rock_quarry.asbestos > 100){
                         global.city.rock_quarry.asbestos = 100;
+                    }
+                }
+            }
+        }
+    });
+}
+
+function loadTMine(parent,bind){
+    parent.append($(`<div>${loc('modal_quarry_ratio',[global.resource.Adamantite.name])}</div>`));
+
+    let slider = $(`<div class="sliderbar"><span class="sub" role="button" @click="sub" aria-label="Increase Aluminium Production">&laquo;</span><b-slider v-model="ratio" format="percent"></b-slider><span class="add" role="button" @click="add" aria-label="Increase Adamantite Production">&raquo;</span></div>`);
+    parent.append(slider);
+
+    vBind({
+        el: bind ? bind : '#specialModal',
+        data: global.space.titan_mine,
+        methods: {
+            sub(){
+                let keyMult = keyMultiplier();
+                if (global.space.titan_mine.ratio > 0){
+                    global.space.titan_mine.ratio -= keyMult;
+                    if (global.space.titan_mine.ratio < 0){
+                        global.space.titan_mine.ratio = 0;
+                    }
+                }
+            },
+            add(){
+                let keyMult = keyMultiplier();
+                if (global.space.titan_mine.ratio < 100){
+                    global.space.titan_mine.ratio += keyMult;
+                    if (global.space.titan_mine.ratio > 100){
+                        global.space.titan_mine.ratio = 100;
                     }
                 }
             }
@@ -1230,6 +1385,7 @@ export function setPowerGrid(){
 }
 
 export function gridDefs(){
+    let type = races[global.race.species].type === 'organism' ? 'humanoid' : races[global.race.species].type;
     return {
         power: { l: global.power, n: loc(`power`), s: true, r: false, rs: false },
         moon: { l: global.support.moon, n: loc(`space_moon_info_name`), s: global.settings.space.moon, r: 'space', rs: 'moon_base' },
@@ -1241,6 +1397,9 @@ export function gridDefs(){
         alien2: { l: global.support.alien2, n: loc('galaxy_alien',[races[global.galaxy.hasOwnProperty('alien2') ? global.galaxy.alien2.id : global.race.species].name]), s: global.settings.space.alien2, r: 'galaxy', rs: 'foothold'  },
         lake: { l: global.support.lake, n: loc(`portal_lake_name`), s: global.settings.portal.lake, r: 'portal', rs: 'harbour'  },
         spire: { l: global.support.spire, n: loc(`portal_spire_name`), s: global.settings.portal.spire, r: 'portal', rs: 'purifier'  },
+        titan: { l: global.support.titan, n: genusVars[type].solar.titan, s: global.settings.space.titan, r: 'space', rs: 'electrolysis'  },
+        enceladus: { l: global.support.enceladus, n: genusVars[type].solar.enceladus, s: global.settings.space.enceladus, r: 'space', rs: 'titan_spaceport'  },
+        eris: { l: global.support.eris, n: genusVars[type].solar.eris, s: global.settings.space.eris, r: 'space', rs: 'drone_control'  },
     };
 }
 

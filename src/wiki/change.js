@@ -3,12 +3,29 @@ import { clearElement } from './../functions.js';
 
 const changeList = [
     {
+        version: `1.2.0`,
+        date: `12/12/2021`,
+        changes: [
+            `Unlock the True Path (Requires completion of Ascension or Demonic Infusion).`,
+            `Using Fanaticism to gain an unempowered trait you already possess will now empower that trait.`,
+            `Added option to Hell Fortress to prevent using ship crew as reinforcements.`,
+            `Shrine Metal bonus now applies to Mining Droid Aluminium production.`,
+            `Armored trait now prevents 50% of deaths.`,
+            `Cannibalize healing now applies a percent based bonus instead of being equivalent to 3 5% Hospitals.`,
+            `GruvBox Dark is now the default theme.`,
+            `Added Evolve Adept Perk.`,
+            `Themed several additional weapon techs in magic universe for immersion.`,
+            `Smoldering and Chilled effects now display as Smoldering or Chilled in production breakdowns instead of Hot/Cold.`,
+            `Improved touch device support.`
+        ]
+    },
+    {
         version: `1.1.17`,
         date: `11/28/2021`,
         changes: [
             `Job stress from Civilian Ship Crew is now calculated correctly.`,
             `Things will now show as unaffordable if they require a locked resource.`,
-            `Added new entries to Mechancis section of Wiki: Job Stress, Cost Creep, and Warmonger.`,
+            `Added new entries to Mechanics section of Wiki: Job Stress, Cost Creep, and Warmonger.`,
             `Evolve Novice and Evolve Journeyman perk conditions updated.`
         ]
     },

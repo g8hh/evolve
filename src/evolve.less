@@ -1321,10 +1321,6 @@ Misc ---------> Main template
         .industry {
             background: none;
 
-            .smelting {
-                border-top: 0;
-            }
-
             .header {
                 border-bottom: @secondary-border solid .0625rem;
             }
@@ -1349,6 +1345,17 @@ Misc ---------> Main template
         }
 
         // Stars
+        .star1 {
+            fill: @html-background;
+            stroke: @star-2-fill;
+            path {
+                stroke: @star-2-fill;
+            }
+            path.bolden {
+                stroke-width: 8px;
+            }
+        }
+
         .star2 {
             fill: @star-2-fill;
         }
@@ -1442,6 +1449,13 @@ Misc ---------> Main template
     > span {
         color: #ebdbb2 !important;
         text-shadow: 2px 2px #000;
+    }
+}
+
+.synth {
+    box-shadow: 0 0 6px forestgreen;
+    > span {
+        text-shadow: 2px 2px forestgreen;
     }
 }
 
@@ -1872,7 +1886,7 @@ a {
 .sub {
     outline: none;
     display: inline-block;
-    margin-left: .25rem;
+    margin-left: .125rem;
     padding: 0 .375rem;
     border-radius: .375rem 0 0 .375rem;
     line-height: 1rem;
@@ -2436,6 +2450,14 @@ a {
         }
     }
 
+    .sshifter {
+        margin-left: 1rem;
+        button {
+            height: 1.5rem;
+            margin-left: .25rem;
+        }
+    }
+
     .foundry {
         margin-top: 1rem;
     }
@@ -2680,6 +2702,7 @@ a {
 
     .pirate {
         margin-right: .75rem;
+        margin-left: .75rem;
     }
 
     .militaryTab {
@@ -2930,6 +2953,7 @@ a {
             top: 1.375rem;
         }
 
+        .star1,
         .star2,
         .star3,
         .star4,
@@ -3102,6 +3126,13 @@ a {
     .regionControl,
     .regionSupport {
         margin-left: .5rem;
+    }
+
+    .space {
+        display: flex;
+        .syndThreat {
+            margin-left: 1rem;
+        }
     }
 }
 
@@ -3718,6 +3749,100 @@ span.inline {
     }
 }
 
+.ShipYardTab {
+    margin-left: 1rem;
+
+    .button {
+        height: 2rem;
+    }
+
+    .stats {
+        display: flex;
+        > div {
+            margin-left: .5rem;
+        }
+    }
+
+    .registry {
+        line-height: 1.25rem;
+        .nameplate {
+            display: inline-block;
+            width: 8rem;
+            height: 1.25rem;
+            input {
+                height: 1.25rem;
+            }
+        }
+    }
+    
+    #shipYardCosts {
+        margin-left: .5rem;
+    }
+
+    .shipBayOptions {
+        .dropdown  {
+            margin-left: .5rem;
+            margin-top: .25rem;
+        }
+    }
+
+    #shipList {
+        margin-top: .25rem;
+        .shipRow {
+            display: grid;
+            padding-top: .25rem;
+            margin-top: .25rem;
+            margin-left: .5rem;
+            border-top: 1px solid;
+            grid-template-columns: auto 10rem;
+
+            .name {
+                display: inline-block;
+                min-width: 5rem;
+            }
+
+            .row1,
+            .row2,
+            .row3 {
+                grid-column-start: 1;
+            }
+
+            .location {
+                grid-column-start: 2;
+                grid-row-start: 1;
+                grid-row-end: 3;
+            }
+
+            .pad {
+                margin: 0 .5rem 0 0;
+            }
+        }
+
+        .compact {
+            button {
+                height: 1rem;
+            }
+        }
+    }
+
+    .assemble {
+        margin: 1rem 0 0 .5rem;
+        line-height: 2rem;
+        > span {
+            margin-left: 1rem;
+            > label.checkbox {
+                margin-right: 0;
+                top: .25rem;
+            }
+        }
+    }
+
+    .solarMap {
+        float: right;
+        margin-right: 1rem;
+    }
+}
+
 .genome {
     margin-bottom: 1rem;
 
@@ -3745,6 +3870,9 @@ span.inline {
             min-width: 4.5rem;
             padding-bottom: .125rem;
         }
+    }
+    .trait.indent {
+        margin-left: 4rem;
     }
 
     .traitRow {
@@ -4035,7 +4163,15 @@ div.bigbang {
     }
 }
 
-.popper { pointer-events: none }
+.popper {
+    pointer-events: none;
+    .touchButton {
+        pointer-events: all;
+        height: 1.25rem;
+        margin-bottom: .25rem;
+    }
+}
+#powerStatus { white-space: nowrap; }
 
 .pyro > .before, .pyro > .after {
     position: absolute;
@@ -4100,4 +4236,93 @@ div.bigbang {
         margin-top: 30%;
         margin-left: 80%;
     }
+}
+
+.noise {
+    position: absolute;
+    top: -500px;
+    right: -500px;
+    bottom: -500px;
+    left: -500px;
+    background: transparent url(/lib/noise.png) 0 0;
+    background-size: 320px 320px;
+    opacity: .35;
+    animation: noise 1s steps(8,end) infinite both;
+}
+
+.noise-wrapper {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 1;
+    overflow: hidden;
+    z-index: 10;
+    
+    &:after {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        background: radial-gradient(ellipse at center, rgba(0,0,0,0) 0%,rgba(0,0,0,0.75) 100%);
+    }
+}
+
+@keyframes noise {
+    0% {
+        transform: translateX(0px,0px);
+    }
+    10% {
+        transform: translate(-100px, 100px);
+    }
+    20% {
+        transform: translate(150px, -100px);
+    }
+    30% {
+        transform: translate(-100px,100px);
+    }
+    40% {
+        transform: translate(100px, -150px);
+    }
+    50% {
+        transform: translate(-100px, 200px);
+    }
+    60% {
+        transform: translate(-200px, -100px);
+    }
+    70% {
+        transform: translateY(50px, 100px);
+    }
+    80% {
+        transform: translate(100px, -150px);
+    }
+    90% {
+        transform: translate(0px, 200px);
+    }
+    100% {
+        transform: translate(-100px, 100px);
+    }
+}
+
+.signal-lost-top {
+    width: 100%;
+    height: 0%;
+    opacity: 0.9;
+    background: black;
+    position: absolute;
+    top: 0;
+    z-index: 100;
+}
+
+.signal-lost-bottom {
+    width: 100%;
+    height: 0%;
+    opacity: 0.9;
+    background: black;
+    position: absolute;
+    bottom: 0;
+    z-index: 100;
 }

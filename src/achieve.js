@@ -31,12 +31,12 @@ const achieve_list = {
         'extinct_arraak','extinct_pterodacti','extinct_dracnid','extinct_entish','extinct_cacti','extinct_pinguicula','extinct_sporgar',
         'extinct_shroomi','extinct_moldling','extinct_mantis','extinct_scorpid','extinct_antid','extinct_sharkin','extinct_octigoran','extinct_dryad',
         'extinct_satyr','extinct_phoenix','extinct_salamander','extinct_yeti','extinct_wendigo','extinct_tuskin','extinct_kamel','extinct_balorg',
-        'extinct_imp','extinct_seraph','extinct_unicorn','extinct_junker','extinct_custom'
+        'extinct_imp','extinct_seraph','extinct_unicorn','extinct_synth','extinct_nano','extinct_junker','extinct_custom'
     ],
     genus: [
         'creator','genus_humanoid','genus_carnivore','genus_herbivore','genus_small','genus_giant','genus_reptilian','genus_avian',
         //'creator','genus_humanoid','genus_carnivore','genus_omnivore','genus_herbivore','genus_small','genus_giant','genus_reptilian','genus_avian',
-        'genus_insectoid','genus_plant','genus_fungi','genus_aquatic','genus_fey','genus_heat','genus_polar','genus_sand','genus_demonic','genus_angelic'
+        'genus_insectoid','genus_plant','genus_fungi','genus_aquatic','genus_fey','genus_heat','genus_polar','genus_sand','genus_demonic','genus_angelic','genus_synthetic'
     ],
     planet: [
         'explorer','biome_grassland','biome_oceanic','biome_forest','biome_desert','biome_volcanic','biome_tundra','biome_hellscape','biome_eden',
@@ -47,7 +47,7 @@ const achieve_list = {
         'vigilante','squished','double_density','cross','macro','marble','heavyweight','whitehole','heavy','canceled',
         'eviltwin','microbang','pw_apocalypse','fullmetal','pass'
     ],
-    challenge: ['joyless','steelen','dissipated','technophobe','wheelbarrow','iron_will','failed_history','banana'],    
+    challenge: ['joyless','steelen','dissipated','technophobe','wheelbarrow','iron_will','failed_history','banana','pathfinder','ashanddust','exodus','obsolete'],
 };
 
 const flairData = {
@@ -143,6 +143,11 @@ export const feats = {
         name: loc("feat_equilibrium_name"),
         desc: loc("feat_equilibrium_desc"),
         flair: loc("feat_equilibrium_flair")
+    },
+    digital_ascension: {
+        name: loc("feat_digital_ascension_name"),
+        desc: loc("feat_digital_ascension_desc"),
+        flair: loc("feat_digital_ascension_flair")
     },
     novice: {
         name: loc("feat_novice_name"),
@@ -477,6 +482,8 @@ export function challengeIcon(){
                 if (global.race['no_trade']){ popper.append($(`<div>${loc('evo_challenge_trade')}</div>`)); }
                 if (global.race['no_craft']){ popper.append($(`<div>${loc('evo_challenge_craft')}</div>`)); }
                 if (global.race['no_crispr']){ popper.append($(`<div>${loc('evo_challenge_crispr')}</div>`)); }
+                if (global.race['nerfed']){ popper.append($(`<div>${loc('evo_challenge_nerfed')}</div>`)); }
+                if (global.race['badgenes']){ popper.append($(`<div>${loc('evo_challenge_badgenes')}</div>`)); }
 
                 return undefined;
             },
@@ -495,6 +502,8 @@ export function alevel(){
     if (global.race['no_craft']){ a_level++; }
     if (global.race['no_crispr']){ a_level++; }
     if (global.race['weak_mastery']){ a_level++; }
+    if (global.race['nerfed']){ a_level++; }
+    if (global.race['badgenes']){ a_level++; }
     if (a_level > 5){
         a_level = 5;
     }
@@ -660,6 +669,22 @@ export function checkAchievements(){
                 global.stats.banana.b3.l = true;
             }
         }
+    }
+
+    // Path Finder
+    {
+        let uAffix = universeAffix();
+        ['l',uAffix].forEach(function (affix){
+            let rank = 0;
+            ['ashanddust','exodus','obsolete'].forEach(function (achieve){
+                if (global.stats.achieve[achieve] && global.stats.achieve[achieve][affix] && global.stats.achieve[achieve][affix] >= 5){
+                    rank++;
+                }
+            });
+            if (rank > 0){
+                unlockAchieve('pathfinder',false,rank,affix);
+            }
+        });
     }
 
     const date = new Date();
@@ -1410,6 +1435,58 @@ export const perkList = {
             loc(`wiki_perks_achievement_note_scale`,[`<span class="has-text-caution">${loc(`achieve_gladiator_name`)}</span>`])
         ]
     },
+    pathfinder: {
+        name: loc(`achieve_pathfinder_name`),
+        group: [
+            {
+                desc(){
+                    return loc("achieve_perks_pathfinder1",[10]);
+                },
+                active(){
+                    return global.stats.achieve['pathfinder'] && global.stats.achieve.pathfinder.l >= 1 ? true : false;
+                }
+            },
+            {
+                desc(){
+                    return loc("achieve_perks_pathfinder2",[10]);
+                },
+                active(){
+                    return global.stats.achieve['pathfinder'] && global.stats.achieve.pathfinder.l >= 2 ? true : false;
+                }
+            },
+            {
+                desc(){
+                    return loc("achieve_perks_pathfinder3");
+                },
+                active(){
+                    return global.stats.achieve['pathfinder'] && global.stats.achieve.pathfinder.l >= 3 ? true : false;
+                }
+            },
+            {
+                desc(){
+                    return loc("unavailable_content");
+                },
+                active(){
+                    return false;
+                }
+            },
+            {
+                desc(){
+                    return loc("unavailable_content");
+                },
+                active(){
+                    return false;
+                }
+            },
+        ],
+        notes: [
+            loc(`wiki_perks_achievement_note`,[`<span class="has-text-caution">${loc(`achieve_pathfinder_name`)}</span>`]),
+            loc(`wiki_perks_achievement_note_pathfinder`,[`<span class="has-text-caution">${loc(`evo_challenge_truepath`)}</span>`]),
+            loc(`wiki_perks_achievement_note_pathfinder_reset`,[`<span class="has-text-${global.stats.achieve['ashanddust'] ? 'success' : 'danger'}">${loc(`wiki_resets_mad`)}</span>`]),
+            loc(`wiki_perks_achievement_note_pathfinder_reset`,[`<span class="has-text-${global.stats.achieve['exodus'] ? 'success' : 'danger'}">${loc(`wiki_resets_bioseed`)}</span>`]),
+            loc(`wiki_perks_achievement_note_pathfinder_reset`,[`<span class="has-text-${global.stats.achieve['obsolete'] ? 'success' : 'danger'}">${loc(`wiki_resets_ai`)}</span>`]),
+        ]
+    },
     creep: {
         name: loc(`wiki_arpa_crispr_creep`),
         desc(wiki){
@@ -2118,7 +2195,7 @@ export const perkList = {
             {
                 desc(wiki){
                     let harmonic = calcPillar();
-                    return loc("perks_harmonic",[wiki ? "1-49" : +((harmonic[0] - 1) * 100).toFixed(0), wiki ? "2-98" : +((harmonic[1] - 1) * 100).toFixed(0)]);
+                    return loc("perks_harmonic",[wiki ? `1-${Object.keys(races).length + 2}` : +((harmonic[0] - 1) * 100).toFixed(0), wiki ? `2-${(Object.keys(races).length + 2) * 2}` : +((harmonic[1] - 1) * 100).toFixed(0)]);
                 },
                 active(){
                     let harmonic = calcPillar();
@@ -2128,7 +2205,7 @@ export const perkList = {
             {
                 desc(wiki){
                     let harmonic = calcPillar();
-                    return loc("perks_harmonic2",[loc("portal_west_tower"), loc("portal_east_tower"), wiki ? "12-552" : +(Object.keys(global.pillars).length * 12)]);
+                    return loc("perks_harmonic2",[loc("portal_west_tower"), loc("portal_east_tower"), wiki ? `12-${(Object.keys(races).length - 1) * 12}` : +(Object.keys(global.pillars).length * 12)]);
                 },
                 active(){
                     let harmonic = calcPillar();
@@ -2177,12 +2254,29 @@ export const perkList = {
             loc(`wiki_perks_progress_note1`,[25,loc(`wiki_resets_bioseed`)]),
             loc(`wiki_perks_progress_note2`)
         ]
-    }
+    },
+    adept: {
+        name: loc(`perk_adept`),
+        desc(wiki){
+            let rank = global.stats.feat['adept'] && global.stats.achieve['whitehole'] && global.stats.achieve.whitehole.l > 0 ? Math.min(global.stats.achieve.whitehole.l,global.stats.feat['adept']) : 1;
+            let res = wiki ? "100/200/300/400/500" : rank * 100;
+            let cap = wiki ? "60/120/180/240/300" : rank * 60;
+            return loc("achieve_perks_adept",[res,cap]);
+        },
+        active(){
+            return global.stats.feat['adept'] && global.stats.achieve['whitehole'] && global.stats.achieve.whitehole.l > 0 ? true : false;
+        },
+        notes: [
+            loc(`wiki_perks_progress_note1`,[50,loc(`wiki_resets_bioseed`)]),
+            loc(`wiki_perks_progress_note2`)
+        ]
+    },
 };
 
 export function drawPerks(){
     clearElement($('#perksPanel'));
     let perks = $('#perksPanel');
+
     let hasPerk = false;
     Object.keys(perkList).forEach(function(perk){
         if (perkList[perk].hasOwnProperty('group')){
@@ -2240,6 +2334,9 @@ export function drawStats(){
     stats.append(`<div><span class="has-text-warning">${loc("achieve_stats_starved_to_death")}</span> {{ s.starved | t_starved | format }}</div>`);
     stats.append(`<div><span class="has-text-warning">${loc("achieve_stats_died_in_combat")}</span> {{ s.died | t_died | format }}</div>`);
     stats.append(`<div><span class="has-text-warning">${loc("achieve_stats_game_days_played")}</span> {{ s.days | played | format }}</div>`);
+    if (global.stats.portals > 0){
+        stats.append(`<div><span class="has-text-warning">${loc("achieve_stats_portals")}</span> {{ s.portals | format }}</div>`);
+    }
     stats.append(`<div><span class="has-text-warning">${loc("achieve_stats_total_resets")}</span> {{ s.reset | format }}</div>`);
     if (global.stats.mad > 0){
         stats.append(`<div><span class="has-text-warning">${loc("achieve_stats_mad_resets")}</span> {{ s.mad | format }}</div>`);
@@ -2259,8 +2356,8 @@ export function drawStats(){
     if (global.stats.descend > 0){
         stats.append(`<div><span class="has-text-warning">${loc("achieve_stats_descension_resets")}</span> {{ s.descend | format }}</div>`);
     }
-    if (global.stats.portals > 0){
-        stats.append(`<div><span class="has-text-warning">${loc("achieve_stats_portals")}</span> {{ s.portals | format }}</div>`);
+    if (global.stats.aiappoc > 0){
+        stats.append(`<div><span class="has-text-warning">${loc("achieve_stats_aiappoc_resets")}</span> {{ s.aiappoc | format }}</div>`);
     }
 
     // Current Run Stats

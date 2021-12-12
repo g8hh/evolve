@@ -116,10 +116,10 @@ function extraTraitList(race){
 export function traitsPage(content){
     content = sideMenu('create',content);
 
-    let types = ['genus','major','minor','special'];
+    let types = [['genus','major'],['minor'],['special']];
     for (let i=0; i<types.length; i++){
-        Object.keys(traits).sort().forEach(function (trait){
-            if (traits[trait].type === types[i]){
+        Object.keys(traits).sort( (a,b) => traits[a].name.localeCompare(traits[b].name) ).forEach(function (trait){
+            if (types[i].includes(traits[trait].type)){
                 let info = $(`<div id="${types[i]}_${trait}" class="infoBox"></div>`);
                 content.append(info);
                 traitDesc(info,trait,false,true);
@@ -172,7 +172,33 @@ const traitExtra = {
     ],
     instinct: [
         loc(`wiki_trait_effect_instinct_ex1`,[6.67,loc('galaxy_chthonian'),10])
+    ],
+    logical: [
+        loc(`wiki_trait_effect_logical_ex1`,[
+            global.tech.hasOwnProperty('science') ? global.tech.science : 0,
+            global.tech.hasOwnProperty('high_tech') ? global.tech.high_tech : 0
+        ]),
     ]
+};
+
+const valAdjust = {
+    fibroblast: [5],
+    imitation: [races[global.race['srace'] || 'protoplasm'].name],
+    detritivore: false,
+    elusive: false,
+    promiscuous: false,
+    revive: false,
+    fast_growth: false,
+    blood_thirst: false,
+    frail: false,
+    sappy: false,
+    spores: false,
+    terrifying: false,
+    shapeshifter: false,
+    freespirit: false,
+    selenophobia: false,
+    infectious: false,
+    infiltrator: false,
 };
 
 export function traitDesc(info,trait,fanatic,tpage){
@@ -189,7 +215,20 @@ export function traitDesc(info,trait,fanatic,tpage){
     }
     info.append(`<div class="desc">${traits[trait].desc}</div>`);
 
-    let vals = traits[trait].hasOwnProperty('vars') ? traits[trait].vars : [];
+    let vals = traits[trait].hasOwnProperty('vars') ? traits[trait].vars() : [];
+    if (valAdjust.hasOwnProperty(trait)){
+        if (trait === 'fibroblast'){
+            for (let i=0; i<vals.length; i++){
+                vals[i] = vals[i] * valAdjust[trait][i];
+            }
+        }
+        else if (valAdjust[trait]){
+            vals = valAdjust[trait];
+        }
+        else {
+            vals = [];
+        }
+    }
     let color = 'warning';
     if (traits[trait].hasOwnProperty('val')){
         color = traits[trait].val >= 0 ? 'success' : 'danger';

@@ -35,9 +35,7 @@ export var breakdown = {
 };
 export var power_generated = {};
 export var p_on = {};
-export var red_on = {};
-export var moon_on = {};
-export var belt_on = {};
+export var support_on = {};
 export var int_on = {};
 export var gal_on = {};
 export var spire_on = {};
@@ -905,7 +903,20 @@ if (convertVersion(global['version']) < 101015){
     }
 }
 
-global['version'] = '1.1.17';
+if (convertVersion(global['version']) < 102000){
+    if (global.hasOwnProperty('portal') && global.portal.hasOwnProperty('fortress') && !global.portal.fortress.hasOwnProperty('nocrew')){
+        global.portal.fortress['nocrew'] = false;
+    }
+    if (global.city.hasOwnProperty('smelter') && !global.city.smelter.hasOwnProperty('Iridium')){
+        global.city.smelter['Iridium'] = 0;
+    }
+    if (global.hasOwnProperty('portal') && global.portal.hasOwnProperty('mechbay') && !global.portal.mechbay.hasOwnProperty('active')){
+        global.portal.mechbay['active'] = 0;
+        global.portal.mechbay['scouts'] = 0;
+    }
+}
+
+global['version'] = '1.2.0';
 delete global['revision'];
 delete global['beta'];
 
@@ -925,6 +936,15 @@ if (!global.hasOwnProperty('support')){
         lake: [],
         spire: []
     };
+}
+
+if (!global.support.hasOwnProperty('titan')){
+    global.support['titan'] = [];
+    global.support['enceladus'] = [];
+}
+
+if (!global.support.hasOwnProperty('eris')){
+    global.support['eris'] = [];
 }
 
 if (global.civic['cement_worker'] && global.civic.cement_worker.impact === 0.25){
@@ -963,6 +983,10 @@ if (!global['settings']){
 
 if (!global.settings.hasOwnProperty('showMechLab')){
     global.settings['showMechLab'] = false;
+}
+
+if (!global.settings.hasOwnProperty('showShipYard')){
+    global.settings['showShipYard'] = false;
 }
 
 if (!global.settings.hasOwnProperty('showCiv')){
@@ -1046,6 +1070,14 @@ if (typeof global.settings.space['sirius'] === 'undefined'){
     global.settings.space['sirius'] = false;
 }
 
+if (!global.settings.space.hasOwnProperty('titan')){
+    global.settings.space['titan'] = false;
+    global.settings.space['enceladus'] = false;
+    global.settings.space['triton'] = false;
+    global.settings.space['kuiper'] = false;
+    global.settings.space['eris'] = false;
+}
+
 if (!global.settings['showDeep']){
     global.settings['showDeep'] = false;
 }
@@ -1056,6 +1088,10 @@ if (!global.settings['showGalactic']){
 
 if (!global.settings['showPortal']){
     global.settings['showPortal'] = false;
+}
+
+if (!global.settings['showOuter']){
+    global.settings['showOuter'] = false;
 }
 
 if (!global.settings['portal']){
@@ -1353,6 +1389,9 @@ if (!global.stats['ascend']){
 if (!global.stats['descend']){
     global.stats['descend'] = 0;
 }
+if (!global.stats['aiappoc']){
+    global.stats['aiappoc'] = 0;
+}
 if (!global.stats['dark']){
     global.stats['dark'] = 0;
 }
@@ -1395,6 +1434,9 @@ if (!global.race['Dark']){
 }
 if (!global.race['Harmony']){
     global.race['Harmony'] = { count: 0 };
+}
+if (!global.race['AICore']){
+    global.race['AICore'] = { count: 0 };
 }
 if (!global.race['deterioration']){
     global.race['deterioration'] = 0;
@@ -1694,6 +1736,9 @@ if (global.city['foundry'] && !global.city.foundry['Nanoweave']){
 if (global.city['foundry'] && !global.city.foundry['Scarletite']){
     global.city.foundry['Scarletite'] = 0;
 }
+if (global.city['foundry'] && !global.city.foundry['Quantium']){
+    global.city.foundry['Quantium'] = 0;
+}
 
 if (!global.settings['arpa']){
     global.settings['arpa'] = {
@@ -1767,6 +1812,15 @@ if (!global.civic['new']){
     global.civic['new'] = 0;
 }
 
+if (!global.race['purgatory']){
+    global.race['purgatory'] = {
+        city: {},
+        space: {},
+        portal: {},
+        tech: {},
+    };
+}
+
 if (!global.civic['d_job']){
     if (global.race['carnivore'] || global.race['soul_eater']){
         global.civic['d_job'] = 'hunter';
@@ -1774,7 +1828,7 @@ if (!global.civic['d_job']){
     else if (global.tech['agriculture'] && global.tech['agriculture'] >= 1){
         global.civic['d_job'] = 'farmer';
     }
-    else{
+    else {
         global.civic['d_job'] = 'unemployed';
     }
 }
@@ -1947,6 +2001,7 @@ window.soft_reset = function reset(){
     
     clearSavedMessages();
 
+    let srace = global.race.hasOwnProperty('srace') ? global.race.srace : false;
     let replace = {
         species : 'protoplasm',
         Plasmid: { count: global.race.Plasmid.count },
@@ -1954,11 +2009,15 @@ window.soft_reset = function reset(){
         Phage: { count: global.race.Phage.count },
         Dark: { count: global.race.Dark.count },
         Harmony: { count: global.race.Harmony.count },
+        AICore: { count: global.race.AICore.count },
         universe: global.race.universe,
         seeded: global.race.seeded,
         probes: global.race.probes,
         seed: global.race.seed,
         ascended: global.race.hasOwnProperty('ascended') ? global.race.ascended : false,
+    }
+    if (srace){
+        replace['srace'] = srace;
     }
     if (global.race['bigbang']){
         replace['bigbang'] = true;
@@ -2120,6 +2179,7 @@ export function clearStates(){
     global.settings.showIndustry = false;
     global.settings.showPowerGrid = false;
     global.settings.showMechLab = false;
+    global.settings.showShipYard = false;
     global.settings.showResearch = false;
     global.settings.showCivic = false;
     global.settings.showMil = false;
@@ -2131,6 +2191,7 @@ export function clearStates(){
     global.settings.showDeep = false;
     global.settings.showGalactic = false;
     global.settings.showPortal = false;
+    global.settings.showOuter = false;
     global.settings.showEjector = false;
     global.settings.showCargo = false;
     global.settings.showAlchemy  = false;
@@ -2156,6 +2217,11 @@ export function clearStates(){
     global.settings.space.alien1 = false;
     global.settings.space.alien2 = false;
     global.settings.space.chthonian = false;
+    global.settings.space.titan = false;
+    global.settings.space.enceladus = false;
+    global.settings.space.triton = false;
+    global.settings.space.eris = false;
+    global.settings.space.kuiper = false;
     global.settings.portal.fortress = false;
     global.settings.portal.badlands = false;
     global.settings.portal.pit = false;

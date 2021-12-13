@@ -2702,7 +2702,7 @@ function fastLoop(){
                             breakdown.p.consume.Lumber[loc('city_compost_heap')] = -(lumber_cost);
                             modRes('Lumber', -(lumber_cost * time_multiplier));
                         }
-                        let c_factor = traits.blood_thirst.vars()[0] / 100;
+                        let c_factor = traits.detritivore.vars()[0] / 100;
                         let food_compost = operating * (1.2 + (global.tech['compost'] * c_factor));
                         food_compost *= global.city.biome === 'grassland' ? biomes.grassland.vars()[0] : 1;
                         food_compost *= global.city.biome === 'volcanic' ? biomes.volcanic.vars()[0] : 1;
@@ -8767,9 +8767,14 @@ function longLoop(){
                     Object.keys(spacePlanetStats).forEach(function(planet){
                         if (global.space.position.hasOwnProperty(planet)){
                             let orbit = spacePlanetStats[planet].orbit === -1 ? global.city.calendar.orbit : spacePlanetStats[planet].orbit;
-                            global.space.position[planet] += +(360 / orbit).toFixed(4);
-                            if (global.space.position[planet] >= 360){
-                                global.space.position[planet] -= 360;
+                            if (orbit === 0){
+                                global.space.position[planet] = 0;
+                            }
+                            else {
+                                global.space.position[planet] += +(360 / orbit).toFixed(4);
+                                if (global.space.position[planet] >= 360){
+                                    global.space.position[planet] -= 360;
+                                }
                             }
                         }
                     });

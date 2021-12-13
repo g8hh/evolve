@@ -917,7 +917,7 @@ if (convertVersion(global['version']) < 102000){
 }
 
 global['version'] = '1.2.0';
-delete global['revision'];
+global['revision'] = 'a';
 delete global['beta'];
 
 if (!global.hasOwnProperty('power')){
@@ -1107,6 +1107,10 @@ if (!global.settings.portal.hasOwnProperty('ruins')){
     global.settings.portal['gate'] = false;
     global.settings.portal['lake'] = false;
     global.settings.portal['spire'] = false;
+}
+
+if (!global.settings.hasOwnProperty('touch')){
+    global.settings['touch'] = false;
 }
 
 if (!global['queue']){

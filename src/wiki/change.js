@@ -4,6 +4,19 @@ import { clearElement } from './../functions.js';
 const changeList = [
     {
         version: `1.2.0`,
+        revision: `a`,
+        date: `12/12/2021`,
+        changes: [
+            `Fixed bug with Plasmid Storage.`,
+            `Fixed bug with Befuddle trait and Espionage.`,
+            `Fixed bug with Composting.`,
+            `Updated Solar Map.`,
+            `Added setting to enable mobile device support.`,
+            `Minor buff to TP Frigate power.`
+        ]
+    },
+    {
+        version: `1.2.0`,
         date: `12/12/2021`,
         changes: [
             `Unlock the True Path (Requires completion of Ascension or Demonic Infusion).`,

@@ -5243,7 +5243,7 @@
   "space_titan_spaceport_storage": "TRANS:+%0% Storehouse Storage",
   "space_electrolysis_title": "电解工厂",
   "space_electrolysis_req": "需要电力和%0",
-  "space_electrolysis_use": "%1 -%0/s，-%2MW",
+  "space_electrolysis_use": "%1 -%0/s，电力 -%2MW",
   "space_hydrogen_plant_title": "氢气发电厂",
   "space_hydrogen_plant_req": "需要解锁电解技术",
   "space_hydrogen_plant_effect": "需要  %1 %0",

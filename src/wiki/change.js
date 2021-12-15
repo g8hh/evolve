@@ -3,6 +3,18 @@ import { clearElement } from './../functions.js';
 
 const changeList = [
     {
+        version: `1.2.1`,
+        date: `12/14/2021`,
+        changes: [
+            `Smelter metals can now be reallocated without unassigning.`,
+            `Increased accuracy of syndicate intel data`,
+            `Fixed bug with removing Weak & Bad genes when toggling True Path.`,
+            `Fixed bug with adding or removing Professors not updating indoctrination value.`,
+            `Fixed bug with Planet Wiki entry that prevented some data from loading.`,
+            `Added trait rankings to wiki.`,
+        ]
+    },
+    {
         version: `1.2.0`,
         revision: `a`,
         date: `12/12/2021`,

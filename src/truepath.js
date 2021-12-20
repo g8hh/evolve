@@ -1,5 +1,5 @@
 import { global, p_on, support_on, sizeApproximation, quantum_level } from './vars.js';
-import { vBind, clearElement, popover, messageQueue, powerCostMod, powerModifier, spaceCostMultiplier, deepClone } from './functions.js';
+import { vBind, clearElement, popover, clearPopper, messageQueue, powerCostMod, powerModifier, spaceCostMultiplier, deepClone } from './functions.js';
 import { races, genusVars, traits } from './races.js';
 import { spatialReasoning } from './resources.js';
 import { defineIndustry, armyRating, garrisonSize } from './civics.js';
@@ -2096,6 +2096,7 @@ function drawShips(){
                             global.space.shipyard.ships[id].destination = {x: dest.x, y: dest.y};
                             global.civic.garrison.crew += crew;
                             drawShips();
+                            clearPopper(`ship${id}loc${l}`);
                         }
                     }
                 },
@@ -2171,8 +2172,8 @@ function calcLandingPoint(ship, planet) {
     let ship_speed = shipSpeed(ship) / 225;
     let cross1_dist = Math.abs(ship_dist - spacePlanetStats[planet].dist);
     let cross2_dist = Math.abs(ship_dist + spacePlanetStats[planet].dist);
-    let cross1_days = Math.min(cross1_dist, cross2_dist) / ship_speed;
-    let cross2_days = Math.max(cross1_dist, cross2_dist) / ship_speed;
+    let cross1_days = Math.floor(Math.min(cross1_dist, cross2_dist) / ship_speed);
+    let cross2_days = Math.ceil(Math.max(cross1_dist, cross2_dist) / ship_speed);
     let planet_orbit = spacePlanetStats[planet].orbit === -1
       ? global.city.calendar.orbit
       : spacePlanetStats[planet].orbit;
@@ -2180,7 +2181,8 @@ function calcLandingPoint(ship, planet) {
     let planet_degree = (global.space.position[planet] + (cross1_days * planet_speed)) % 360;
     let rads = (Math.PI / 180);
     for (let i = cross1_days; i <= cross2_days; i++) {
-        let planet_x = Math.cos(planet_degree * rads) * spacePlanetStats[planet].dist;
+        let planet_x = xPosition(Math.cos(planet_degree * rads) * spacePlanetStats[planet].dist, planet);
+        planet_x += xShift(planet);
         let planet_y = Math.sin(planet_degree * rads) * spacePlanetStats[planet].dist;
         let time = Math.sqrt(((planet_x - ship.xy.x) ** 2) + ((planet_y - ship.xy.y) ** 2)) / ship_speed;
         if (time <= i) {
@@ -2407,8 +2409,9 @@ export function setOrbits(){
 }
 
 export function genXYcoord(planet){
-    let cx = +(Math.cos(global.space.position[planet] * (Math.PI / 180))).toFixed(5) * spacePlanetStats[planet].dist;
+    let cx = xPosition(+(Math.cos(global.space.position[planet] * (Math.PI / 180))).toFixed(5) * spacePlanetStats[planet].dist, planet);
     let cy = +(Math.sin(global.space.position[planet] * (Math.PI / 180))).toFixed(5) * spacePlanetStats[planet].dist;
+    cx += xShift(planet);
     return {x: cx, y: cy};
 }
 
@@ -2456,6 +2459,33 @@ export function calcAIDrift(){
     return drift;
 }
 
+function xPosition(x,p){
+    let e = 1.075 + (spacePlanetStats[p].dist / 100);
+    if (global.city.ptrait === 'elliptical'){
+        switch (p){
+            case 'spc_home':
+                e = 1.5;
+                break;
+            default:
+                e = 1.275 + (spacePlanetStats[p].dist / 100);
+                break;
+        }
+    }
+    x *= e;
+    return x;
+}
+
+function xShift(id){
+    let x = spacePlanetStats[id].dist / 3;
+    if (global.city.ptrait === 'elliptical' && id === 'spc_home'){
+        x += 0.15;
+    }
+    if (id === 'spc_eris'){
+        x += 25;
+    }
+    return x;
+}
+
 function drawMap(scale, translatePos) {
     let canvas = document.getElementById("mapCanvas");
     let ctx = canvas.getContext("2d");
@@ -2471,11 +2501,7 @@ function drawMap(scale, translatePos) {
     // Calculate positions
     let planetLocation = {};
     for (let [id, planet] of Object.entries(spacePlanetStats)) {
-        let degree = global.space.position[id] * (Math.PI / 180);
-        planetLocation[id] = {
-            x: Math.cos(degree) * planet.dist,
-            y: Math.sin(degree) * planet.dist
-        }
+        planetLocation[id] = genXYcoord(id);
     }
 
     // Draw orbits
@@ -2490,7 +2516,8 @@ function drawMap(scale, translatePos) {
             else {
                 ctx.setLineDash([]);
             }
-            ctx.arc(0, 0, planet.dist, 0, Math.PI * 2, true);
+            let cx = xShift(id);
+            ctx.ellipse(cx, 0, xPosition(planet.dist,id), planet.dist, 0, 0, Math.PI * 2, true);
             ctx.stroke();
         }
     }
@@ -2539,7 +2566,14 @@ function drawMap(scale, translatePos) {
         }
         else {
             let size = planet.size / 10;
-            ctx.arc(planetLocation[id].x, planetLocation[id].y, size, 0, Math.PI * 2, true);
+            switch (id){
+                case 'spc_sun':
+                    ctx.arc(planetLocation[id].x, planetLocation[id].y, size, 0, Math.PI * 2, true);
+                    break;
+                default:
+                    ctx.arc(planetLocation[id].x, planetLocation[id].y, size, 0, Math.PI * 2, true);
+                    break;
+            }
         }
         ctx.fill();
     }

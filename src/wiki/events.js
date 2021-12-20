@@ -1602,7 +1602,7 @@ function specialEventsPage(content){
 
         infoBoxBuilder(mainContent, { name: `${event}_condition`, template: 'events', label: loc(`wiki_events_${event}`), paragraphs: 2, break: [2], h_level: 2,
             para_data: {
-                1: [`${loc(`month${halloween.date[0]}`)} ${halloween.date[1]}`, `${loc(`month${halloween.endDate[0]}`)} ${halloween.endDate[1]}`],
+                1: [`${loc(`month${halloween.date[0]}`)}${halloween.date[1]}日`, `${loc(`month${halloween.endDate[0]}`)}${halloween.endDate[1]}日`],
             }
         }, section);
         sideMenu('add',`special-events`,event,loc(`wiki_events_${event}`));

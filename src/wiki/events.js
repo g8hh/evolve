@@ -1349,7 +1349,7 @@ function specialEventsPage(content){
             });
             infoBoxBuilder(mainContent, { name: `${event}_condition`, template: 'events', label: loc(`wiki_events_${event}`), paragraphs: 2, break: [2], h_level: 2,
                 para_data: {
-                    1: [`${loc(`month${easter.date[0]}`)} ${easter.date[1]}`],
+                    1: [`${loc(`month${easter.date[0]}`)}${easter.date[1]}日`],
                 }
             }, section);
             sideMenu('add',`special-events`,event,loc(`wiki_events_${event}`));
@@ -1409,13 +1409,13 @@ function specialEventsPage(content){
                 let egg = global.special.egg.hasOwnProperty(year) && global.special.egg[year][`egg${i}`] ? 'has-text-success' : 'has-text-danger';
                 let found = global.special.egg.hasOwnProperty(year) && global.special.egg[year][`egg${i}`] ? 'found' : 'missing';
                 
-                let hint = `<span class="tcell">${loc('wiki_events_hint_avail')} ${loc(`month${easter.hintDate[0]}`)} ${easter.hintDate[1]}</span>`;
+                let hint = `<span class="tcell">${loc('wiki_events_hint_avail')} ${loc(`month${easter.hintDate[0]}`)}${easter.hintDate[1]}日</span>`;
                 if (easter.hint){
                     const bytes = CryptoJS.AES.decrypt(hints[i-1], passphrase);
                     hint = `<span class="tcell">` + bytes.toString(CryptoJS.enc.Utf8) + `</span>`;
                 }
 
-                let sol = `<span class="tcell">${loc('wiki_events_sol_avail')} ${loc(`month${easter.solveDate[0]}`)} ${easter.solveDate[1]}</span>`;
+                let sol = `<span class="tcell">${loc('wiki_events_sol_avail')} ${loc(`month${easter.solveDate[0]}`)}${easter.solveDate[1]}日</span>`;
                 if (easter.solve){
                     sol = `<span class="tcell eggsol" data-sol="${solutions[i-1]}">${loc('wiki_events_reveal_sol')}</span>`;
                 }
@@ -1433,7 +1433,7 @@ function specialEventsPage(content){
 
             infoBoxBuilder(mainContent, { name: `${event}_condition`, template: 'events', label: loc(`wiki_events_${event}`), paragraphs: 2, break: [2], h_level: 2,
                 para_data: {
-                    1: [`${loc(`month${easter.date[0]}`)} ${easter.date[1]}`, `${loc(`month${easter.endDate[0]}`)} ${easter.endDate[1]}`],
+                    1: [`${loc(`month${easter.date[0]}`)}${easter.date[1]}日`, `${loc(`month${easter.endDate[0]}`)}${easter.endDate[1]}日`],
                 }
             }, section);
             sideMenu('add',`special-events`,event,loc(`wiki_events_${event}`));
@@ -1552,7 +1552,7 @@ function specialEventsPage(content){
             let treat = global.special.trick.hasOwnProperty(year) && global.special.trick[year][`treat${i}`] ? 'has-text-success' : 'has-text-danger';
             let found = global.special.trick.hasOwnProperty(year) && global.special.trick[year][`treat${i}`] ? 'found' : 'missing';
             
-            let hint = `<span class="tcell">${loc('wiki_events_hint_avail')} ${loc(`month${halloween.hintDate[0]}`)} ${halloween.hintDate[1]}</span>`;
+            let hint = `<span class="tcell">${loc('wiki_events_hint_avail')} ${loc(`month${halloween.hintDate[0]}`)}${halloween.hintDate[1]}日</span>`;
             if (halloween.hint){
                 const bytes = CryptoJS.AES.decrypt(candy_hints[i-1], passphrase);
                 hint = `<span class="tcell">` + bytes.toString(CryptoJS.enc.Utf8) + `</span>`;
@@ -1560,7 +1560,7 @@ function specialEventsPage(content){
 
             treats = treats + `<div class="trow"><span role="img" class="tcell ${treat}" aria-label="${loc('wiki_feat_treat_num',[i])} ${found}">${loc('wiki_feat_treat_num',[i])}</span>${hint}</div>`
 
-            let sol = `<span class="tcell">${loc('wiki_events_sol_avail')} ${loc(`month${halloween.solveDate[0]}`)} ${halloween.solveDate[1]}</span>`;
+            let sol = `<span class="tcell">${loc('wiki_events_sol_avail')} ${loc(`month${halloween.solveDate[0]}`)}${halloween.solveDate[1]}日</span>`;
             if (halloween.solve){
                 sol = `<span class="tcell totsol" data-sol="${candy_solutions[i-1]}">${loc('wiki_events_reveal_sol')}</span>`;
             }
@@ -1576,7 +1576,7 @@ function specialEventsPage(content){
             let trick = global.special.trick.hasOwnProperty(year) && global.special.trick[year][`trick${i}`] ? 'has-text-success' : 'has-text-danger';
             let found = global.special.trick.hasOwnProperty(year) && global.special.trick[year][`trick${i}`] ? 'found' : 'missing';
             
-            let hint = `<span class="tcell">${loc('wiki_events_hint_avail')} ${loc(`month${halloween.hintDate[0]}`)} ${halloween.hintDate[1]}</span>`;
+            let hint = `<span class="tcell">${loc('wiki_events_hint_avail')} ${loc(`month${halloween.hintDate[0]}`)}${halloween.hintDate[1]}日</span>`;
             if (halloween.hint){
                 const bytes = CryptoJS.AES.decrypt(ghost_hints[i-1], passphrase);
                 hint = `<span class="tcell">` + bytes.toString(CryptoJS.enc.Utf8) + `</span>`;
@@ -1584,7 +1584,7 @@ function specialEventsPage(content){
 
             tricks = tricks + `<div class="trow"><span role="img" class="tcell ${trick}" aria-label="${loc('wiki_feat_trick_num',[i])} ${found}">${loc('wiki_feat_trick_num',[i])}</span>${hint}</div>`
 
-            let sol = `<span class="tcell">${loc('wiki_events_sol_avail')} ${loc(`month${halloween.solveDate[0]}`)} ${halloween.solveDate[1]}</span>`;
+            let sol = `<span class="tcell">${loc('wiki_events_sol_avail')} ${loc(`month${halloween.solveDate[0]}`)}${halloween.solveDate[1]}日</span>`;
             if (halloween.solve){
                 sol = `<span class="tcell totsol" data-sol="${ghost_solutions[i-1]}">${loc('wiki_events_reveal_sol')}</span>`;
             }

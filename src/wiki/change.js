@@ -3,6 +3,14 @@ import { clearElement } from './../functions.js';
 
 const changeList = [
     {
+        version: `1.2.5`,
+        date: `12/21/2021`,
+        changes: [
+            `Fixed bug that caused a planet to lose its geology traits after an AI reset.`,
+            `Fixed bug with scavenger job description.`,
+        ]
+    },
+    {
         version: `1.2.4`,
         date: `12/19/2021`,
         changes: [

@@ -3,6 +3,15 @@ import { clearElement } from './../functions.js';
 
 const changeList = [
     {
+        version: `1.2.6`,
+        date: `12/24/2021`,
+        changes: [
+            `Fixed bug that prevented custom Synthetic race from showing if you refreshed the page.`,
+            `Fixed bugs with Synthetic evolution and traits: Calm, Cannibalize, and Magnificent.`,
+            `Fixed bugs with using the quick tab keys when preload tabs is enabled.`
+        ]
+    },
+    {
         version: `1.2.5`,
         date: `12/21/2021`,
         changes: [

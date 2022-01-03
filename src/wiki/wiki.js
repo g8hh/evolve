@@ -322,5 +322,7 @@ function mainPage(){
 
     list.append(`<li><a href="https://wooledge.org/~greg/evolve/guide.html" target="_blank">${loc(`wiki_resources_begin_guide`)}</a> ${loc(`wiki_resources_by`,['GreyCat'])}</li>`);
     list.append(`<li><a href="https://karsen777.github.io/" target="_blank">${loc(`wiki_resources_tracker`)}</a> ${loc(`wiki_resources_by`,['Karsen777'])}</li>`);
+    list.append(`<li><a href="https://by22dgb.gitee.io/evolveprogresstracker/" target="_blank">成就追踪器（已本地化）</a> ${loc(`wiki_resources_by`,['by22dgb'])}</li>`);
     list.append(`<li><a href="https://zarakon.github.io/EvolveHellSim/" target="_blank">${loc(`wiki_resources_hell_sim`)}</a> ${loc(`wiki_resources_by`,['Jotun'])}</li>`);
+    list.append(`<li><a href="https://by22dgb.gitee.io/evolvehellsim/" target="_blank">地狱模拟器（已本地化）</a> ${loc(`wiki_resources_by`,['by22dgb'])}</li>`);
 }

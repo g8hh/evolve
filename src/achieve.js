@@ -31,7 +31,7 @@ const achieve_list = {
         'extinct_arraak','extinct_pterodacti','extinct_dracnid','extinct_entish','extinct_cacti','extinct_pinguicula','extinct_sporgar',
         'extinct_shroomi','extinct_moldling','extinct_mantis','extinct_scorpid','extinct_antid','extinct_sharkin','extinct_octigoran','extinct_dryad',
         'extinct_satyr','extinct_phoenix','extinct_salamander','extinct_yeti','extinct_wendigo','extinct_tuskin','extinct_kamel','extinct_balorg',
-        'extinct_imp','extinct_seraph','extinct_unicorn','extinct_synth','extinct_nano','extinct_junker','extinct_custom'
+        'extinct_imp','extinct_seraph','extinct_unicorn','extinct_synth','extinct_nano','extinct_junker','extinct_sludge','extinct_custom'
     ],
     genus: [
         'creator','genus_humanoid','genus_carnivore','genus_herbivore','genus_small','genus_giant','genus_reptilian','genus_avian',
@@ -47,7 +47,7 @@ const achieve_list = {
         'vigilante','squished','double_density','cross','macro','marble','heavyweight','whitehole','heavy','canceled',
         'eviltwin','microbang','pw_apocalypse','fullmetal','pass'
     ],
-    challenge: ['joyless','steelen','dissipated','technophobe','wheelbarrow','iron_will','failed_history','banana','pathfinder','ashanddust','exodus','obsolete'],
+    challenge: ['joyless','steelen','dissipated','technophobe','wheelbarrow','iron_will','failed_history','banana','pathfinder','ashanddust','exodus','obsolete','gross'],
 };
 
 const flairData = {
@@ -183,6 +183,11 @@ export const feats = {
         name: loc("feat_twisted_name"),
         desc: loc("feat_twisted_desc"),
         flair: loc("feat_twisted_flair")
+    },
+    slime_lord: {
+        name: loc("feat_slime_lord_name"),
+        desc: loc("feat_slime_lord_desc"),
+        flair: loc("feat_slime_lord_flair")
     },
     friday: {
         name: loc("feat_friday_name"),
@@ -589,13 +594,15 @@ export function checkAchievements(){
         let equilRank = 5;
         Object.keys(global.pillars).forEach(function(race){                
             if (races[race]){
-                if (!genus[races[race].type] || global.pillars[race] > genus[races[race].type]){
-                    genus[races[race].type] = global.pillars[race];
+                if (race !== 'sludge'){
+                    if (!genus[races[race].type] || global.pillars[race] > genus[races[race].type]){
+                        genus[races[race].type] = global.pillars[race];
+                    }
+                    if (global.pillars[race] < equilRank){
+                        equilRank = global.pillars[race];
+                    }
+                    rCnt++;
                 }
-                if (global.pillars[race] < equilRank){
-                    equilRank = global.pillars[race];
-                }
-                rCnt++;
             }
         });
         if (Object.keys(genus).length >= Object.keys(genus_traits).length){
@@ -607,7 +614,7 @@ export function checkAchievements(){
             });
             unlockAchieve('enlightenment',false,rank);
         }
-        if (rCnt >= Object.keys(races).length - 1){
+        if (rCnt >= Object.keys(races).length - 2){
             unlockAchieve('resonance');
             unlockFeat('equilibrium',false,equilRank);
         }
@@ -1078,6 +1085,69 @@ export const perkList = {
         notes: [
             loc(`wiki_perks_achievement_note`,[`<span class="has-text-caution">${loc(`achieve_wheelbarrow_name`)}</span>`]),
             loc(`wiki_perks_achievement_note_scale`,[`<span class="has-text-caution">${loc(`achieve_wheelbarrow_name`)}</span>`])
+        ]
+    },
+    extinct_sludge: {
+        name: loc(`achieve_extinct_sludge_name`),
+        group: [
+            {
+                desc(wiki){
+                    let bonus = wiki ? "3/6/9/12/15" : (global.stats.achieve['extinct_sludge'] ? global.stats.achieve['extinct_sludge'].l * 3 : 3);
+                    return loc("achieve_perks_extinct_sludge",[bonus,loc(`universe_standard`)]);
+                },
+                active(){
+                    return global.stats.achieve['extinct_sludge'] && global.stats.achieve.extinct_sludge.l >= 1 ? true : false;
+                },
+            },
+            {
+                desc(wiki){
+                    let bonus = wiki ? "3/6/9/12/15" : (global.stats.achieve['extinct_sludge'] ? global.stats.achieve['extinct_sludge'].h * 3 : 3);
+                    return loc("achieve_perks_extinct_sludge",[bonus,loc(`universe_heavy`)]);
+                },
+                active(){
+                    return global.stats.achieve['extinct_sludge'] && global.stats.achieve.extinct_sludge.h >= 1 ? true : false;
+                },
+            },
+            {
+                desc(wiki){
+                    let bonus = wiki ? "3/6/9/12/15" : (global.stats.achieve['extinct_sludge'] ? global.stats.achieve['extinct_sludge'].a * 3 : 3);
+                    return loc("achieve_perks_extinct_sludge",[bonus,loc(`universe_antimatter`)]);
+                },
+                active(){
+                    return global.stats.achieve['extinct_sludge'] && global.stats.achieve.extinct_sludge.a >= 1 ? true : false;
+                },
+            },
+            {
+                desc(wiki){
+                    let bonus = wiki ? "3/6/9/12/15" : (global.stats.achieve['extinct_sludge'] ? global.stats.achieve['extinct_sludge'].e * 3 : 3);
+                    return loc("achieve_perks_extinct_sludge",[bonus,loc(`universe_evil`)]);
+                },
+                active(){
+                    return global.stats.achieve['extinct_sludge'] && global.stats.achieve.extinct_sludge.e >= 1 ? true : false;
+                },
+            },
+            {
+                desc(wiki){
+                    let bonus = wiki ? "3/6/9/12/15" : (global.stats.achieve['extinct_sludge'] ? global.stats.achieve['extinct_sludge'].m * 3 : 3);
+                    return loc("achieve_perks_extinct_sludge",[bonus,loc(`universe_micro`)]);
+                },
+                active(){
+                    return global.stats.achieve['extinct_sludge'] && global.stats.achieve.extinct_sludge.m >= 1 ? true : false;
+                },
+            },
+            {
+                desc(wiki){
+                    let bonus = wiki ? "3/6/9/12/15" : (global.stats.achieve['extinct_sludge'] ? global.stats.achieve['extinct_sludge'].mg * 3 : 3);
+                    return loc("achieve_perks_extinct_sludge",[bonus,loc(`universe_magic`)]);
+                },
+                active(){
+                    return global.stats.achieve['extinct_sludge'] && global.stats.achieve.extinct_sludge.mg >= 1 ? true : false;
+                },
+            },
+        ],
+        notes: [
+            loc(`wiki_perks_achievement_note`,[`<span class="has-text-caution">${loc(`achieve_extinct_sludge_name`)}</span>`]),
+            loc(`wiki_perks_achievement_note_universe_scale`,[`<span class="has-text-caution">${loc(`achieve_extinct_sludge_name`)}</span>`])
         ]
     },
     whitehole: {
@@ -2267,7 +2337,7 @@ export const perkList = {
             return global.stats.feat['adept'] && global.stats.achieve['whitehole'] && global.stats.achieve.whitehole.l > 0 ? true : false;
         },
         notes: [
-            loc(`wiki_perks_progress_note1`,[50,loc(`wiki_resets_bioseed`)]),
+            loc(`wiki_perks_progress_note1`,[50,loc(`wiki_resets_blackhole`)]),
             loc(`wiki_perks_progress_note2`)
         ]
     },

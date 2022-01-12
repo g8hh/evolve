@@ -154,7 +154,7 @@ export function bioseed(){
     if (atmo === 'dense' && global.race.universe === 'heavy'){
         unlockAchieve(`double_density`);
     }
-    if (global.race.species === 'junker'){
+    if (global.race['junker'] && global.race.species === 'junker'){
         unlockFeat('organ_harvester');
     }
     if (global.city.biome === 'hellscape' && races[global.race.species].type !== 'demonic'){
@@ -166,6 +166,9 @@ export function bioseed(){
 
     if (global.race['cataclysm']){
         unlockAchieve('iron_will',false,5);
+    }
+    if (global.race['gross_enabled'] && global.race['ooze'] && global.race.species !== 'custom' && global.race.species !== 'sludge'){
+        unlockAchieve(`gross`);
     }
 
     let good_rocks = 0;
@@ -399,7 +402,7 @@ export function big_bang(){
     if (global.race.universe === 'evil' && races[global.race.species].type === 'angelic'){
         unlockFeat('nephilim');
     }
-    if (global.race.species === 'junker'){
+    if (global.race['junker'] && global.race.species === 'junker'){
         unlockFeat('the_misery');
     }
     if (global.race['decay']){
@@ -510,7 +513,7 @@ export function vacuumCollapse(){
         if (!global.race['modified'] && global.race.species === 'balorg'){
             unlockAchieve('pass');
         }
-        if (global.race.species === 'junker'){
+        if (global.race['junker'] && global.race.species === 'junker'){
             unlockFeat('the_misery');
         }
         if (global.race['decay']){
@@ -671,6 +674,10 @@ export function ascend(){
         unlockFeat('digital_ascension');
     }
 
+    if (global.race['gross_enabled'] && global.race['ooze'] && global.race.species !== 'custom' && global.race.species !== 'sludge'){
+        unlockAchieve(`gross`);
+    }
+
     checkAchievements();
 
     let srace = global.race.hasOwnProperty('srace') ? global.race.srace : false;
@@ -741,7 +748,7 @@ export function descension(){
     if (races[global.race.species].type === 'angelic'){
         unlockFeat('twisted');
     }
-    if (global.race.species === 'junker'){
+    if (global.race['junker'] && global.race.species === 'junker'){
         unlockFeat('the_misery');
     }
     if (!global.race['modified'] && global.race['junker'] && global.race.species === 'junker'){
@@ -749,6 +756,9 @@ export function descension(){
     }
     if (global.race['cataclysm']){
         unlockFeat(`finish_line`);
+    }
+    if (global.race['ooze'] && global.race.species === 'sludge'){
+        unlockFeat('slime_lord');
     }
 
     let artifacts = calcPrestige('descend').artifact;
@@ -850,7 +860,7 @@ export function aiApocalypse(){
     unlockAchieve(`obsolete`);
 
     unlockAchieve(`squished`,true);
-    if (global.race.species === 'junker'){
+    if (global.race['junker'] && global.race.species === 'junker'){
         unlockFeat('the_misery');
     }
 

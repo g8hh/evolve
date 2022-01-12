@@ -2,7 +2,7 @@ import { global, save, webWorker, power_generated } from './vars.js';
 import { loc } from './locale.js';
 import { defineIndustry } from './civics.js';
 import { setJobName } from './jobs.js'; 
-import { vBind, clearElement, removeFromQueue, removeFromRQueue, getEaster, getHalloween } from './functions.js';
+import { vBind, clearElement, removeFromQueue, removeFromRQueue, calc_mastery, getEaster, getHalloween } from './functions.js';
 import { setResourceName } from './resources.js';
 import { buildGarrison } from './civics.js';
 import { govActive } from './governor.js';
@@ -2818,6 +2818,27 @@ export const traits = {
             }
         }
     },
+    ooze: { // you are some kind of ooze, everything is bad
+        name: loc('trait_ooze_name'),
+        desc: loc('trait_ooze'),
+        type: 'major',
+        val: -50,
+        vars(r){
+            // [All jobs worse, Theology weaker, Mastery weaker]
+            switch (r || global.race.ooze || 1){
+                case 0.25:
+                    return [20,25,40];
+                case 0.5:
+                    return [15,20,35];
+                case 1:
+                    return [12,15,30];
+                case 2:
+                    return [10,12,25];
+                case 3:
+                    return [8,10,20];
+            }
+        }
+    },
     soul_eater: { // You eat souls for breakfast, lunch, and dinner
         name: loc('trait_soul_eater_name'),
         desc: loc('trait_soul_eater'),
@@ -3925,6 +3946,59 @@ export const races = {
         },
         fanaticism: 'none'
     },
+    sludge: {
+        name: loc('race_sludge'),
+        desc: loc('race_sludge_desc'),
+        type: (function(){ return global.race.hasOwnProperty('jtype') ? global.race.jtype : 'humanoid'; })(),
+        home: loc('race_sludge_home'),
+        entity: loc('race_sludge_entity'),
+        traits: {
+            ooze: 0.25,
+            diverse: 0.25,
+            arrogant: 0.25,
+            angry: 0.25,
+            lazy: 0.25,
+            hooved: 0.25,
+            freespirit: 0.25,
+            heavy: 0.25,
+            gnawer: 0.25,
+            paranoid: 0.25,
+            greedy: 0.25,
+            puny: 0.25,
+            dumb: 0.25,
+            nearsighted: 0.25,
+            gluttony: 0.25,
+            slow: 0.25,
+            hard_of_hearing: 0.25,
+            selenophobia: 0.25,
+            pessimistic: 0.25,
+            solitary: 0.25,
+            pyrophobia: 0.25,
+            skittish: 0.25,
+            fragrant: 0.25,
+            nyctophilia: 0.25,
+            hibernator: 0.25,
+            frail: 0.25,
+            atrophy: 0.25,
+            invertebrate: 0.25,
+            unorganized: 0.25,
+            slow_regen: 0.25,
+            autoignition: 0.25,
+            snowy: 0.25,
+            mistrustful: 0.25,
+            thalassophobia: 0.25,
+            pathetic: 0.25,
+            truthful: 0.25,
+        },
+        solar: {
+            red: loc('race_sludge_solar_red'),
+            hell: loc('race_sludge_solar_hell'),
+            gas: loc('race_sludge_solar_gas'),
+            gas_moon: loc('race_sludge_solar_gas_moon'),
+            dwarf: loc('race_sludge_solar_dwarf'),
+        },
+        fanaticism: 'ooze'
+    },
     custom: customRace()
 };
 
@@ -3962,7 +4036,8 @@ Object.keys(genusVars).forEach(function(k){
 });
 
 export function setJType(){
-    races.junker.type = global.race.hasOwnProperty('jtype') ? global.race.jtype : 'humanoid';;
+    races.junker.type = global.race.hasOwnProperty('jtype') ? global.race.jtype : 'humanoid';
+    races.sludge.type = global.race.hasOwnProperty('jtype') ? global.race.jtype : 'humanoid';;
 }
 
 function customRace(){
@@ -4091,6 +4166,9 @@ export function racialTrait(workers,type){
     }
     if (global.race['analytical'] && type === 'science'){
         modifier *= 1 + (traits.analytical.vars()[0] * global.race['analytical'] / 100);
+    }
+    if (global.race['ooze']){
+        modifier *= 1 - (traits.ooze.vars()[0] / 100);
     }
     if (global.civic.govern.type === 'democracy'){
         modifier *= 0.95;
@@ -4555,6 +4633,12 @@ export function cleanAddTrait(trait){
             setResourceName('Furs');
             setResourceName('Plywood');
             break;
+        case 'ooze':
+            if (!global.tech['high_tech'] && global.race.species !== 'custom' && global.race.species !== 'sludge'){
+                global.race['gross_enabled'] = 1;
+            }
+            calc_mastery(true);
+            break;
         default:
             break;
     }
@@ -4730,6 +4814,10 @@ export function cleanRemoveTrait(trait){
             setResourceName('Lumber');
             setResourceName('Furs');
             setResourceName('Plywood');
+            break;
+        case 'ooze':
+            delete global.race['gross_enabled'];
+            calc_mastery(true);
             break;
         default:
             break;

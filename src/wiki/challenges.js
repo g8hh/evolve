@@ -294,6 +294,54 @@ export function challengesPage(content){
             inflationCalc(subSection);
             subSideMenu('add',`challenges-gameplay`,'modes_inflation',loc('wiki_challenges_modes_inflation'));
         }
+
+        {   // Failed Experiment
+            let failed = infoBoxBuilder(modes,{ name: 'modes_sludge', template: 'challenges', paragraphs: 7, break: [3,4,5,6,7], h_level: 2,
+                para_data: {
+                    1: [loc(`evo_challenge_sludge`),loc(`wiki_challenges_challenge`),loc(`race_sludge`)],
+                    3: [loc(`race_sludge`)],
+                    4: [loc(`evo_challenge_sludge`)],
+                    5: [loc(`race_sludge`),loc(`wiki_resets_mad`)],
+                    6: [loc(`race_sludge`),loc(`wiki_resets_cataclysm`)],
+                    7: [loc(`wiki_challenges_scenarios_junker`)]
+                },
+                data_link: {
+                    1: [false,false,'wiki.html#races-species-sludge'],
+                    3: [false,'wiki.html#resets-prestige-mad']
+                }
+            });
+            addAchievements(failed,false,['extinct_sludge']);
+            addRequirements(failed,[
+                {
+                    text: `wiki_challenges_reqs_achieve`,
+                    subreqs: [
+                        {
+                            text: loc(`achieve_extinct_junker_name`),
+                            color: global.stats.achieve['extinct_junker'] ? true : false
+                        }
+                    ]
+                    
+                }
+            ]);
+            addRequirements(failed,[
+                {
+                    text: `wiki_challenges_reqs_reset`,
+                    subreqs: [
+                        {
+                            text: loc(`wiki_resets_ascension`),
+                            color: global.stats.achieve['ascended'] ? true : false,
+                            link: 'wiki.html#resets-prestige-ascension'
+                        },
+                        {
+                            text: loc(`wiki_resets_infusion`),
+                            color: global.stats.achieve['corrupted'] ? true : false,
+                            link: 'wiki.html#resets-prestige-infusion'
+                        }
+                    ]
+                }
+            ]);
+            subSideMenu('add',`challenges-gameplay`,'modes_sludge',loc('wiki_challenges_modes_sludge'));
+        }
     }
     
     // Scenarios
@@ -308,10 +356,11 @@ export function challengesPage(content){
         sideMenu('add',`challenges-gameplay`,'scenarios_intro',loc('wiki_challenges_scenarios_intro'));
         
         {   // Genetic Dead End
-            let junker = infoBoxBuilder(scenarios,{ name: 'scenarios_junker', template: 'challenges', paragraphs: 3, break: [3], h_level: 2,
+            let junker = infoBoxBuilder(scenarios,{ name: 'scenarios_junker', template: 'challenges', paragraphs: 4, break: [3,4], h_level: 2,
                 para_data: {
                     1: [loc(`evo_challenge_junker`),loc(`wiki_challenges_scenario`),loc(`race_junker`)],
-                    3: [loc(`wiki_challenges_scenario`),loc(`wiki_resets_mad`)]
+                    3: [loc(`wiki_challenges_scenario`),loc(`wiki_resets_mad`)],
+                    4: [loc(`wiki_challenges_modes_sludge`)]
                 },
                 data_link: {
                     1: [false,false,'wiki.html#races-species-junker'],
@@ -506,7 +555,6 @@ export function challengesPage(content){
                             link: 'wiki.html#resets-prestige-infusion'
                         }
                     ]
-                    
                 }
             ]);
             subSideMenu('add',`challenges-gameplay`,'scenarios_truepath',loc('wiki_challenges_scenarios_truepath'));

@@ -859,6 +859,12 @@ export function setResourceName(name){
         global.resource[name].name = name === 'Money' ? '$' : loc(`resource_${name}_name`);
     }
     
+    if (global.race['sludge']){
+        if (name === 'Horseshoe'){
+            global.resource[name].name = loc(`resource_Beaker_name`);
+        }
+    }
+
     if (global.race['artifical']){
         if (name === 'Genes'){
             global.resource[name].name = loc(`resource_Program_name`);
@@ -2665,6 +2671,9 @@ export function faithBonus(){
             if (global.civic.govern.type === 'theocracy'){
                 temple_bonus *= 1.12;
             }
+            if (global.race['ooze']){
+                temple_bonus *= 1 - (traits.ooze.vars()[1] / 100);
+            }
             return (global.race['cataclysm'] ? global.space.ziggurat.count : global.city.temple.count) * temple_bonus;
         }
     }
@@ -2733,6 +2742,9 @@ export const plasmidBonus = (function (){
                     }
                     if (global.civic.govern.type === 'theocracy'){
                         temple_bonus *= 1.12;
+                    }
+                    if (global.race['ooze']){
+                        temple_bonus *= 1 - (traits.ooze.vars()[1] / 100);
                     }
                     standard *= 1 + (global.city.temple.count * temple_bonus);
                 }

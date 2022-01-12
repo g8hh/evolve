@@ -35,7 +35,7 @@ export function mainVue(){
                 }
             },
             saveExport(){
-                $('#importExport').val(exportGame());
+                $('#importExport').val(window.exportGame());
                 $('#importExport').select();
                 document.execCommand('copy');
             },
@@ -49,7 +49,7 @@ export function mainVue(){
                     URL.revokeObjectURL(a.href);
                 };
                 const date = new Date();
-                downloadToFile(exportGame(), `evolve-${date.getFullYear()}-${date.getMonth()+1}-${date.getDate()}.txt`, 'text/plain');
+                downloadToFile(window.exportGame(), `evolve-${date.getFullYear()}-${date.getMonth()+1}-${date.getDate()}.txt`, 'text/plain');
             },
             importStringFile(){ 
                 let file = document.getElementById("stringPackFile").files[0];
@@ -1164,6 +1164,7 @@ export function index(){
         {i: 'banana',       f: 'banana',            r: 2 },
         {i: 'turtle',       f: 'finish_line',       r: 2 },
         {i: 'floppy',       f: 'digital_ascension', r: 2 },
+        {i: 'slime',        f: 'slime_lord',        r: 2 },
         {i: 'heart',        f: 'valentine',         r: 1 },
         {i: 'clover',       f: 'leprechaun',        r: 1 },
         {i: 'bunny',        f: 'easter',            r: 1 },

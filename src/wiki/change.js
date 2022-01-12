@@ -3,6 +3,24 @@ import { clearElement } from './../functions.js';
 
 const changeList = [
     {
+        version: `1.2.7`,
+        revision: `a`,
+        date: `1/11/2021`,
+        changes: [
+            `Fixed storage bug with standard universe.`,
+        ]
+    },
+    {
+        version: `1.2.7`,
+        date: `1/11/2021`,
+        changes: [
+            `Failed Experiment Challenge mode.`,
+            `Ziggurat bonus separated from base production of buildings.`,
+            `Fixed bug that prevented smoldering races from being able to loot Chrysotile`,
+            `Fixed bug that would cause Intergalactic Tech page in wiki not to load if you were playing in Antimatter universe.`,
+        ]
+    },
+    {
         version: `1.2.6`,
         date: `12/24/2021`,
         changes: [

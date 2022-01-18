@@ -1608,7 +1608,7 @@ const extraInformation = {
         loc(`wiki_tech_ship_weapon_unlock`,[loc('outer_shipyard_weapon_disruptor')])
     ],
     destroyer_ship: [
-        loc(`wiki_tech_building_unlock`,[loc('outer_shipyard_class_destroyer')])
+        loc(`wiki_tech_ship_class_unlock`,[loc('outer_shipyard_class_destroyer')])
     ],
     cruiser_ship_tp: [
         loc(`wiki_tech_ship_class_unlock`,[loc('outer_shipyard_class_cruiser')])

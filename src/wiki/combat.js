@@ -46,9 +46,9 @@ export function combatPage(content){
             23: [loc('trait_beast_of_burden_name'),loc('wiki_combat_loot_money'),loc('wiki_combat_loot_basic'),loc('wiki_combat_loot_common'),loc('wiki_combat_loot_rare')],
             24: [loc('civics_garrison_tactic_siege')],
             25: [999],
-            28: [`base loot * log(looters + 1)`],
+            28: [`战利品基础数量 × log(影响战利品数量的士兵数量 + 1)`],
             29: [loc('civics_gov_eco_rate')],
-            30: [`floor(loot * economic rating / 100)`]
+            30: [`战利品数量 × 经济发展 / 100，然后取整`]
         },
         data_color: {
             5: ['warning','caution','caution','caution'],

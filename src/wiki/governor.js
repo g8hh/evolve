@@ -36,7 +36,7 @@ export function governPage(content){
     }
 
     {
-        let govern = infoBoxBuilder(mainContent,{ name: 'task', template: 'governor', paragraphs: 2, h_level: 2,
+        let govern = infoBoxBuilder(mainContent,{ name: 'task', template: 'governor', paragraphs: 3, h_level: 2,
             para_data: {
                 2: [3,loc('governor_bureaucrat'),4],
                 3: [Object.keys(gov_tasks).length]
@@ -160,8 +160,8 @@ export function governPage(content){
                     8: [loc(`tech_unification`)],
                 },
                 data_link: {
-                    6: ['wiki.html#civilized-tech-spy'],
-                    7: ['wiki.html#early_space-tech-unification2']
+                    7: ['wiki.html#civilized-tech-spy'],
+                    8: ['wiki.html#early_space-tech-unification2']
                 }
             });
             sideMenu('add',`governor-gameplay`,task,loc(`gov_task_${task}`));

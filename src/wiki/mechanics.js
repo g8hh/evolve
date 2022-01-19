@@ -416,8 +416,8 @@ export function mechanicsPage(content){
             para_data: {
                 1: [loc('tech_quantum_manufacturing'),loc('city_factory'),loc('wiki_mechanics_quantum')],
                 2: [loc(`modal_factory_lux`)],
-                3: [loc(`resource_Furs_name`),'(Q Level - 1) * 12.5'],
-                4: ['(Q Level - 1) * 50'],
+                3: [loc(`resource_Furs_name`),'(量子水平 - 1) * 12.5'],
+                4: ['(量子水平 - 1) * 50'],
             },
             data_link: {
                 1: ['wiki.html#deep_space-tech-quantum_manufacturing','wiki.html#planetary-structures-factory',false]
@@ -427,7 +427,7 @@ export function mechanicsPage(content){
         infoBoxBuilder(quantum,{ name: 'quantum_cement_processing', template: 'mechanics', label: loc('tech_cement_processing'), paragraphs: 2, break: [2], h_level: 2,
             para_data: {
                 1: [loc('tech_cement_processing'),loc('interstellar_citadel_title')],
-                2: ['(Q Level / 1.75) %'],
+                2: ['(量子水平 / 1.75) %'],
             },
             data_link: {
                 1: ['wiki.html#interstellar-tech-cement_processing','wiki.html#interstellar-structures-citadel']
@@ -437,7 +437,7 @@ export function mechanicsPage(content){
         infoBoxBuilder(quantum,{ name: 'quantum_graph_processing', template: 'mechanics', label: loc('tech_graphene_processing'), paragraphs: 2, break: [2], h_level: 2,
             para_data: {
                 1: [loc('tech_graphene_processing'),loc('interstellar_citadel_title')],
-                2: ['(Q Level / 5) %'],
+                2: ['(量子水平 / 5) %'],
             },
             data_link: {
                 1: ['wiki.html#intergalactic-tech-graphene_processing','wiki.html#interstellar-structures-citadel']
@@ -578,18 +578,18 @@ export function mechanicsPage(content){
                 5: [loc('tech_scarletite'),loc('evo_challenge_genes')],
                 6: [loc('achieve_resonance_name')],
                 7: [loc('achieve_resonance_name'),loc('tech_scarletite')],
-                8: [loc('race_junker'),loc('wiki_mechanics_custom'),loc('achieve_enlightenment_name')],
+                8: [loc('race_junker'),loc('race_sludge'),loc('wiki_mechanics_custom'),loc('achieve_enlightenment_name')],
                 9: [loc('wiki_mechanics_custom')],
-                10: [loc('race_junker'),loc('genelab_genus_humanoid')]
+                10: [loc('race_junker'),loc('race_sludge'),loc('genelab_genus_humanoid')]
             },
             data_link: {
                 1: ['wiki.html#dimensional-tech-pillars'],
                 3: ['wiki.html#universes-gameplay-micro'],
                 5: ['wiki.html#dimensional-tech-scarletite'],
                 7: [false,'wiki.html#dimensional-tech-scarletite'],
-                8: ['wiki.html#races-species-junker','wiki.html#mechanics-gameplay-custom'],
+                8: ['wiki.html#races-species-junker','wiki.html#races-species-sludge','wiki.html#mechanics-gameplay-custom'],
                 9: ['wiki.html#mechanics-gameplay-custom'],
-                10: ['wiki.html#races-species-junker']
+                10: ['wiki.html#races-species-junker','wiki.html#races-species-sludge']
             }
         },custom);
         sideMenu('add',`mechanics-gameplay`,`pillar`,loc('wiki_mechanics_pillar'));

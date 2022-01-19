@@ -177,7 +177,7 @@ export function challengesPage(content){
         {   // Steelen
             let steelen = infoBoxBuilder(modes,{ name: 'modes_steelen', template: 'challenges', paragraphs: 4, break: [4], h_level: 2,
                 para_data: {
-                    1: [loc(`evo_challenge_steelen`),loc(`wiki_challenges_mode`),loc('resource_Steel_name') + ' ' + loc('modal_smelting'),loc('resource_Steel_name')],
+                    1: [loc(`evo_challenge_steelen`),loc(`wiki_challenges_mode`),loc('modal_smelting') + loc('resource_Steel_name'),loc('resource_Steel_name')],
                     2: [loc('resource_Steel_name')],
                     3: [loc(`tech_steel`),loc(`tech_bessemer_process`),loc(`tech_oxygen_converter`),loc(`tech_electric_arc_furnace`)],
                     4: [loc(`wiki_challenges_mode`),loc(`wiki_resets_bioseed`)]
@@ -298,7 +298,7 @@ export function challengesPage(content){
         {   // Failed Experiment
             let failed = infoBoxBuilder(modes,{ name: 'modes_sludge', template: 'challenges', paragraphs: 7, break: [3,4,5,6,7], h_level: 2,
                 para_data: {
-                    1: [loc(`evo_challenge_sludge`),loc(`wiki_challenges_challenge`),loc(`race_sludge`)],
+                    1: [loc(`evo_challenge_sludge`),loc(`wiki_challenges_mode`),loc(`race_sludge`)],
                     3: [loc(`race_sludge`)],
                     4: [loc(`evo_challenge_sludge`)],
                     5: [loc(`race_sludge`),loc(`wiki_resets_mad`)],

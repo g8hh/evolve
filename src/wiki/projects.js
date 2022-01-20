@@ -230,7 +230,7 @@ function monumentExtra(){
         loc('resource_Bones_name'),
         loc('resource_Crystal_name'),
     ];
-    let desc = `<div>${loc('wiki_arpa_project_monument',[monuments.length, monuments.join(", ")])}</div>`;
+    let desc = `<div>${loc('wiki_arpa_project_monument',[monuments.length, monuments.join("、")])}</div>`;
     for (let i=0; i<monuments.length; i++){
         desc = desc + `<div>${loc('wiki_arpa_project_monument_type',[
             `<span class="has-text-warning">${monuments[i]}</span>`,

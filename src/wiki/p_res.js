@@ -87,7 +87,7 @@ export function pResPage(content){
         para_data: {
             1: [loc('wiki_resets_infusion')],
             2: [loc('tab_arpa_blood')],
-            3: [1,'5th'],
+            3: [1,'5'],
         },
         data_link: {
             1: ['wiki.html#resets-prestige-infusion'],

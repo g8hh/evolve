@@ -10,7 +10,7 @@ export function resetsPage(content){
     let reset_labels = resets.map(x => `<span class="has-text-caution">${loc(`wiki_resets_${x}`)}</span>`);
 
     infoBoxBuilder(mainContent,{ name: 'intro', template: 'resets', paragraphs: 3, h_level: 2,
-        para_data: { 1: [resets.length, reset_labels.slice(0, -1).join(', ') + `, & ${reset_labels[reset_labels.length - 1]}`] },
+        para_data: { 1: [resets.length, reset_labels.slice(0, -1).join('、') + `和${reset_labels[reset_labels.length - 1]}`] },
         data_color: { 1: ['warning','plain'] }
     });
     sideMenu('add',`resets-prestige`,'intro',loc('wiki_menu_intro'));
@@ -72,7 +72,7 @@ export function resetsPage(content){
             6: [loc('wiki_resets_blackhole_exotic'),loc('tech_exotic_infusion')],
             7: [10,loc('wiki_hell_soul_gem')],
             8: [loc('tech_stabilize_blackhole'),loc('wiki_resets_blackhole_exotic')],
-            10: [universes.length, universe_labels.slice(0, -1).join(', ') + `, ${loc('or')} ${universe_labels[universe_labels.length - 1]}`],
+            10: [universes.length, universe_labels.slice(0, -1).join('、') + `和${universe_labels[universe_labels.length - 1]}`],
             12: [loc('wiki_resets_blackhole')]
         },
         data_color: {

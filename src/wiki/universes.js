@@ -15,7 +15,7 @@ export function universePage(content){
 
     infoBoxBuilder(mainContent,{ name: 'intro', template: 'universe', paragraphs: 3, break: [2], h_level: 2,
         para_data: {
-            1: [universes.length, universe_labels.slice(0, -1).join(', ') + `, ${loc('or')} ${universe_labels[universe_labels.length - 1]}`],
+            1: [universes.length, universe_labels.slice(0, -1).join('、') + `和${universe_labels[universe_labels.length - 1]}`],
             2: [loc(`universe_standard`)],
             3: [loc(`wiki_resets_blackhole`)]
         },

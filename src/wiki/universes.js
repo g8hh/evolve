@@ -17,14 +17,14 @@ export function universePage(content){
         para_data: {
             1: [universes.length, universe_labels.slice(0, -1).join('、') + `和${universe_labels[universe_labels.length - 1]}`],
             2: [loc(`universe_standard`)],
-            3: [loc(`wiki_resets_blackhole`)]
+            3: [loc(`wiki_resets_blackhole`),loc(`wiki_resets_vacuum`)]
         },
         data_color: {
             1: ['warning','plain'],
             2: ['caution']
         },
         data_link: {
-            3: ['wiki.html#resets-gameplay-blackhole']
+            3: ['wiki.html#resets-gameplay-blackhole',`wiki.html#resets-gameplay-vacuum`]
         }
     });
     sideMenu('add',`universes-gameplay`,'intro',loc('wiki_menu_intro'));

@@ -1471,11 +1471,11 @@ export const perkList = {
         notes: [
             loc(`wiki_perks_achievement_note`,[`<span class="has-text-caution">${loc(`achieve_iron_will_name`)}</span>`]),
             loc(`wiki_perks_achievement_note_ironwill`,[`<span class="has-text-caution">${loc(`evo_challenge_cataclysm`)}</span>`]),
-            loc(`wiki_perks_achievement_note_ironwill2`,[1,`<span class="has-text-caution">${loc(`space_red_ziggurat_title`)}</span>`]),
-            loc(`wiki_perks_achievement_note_ironwill3`,[2,`<span class="has-text-caution">${loc(`tech_elerium_mining`)}</span>`]),
-            loc(`wiki_perks_achievement_note_ironwill3`,[3,`<span class="has-text-caution">${loc(`tech_lasers`)}</span>`]),
-            loc(`wiki_perks_achievement_note_ironwill3`,[4,`<span class="has-text-caution">${loc(`tech_generational_ship`)}</span>`]),
-            loc(`wiki_perks_achievement_note_ironwill4`,[5,`<span class="has-text-caution">${loc(`wiki_resets_bioseed`)}</span>`])
+            loc(`wiki_perks_achievement_note_ironwill2`,[0,`<span class="has-text-caution">${loc(`space_red_ziggurat_title`)}</span>`]),
+            loc(`wiki_perks_achievement_note_ironwill3`,[1,`<span class="has-text-caution">${loc(`tech_elerium_mining`)}</span>`]),
+            loc(`wiki_perks_achievement_note_ironwill3`,[2,`<span class="has-text-caution">${loc(`tech_lasers`)}</span>`]),
+            loc(`wiki_perks_achievement_note_ironwill3`,[3,`<span class="has-text-caution">${loc(`tech_generational_ship`)}</span>`]),
+            loc(`wiki_perks_achievement_note_ironwill4`,[4,`<span class="has-text-caution">${loc(`wiki_resets_bioseed`)}</span>`])
         ]
     },
     failed_history: {

@@ -1532,17 +1532,17 @@ export function drawShipYard(){
 
 function getRandomShipName(){
     let names = [
-        'Trident','Spacewolf','Excalibur','Neptune','Deimos','Phobos','Enterprise','Intrepid','Daedalus','Odyssey','Endurance','Horizon','Hyperion',
-        'Icarus','Aurora','Axiom','Nemesis','Normandy','Orion','Prometheus','Vanguard','Discovery','Voyager','Defiant','Titan','Liberty','Destiny',
-        'Phoenix','Nautilus','Barracuda','Dolphin','Cuttlefish','Tiger Shark','Stingray','Swordfish','Triton','Dragon','Scorpion','Hagfish','Marlin',
-        'Galileo','Raven','Sarcophagus','Excelsior','Scimitar','Vengeance','Nomad','Nova','Olympus','Aegis','Agamemnon','Charon','Achilles','Apollo',
-        'Hermes','Hydra','Medusa','Talos','Zeus','Heracles','Cerberus','Acheron','Damocles','Juno','Persephone','Solaris','Victory','Hawk','Fury',
-        'Razor','Stinger','Outrider','Falcon','Vulture','Nirvana','Retribution','Swordbreaker','Valkyrie','Athena','Avalon','Merlin','Argonaut','Serenity',
-        'Gunstar','Ranger','Tantive','Cygnus','Nostromo','Reliant','Narcissus','Liberator','Sulaco','Infinity','Resolute','Wasp','Hornet','Independence',
-        'Gilgamesh','Midway','Concordia','Goliath','Cosmos','Express','Tigers Claw','Oberon','Minnow','Majestic','Spartacus','Colossi','Vigilant',
-        'Remorseless','Caelestis','Inquisitor','Atlas','Avenger','Dauntless','Nihilus','Thanatos','Stargazer','Xyzzy','Kraken','Xerxes','Spitfire',
-        'McShipFace','Monitor','Merrimack','Constitution','Ghost','Pequod','Arcadia','Corsair','Inferno','Jenny','Revenge','Red October','Jackdaw',
-        'Thorn','Caleuche','Valencia','Ourang','Deering','Baychimo','Octavius','Joyita','Lovibond','Celeste','Dutchman'
+        '三叉戟','太空战狼','圣剑','涅普顿','戴莫斯','福波斯','进取号','无畏号','代达罗斯','奥德赛','坚韧号','地平线号','休伯利安',
+        '伊卡洛斯','极光号','公理号','复仇女神','诺曼底号','猎户座','普罗米修斯','前卫号','发现号','旅行者','抵抗者','泰坦号','自由号','命运',
+        '不死鸟','鹦鹉螺号','梭子鱼号','海豚号','墨鱼号','虎鲨号','魔鬼鱼号','剑鱼号','特里同','巨龙号','蝎子号','八目鳗号','枪鱼号',
+        '伽利略','渡鸦号','石冢号','精进号','大弯刀号','报复号','牧羊人','新星号','奥林巴斯','宙斯盾号','阿伽门农','卡戎','阿喀琉斯','阿波罗',
+        '赫尔墨斯','海德拉','美杜莎','塔罗斯','宙斯','赫拉克勒斯','刻耳柏洛斯','冥河号','达摩克利斯','朱诺','珀耳塞福涅','索拉里斯','胜利号','战鹰号','狂怒号',
+        '剃刀号','毒刺号','先驱者','猎鹰号','秃鹫号','涅槃号','报应号','碎刃者','瓦尔基里','雅典娜','阿瓦隆','梅林','亚尔古','宁静号',
+        '枪星号','游侠号','坦特维','天鹅号','诺斯托罗莫','依靠号','纳西索斯','解放者','苏拉科','无限号','坚毅号','黄蜂号','大黄蜂号','独立号',
+        '吉尔伽美什','中途岛号','协和号','歌利亚','宇宙号','捷运号','虎爪号','奥伯龙','米诺号','庄严号','斯巴达克斯','巨像号','警惕号',
+        '无情号','凯莱斯蒂斯','裁判官','阿特拉斯','复仇者','无畏号','奈亚利斯','塔纳托斯','观星者','魔文号','克拉肯','薛西斯','喷火',
+        '船脸号','莫尼特号','梅里马克','宪法号','幽灵号','裴廓德','桃源号','海盗船号','烈焰号','珍妮号','复仇号','红十月号','寒鸦号',
+        '荆棘号','卡卢什号','巴伦西亚号','棉兰号','迪林号','贝奇摩号','屋大维号','乔伊塔号','罗维朋号','西莱斯特号','飞翔荷兰人号'
     ];
 
     let name = names[Math.rand(0, names.length)];

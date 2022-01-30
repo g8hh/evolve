@@ -3753,7 +3753,7 @@ export const actions = {
                     return `<div>${loc('city_mine_effect1',[jobScale(1)])}</div><div class="has-text-caution">${loc('city_mine_effect2',[$(this)[0].powered(),5])}</div>`;
                 }
                 else {
-                    return loc('city_mine_effect1');
+                    return loc('city_mine_effect1',[jobScale(1)]);
                 }
             },
             powered(){ return powerCostMod(1); },
@@ -6051,8 +6051,9 @@ function runAction(c_action,action,type){
                         if ((global.settings.qKey && keyMap.q) || (!(res = c_action.action(1)))){
                             if (res !== 0 && !no_queue && global.tech['queue'] && (keyMult === 1 || (global.settings.qKey && keyMap.q))){
                                 let max_queue = global.tech['queue'] >= 2 ? (global.tech['queue'] >= 3 ? 8 : 5) : 3;
-                                if (global.stats.feat['journeyman'] && global.stats.feat['journeyman'] >= 2){
-                                    max_queue += global.stats.feat['journeyman'] >= 4 ? 2 : 1;
+                                if (global.stats.feat['journeyman'] && global.stats.feat['journeyman'] >= 2 && global.stats.achieve['seeder'] && global.stats.achieve.seeder.l >= 2){
+                                    let rank = Math.min(global.stats.achieve.seeder.l,global.stats.feat['journeyman']);
+                                    max_queue += rank >= 4 ? 2 : 1;
                                 }
                                 if (global.genes['queue'] && global.genes['queue'] >= 2){
                                     max_queue *= 2;

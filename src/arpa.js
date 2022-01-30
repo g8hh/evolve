@@ -1,5 +1,5 @@
 import { global, keyMultiplier, sizeApproximation, srSpeak } from './vars.js';
-import { clearElement, popover, clearPopper, flib, timeFormat, vBind, messageQueue, adjustCosts, removeFromQueue, calcQueueMax, calcRQueueMax, buildQueue, calcPrestige, calc_mastery, darkEffect, easterEgg } from './functions.js';
+import { clearElement, popover, clearPopper, flib, timeFormat, vBind, messageQueue, adjustCosts, removeFromQueue, calcQueueMax, calcRQueueMax, buildQueue, calcPrestige, calc_mastery, darkEffect, easterEgg, getTraitDesc } from './functions.js';
 import { actions, updateQueueNames, drawTech, drawCity, addAction, removeAction, wardenLabel, checkCosts } from './actions.js';
 import { races, traits, cleanAddTrait, cleanRemoveTrait, setImitation } from './races.js';
 import { renderSpace } from './space.js';
@@ -75,7 +75,7 @@ export const arpaProjects = {
                 }
                 else {
                     return global.tech['gambling'] && global.tech['gambling'] >= 4 ? loc('arpa_projects_stock_exchange_effect3') : loc('arpa_projects_stock_exchange_effect2');
-                }                
+                }
             }
             else {
                 return loc('arpa_projects_stock_exchange_effect1');
@@ -108,7 +108,7 @@ export const arpaProjects = {
         id: 'arpalaunch_facility',
         title: loc('arpa_projects_launch_facility_title'),
         desc: loc('arpa_projects_launch_facility_desc'),
-        reqs: { high_tech: 7 },        
+        reqs: { high_tech: 7 },
         condition(){
             return global.race['cataclysm'] ? false : true;
         },
@@ -128,7 +128,7 @@ export const arpaProjects = {
         }
     },
     monument: {
-        title(wiki){ 
+        title(wiki){
             if (wiki){
                 return loc('arpa_project_monument_title');
             }
@@ -1668,7 +1668,7 @@ function genetics(){
             let boost = $(`<b-tooltip :label="autoLabel(false)" position="is-bottom" animated multilined><button class="button auto" @click="auto_seq" :aria-label="autoLabel(true)">${loc(global.race['artifical'] ? 'arpa_auto_compile' : 'arpa_auto_sequence')}</button></b-tooltip>`);
             genome.append(boost);
         }
-        
+
         if (global.arpa.sequence.on){
             $('#arpaSequence button.seq').addClass('has-text-success');
         }
@@ -1776,7 +1776,7 @@ function genetics(){
         let breakdown = $('<div id="geneticBreakdown" class="geneticTraits"></div>');
         $('#arpaGenetics').append(breakdown);
 
-        let minorList = $('<div id="geneticMinor"></div>');
+        let minorList = $('<div id="geneticMinor" class="traitListing"></div>');
         breakdown.append(minorList);
 
         if (global.tech['decay'] && global.tech['decay'] >= 2){
@@ -1812,12 +1812,18 @@ function genetics(){
         });
 
         breakdown.append(`<div class="trait major has-text-success">${loc('arpa_race_genetic_traids',[flib('name')])}</div>`)
-        
+
+        let traitName = {
+            hooved: global.race['sludge'] ? loc('trait_hooved_slime_name') : traits['hooved'].name,
+        };
         let traitDesc = {
             hooved: global.race['sludge'] ? loc('trait_hooved_slime') : traits['hooved'].desc,
         };
 
         let remove_list = [];
+        let null_list = [];
+        let traitListing = $(`<div class="traitListing"></div>`);
+        breakdown.append(traitListing);
         Object.keys(global.race).forEach(function (trait){
             if (traits[trait] && traits[trait].type !== 'minor' && traits[trait].type !== 'special' && trait !== 'evil' && trait !== 'soul_eater' && trait !== 'artifical'){
                 let readOnly = false;
@@ -1831,23 +1837,24 @@ function genetics(){
                     let major = $(`<div class="traitRow"></div>`);
                     let purge = $(`<span class="remove${trait} basic-button has-text-danger" role="button" :aria-label="removeCost('${trait}')" @click="purge('${trait}')">${loc('arpa_remove_button')}</span>`);
                     remove_list.push(trait);
-                    
-                    major.append(purge);
-                    major.append($(`<span class="trait has-text-warning">${traitDesc[trait] ? traitDesc[trait] : traits[trait].desc} (${loc(`arpa_genepool_rank`,[global.race[trait]])})</span>`));
 
-                    breakdown.append(major);
+                    major.append(purge);
+                    major.append($(`<span class="trait has-text-warning" id="raceTrait${trait}">${traitName[trait] ? traitName[trait] : traits[trait].name} (${loc(`arpa_genepool_rank`,[global.race[trait]])})</span>`));
+
+                    traitListing.append(major);
                 }
                 else {
-                    breakdown.append(`<div class="trait has-text-warning${global.genes['mutation'] ? ' indent' : ''}">${traitDesc[trait] ? traitDesc[trait] : traits[trait].desc} (${loc(`arpa_genepool_rank`,[global.race[trait]])})</div>`);
+                    null_list.push(trait);
+                    traitListing.append(`<div class="traitRow trait${trait}"><div class="trait has-text-warning${global.genes['mutation'] ? ' indent' : ''}">${traitName[trait] ? traitName[trait] : traits[trait].name} (${loc(`arpa_genepool_rank`,[global.race[trait]])})</div></div>`);
                 }
             }
         });
-        
+
         let trait_list = [];
         if (global.genes['mutation'] && global.genes['mutation'] >= 3){
             if (global.race.species !== 'sludge' || !global.race['modified']){
                 breakdown.append(`<div class="trait major has-text-success">${loc('arpa_race_genetic_gain')}</div>`)
-                
+
                 let conflict_traits = ['dumb','smart']; //Conflicting traits are paired together
                 Object.keys(races).forEach(function (race){
                     if (race !== 'junker' && race !== 'sludge' && race !== 'custom' && races[race].type === races[global.race.species].type){
@@ -1880,15 +1887,17 @@ function genetics(){
                     }
                 });
 
+                let addListing = $(`<div class="traitListing"></div>`);
+                breakdown.append(addListing);
                 for (let i=0; i<trait_list.length; i++){
                     let trait = trait_list[i];
                     let major = $(`<div class="traitRow"></div>`);
                     let add = $(`<span class="add${trait} basic-button has-text-success" role="button" :aria-label="addCost('${trait}')" @click="gain('${trait}')">${loc('arpa_gain_button')}</span>`);
-                    
-                    major.append(add);
-                    major.append($(`<span class="trait has-text-warning">${traitDesc[trait] ? traitDesc[trait] : traits[trait].desc}</span>`));
 
-                    breakdown.append(major);
+                    major.append(add);
+                    major.append($(`<span class="trait has-text-warning" id="raceTrait${trait}">${traitName[trait] ? traitName[trait] : traits[trait].name}</span>`));
+
+                    addListing.append(major);
                 }
             }
         }
@@ -2014,6 +2023,7 @@ function genetics(){
                         else {
                             global.race.Plasmid.count -= cost;
                         }
+                        let rank = global.race[t];
                         delete global.race[t];
                         if (!global.race['modified']){
                             global.race['modified'] = 1;
@@ -2021,7 +2031,7 @@ function genetics(){
                         else {
                             global.race['modified']++;
                         }
-                        cleanRemoveTrait(t);
+                        cleanRemoveTrait(t,rank);
                         genetics();
                         drawTech();
                         drawCity();
@@ -2120,6 +2130,19 @@ function genetics(){
                     classes: `has-background-light has-text-dark`
                 });
             }
+
+            popover(`popGenetrait${t}`, function(){
+                if (global.stats.feat['novice'] && global.stats.achieve['apocalypse'] && global.stats.achieve.apocalypse.l > 0){
+                    return `<div>${traits[t].desc}</div><div>${loc(`trait_${t}_effect`)}</div>`;
+                }
+                else {
+                    return traits[t].desc;
+                }
+            },
+            {
+                elm: `#geneticBreakdown .t-${t} .name`,
+                classes: `has-background-light has-text-dark`
+            });
         });
 
         remove_list.forEach(function (t){
@@ -2130,6 +2153,18 @@ function genetics(){
                 elm: `#geneticBreakdown .remove${t}`,
                 classes: `has-background-light has-text-dark`
             });
+
+            let id = `raceTrait${t}`;
+            let desc = $(`<div></div>`);
+            getTraitDesc(desc, t, { trank: global.race[t] });
+            popover(id,desc,{ wide: true, classes: 'w30' });
+        });
+
+        null_list.forEach(function (t){
+            let id = `raceTrait${t}`;
+            let desc = $(`<div></div>`);
+            getTraitDesc(desc, t, { trank: global.race[t] });
+            popover(id, desc, { elm: `#geneticBreakdown .trait${t}`, wide: true, classes: 'w30' });
         });
 
         trait_list.forEach(function (t){
@@ -2140,6 +2175,11 @@ function genetics(){
                 elm: `#geneticBreakdown .add${t}`,
                 classes: `has-background-light has-text-dark`
             });
+
+            let id = `raceTrait${t}`;
+            let desc = $(`<div></div>`);
+            getTraitDesc(desc, t, { trank: global.race[t] });
+            popover(id,desc,{ wide: true, classes: 'w30' });
         });
 
         dragGeneticsList();
@@ -2156,7 +2196,7 @@ function bindTrait(breakdown,trait){
     }
 
     let total = global.race[trait] > 1 ? `(${global.race[trait]}) ` : '';
-    m_trait.append(`<b-tooltip :label="traitEffect('${trait}')" position="is-bottom" multilined animated><span class="has-text-warning">${total}${traits[trait].desc}</span></b-tooltip>`);
+    m_trait.append(`<span class="has-text-warning name">${total}${traits[trait].name}</span>`);
 
     breakdown.append(m_trait);
 }

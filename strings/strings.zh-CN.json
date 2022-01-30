@@ -6467,7 +6467,7 @@
   "wiki_trait_effect_pack_mentality": "第一级住房成本蠕变 +%0，第二、三级住房成本蠕变 -%1。",
   "wiki_trait_effect_tracker": "狩猎产量 +%0%。",
   "wiki_trait_effect_playful": "每位猎人使士气 +%0%，且不产生工作压力。",
-  "wiki_trait_effect_freespirit": "基础类型以外的工作，也就是有人数上限的工作，产生的工作压力 +%0。",
+  "wiki_trait_effect_freespirit": "基础类型以外的工作，也就是有人数上限的工作，产生的工作压力 +%0%。",
   "wiki_trait_effect_beast_of_burden": "额外获得一轮战利品。（特质级别无影响。）",
   "wiki_trait_effect_sniper": "武器升级研究效果 +%0%。",
   "wiki_trait_effect_sniper_ex1": "最终效果将乘上武器升级研究次数。（双层床也视为武器升级研究。）",

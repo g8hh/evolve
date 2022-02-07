@@ -764,8 +764,9 @@ function fastLoop(){
         global_multiplier *= harmonic[0];
     }
     if (global.race['suction_grip']){
-        breakdown.p['Global'][loc('trait_suction_grip_bd')] = '8%';
-        global_multiplier *= 1 + (traits.suction_grip.vars()[0] / 100);
+        let bonus = traits.suction_grip.vars()[0];
+        breakdown.p['Global'][loc('trait_suction_grip_bd')] = bonus+'%';
+        global_multiplier *= 1 + (bonus / 100);
     }
     if (global.race['intelligent']){
         let bonus = (global.civic.scientist.workers * traits.intelligent.vars()[1]) + (global.civic.professor.workers * traits.intelligent.vars()[0]);
@@ -4255,10 +4256,14 @@ function fastLoop(){
             let shock_base = support_on['shock_trooper'] * production('shock_trooper');
             let tank_base = support_on['tank'] * production('tank');
 
-            cipher_bd[loc('space_shock_trooper_title')] = shock_base + 'v';
-            cipher_bd[`ᄂ${loc('space_syndicate')}+1`] = -((1 - synd) * 100) + '%';
-            cipher_bd[loc('space_tank_title')] = tank_base + 'v';
-            cipher_bd[`ᄂ${loc('space_syndicate')}+2`] = -((1 - synd) * 100) + '%';
+            if (support_on['shock_trooper']){
+                cipher_bd[loc('space_shock_trooper_title')] = shock_base + 'v';
+                cipher_bd[`ᄂ${loc('space_syndicate')}+1`] = -((1 - synd) * 100) + '%';
+            }
+            if (support_on['tank']){
+                cipher_bd[loc('space_tank_title')] = tank_base + 'v';
+                cipher_bd[`ᄂ${loc('space_syndicate')}+2`] = -((1 - synd) * 100) + '%';
+            }
 
             let delta = (shock_base + tank_base) * global_multiplier * synd;
             modRes('Cipher', delta * time_multiplier);
@@ -7202,6 +7207,9 @@ function midLoop(){
                 cm = 600;
             }
             let gain = cm * (global.resource[global.race.species].amount + global.civic.garrison.workers);
+            if (global.race['high_pop']){
+                gain = highPopAdjust(gain);
+            }
             caps['Money'] += gain;
             bd_Money[loc('tech_bonds')] = gain+'v';
         }
@@ -9614,16 +9622,16 @@ function resourceAlt(){
 }
 
 function spyCaught(i){
-    if (global.civic.foreign[`gov${i}`].spy > 0){
-        global.civic.foreign[`gov${i}`].spy -= global.race['elusive'] ? 0 : 1;
-    }
     let escape = global.race['elusive'] || Math.floor(Math.seededRandom(0,3)) === 0 ? true : false;
+    if (!escape && global.civic.foreign[`gov${i}`].spy > 0){
+        global.civic.foreign[`gov${i}`].spy -= 1;
+    }
     if (!escape && Math.floor(Math.seededRandom(0,4)) === 0){
         messageQueue(loc('event_spy_sellout',[govTitle(i)]),'danger',false,['spy']);
         let max = global.race['mistrustful'] ? 5 + traits.mistrustful.vars()[0] : 5;
         global.civic.foreign[`gov${i}`].hstl += Math.floor(Math.seededRandom(1,max));
-        if (global.civic.foreign[`gov${gov}`].hstl > 100){
-            global.civic.foreign[`gov${gov}`].hstl = 100;
+        if (global.civic.foreign[`gov${i}`].hstl > 100){
+            global.civic.foreign[`gov${i}`].hstl = 100;
         }
     }
     else {

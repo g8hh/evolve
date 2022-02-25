@@ -21,7 +21,7 @@ export function govPage(content){
             break: [2,5],
             para_data: {
                 2: [10],
-                3: ['10th','0.25%','1/2']
+                3: ['10','0.25%','1/2']
             }
         },
         autocracy: {
@@ -42,7 +42,7 @@ export function govPage(content){
                 4: ['25%',loc('tech_electricity'),'30%',loc('tech_virtual_reality')],
                 5: ['5%'],
                 6: [
-                    loc('job_farmer'),loc('job_lumberjack'),loc('job_quarry_worker'),loc('job_miner'),loc('job_crystal_miner'),
+                    loc('job_farmer'),loc('job_lumberjack'),loc('job_quarry_worker'),loc('job_reclaimer'),loc('job_crystal_miner'),loc('job_miner'),
                     loc('job_coal_miner'),loc('job_cement_worker'),loc('job_professor'),loc('job_scientist'),loc('soldiers')
                 ]
             }

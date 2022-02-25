@@ -3867,19 +3867,24 @@ span.inline {
 
     .trait {
         .gene {
-            min-width: 4.5rem;
+            min-width: 5rem;
             padding-bottom: .125rem;
         }
     }
     .trait.indent {
-        margin-left: 4rem;
+        margin-left: 4.5rem;
+    }
+
+    .traitListing {
+        display: flex;
+        flex-wrap: wrap;
+        > .traitRow {
+            width: 25rem;
+        }
     }
 
     .traitRow {
-        display: table;
-
-        >span {
-            display: table-cell;
+        > span {
             vertical-align: middle;
         }
 
@@ -3887,6 +3892,16 @@ span.inline {
             height: 100%;
         }
     }
+}
+
+.main>div.popper.wide.w25,
+body .modal>div.popper.wide.w25 {
+    max-width: 25rem;
+}
+
+.main>div.popper.wide.w30,
+body .modal>div.popper.wide.w30 {
+    max-width: 30rem;
 }
 
 #trick6 {

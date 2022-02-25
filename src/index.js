@@ -9,7 +9,7 @@ import { setPowerGrid, gridDefs, clearGrids } from './industry.js';
 import { defineGovernment, defineIndustry, defineGarrison, buildGarrison, commisionGarrison, foreignGov } from './civics.js';
 import { races, shapeShift } from './races.js';
 import { drawCity, drawTech, resQueue, clearResDrag } from './actions.js';
-import { renderSpace } from './space.js';
+import { renderSpace, ascendLab } from './space.js';
 import { renderFortress, buildFortress, drawMechLab, clearMechDrag } from './portal.js';
 import { drawShipYard, clearShipDrag } from './truepath.js';
 import { arpa, clearGeneticsDrag } from './arpa.js';
@@ -35,7 +35,7 @@ export function mainVue(){
                 }
             },
             saveExport(){
-                $('#importExport').val(exportGame());
+                $('#importExport').val(window.exportGame());
                 $('#importExport').select();
                 document.execCommand('copy');
             },
@@ -49,7 +49,7 @@ export function mainVue(){
                     URL.revokeObjectURL(a.href);
                 };
                 const date = new Date();
-                downloadToFile(exportGame(), `evolve-${date.getFullYear()}-${date.getMonth()+1}-${date.getDate()}.txt`, 'text/plain');
+                downloadToFile(window.exportGame(), `evolve-${date.getFullYear()}-${date.getMonth()+1}-${date.getDate()}.txt`, 'text/plain');
             },
             importStringFile(){ 
                 let file = document.getElementById("stringPackFile").files[0];
@@ -389,6 +389,10 @@ export function loadTab(tab){
                     drawCity();
                     renderSpace();
                     renderFortress();
+                }
+                if (global.race['noexport']){
+                    clearElement($(`#city`));
+                    ascendLab();
                 }
             }
             break;
@@ -1164,6 +1168,7 @@ export function index(){
         {i: 'banana',       f: 'banana',            r: 2 },
         {i: 'turtle',       f: 'finish_line',       r: 2 },
         {i: 'floppy',       f: 'digital_ascension', r: 2 },
+        {i: 'slime',        f: 'slime_lord',        r: 2 },
         {i: 'heart',        f: 'valentine',         r: 1 },
         {i: 'clover',       f: 'leprechaun',        r: 1 },
         {i: 'bunny',        f: 'easter',            r: 1 },
@@ -1419,7 +1424,7 @@ export function index(){
                 <h2 class="is-sr-only">External Links</h2>
                 <ul class="external-links">
                     <li><a href="wiki.html" target="_blank">Wiki</a></li>
-                    <li><a href="https://shimo.im/sheets/tg6VPQgCKhrYW9QG/" target="_blank" style="color: green;">大佬整理的Wiki</a></li>
+                    <li><a href="https://shimo.im/sheets/tg6VPQgCKhrYW9QG/" target="_blank" style="color: green;">进化攻略本（作为wiki补充）</a></li>
                     <li><a href="https://www.reddit.com/r/EvolveIdle/" target="_blank">Reddit</a></li>
                     <li><a href="https://discord.gg/dcwdQEr" target="_blank">Discord</a></li>
                     <li><a href="https://github.com/pmotschmann/Evolve" target="_blank">GitHub</a></li>

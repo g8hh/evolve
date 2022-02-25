@@ -2,8 +2,9 @@ import { global, save, webWorker, power_generated } from './vars.js';
 import { loc } from './locale.js';
 import { defineIndustry } from './civics.js';
 import { setJobName } from './jobs.js'; 
-import { vBind, clearElement, removeFromQueue, removeFromRQueue, getEaster, getHalloween } from './functions.js';
+import { vBind, clearElement, removeFromQueue, removeFromRQueue, calc_mastery, getEaster, getHalloween } from './functions.js';
 import { setResourceName } from './resources.js';
+import { highPopAdjust } from './prod.js';
 import { buildGarrison } from './civics.js';
 import { govActive } from './governor.js';
 import { unlockAchieve } from './achieve.js';
@@ -106,6 +107,7 @@ export const genus_traits = {
         rigid: 1
     },
     insectoid: {
+        high_pop: 1,
         fast_growth: 1,
         high_metabolism: 1
     },
@@ -443,11 +445,32 @@ export const traits = {
             }
         },
     },
+    high_pop: { // Population is higher, but less productive
+        name: loc('trait_high_pop_name'),
+        desc: loc('trait_high_pop'),
+        type: 'genus',
+        val: 3,
+        vars(r){
+            // [Citizen Cap, Worker Effectiveness, Growth Multiplier]
+            switch (r || global.race.high_pop || 1){
+                case 0.25:
+                    return [2, 50, 1.5];
+                case 0.5:
+                    return [3, 34, 2.5];
+                case 1:
+                    return [4, 26, 3.5];
+                case 2:
+                    return [5, 21.2, 4.5];
+                case 3:
+                    return [6, 18, 5.5];
+            }
+        },
+    },
     fast_growth: { // Greatly increases odds of population growth each cycle
         name: loc('trait_fast_growth_name'),
         desc: loc('trait_fast_growth'),
         type: 'genus',
-        val: 3,
+        val: 2,
         vars(r){
             // [bound multi, bound add]
             switch (r || global.race.fast_growth || 1){
@@ -1644,17 +1667,18 @@ export const traits = {
         type: 'major',
         val: -6,
         vars(r){
+            // [Max bonus]
             switch (r || global.race.selenophobia || 1){
                 case 0.25:
-                    return [6];
+                    return [2];
                 case 0.5:
-                    return [5];
+                    return [3];
                 case 1:
                     return [4];
                 case 2:
-                    return [3];
+                    return [5];
                 case 3:
-                    return [2];
+                    return [6];
             }
         },
     },
@@ -1920,18 +1944,18 @@ export const traits = {
         desc: loc('trait_infiltrator'),
         type: 'major',
         val: 4,
-        vars(r){
+        vars(r){ // [Steal Cap]
             switch (r || global.race.infiltrator || 1){
                 case 0.25:
-                    return [120];
-                case 0.5:
                     return [110];
-                case 1:
+                case 0.5:
                     return [100];
-                case 2:
-                    return [95];
-                case 3:
+                case 1:
                     return [90];
+                case 2:
+                    return [85];
+                case 3:
+                    return [80];
             }
         }
     },
@@ -1941,7 +1965,7 @@ export const traits = {
         type: 'major',
         val: -3,
         vars(r){
-            // [Food Consumption, Prodction]
+            // [Food Consumption, Production]
             switch (r || global.race.hibernator || 1){
                 case 0.25:
                     return [15,8];
@@ -2106,15 +2130,15 @@ export const traits = {
             // [Cap]
             switch (r || global.race.blood_thirst || 1){
                 case 0.25:
-                    return [500000];
+                    return [250000];
                 case 0.5:
-                    return [750000];
+                    return [500000];
                 case 1:
                     return [1000000];
                 case 2:
-                    return [1250000];
+                    return [2000000];
                 case 3:
-                    return [1400000];
+                    return [4000000];
             }
         }
     },
@@ -2815,6 +2839,27 @@ export const traits = {
                     return [0.12,100];
                 case 3:
                     return [0.14,100];
+            }
+        }
+    },
+    ooze: { // you are some kind of ooze, everything is bad
+        name: loc('trait_ooze_name'),
+        desc: loc('trait_ooze'),
+        type: 'major',
+        val: -50,
+        vars(r){
+            // [All jobs worse, Theology weaker, Mastery weaker]
+            switch (r || global.race.ooze || 1){
+                case 0.25:
+                    return [20,25,40];
+                case 0.5:
+                    return [15,20,35];
+                case 1:
+                    return [12,15,30];
+                case 2:
+                    return [10,12,25];
+                case 3:
+                    return [8,10,20];
             }
         }
     },
@@ -3925,6 +3970,59 @@ export const races = {
         },
         fanaticism: 'none'
     },
+    sludge: {
+        name: loc('race_sludge'),
+        desc: loc('race_sludge_desc'),
+        type: (function(){ return global.race.hasOwnProperty('jtype') ? global.race.jtype : 'humanoid'; })(),
+        home: loc('race_sludge_home'),
+        entity: loc('race_sludge_entity'),
+        traits: {
+            ooze: 0.25,
+            diverse: 0.25,
+            arrogant: 0.25,
+            angry: 0.25,
+            lazy: 0.25,
+            hooved: 0.25,
+            freespirit: 0.25,
+            heavy: 0.25,
+            gnawer: 0.25,
+            paranoid: 0.25,
+            greedy: 0.25,
+            puny: 0.25,
+            dumb: 0.25,
+            nearsighted: 0.25,
+            gluttony: 0.25,
+            slow: 0.25,
+            hard_of_hearing: 0.25,
+            selenophobia: 0.25,
+            pessimistic: 0.25,
+            solitary: 0.25,
+            pyrophobia: 0.25,
+            skittish: 0.25,
+            fragrant: 0.25,
+            nyctophilia: 0.25,
+            hibernator: 0.25,
+            frail: 0.25,
+            atrophy: 0.25,
+            invertebrate: 0.25,
+            unorganized: 0.25,
+            slow_regen: 0.25,
+            autoignition: 0.25,
+            snowy: 0.25,
+            mistrustful: 0.25,
+            thalassophobia: 0.25,
+            pathetic: 0.25,
+            truthful: 0.25,
+        },
+        solar: {
+            red: loc('race_sludge_solar_red'),
+            hell: loc('race_sludge_solar_hell'),
+            gas: loc('race_sludge_solar_gas'),
+            gas_moon: loc('race_sludge_solar_gas_moon'),
+            dwarf: loc('race_sludge_solar_dwarf'),
+        },
+        fanaticism: 'ooze'
+    },
     custom: customRace()
 };
 
@@ -3962,7 +4060,8 @@ Object.keys(genusVars).forEach(function(k){
 });
 
 export function setJType(){
-    races.junker.type = global.race.hasOwnProperty('jtype') ? global.race.jtype : 'humanoid';;
+    races.junker.type = global.race.hasOwnProperty('jtype') ? global.race.jtype : 'humanoid';
+    races.sludge.type = global.race.hasOwnProperty('jtype') ? global.race.jtype : 'humanoid';;
 }
 
 function customRace(){
@@ -4024,13 +4123,19 @@ export function racialTrait(workers,type){
         modifier *= 1 + (traits.artifical.vars()[0] / 100);
     }
     if (global.race['hivemind'] && type !== 'farmer'){
-        if (workers <= traits.hivemind.vars()[0]){
-            let start = 1 - (traits.hivemind.vars()[0] * 0.05);
-            modifier *= (workers * 0.05) + start;
+        let breakpoint = traits.hivemind.vars()[0];
+        let scale = 0.05;
+        if (global.race['high_pop'] && type !== 'army' && type !== 'hellArmy'){
+            breakpoint *= traits.high_pop.vars()[0];
+            scale = 0.5 / (traits.hivemind.vars()[0] * traits.high_pop.vars()[0]);
+        }
+        if (workers <= breakpoint){
+            let start = 1 - (breakpoint * scale);
+            modifier *= (workers * scale) + start;
         }
         else {
-            let mod = type === 'army' || type === 'hellArmy' ? 0.99 : 0.98;
-            modifier *= 1 + (1 - (mod ** (workers - traits.hivemind.vars()[0])));
+            let mod = type === 'army' || type === 'hellArmy' ? 0.99 : (global.race['high_pop'] ? 0.985 : 0.98);
+            modifier *= 1 + (1 - (mod ** (workers - breakpoint)));
         }
     }
     if (global.race['cold_blooded'] && type !== 'army' && type !== 'hellArmy' && type !== 'factory' && type !== 'science'){
@@ -4092,6 +4197,9 @@ export function racialTrait(workers,type){
     if (global.race['analytical'] && type === 'science'){
         modifier *= 1 + (traits.analytical.vars()[0] * global.race['analytical'] / 100);
     }
+    if (global.race['ooze']){
+        modifier *= 1 - (traits.ooze.vars()[0] / 100);
+    }
     if (global.civic.govern.type === 'democracy'){
         modifier *= 0.95;
     }
@@ -4112,6 +4220,9 @@ export function racialTrait(workers,type){
     }
     if (global.tech['cyber_worker'] && (type === 'lumberjack' || type === 'miner')){
         modifier *= 1.25;
+    }
+    if (global.race['high_pop']){
+        modifier = highPopAdjust(modifier);
     }
     return modifier;
 }
@@ -4217,11 +4328,15 @@ function purgeLumber(){
         global.interstellar.mass_ejector.total -= global.interstellar.mass_ejector.Lumber;
         global.interstellar.mass_ejector.Lumber = 0;
     }
+    if (global.city['nanite_factory']){
+        global.city.nanite_factory.Lumber = 0;
+    }
 }
 
 function adjustFood() {
     let farmersEnabled = checkTechQualifications(actions.tech.agriculture);
     let huntingEnabled = checkTechQualifications(actions.tech.smokehouse);
+    let lumberEnabled = checkTechQualifications(actions.tech.reclaimer) || checkTechQualifications(actions.tech.stone_axe);
     let altLodge = checkTechQualifications(actions.tech.alt_lodge);
     let altMill = checkTechQualifications(actions.tech.wind_plant);
     let disabledCity = [], disabledTech = [];
@@ -4349,6 +4464,12 @@ function adjustFood() {
         jobDisabled.push('hunter');
         jobEnabled.push('unemployed');
     }
+    if (lumberEnabled) {
+        jobEnabled.push('lumberjack');
+    }
+    else {
+        jobDisabled.push('lumberjack');
+    }
 
     jobEnabled.forEach(function(job) {
         if (!global.civic[job].display) {
@@ -4382,6 +4503,12 @@ function adjustFood() {
 
 export function cleanAddTrait(trait){
     switch (trait){
+        case 'high_pop':
+            global.resource[global.race.species].amount = Math.round(global.resource[global.race.species].amount * traits.high_pop.vars()[0]);
+            if (global.civic.hasOwnProperty('garrison')) {
+                global.civic.garrison.workers = Math.round(global.civic.garrison.workers * traits.high_pop.vars()[0]);
+            }
+            break;
         case 'kindling_kindred':
             if (global.race['smoldering']){
                 break;
@@ -4555,13 +4682,25 @@ export function cleanAddTrait(trait){
             setResourceName('Furs');
             setResourceName('Plywood');
             break;
+        case 'ooze':
+            if (!global.tech['high_tech'] && global.race.species !== 'custom' && global.race.species !== 'sludge'){
+                global.race['gross_enabled'] = 1;
+            }
+            calc_mastery(true);
+            break;
         default:
             break;
     }
 }
 
-export function cleanRemoveTrait(trait){
+export function cleanRemoveTrait(trait,rank){
     switch (trait){
+        case 'high_pop':
+            global.resource[global.race.species].amount = Math.round(global.resource[global.race.species].amount / traits.high_pop.vars(rank)[0]);
+            if (global.civic.hasOwnProperty('garrison')) {
+                global.civic.garrison.workers = Math.round(global.civic.garrison.workers / traits.high_pop.vars(rank)[0]);
+            }
+            break;
         case 'kindling_kindred':
             if (global.race['smoldering']){
                 break;
@@ -4579,7 +4718,7 @@ export function cleanRemoveTrait(trait){
             checkPurgatory('tech','axe');
             checkPurgatory('tech','reclaimer');
             checkPurgatory('tech','saw');
-            if (global.tech['axe']){
+            if (global.tech['axe'] || global.tech['reclaimer']){
                 global.civic.lumberjack.display = true;
             }
             break;
@@ -4621,6 +4760,9 @@ export function cleanRemoveTrait(trait){
                     global.civic.quarry_worker.display = true;
                 }
             }
+            break;
+        case 'apex_predator':
+            checkPurgatory('tech','armor');
             break;
         case 'environmentalist':
             delete power_generated[loc('city_hydro_power')];
@@ -4714,8 +4856,9 @@ export function cleanRemoveTrait(trait){
                 Object.keys(global.race.iTraits).forEach(function (t){
                     if (t !== 'imitation'){
                         if (global.race.iTraits[t] === 0){
+                            let rank = global.race[t];
                             delete global.race[t];
-                            cleanRemoveTrait(t);
+                            cleanRemoveTrait(t,rank);
                             global.race['iTraits'];
                         }
                         else {
@@ -4730,6 +4873,10 @@ export function cleanRemoveTrait(trait){
             setResourceName('Lumber');
             setResourceName('Furs');
             setResourceName('Plywood');
+            break;
+        case 'ooze':
+            delete global.race['gross_enabled'];
+            calc_mastery(true);
             break;
         default:
             break;
@@ -4788,8 +4935,9 @@ export function shapeShift(genus,setup){
     let shifted = global.race.hasOwnProperty('ss_traits') ? global.race.ss_traits : [];
     if (!setup){
         shifted.forEach(function(trait){
+            let rank = global.race[trait];
             delete global.race[trait];
-            cleanRemoveTrait(trait);
+            cleanRemoveTrait(trait,rank);
         });
         shifted = [];
     }
@@ -4797,7 +4945,7 @@ export function shapeShift(genus,setup){
     if (genus){
         if (genus !== 'none'){
             Object.keys(genus_traits[genus]).forEach(function (trait) {
-                if (!global.race[trait]){
+                if (!global.race[trait] && trait !== 'high_pop'){
                     if (traits[trait].val >= 0){
                         global.race[trait] = traits.shapeshifter.vars()[0];
                     }
@@ -4876,6 +5024,25 @@ export function setTraitRank(trait,opts){
         return true;
     }
     return false;
+}
+
+export function traitSkin(type,trait){
+    switch (type){
+        case 'name':
+        {
+            let name = {
+                hooved: global.race['sludge'] ? loc('trait_hooved_slime_name') : traits['hooved'].name,
+            };
+            return trait ? (name[trait] ? name[trait] : traits[trait].name) : name;
+        } 
+        case 'desc':
+        {
+            let desc = {
+                hooved: global.race['sludge'] ? loc('trait_hooved_slime') : traits['hooved'].desc,
+            };
+            return trait ? (desc[trait] ? desc[trait] : traits[trait].desc) : desc;
+        }
+    }
 }
 
 export const biomes = {

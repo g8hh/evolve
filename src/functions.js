@@ -1,12 +1,12 @@
 import { global, save, message_logs, message_filters, webWorker, keyMultiplier, intervals, resizeGame } from './vars.js';
 import { loc } from './locale.js';
-import { races, traits, genus_traits } from './races.js';
+import { races, traits, genus_traits, traitSkin } from './races.js';
 import { actions, actionDesc } from './actions.js';
 import { universe_affixes } from './space.js';
 import { arpaAdjustCosts, arpaProjectCosts } from './arpa.js';
 import { gridDefs } from './industry.js';
 import { govActive } from './governor.js';
-import { universeLevel, alevel } from './achieve.js';
+import { universeLevel, universeAffix, alevel } from './achieve.js';
 
 var popperRef = false;
 export function popover(id,content,opts){
@@ -56,9 +56,9 @@ export function popover(id,content,opts){
             if (opts.hasOwnProperty('in') && typeof opts['in'] === 'function'){
                 opts['in']({ this: this, popper: popper, id: `popper` });
             }
-            if (eventActive('firework') && ( 
-                (!global.race['cataclysm'] && global.city.firework.on > 0) || 
-                (global.race['cataclysm'] && global.space.firework.on > 0) 
+            if (eventActive('firework') && (
+                (!global.race['cataclysm'] && global.city.firework.on > 0) ||
+                (global.race['cataclysm'] && global.space.firework.on > 0)
                 )){
                 $(popper).append(`<span class="pyro"><span class="before"></span><span class="after"></span></span>`);
             }
@@ -139,17 +139,8 @@ export function gameLoop(act){
                 }
                 webWorker.mt = main_timer;
 
-                let dt = Date.now();
-                let timeDiff = dt - global.stats.current;
-                if (global.stats.hasOwnProperty('current') && (timeDiff >= 120000 || global.settings.at > 0)){
-                    if (timeDiff >= 120000){
-                        global.settings.at += Math.floor(timeDiff / 3333);
-                    }
-                    if (global.settings.at > 11520){
-                        global.settings.at = 11520;
-                    }
-                }
-
+                calcATime();
+                
                 if (global.settings.at > 0){
                     main_timer = Math.ceil(main_timer * 0.5);
                     mid_timer = Math.ceil(mid_timer * 0.5);
@@ -178,10 +169,24 @@ export function gameLoop(act){
     }
 }
 
+function calcATime(){
+    let dt = Date.now();
+    let timeDiff = dt - global.stats.current;
+    if (global.stats.hasOwnProperty('current') && (timeDiff >= 120000 || global.settings.at > 0)){
+        if (timeDiff >= 120000){
+            global.settings.at += Math.floor(timeDiff / 3333);
+        }
+        if (global.settings.at > 11520){
+            global.settings.at = 11520;
+        }
+    }
+}
+
 window.exportGame = function exportGame(){
     if (global.race['noexport']){
         return 'Export is not available during Race Creation';
     }
+    calcATime();
     global.stats['current'] = Date.now();
     return LZString.compressToBase64(JSON.stringify(global));
 }
@@ -303,9 +308,9 @@ export function messageQueue(msg,color,dnr,tags,reload){
     if (!reload && !tags.includes('all')){
         tags.push('all');
     }
-    
+
     color = color || 'warning';
-    
+
     if (tags.includes(message_logs.view)){
         let new_message = $('<p class="has-text-'+color+'">'+msg+'</p>');
         $('#msgQueueLog').prepend(new_message);
@@ -319,7 +324,7 @@ export function messageQueue(msg,color,dnr,tags,reload){
             message_logs[tag].pop();
         }
     });
-    
+
     if (!dnr){
         tags.forEach(function (tag){
             if (global.lastMsg[tag]){
@@ -361,7 +366,7 @@ export function calcQueueMax(){
     if (pragVal){
         max_queue = Math.round(max_queue * (1 + (pragVal / 100)));
     }
-    
+
     global.queue.max = max_queue;
 }
 
@@ -378,7 +383,7 @@ export function calcRQueueMax(){
     if (theoryVal){
         max_queue = Math.round(max_queue * (1 + (theoryVal / 100)));
     }
-    
+
     global.r_queue.max = max_queue;
 }
 
@@ -478,7 +483,7 @@ export function buildQueue(){
                     for (let i=0; i<global.queue.queue.length; i++){
                         used += Math.ceil(global.queue.queue[i].q / global.queue.queue[i].qs);
                     }
-                    
+
                     return used;
                 }
             }
@@ -1009,12 +1014,16 @@ export function darkEffect(universe, flag, info, inputs){
     if (!inputs) { inputs = {}; }
     let dark = inputs.dark !== undefined ? inputs.dark : global.race.Dark.count;
     let harmony = inputs.harmony !== undefined ? inputs.harmony : global.race.Harmony.count;
-    
+    let sludge = inputs.sludge !== undefined ? inputs.sludge : (global.stats.achieve['extinct_sludge'] && global.stats.achieve.extinct_sludge[universeAffix(universe)]) ? global.stats.achieve.extinct_sludge[universeAffix(universe)] : 0;
+
     switch (universe){
         case 'standard':
             if (global.race.universe === 'standard' || info){
                 if (harmony > 0){
                     dark *= 1 + (harmony * 0.001);
+                }
+                if (sludge){
+                    dark *= 1 + (sludge * 0.03);
                 }
                 return 1 + (dark / 200);
             }
@@ -1024,6 +1033,9 @@ export function darkEffect(universe, flag, info, inputs){
             if (global.race.universe === 'evil' || info){
                 if (harmony > 0){
                     dark *= 1 + (harmony * 0.01);
+                }
+                if (sludge){
+                    dark *= 1 + (sludge * 0.03);
                 }
                 return (1 + ((Math.log2(10 + dark) - 3.321928094887362) / 5));
             }
@@ -1036,6 +1048,9 @@ export function darkEffect(universe, flag, info, inputs){
                         dark *= 1 + (harmony * 0.01);
                     }
                     dark = 0.01 + (Math.log(100 + dark) - 4.605170185988092) / 35;
+                    if (sludge){
+                        dark *= 1 + (sludge * 0.03);
+                    }
                     if (dark > 0.04){
                         dark = 0.04;
                     }
@@ -1046,6 +1061,9 @@ export function darkEffect(universe, flag, info, inputs){
                         dark *= 1 + (harmony * 0.01);
                     }
                     dark = 0.02 + (Math.log(100 + dark) - 4.605170185988092) / 20;
+                    if (sludge){
+                        dark *= 1 + (sludge * 0.03);
+                    }
                     if (dark > 0.06){
                         dark = 0.06;
                     }
@@ -1059,6 +1077,9 @@ export function darkEffect(universe, flag, info, inputs){
                 if (harmony > 0){
                     dark *= 1 + (harmony * 0.01);
                 }
+                if (sludge){
+                    dark *= 1 + (sludge * 0.03);
+                }
                 return 0.995 ** dark;
             }
             return 1;
@@ -1068,6 +1089,9 @@ export function darkEffect(universe, flag, info, inputs){
                 if (harmony > 0){
                     dark *= 1 + (harmony * 0.01);
                 }
+                if (sludge){
+                    dark *= 1 + (sludge * 0.03);
+                }
                 return 1 + (Math.log(50 + dark) - 3.912023005428146) / 5;
             }
             return 0;
@@ -1076,6 +1100,9 @@ export function darkEffect(universe, flag, info, inputs){
             if (global.race.universe === 'magic' || info){
                 if (harmony > 0){
                     dark *= 1 + (harmony * 0.01);
+                }
+                if (sludge){
+                    dark *= 1 + (sludge * 0.03);
                 }
                 return 1 + (Math.log(50 + dark) - 3.912023005428146) / 3;
             }
@@ -1117,6 +1144,10 @@ export function masteryType(universe,detailed){
             m_rate /= universe === 'antimatter' ? 5 : 2;
             u_rate /= universe === 'antimatter' ? 5 : 2;
         }
+        if (global.race['ooze']){
+            m_rate *= 1 - (traits.ooze.vars()[2] / 100);
+            u_rate *= 1 - (traits.ooze.vars()[2] / 100);
+        }
         let m_mastery = ua_level.aLvl * m_rate;
         let u_mastery = 0;
         if (universe !== 'standard'){
@@ -1153,16 +1184,18 @@ export const calcPillar = (function(){
     }
 })();
 
-export function challenge_multiplier(value,type,decimals,challenge,universe){
+export function challenge_multiplier(value,type,decimals,inputs){
     decimals = decimals || 0;
-    let challenge_level = challenge;
-    if (challenge === undefined){
+    inputs = inputs || {};
+    
+    let challenge_level = inputs.genes;
+    if (challenge_level === undefined){
         challenge_level = alevel() - 1;
         if (challenge_level > 4){
             challenge_level = 4;
         }
     }
-    universe = universe || global.race.universe;
+    let universe = inputs.uni || global.race.universe;
 
     if (universe === 'micro'){ value = value * 0.25; }
     if (universe === 'antimatter'){ value = value * 1.1; }
@@ -1185,7 +1218,7 @@ export function challenge_multiplier(value,type,decimals,challenge,universe){
                 break;
         }
     }
-    if (global.race['truepath']){
+    if (inputs.tp !== undefined ? inputs.tp : global.race['truepath']){
         value = value * 1.1;
     }
     switch (challenge_level){
@@ -1211,12 +1244,12 @@ export function calcPrestige(type,inputs){
         artifact: 0,
         cores: 0,
     };
-    
+
     if (!inputs) { inputs = {}; }
     let challenge = inputs.genes;
     let universe = inputs.uni;
     universe = universe || global.race.universe;
-    
+
     let pop = 0;
     if (inputs.cit === undefined){
         let garrisoned = global.civic.hasOwnProperty('garrison') ? global.civic.garrison.workers : 0;
@@ -1225,10 +1258,20 @@ export function calcPrestige(type,inputs){
                 garrisoned += global.civic.govern.type === 'federation' ? 15 : 20;
             }
         }
-        pop = global.resource[global.race.species].amount + garrisoned;
+        if (global.race['high_pop']){
+            pop = Math.round(global.resource[global.race.species].amount / traits.high_pop.vars()[0]) + Math.round(garrisoned / traits.high_pop.vars()[0]);
+        }
+        else {
+            pop = global.resource[global.race.species].amount + garrisoned;
+        }
     }
     else {
-        pop = inputs.cit + inputs.sol;
+        if (inputs.high_pop){
+            pop = Math.round(inputs.cit / traits.high_pop.vars(inputs.high_pop)[0]) + Math.round(inputs.sol / traits.high_pop.vars(inputs.high_pop)[0]);
+        }
+        else {
+            pop = inputs.cit + inputs.sol;
+        }
     }
 
     let pop_divisor = 999;
@@ -1243,7 +1286,7 @@ export function calcPrestige(type,inputs){
             k_inc = 100000;
             k_mult = 1.1;
             plasmid_cap = 150;
-            if (races[global.race.species].type === 'synthetic'){
+            if (inputs.synth !== undefined ? inputs.synth : races[global.race.species].type === 'synthetic'){
                 pop_divisor = 5;
                 k_inc = 125000;
                 plasmid_cap = 100;
@@ -1281,7 +1324,12 @@ export function calcPrestige(type,inputs){
             break;
     }
 
-    plasmid_cap = Math.floor(plasmid_cap * (1 + (alevel() - (global.race['truepath'] ? 0 : 1)) / 8));
+    if (challenge !== undefined){
+        plasmid_cap = Math.floor(plasmid_cap * (1 + (challenge + (inputs.tp ? 1 : 0)) / 8));
+    }
+    else {
+        plasmid_cap = Math.floor(plasmid_cap * (1 + (alevel() - (global.race['truepath'] ? 0 : 1)) / 8));
+    }
 
     if (inputs.plas === undefined){
         let k_base = inputs.know !== undefined ? inputs.know : global.stats.know;
@@ -1296,9 +1344,9 @@ export function calcPrestige(type,inputs){
             new_plasmid += 300;
         }
 
-        gains.plasmid = challenge_multiplier(new_plasmid,type,false,challenge,universe);
+        gains.plasmid = challenge_multiplier(new_plasmid,type,false,inputs);
 
-        if (gains.plasmid > plasmid_cap){
+        if (!inputs.rawPlasmids && gains.plasmid > plasmid_cap){
             let overflow = gains.plasmid - plasmid_cap;
             gains.plasmid = plasmid_cap;
             overflow = Math.floor(overflow / (overflow + plasmid_cap) * plasmid_cap);
@@ -1308,7 +1356,7 @@ export function calcPrestige(type,inputs){
     else {
         gains.plasmid = inputs.plas;
     }
-    gains.phage = gains.plasmid > 0 ? challenge_multiplier(Math.floor(Math.log2(gains.plasmid) * Math.E * phage_mult),type,false,challenge,universe) : 0;
+    gains.phage = gains.plasmid > 0 ? challenge_multiplier(Math.floor(Math.log2(gains.plasmid) * Math.E * phage_mult),type,false,inputs) : 0;
 
     if (type === 'bigbang'){
         let exotic = inputs.exotic;
@@ -1317,20 +1365,20 @@ export function calcPrestige(type,inputs){
             exotic = global.interstellar.stellar_engine.exotic;
             mass = global.interstellar.stellar_engine.mass;
         }
-        
+
         let new_dark = +(Math.log(1 + (exotic * 40))).toFixed(3);
         new_dark += +(Math.log2(mass - 7)/2.5).toFixed(3);
-        new_dark = challenge_multiplier(new_dark,'bigbang',3,challenge,universe);
+        new_dark = challenge_multiplier(new_dark,'bigbang',3,inputs);
         gains.dark = new_dark;
     }
     else if (type === 'vacuum'){
         let mana = inputs.mana !== undefined ? inputs.mana : global.resource.Mana.gen;
         let new_dark = +(Math.log2(mana)/5).toFixed(3);
-        new_dark = challenge_multiplier(new_dark,'vacuum',3,challenge,universe);
+        new_dark = challenge_multiplier(new_dark,'vacuum',3,inputs);
         gains.dark = new_dark;
     }
 
-    
+
     if (type === 'ascend' || type === 'descend'){
         let harmony = 1;
         if (challenge === undefined){
@@ -1342,7 +1390,7 @@ export function calcPrestige(type,inputs){
         else {
             harmony = challenge + 1;
         }
-        
+
         if (type === 'ascend'){
             switch (universe){
                 case 'micro':
@@ -1376,7 +1424,7 @@ export function calcPrestige(type,inputs){
             gains.artifact = artifact;
         }
     }
-    
+
     if (type === 'ai'){
         gains.cores = universe === 'micro' ? 2 : 5;
     }
@@ -1425,7 +1473,7 @@ function truthAdjust(costs, c_action, offset, wiki){
     }
     return costs;
 }
-                
+
 function inflationAdjust(costs, offset, wiki){
     if (global.race['inflation']){
         var newCosts = {};
@@ -1569,6 +1617,13 @@ function craftAdjust(costs, offset, wiki){
     return costs;
 }
 
+export function popCost(p){
+    if (global.race['high_pop']){
+        p *= traits.high_pop.vars()[0];
+    }
+    return p;
+}
+
 function heavyAdjust(costs, offset, wiki){
     if (global.race['heavy']){
         var newCosts = {};
@@ -1671,6 +1726,8 @@ export function svgIcons(icon){
             return `<defs><linearGradient id="lg1"><stop style="stop-color:#ffd73b" offset="0"/><stop style="stop-color:#ee8400" offset="1"/></linearGradient><radialGradient id="rg1" xlink:href="#lg1" gradientUnits="userSpaceOnUse" cy="5.4103" cx="6.8633" gradientTransform="matrix(2.9713 .76566 -.43392 1.6839 -11.182 -8.949)" r="7.4938"/><filter id="f1"><feGaussianBlur stdDeviation="0.1874122"/></filter><filter id="f2" height="1.4599" width="1.2095" y="-.22993" x="-.10474"><feGaussianBlur stdDeviation="0.18425117"/></filter></defs><g transform="rotate(25)"><g transform="translate(0 -1004.4)"><g transform="matrix(.96824 .25003 -.25003 .96824 261.98 28.943)"><path d="m4.8515 1021.1c2.2196-2.3727 8.9482-2.5884 12.79 0v18.23c-4.6353-0.054-8.7325 0.073-12.79 0v-18.23z"/><path d="m4.8515 1021.1c3.6818 1.7448 7.7427 2.3524 12.79 0v23.155c-4.6232 2.7464-10.845 2.1081-12.79 0v-23.155z"/><path style="fill:#aa0000" d="m4.8515 1023.8c3.6818 1.7448 7.7427 2.3524 12.79 0v1.3967c-4.3025 2.9151-11.359 1.8495-12.79 0v-1.3967z"/><path style="fill:#aa0000" d="m4.8515 1040.9c3.6818 1.7448 7.7427 2.3524 12.79 0v1.3967c-4.3025 2.9151-10.551 1.6657-12.79 0v-1.3967z"/><path style="fill:#000000;" d="m11.532 1013.7c0.23305 0.9512-0.1845 2.2498-0.59925 2.9502-0.70598 1.468-0.64652 2.4533-0.31604 3.9744 0.6051 0.3974 1.172 0.4004 1.1893-0.182-0.45969-1.2664-0.49139-2.3558-0.35476-3.4927 0.51677-1.9847 0.31739-2.2127 0.31446-3.27l-0.23368 0.02z" /></g><path style="fill-rule:evenodd;fill:url(#rg1)" d="m15.069 7.3507-5.2438 0.5091 2.9058 4.1512-4.3446-2.9806-0.4427 5.0476-1.4119-5.0757-3.5836 3.5817 2.181-4.7953-5.0478 0.4405 4.7534-2.2718-4.15-2.9072 5.1016 1.3151-1.3104-4.8946 3.0628 4.2866 2.1423-4.5917-0.4092 5.2524 4.5931-2.1404-3.69 3.7606 4.894 1.3125z" transform="matrix(.66944 .049369 -.049369 .66944 15.923 1007.3)"/><path style="fill-opacity:.49554;color:#000000;filter:url(#f1);fill:#ffffff" transform="translate(0 1004.4)" d="m6.2481 34.842c0.3675-0.882 5.2189-19.479 5.2189-19.479s-2.8668 19.553-5.219 19.479z"/><path style="fill-opacity:.71429;color:#000000;filter:url(#f2);fill:#ffffff" transform="translate(0 1004.4)" d="m16.319 14.334c-2.9288-0.09923-4.5208 0.2293-2.5727 1.6907 0 0-5.072-2.7198 2.5727-1.6907z"/></g></g>`;
         case 'floppy':
             return `<path style="stroke-linejoin:round;fill-rule:evenodd;stroke-linecap:round;stroke-width:1pt" transform="matrix(1.0594 0 0 1.0594 -1.4619 -1.891)" d="m8.375 6.0625c-1.108 0-2 0.892-2 2v44.844c0 1.108 0.892 2 2 2h43.062c1.108 0 2-0.892 2-2v-40.25l-6.625-6.5935h-38.437z"/><path style="fill-rule:evenodd;stroke:#333333;stroke-width:3.125" d="m15.914 4.6592v13.242c0 1.353 1.188 2.442 2.665 2.442h17.908c1.477 0 2.666-1.089 2.666-2.442v-13.242l-23.239 0.0002z"/><rect style="fill-rule:evenodd;stroke:#333333;stroke-width:1.875;fill:#7f7f7f" rx="1.3992" height="9.0411" width="6.5871" y="7.9428" x="19.516"/><path style="stroke-linejoin:round;stroke:#333333;stroke-linecap:round;stroke-width:2.9499;fill:none" transform="matrix(1.0594 0 0 1.0594 -1.4619 -1.891)" d="m8.375 6.0625c-1.108 0-2 0.892-2 2v44.844c0 1.108 0.892 2 2 2h43.063c1.108 0 2-0.892 2-2v-40.25l-6.626-6.5935h-38.437z"/><rect style="stroke-linejoin:round;fill-rule:evenodd;fill-opacity:.75;stroke:#333333;stroke-linecap:round;stroke-width:1.875;fill:#d9d9d9" rx="2.0351" height="28.611" width="41.747" y="24.011" x="9.3572"/>`;
+        case 'slime':
+            return `<path d="m 163.57665,478.9939 c -24.3084,-14.10129 20.22363,-31.85842 11.65433,-4.63671 -2.25318,3.00162 -7.82305,7.72231 -11.65433,4.63671 z m 183.28848,-20.78849 c -13.14775,-2.33976 -17.9053,-20.06385 -30.08968,-21.98687 -22.97473,-4.1326 -43.31948,4.50415 -60.96133,14.07232 -10.51557,-9.2598 -14.59557,-41.08981 -37.2545,-23.17861 -11.85767,5.10112 -26.09006,37.76324 -36.43017,17.92471 12.26335,-16.11595 13.61823,-38.69297 -2.50565,-53.85402 -9.07864,-25.52803 -23.49108,-2.96585 -38.11197,-0.47002 -19.8545,-7.00156 2.24982,-17.9895 4.45519,-28.45906 -19.65784,-4.47223 -49.62704,-12.5375 -40.5684,-40.71986 -1.26199,-17.36206 -23.24425,-4.54888 -33.79057,-10.24131 -16.397164,-2.8794 -10.496155,-27.34616 7.05826,-18.74942 17.51815,3.39812 57.60888,-4.46006 32.23855,-26.61982 -15.76203,-15.19509 -36.4094,-26.72533 -59.007044,-19.4613 -11.307053,7.56151 -45.1768893,3.79939 -35.022881,-13.82 19.669671,-10.71178 41.22779,3.85343 62.546315,-0.41167 22.65923,2.25062 56.7955,2.92211 46.56505,-30.26243 -9.26561,-9.78026 -32.91651,-30.82361 -7.38635,-36.30014 15.55413,-0.21331 30.86842,10.43077 44.60082,1.80665 13.21274,-12.4417 16.76714,-39.42827 -0.38632,-50.47828 -10.80648,-8.45672 -38.40916,-16.85432 -19.84938,-33.902321 19.3853,1.0478 24.20642,27.651681 41.16885,36.150751 18.51916,13.61049 50.95835,7.17401 61.80278,-12.78899 1.96924,-16.748651 -11.63994,-42.923241 12.50617,-47.433179 23.30938,6.353523 -1.66539,45.643539 28.90133,45.889059 25.56358,7.85631 39.61883,-14.011941 60.08396,-22.018981 30.2942,9.28422 -29.51698,37.027991 8.87108,40.322941 23.1761,5.46703 39.02059,-17.52132 48.06887,-35.414291 3.46612,-8.21607 5.50233,-27.606776 17.85058,-22.515508 13.24499,18.081808 1.86915,39.536319 -11.35616,52.268479 -10.16764,16.26152 9.46107,29.60498 13.1601,44.13081 1.34227,15.68577 3.95064,63.23778 25.50577,34.08371 11.20788,-16.92925 39.90908,7.29467 12.92634,13.29565 -21.85133,2.38884 -8.74246,30.90525 8.32053,31.55607 15.1609,9.00237 41.9144,-1.77662 49.85037,17.11456 -3.05446,22.09256 -29.22362,4.29383 -44.75131,8.75457 -26.49789,0.12599 -17.43484,26.88046 -7.77732,42.51035 9.76698,19.89884 31.2054,31.76298 48.60822,44.93826 18.15985,15.69828 -12.65871,32.16282 -20.76404,11.87903 -12.49108,-15.20596 -28.1879,-37.35636 -51.04288,-25.58585 -20.34079,12.10319 -3.81472,46.51527 -27.16948,55.99789 -13.78208,11.17439 14.82012,29.49627 21.31808,39.46489 19.96655,7.40908 3.994,34.09436 -8.11021,13.7541 -12.62478,-14.46055 -23.96764,-30.13593 -42.7521,-37.32729 -23.81689,-5.8173 -31.20602,23.70722 -28.16799,40.3062 -2.51049,4.62673 -8.09576,6.80908 -13.15148,5.77822 z M 87.72089,429.74028 c -13.99202,-18.69723 22.26227,-31.47183 36.51218,-33.31233 -8.19425,13.17742 -16.8232,38.48212 -36.51218,33.31233 z m 395.16287,-237.9861 c 3.08236,-15.41161 26.50512,-16.98533 35.11966,-30.10934 15.44768,-13.89517 30.96141,21.08476 5.35868,18.73778 -12.78887,2.57515 -28.00886,12.6114 -40.47834,11.37156 z M 416.42257,45.68923 c -11.99704,-10.851863 4.40672,-47.6817285 9.83431,-21.44264 1.89744,5.3401 -6.99834,36.270722 -9.83431,21.44264 z"/>`;
     }
 }
 
@@ -1742,6 +1799,8 @@ export function svgViewBox(icon){
             return `0 10 12 35`;
         case 'floppy':
             return `0 0 60 60`;
+        case 'slime':
+            return `0 0 552 495`;
     }
 }
 
@@ -1766,6 +1825,12 @@ export function getBaseIcon(name,type){
                 return 'lightbulb';
             case 'finish_line':
                 return 'turtle';
+            case 'banana':
+                return 'banana';
+            case 'digital_ascension':
+                return 'floppy';
+            case 'slime_lord':
+                return 'slime';
             case 'friday':
                 return 'mask';
             case 'valentine':
@@ -1790,10 +1855,6 @@ export function getBaseIcon(name,type){
                 return 'turkey';
             case 'xmas':
                 return 'present';
-            case 'banana':
-                return 'banana';
-            case 'digital_ascension':
-                return 'floppy';
             default:
                 return 'star';
         }
@@ -2227,7 +2288,7 @@ export function getEaster(){
             easter.solve = true;
         }
     }
-    
+
     return easter;
 }
 
@@ -2317,4 +2378,206 @@ export function getShrineBonus(type) {
 	}
 
 	return shrine_bonus;
+}
+
+const valAdjust = {
+    promiscuous: false,
+    revive: false,
+    fast_growth: false,
+    spores: false,
+    terrifying: false,
+    fibroblast: true,
+    hivemind: true,
+    imitation: true,
+    elusive: true,
+    blood_thirst: true,
+    selenophobia: true,
+    hooved: true,
+};
+
+function getTraitVals(trait,rank){
+    let vals = traits[trait].hasOwnProperty('vars') ? traits[trait].vars(rank) : [];
+    if (valAdjust.hasOwnProperty(trait)){
+        if (trait === 'fibroblast'){
+            vals = [vals[0] * 5];
+        }
+        else if (trait === 'hivemind' && global.race['high_pop']){
+            vals = [vals[0] * traits.high_pop.vars()[0]];
+        }
+        else if (trait === 'imitation') {
+            vals.push(races[global.race['srace'] || 'protoplasm'].name);
+        }
+        else if (trait === 'elusive') {
+            vals = [Math.round(((1/30)/(1/(30+vals[0]))-1)*100)];
+        }
+        else if (trait === 'blood_thirst') {
+            vals = [Math.ceil(Math.log2(vals[0]))];
+        }
+        else if (trait === 'selenophobia') {
+            vals = [14 - vals[0], vals[0]];
+        }
+        else if (trait === 'hooved') {
+            vals = [global.race['sludge'] ? loc('resource_Beaker_name') : loc('resource_Horseshoe_name')];
+        }
+        else if (!valAdjust[trait]){
+            vals = [];
+        }
+    }
+    return vals;
+}
+
+const traitExtra = {
+    infiltrator: [
+        loc(`wiki_trait_effect_infiltrator_ex1`),
+        loc(`wiki_trait_effect_infiltrator_ex2`,[
+            [
+                `<span class="has-text-warning">${loc('tech_steel')}</span>`, `<span class="has-text-warning">${loc('tech_electricity')}</span>`, `<span class="has-text-warning">${loc('tech_electronics')}</span>`, `<span class="has-text-warning">${loc('tech_fission')}</span>`,
+                `<span class="has-text-warning">${loc('tech_rocketry')}</span>`, `<span class="has-text-warning">${loc('tech_artificial_intelligence')}</span>`, `<span class="has-text-warning">${loc('tech_quantum_computing')}</span>`,
+                `<span class="has-text-warning">${loc('tech_virtual_reality')}</span>`, `<span class="has-text-warning">${loc('tech_shields')}</span>`, `<span class="has-text-warning">${loc('tech_ai_core')}</span>`, `<span class="has-text-warning">${loc('tech_graphene_processing')}</span>`,
+                `<span class="has-text-warning">${loc('tech_nanoweave')}</span>`, `<span class="has-text-warning">${loc('tech_orichalcum_analysis')}</span>`, `<span class="has-text-warning">${loc('tech_infernium_fuel')}</span>`
+            ].join(', ')
+        ])
+    ],
+    heavy: [
+        loc(`wiki_trait_effect_heavy_ex1`,[rName('Stone'),rName('Cement'),rName('Wrought_Iron')])
+    ],
+    sniper: [
+        loc(`wiki_trait_effect_sniper_ex1`),
+    ],
+    hooved: [
+        loc(`wiki_trait_effect_hooved_ex1`),
+        loc(`wiki_trait_effect_hooved_ex2`,[
+            `<span class="has-text-warning">${global.resource.hasOwnProperty('Lumber') ? global.resource.Lumber.name : loc('resource_Lumber_name')}</span>`,
+            `<span class="has-text-warning">${global.resource.hasOwnProperty('Copper') ? global.resource.Copper.name : loc('resource_Copper_name')}</span>`,
+            `<span class="has-text-warning">${global.resource.hasOwnProperty('Iron') ? global.resource.Iron.name : loc('resource_Iron_name')}</span>`,
+            `<span class="has-text-warning">${global.resource.hasOwnProperty('Steel') ? global.resource.Steel.name : loc('resource_Steel_name')}</span>`,
+            `<span class="has-text-warning">${global.resource.hasOwnProperty('Adamantite') ? global.resource.Adamantite.name : loc('resource_Adamantite_name')}</span>`,
+            `<span class="has-text-warning">${global.resource.hasOwnProperty('Orichalcum') ? global.resource.Orichalcum.name : loc('resource_Orichalcum_name')}</span>`,
+            12,75,150,500,5000
+        ]),
+        loc(`wiki_trait_effect_hooved_ex3`),
+        loc(`wiki_trait_effect_hooved_ex4`,[`<span class="has-text-warning">${5}</span>`]),
+        loc(`wiki_trait_effect_hooved_ex5`,[
+            `<span class="has-text-warning">${global.resource.hasOwnProperty('Lumber') ? global.resource.Lumber.name : loc('resource_Lumber_name')}</span>`,
+            `<span class="has-text-warning">${global.resource.hasOwnProperty('Copper') ? global.resource.Copper.name : loc('resource_Copper_name')}</span>`
+        ]),
+    ],
+    instinct: [
+        loc(`wiki_trait_effect_instinct_ex1`,[6.67,loc('galaxy_chthonian'),10])
+    ],
+    logical: [
+        loc(`wiki_trait_effect_logical_ex1`,[
+            global.tech.hasOwnProperty('science') ? global.tech.science : 0,
+            global.tech.hasOwnProperty('high_tech') ? global.tech.high_tech : 0
+        ]),
+    ],
+    high_pop: [
+        loc(`wiki_trait_effect_high_pop_ex1`)
+    ]
+};
+
+function rName(r){
+    let res = global.hasOwnProperty('resource') && global.resource.hasOwnProperty(r) ? global.resource[r].name : loc(`resource_${r}_name`);
+    return `<span class="has-text-warning">${res}</span>`;
+}
+
+export function getTraitDesc(info,trait,opts){
+    let fanatic = opts['fanatic'] || false;
+    let tpage = opts['tpage'] || false;
+    let trank = opts['trank'] || false;
+    let wiki = opts['wiki'] || false;
+    let rank = '';
+
+    let traitName = traitSkin('name',trait);
+    let traitDesc = traitSkin('desc',trait);
+
+    if (tpage && ['genus','major'].includes(traits[trait].type)){
+        rank = `<span><span role="button" @click="down()">&laquo;</span><span class="has-text-warning">${loc(`wiki_trait_rank`)} {{ rank }}</span><span role="button" @click="up()">&raquo;</span></span>`;
+    }
+    if (wiki){
+        info.append(`<div class="type"><h2 class="has-text-warning">${traitName}</h2>${rank}</div>`);
+    }
+    if (wiki){
+        if (tpage && traits[trait].hasOwnProperty('val')){
+            info.append(`<div class="type has-text-caution">${loc(`wiki_trait_${traits[trait].type}`)}<span>${loc(`wiki_trait_value`,[traits[trait].val])}</span></div>`);
+        }
+        else {
+            info.append(`<div class="type has-text-caution">${loc(`wiki_trait_${traits[trait].type}`)}</div>`);
+        }
+    }
+
+    if (fanatic && wiki){
+        info.append(`<div class="has-text-danger">${loc(`wiki_trait_fanaticism`,[fanatic])}</div>`);
+    }
+
+    info.append(`<div class="desc">${traitDesc}</div>`);
+
+    let color = 'warning';
+    if (traits[trait].hasOwnProperty('val')){
+        color = traits[trait].val >= 0 ? 'success' : 'danger';
+    }
+    if (tpage && ['genus','major'].includes(traits[trait].type)){
+        info.append(`<div class="has-text-${color} effect" v-html="getTraitDesc(rank)"></div>`);
+    }
+    else {
+        if (wiki || (global.stats.feat['journeyman'] && global.stats.achieve['seeder'] && global.stats.achieve.seeder.l > 0)){
+            info.append(`<div class="has-text-${color} effect">${loc(`wiki_trait_effect_${trait}`,getTraitVals(trait,trank))}</div>`);
+        }
+    }
+    if (traitExtra[trait] && wiki){
+        traitExtra[trait].forEach(function(te){
+            info.append(`<div class="effect">${te}</div>`);
+        });
+    }
+
+    if (tpage && ['genus','major'].includes(traits[trait].type)){
+        let data = { rank: global.race[trait] || 1 };
+        vBind({
+            el: `#${traits[trait].type}_${trait}`,
+            data: data,
+            methods: {
+                getTraitDesc(rk){
+                    return loc(`wiki_trait_effect_${trait}`,getTraitVals(trait,rk));
+                },
+                up(){
+                    switch (data.rank){
+                        case 0.25:
+                            data.rank = 0.5;
+                            break;
+                        case 0.5:
+                            data.rank =  1;
+                            break;
+                        case 1:
+                            data.rank =  2;
+                            break;
+                        case 2:
+                            data.rank =  3;
+                            break;
+                        case 3:
+                            data.rank =  3;
+                            break;
+                    }
+                },
+                down(){
+                    switch (data.rank){
+                        case 0.25:
+                            data.rank = 0.25;
+                            break;
+                        case 0.5:
+                            data.rank =  0.25;
+                            break;
+                        case 1:
+                            data.rank =  0.5;
+                            break;
+                        case 2:
+                            data.rank =  1;
+                            break;
+                        case 3:
+                            data.rank =  2;
+                            break;
+                    }
+                },
+            },
+        });
+    }
 }

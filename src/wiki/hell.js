@@ -14,7 +14,7 @@ export function hellPage(content){
     sideMenu('add',`hell-gameplay`,'threat',loc('wiki_hell_threat'));
 
     infoBoxBuilder(mainContent,{ name: 'siege', template: 'hell', paragraphs: 5,
-        para_data: { 3: ['5k+'] },
+        para_data: { 3: ['5000'] },
         data_color: { 3: ['caution'] } });
     sideMenu('add',`hell-gameplay`,'siege',loc('wiki_hell_siege'));
 

@@ -1,6 +1,6 @@
 import { global, save, webWorker } from './vars.js';
 import { loc } from './locale.js';
-import { vBind, clearElement, calcQueueMax, calcRQueueMax, calcPrestige, messageQueue, clearPopper } from './functions.js';
+import { vBind, clearElement, calcQueueMax, calcRQueueMax, calcPrestige, messageQueue, clearPopper, popCost } from './functions.js';
 import { unlockAchieve, alevel, universeAffix } from './achieve.js';
 import { payCosts, housingLabel, wardenLabel, updateQueueNames, drawTech, fanaticism, checkAffordable } from './actions.js';
 import { races, genusVars, checkAltPurgatory } from './races.js';
@@ -4532,7 +4532,7 @@ const techs = {
         reqs: { hell_spire: 10, b_stone: 2, waygate: 3 },
         grant: ['waygate',4],
         cost: {
-            Species(){ return 1000; },
+            Species(){ return popCost(1000); },
             Knowledge(){ return 55000000; },
             Demonic_Essence(){ return 1; }
         },
@@ -4617,7 +4617,7 @@ const techs = {
         reqs: { high_tech: 16, corrupt: 1 },
         grant: ['corrupt',2],
         cost: {
-            Species(){ return 1; },
+            Species(){ return 1; }, // Not scaled intentionally
             Knowledge(){ return 22000000; },
             Corrupt_Gem(){ return 1; }
         },
@@ -6639,7 +6639,7 @@ const techs = {
             Knowledge(){ return 9500000; },
             Bolognium(){ return 100000; }
         },
-        effect(){ return global.race.universe === 'magic' ? loc('tech_magicword_kill_effect') : loc('tech_disruptor_rifles_effect'); },
+        effect(){ return global.race.universe === 'magic' ? loc('tech_magicword_kill_effect') : loc('tech_gauss_rifles_effect'); },
         action(){
             if (payCosts($(this)[0])){
                 let tech = $(this)[0].grant[0];
@@ -6940,6 +6940,7 @@ const techs = {
         not_trait: ['cataclysm'],
         grant: ['mad',1],
         condition(){
+            if (global.race['sludge']){ return false; }
             return global.race['truepath'] ? (global.tech['world_control'] ? true : false ) : true;
         },
         cost: {
@@ -9857,6 +9858,9 @@ const techs = {
         grant: ['quaked',2],
         cost: {
             Knowledge(){ return 500000; }
+        },
+        condition(){
+            return global.race['sludge'] && !global.race['cataclysm'] ? false : true;
         },
         effect(){
             let gains = calcPrestige('cataclysm');

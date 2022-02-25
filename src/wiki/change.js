@@ -3,6 +3,77 @@ import { clearElement } from './../functions.js';
 
 const changeList = [
     {
+        version: `1.2.11`,
+        date: `2/16/2022`,
+        changes: [
+            `Added Doomed achievement to the perks lists.`,
+            `Added Governor CRISPR tree to perks list.`,
+            `Updated prestige gain/bonus calculators.`,
+            `Fixed Ritual Casting not showing up in Industry in Cataclysm.`,
+            `Detritivores no longer see the Farming ritual.`,
+            `Fixed Entertainer tooltip showing twice the effect of Musical.`,
+            `Fixed Gauss Rifles showing the effect for Disruptor Rifles.`,
+            `Fixed Water Freighter tooltip showing half the Helium-3 cost.`,
+            `Fixed some affordability checks.`
+        ]
+    },
+    {
+        version: `1.2.10`,
+        date: `2/7/2022`,
+        changes: [
+            `Bioseed probes now have significantly less cost creep inside True Path scenario.`,
+            `You can no longer manually buy or sell resources while the game is paused.`,
+            `Fixed bug with High Pop trait and Savings Bonds granting too much money.`,
+            `Minor bug fixes`
+        ]
+    },
+    {
+        version: `1.2.9`,
+        date: `1/29/2022`,
+        changes: [
+            `Spies may now sell you out when caught or escape when failing a mission.`,
+            `Infiltrator can now steal Quantium tech inside True Path.`,
+            `Genetics Lab UI updated.`
+        ]
+    },
+    {
+        version: `1.2.8`,
+        revision: `a`,
+        date: `1/19/2022`,
+        changes: [
+            `Fixed Farmer per Farm scaling with High Pop trait.`,
+            `Adjusted low end scaling of High Pop Hivemind trait.`,
+            `Wireless Signal cost for Symposium lowered.`,
+            `Added Anarchy scaling with High Pop`
+        ]
+    },
+    {
+        version: `1.2.8`,
+        date: `1/19/2022`,
+        changes: [
+            `Insectoid genus redesigned with High Population trait.`,
+            `Fixed bug that caused incorrect timer calculations when using Slow or Hyper trait at any rank other then 1.`
+        ]
+    },
+    {
+        version: `1.2.7`,
+        revision: `a`,
+        date: `1/11/2022`,
+        changes: [
+            `Fixed storage bug with standard universe.`,
+        ]
+    },
+    {
+        version: `1.2.7`,
+        date: `1/11/2022`,
+        changes: [
+            `Failed Experiment Challenge mode.`,
+            `Ziggurat bonus separated from base production of buildings.`,
+            `Fixed bug that prevented smoldering races from being able to loot Chrysotile`,
+            `Fixed bug that would cause Intergalactic Tech page in wiki not to load if you were playing in Antimatter universe.`,
+        ]
+    },
+    {
         version: `1.2.6`,
         date: `12/24/2021`,
         changes: [
@@ -2742,9 +2813,11 @@ export function getTopChange(elm){
         }
     }
 
-    elm.append(`<div class="type"><h2 class="has-text-warning">v${changeList[index].version}</h2><span class="has-text-caution">${changeList[index].date}</span></div>`);
-    for (let i=0; i<changeList[index].changes.length; i++){
-        elm.append(`<div class="desc">${changeList[index].changes[i]}</div>`);
+    for (let idx=index; idx>=0; idx--){
+        elm.append(`<div class="type"><h2 class="has-text-warning">v${changeList[idx].version}${changeList[idx].hasOwnProperty('revision') ? changeList[idx].revision : ''}</h2><span class="has-text-caution">${changeList[idx].date}</span></div>`);
+        for (let i=0; i<changeList[idx].changes.length; i++){
+            elm.append(`<div class="desc">${changeList[idx].changes[i]}</div>`);
+        }
     }
     return elm;
 }

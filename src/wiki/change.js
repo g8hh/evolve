@@ -3,6 +3,20 @@ import { clearElement } from './../functions.js';
 
 const changeList = [
     {
+        version: `1.2.12`,
+        date: `2/28/2022`,
+        changes: [
+            `Planets can now have upto two traits.`,
+            `Advanced Biomes: Savanna, Swamp, Ashland, and Taiga can now appear.`,
+            `Added Permafrost planetary trait.`,
+            `Forest Biome lumber bonus changed from 15% to 20%.`,
+            `Exotic materials are now ranked higher by the Mass Optimizer governor task.`,
+            `Repair droid effect on Carport repairs buffed from 5% to 8%.`,
+            `You must now discover the Hell Vault through Archaeology.`,
+            `Water now has Mass.`,
+        ]
+    },
+    {
         version: `1.2.11`,
         date: `2/16/2022`,
         changes: [

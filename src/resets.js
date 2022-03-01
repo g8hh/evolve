@@ -143,9 +143,9 @@ export function bioseed(){
     global.stats.phage += new_phage;
     unlockAchieve(`seeder`);
     unlockAchieve(`biome_${biome}`);
-    if (atmo !== 'none'){
-        unlockAchieve(`atmo_${atmo}`);
-    }
+    atmo.forEach(function(a){
+        unlockAchieve(`atmo_${a}`);
+    });
     unlockAchieve(`genus_${genus}`);
     
     if (global.race['truepath']){
@@ -259,7 +259,7 @@ export function bioseed(){
 
 // Cataclysm
 export function cataclysm_end(){
-    if (global.city.ptrait === 'unstable' && global.tech['quaked']){
+    if (global.city.ptrait.includes('unstable') && global.tech['quaked']){
         if (webWorker.w){
             webWorker.w.terminate();
         }
@@ -648,9 +648,9 @@ export function ascend(){
     global.stats.harmony += new_harmony;
     global.stats.harmony = parseFloat(global.stats.harmony.toFixed(2));
 
-    if (atmo !== 'none'){
-        unlockAchieve(`atmo_${atmo}`);
-    }
+    atmo.forEach(function(a){
+        unlockAchieve(`atmo_${a}`);
+    });
 
     if (typeof global.tech['world_control'] === 'undefined'){
         unlockAchieve(`cult_of_personality`);

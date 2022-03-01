@@ -34,13 +34,18 @@ const extraInfo = {
     desert: ['trait','genus'],
     volcanic: ['weather','genus'],
     tundra: ['weather','genus'],
+    savanna: ['condition'],
+    swamp: ['trait','trait2','genus','condition'],
+    ashland: ['weather','trait','genus','condition'],
+    taiga: ['weather','genus','condition'],
     hellscape: ['weather','genus','universe'],
     eden: ['geology', 'genus','universe'],
     stormy: ['trait'],
     ozone: ['trait'],
     trashed: ['trait'],
     elliptical: ['trait'],
-    unstable: ['trait']
+    unstable: ['trait'],
+    permafrost: ['trait']
 };
 
 function infoForFeature(planetFeatures, content) {

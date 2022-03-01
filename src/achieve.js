@@ -39,9 +39,10 @@ const achieve_list = {
         'genus_insectoid','genus_plant','genus_fungi','genus_aquatic','genus_fey','genus_heat','genus_polar','genus_sand','genus_demonic','genus_angelic','genus_synthetic'
     ],
     planet: [
-        'explorer','biome_grassland','biome_oceanic','biome_forest','biome_desert','biome_volcanic','biome_tundra','biome_hellscape','biome_eden',
+        'explorer','biome_grassland','biome_oceanic','biome_forest','biome_desert','biome_volcanic','biome_tundra',
+        'biome_savanna','biome_swamp','biome_ashland','biome_taiga','biome_hellscape','biome_eden',
         'atmo_toxic','atmo_mellow','atmo_rage','atmo_stormy','atmo_ozone','atmo_magnetic','atmo_trashed','atmo_elliptical','atmo_flare','atmo_dense',
-        'atmo_unstable'
+        'atmo_unstable','atmo_permafrost'
     ],
     universe: [
         'vigilante','squished','double_density','cross','macro','marble','heavyweight','whitehole','heavy','canceled',

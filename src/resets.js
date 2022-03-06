@@ -147,14 +147,14 @@ export function bioseed(){
         if (planetTraits.hasOwnProperty(a)){
             unlockAchieve(`atmo_${a}`);
         }
+        if (a === 'dense' && global.race.universe === 'heavy'){
+            unlockAchieve(`double_density`);
+        }
     });
     unlockAchieve(`genus_${genus}`);
     
     if (global.race['truepath']){
         unlockAchieve(`exodus`);
-    }
-    if (atmo === 'dense' && global.race.universe === 'heavy'){
-        unlockAchieve(`double_density`);
     }
     if (global.race['junker'] && global.race.species === 'junker'){
         unlockFeat('organ_harvester');

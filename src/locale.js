@@ -47,7 +47,7 @@ function getString(locale) {
         defaultString = data;
     });
 
-    if (locale != "en-US") {
+    if (locale != "zh-CN") {
         let localeString;
         try {
             $.getJSON(`strings/strings.${locale}.json`, (data) => {
@@ -93,7 +93,7 @@ function getString(locale) {
 
 export const locales = {
     'zh-CN': '简体中文 (CN)',
-    'en-US': 'English (US)',
+    //'en-US': 'English (US)',
     'es-ES': 'Spanish (ESP)',
     'pt-BR': 'Português (BR)',
     'ko-KR': '한국어',

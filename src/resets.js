@@ -1,6 +1,6 @@
 import { global, save, webWorker, clearSavedMessages, clearStates } from './vars.js';
 import { tagEvent, calcPrestige, updateResetStats } from './functions.js';
-import { races } from './races.js';
+import { races, planetTraits } from './races.js';
 import { unlockAchieve, unlockFeat, checkAchievements, universeAffix } from './achieve.js';
 
 // Mutual Assured Destruction
@@ -143,16 +143,18 @@ export function bioseed(){
     global.stats.phage += new_phage;
     unlockAchieve(`seeder`);
     unlockAchieve(`biome_${biome}`);
-    if (atmo !== 'none'){
-        unlockAchieve(`atmo_${atmo}`);
-    }
+    atmo.forEach(function(a){
+        if (planetTraits.hasOwnProperty(a)){
+            unlockAchieve(`atmo_${a}`);
+        }
+        if (a === 'dense' && global.race.universe === 'heavy'){
+            unlockAchieve(`double_density`);
+        }
+    });
     unlockAchieve(`genus_${genus}`);
     
     if (global.race['truepath']){
         unlockAchieve(`exodus`);
-    }
-    if (atmo === 'dense' && global.race.universe === 'heavy'){
-        unlockAchieve(`double_density`);
     }
     if (global.race['junker'] && global.race.species === 'junker'){
         unlockFeat('organ_harvester');
@@ -259,7 +261,7 @@ export function bioseed(){
 
 // Cataclysm
 export function cataclysm_end(){
-    if (global.city.ptrait === 'unstable' && global.tech['quaked']){
+    if (global.city.ptrait.includes('unstable') && global.tech['quaked']){
         if (webWorker.w){
             webWorker.w.terminate();
         }
@@ -648,9 +650,11 @@ export function ascend(){
     global.stats.harmony += new_harmony;
     global.stats.harmony = parseFloat(global.stats.harmony.toFixed(2));
 
-    if (atmo !== 'none'){
-        unlockAchieve(`atmo_${atmo}`);
-    }
+    atmo.forEach(function(a){
+        if (planetTraits.hasOwnProperty(a)){
+            unlockAchieve(`atmo_${a}`);
+        }
+    });
 
     if (typeof global.tech['world_control'] === 'undefined'){
         unlockAchieve(`cult_of_personality`);

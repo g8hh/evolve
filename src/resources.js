@@ -116,6 +116,7 @@ export const atomic_mass = {
     Bolognium: 75.898,
     Vitreloy: 41.08,
     Orichalcum: 237.8,
+    Water: 18.01,
     Plywood: 7.666,
     Brick: 20.009,
     Wrought_Iron: 55.845,
@@ -918,6 +919,15 @@ export function setResourceName(name){
                 break;
         }
     }
+
+    /* Too many hard coded string references to cement, maybe some other day
+    if (global.city.biome === 'ashland'){
+        switch(name){
+            case 'Cement':
+                global['resource'][name].name = loc('resource_Ashcrete_name');
+                break;
+        }
+    }*/
 
     let hallowed = eventActive('halloween');
     if (hallowed.active){

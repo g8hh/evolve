@@ -448,13 +448,19 @@ popover('topBarPlanet',
             let race = flib('name');
             let planet_label = biomes[global.city.biome].label;
             let trait = global.city.ptrait;
-            if (trait !== 'none'){
-                if (trait === 'mellow' && global.race.species === 'entish'){
-                    planet_label = `${loc('planet_mellow_eg')} ${planet_label}`;
-                }
-                else {
-                    planet_label = `${planetTraits[trait].label} ${planet_label}`;
-                }
+            if (trait.length > 0){
+                let traits = '';
+                trait.forEach(function(t){
+                    if (planetTraits.hasOwnProperty(t)){
+                        if (t === 'mellow' && global.race.species === 'entish'){
+                            traits += `${loc('planet_mellow_eg')} `;
+                        }
+                        else {
+                            traits += `${planetTraits[t].label} `;
+                        }
+                    }
+                });
+                planet_label = `${traits}${planet_label}`;
             }
             let orbit = global.city.calendar.orbit;
 
@@ -781,9 +787,9 @@ function fastLoop(){
         breakdown.p['Global'][loc('trait_slaver_bd')] = bonus+'%';
         global_multiplier *= 1 + (bonus / 100);
     }
-    if ((global.city.ptrait === 'trashed' || global.race['scavenger']) && global.civic['scavenger'] && global.civic.scavenger.workers > 0){
+    if ((global.city.ptrait.includes('trashed') || global.race['scavenger']) && global.civic['scavenger'] && global.civic.scavenger.workers > 0){
         let bonus = (global.civic.scavenger.workers * traits.scavenger.vars()[0]);
-        if (global.city.ptrait === 'trashed' && global.race['scavenger']){
+        if (global.city.ptrait.includes('trashed') && global.race['scavenger']){
             bonus *= 1 + (traits.scavenger.vars()[1] / 100);
         }
         if (global.race['high_pop']){
@@ -792,11 +798,11 @@ function fastLoop(){
         breakdown.p['Global'][loc('job_scavenger')] = bonus+'%';
         global_multiplier *= 1 + (bonus / 100);
     }
-    if (global.city.ptrait === 'mellow'){
+    if (global.city.ptrait.includes('mellow')){
         breakdown.p['Global'][loc('planet_mellow_bd')] = '-10%';
         global_multiplier *= planetTraits.mellow.vars()[2];
     }
-    if (global.city.ptrait === 'ozone' && global.city['sun']){
+    if (global.city.ptrait.includes('ozone') && global.city['sun']){
         let uv = global.city['sun'] * 0.25;
         breakdown.p['Global'][loc('planet_ozone_bd')] = `-${uv}%`;
         global_multiplier *= 1 - (uv / 100);
@@ -863,11 +869,11 @@ function fastLoop(){
     }
 
     if (
-        (races[global.race.species].type === 'aquatic' && global.city.biome !== 'oceanic') ||
-        (races[global.race.species].type === 'fey' && global.city.biome !== 'forest') ||
-        (races[global.race.species].type === 'heat' && global.city.biome !== 'volcanic') ||
-        (races[global.race.species].type === 'polar' && global.city.biome !== 'tundra') ||
-        (races[global.race.species].type === 'sand' && global.city.biome !== 'desert') ||
+        (races[global.race.species].type === 'aquatic' && !['swamp','oceanic'].includes(global.city.biome)) ||
+        (races[global.race.species].type === 'fey' && !['forest','swamp','taiga'].includes(global.city.biome)) ||
+        (races[global.race.species].type === 'heat' && !['ashland','volcanic'].includes(global.city.biome)) ||
+        (races[global.race.species].type === 'polar' && !['tundra','taiga'].includes(global.city.biome)) ||
+        (races[global.race.species].type === 'sand' && !['ashland','desert'].includes(global.city.biome)) ||
         (races[global.race.species].type === 'demonic' && global.city.biome !== 'hellscape') ||
         (races[global.race.species].type === 'angelic' && global.city.biome !== 'eden')
     ){
@@ -1133,7 +1139,7 @@ function fastLoop(){
 
         let divisor = 5;
         global.city.morale.unemployed = 0;
-        if (global.city.ptrait !== 'mellow'){
+        if (!global.city.ptrait.includes('mellow')){
             morale -= global.civic.unemployed.workers;
             global.city.morale.unemployed = -(global.civic.unemployed.workers);
         }
@@ -1159,7 +1165,7 @@ function fastLoop(){
 
         if (global.civic['garrison']){
             let divisor = 2;
-            if (global.city.ptrait === 'mellow'){
+            if (global.city.ptrait.includes('mellow')){
                 divisor *= planetTraits.mellow.vars()[0];
             }
             let army_stress = global.civic.garrison.max / divisor;
@@ -2388,14 +2394,14 @@ function fastLoop(){
                 }
                 if (job !== 'unemployed' && job !== 'hunter' && job !== 'forager'){
                     let stress_level = global.civic[job].stress;
-                    if (global.city.ptrait === 'mellow'){
+                    if (global.city.ptrait.includes('mellow')){
                         stress_level += planetTraits.mellow.vars()[1];
                     }
                     if (global.race['content']){
                         let effectiveness = job === 'hell_surveyor' ? 0.2 : 0.4;
                         stress_level += global.race['content'] * effectiveness;
                     }
-                    if (global.city.ptrait === 'dense' && job === 'miner'){
+                    if (global.city.ptrait.includes('dense') && job === 'miner'){
                         stress_level -= planetTraits.dense.vars()[1];
                     }
                     if (global.race['freespirit'] && job !== 'farmer' && job !== 'lumberjack' && job !== 'quarry_worker' && job !== 'crystal_miner' && job !== 'scavenger'){
@@ -2738,9 +2744,11 @@ function fastLoop(){
                         let c_factor = traits.detritivore.vars()[0] / 100;
                         let food_compost = operating * (1.2 + (global.tech['compost'] * c_factor));
                         food_compost *= global.city.biome === 'grassland' ? biomes.grassland.vars()[0] : 1;
+                        food_compost *= global.city.biome === 'savanna' ? biomes.savanna.vars()[0] : 1;
+                        food_compost *= global.city.biome === 'ashland' ? biomes.ashland.vars()[0] : 1;
                         food_compost *= global.city.biome === 'volcanic' ? biomes.volcanic.vars()[0] : 1;
                         food_compost *= global.city.biome === 'hellscape' ? biomes.hellscape.vars()[0] : 1;
-                        food_compost *= global.city.ptrait === 'trashed' ? planetTraits.trashed.vars()[0] : 1;
+                        food_compost *= global.city.ptrait.includes('trashed') ? planetTraits.trashed.vars()[0] : 1;
                         food_bd[loc('city_compost_heap')] = food_compost + 'v';
                         food_base += food_compost;
                     }
@@ -2750,6 +2758,9 @@ function fastLoop(){
                     let food_hunt = global.civic.hunter.workers * strength * (global.race['carnivore'] ? 2 : 0.5);
                     if (global.race['ghostly']){
                         food_hunt *= 1 + (traits.ghostly.vars()[0] / 100);
+                    }
+                    if (global.city.biome === 'savanna'){
+                        food_hunt *= biomes.savanna.vars()[1];
                     }
                     food_bd[loc('job_hunter')] = food_hunt + 'v';
 
@@ -3007,7 +3018,10 @@ function fastLoop(){
                 if (global.race['high_pop']){
                     lowerBound *= traits.high_pop.vars()[2];
                 }
-                let base = global.city.ptrait === 'toxic' ? global['resource'][global.race.species].amount * planetTraits.toxic.vars()[1] : global['resource'][global.race.species].amount;
+                if (global.city.biome === 'taiga'){
+                    lowerBound *= biomes.taiga.vars()[1];
+                }
+                let base = global.city.ptrait.includes('toxic') ? global['resource'][global.race.species].amount * planetTraits.toxic.vars()[1] : global['resource'][global.race.species].amount;
                 if (global.race['parasite'] && global.race['cataclysm']){
                     lowerBound = Math.round(lowerBound / 5);
                     base *= 3;
@@ -3146,6 +3160,9 @@ function fastLoop(){
             if (global.race['evil'] || global.race['artifical']){
                 let weapons = global.tech['military'] ? (global.tech.military >= 5 ? global.tech.military - 1 : global.tech.military) : 1;
                 let hunters = global.civic.hunter.workers * weapons / 20;
+                if (global.city.biome === 'savanna'){
+                    hunters *= biomes.savanna.vars()[1];
+                }
                 fur_bd[loc('job_hunter')] = hunters  + 'v';
                 modRes('Furs', hunters * hunger * global_multiplier * time_multiplier);
 
@@ -3164,6 +3181,7 @@ function fastLoop(){
             else if (global.city.biome === 'tundra'){
                 hunting *= biomes.tundra.vars()[0];
             }
+
             fur_bd[loc('soldiers')] = hunting  + 'v';
 
             let delta = hunting;
@@ -3189,7 +3207,7 @@ function fastLoop(){
             if (global.stats.achieve['extinct_junker'] && global.stats.achieve['extinct_junker'].l >= 1){
                 sundial_base++;
             }
-            if (global.city.ptrait === 'magnetic'){
+            if (global.city.ptrait.includes('magnetic')){
                 sundial_base += planetTraits.magnetic.vars()[0];
             }
             if (global.race['ascended']){
@@ -3714,6 +3732,9 @@ function fastLoop(){
         // Cement
         if (global.resource.Cement.display){
             let unit_price = global.race['high_pop'] ? 3 / traits.high_pop.vars()[0] : 3;
+            if (global.city.biome === 'ashland'){
+                unit_price *= biomes.ashland.vars()[1];
+            }
             let stone_cost = global.civic.cement_worker.workers * unit_price;
             let workDone = global.civic.cement_worker.workers;
             while (stone_cost * time_multiplier > global.resource.Stone.amount && stone_cost > 0){
@@ -3727,6 +3748,9 @@ function fastLoop(){
             let cement_base = global.tech['cement'] >= 4 ? 1.2 : 1;
             cement_base *= global.civic.cement_worker.impact;
             cement_base *= racialTrait(global.civic.cement_worker.workers,'factory');
+            if (global.city.biome === 'ashland'){
+                cement_base *= biomes.ashland.vars()[1];
+            }
 
             let factory_output = workDone * cement_base;
             if (global.civic.govern.type === 'corpocracy'){
@@ -4291,6 +4315,9 @@ function fastLoop(){
                 let lumber_bd = {};
                 let weapons = global.tech['military'] ? (global.tech.military >= 5 ? global.tech.military - 1 : global.tech.military) : 1;
                 let hunters = global.civic.hunter.workers * weapons / 2;
+                if (global.city.biome === 'savanna'){
+                    hunters *= biomes.savanna.vars()[1];
+                }
 
                 let soldiers = armyRating(garrisonSize(),'hunting') / 3;
 
@@ -4330,7 +4357,10 @@ function fastLoop(){
             else {
                 let lumber_base = global.civic.lumberjack.workers;
                 lumber_base *= global.city.biome === 'forest' ? biomes.forest.vars()[0] : 1;
+                lumber_base *= global.city.biome === 'savanna' ? biomes.savanna.vars()[2] : 1;
                 lumber_base *= global.city.biome === 'desert' ? biomes.desert.vars()[2] : 1;
+                lumber_base *= global.city.biome === 'swamp' ? biomes.swamp.vars()[2] : 1;
+                lumber_base *= global.city.biome === 'taiga' ? biomes.taiga.vars()[0] : 1;
                 lumber_base *= global.civic.lumberjack.impact;
                 lumber_base *= racialTrait(global.civic.lumberjack.workers,'lumberjack');
                 lumber_base *= (global.tech['axe'] && global.tech['axe'] > 1 ? (global.tech['axe'] - 1) * 0.35 : 0) + 1;
@@ -4419,6 +4449,9 @@ function fastLoop(){
             stone_base *= (global.tech['hammer'] && global.tech['hammer'] > 0 ? global.tech['hammer'] * 0.4 : 0) + 1;
             if (global.city.biome === 'desert'){
                 stone_base *= biomes.desert.vars()[0];
+            }
+            if (global.city.biome === 'swamp'){
+                stone_base *= biomes.swamp.vars()[3];
             }
             if (global.tech['explosives'] && global.tech['explosives'] >= 2){
                 stone_base *= global.tech['explosives'] >= 3 ? 1.75 : 1.5;
@@ -4666,8 +4699,11 @@ function fastLoop(){
                 let bonus = 1 + (traits.industrious.vars()[0] * global.race['industrious'] / 100);
                 miner_base *= bonus;
             }
-            if (global.city.ptrait === 'dense'){
+            if (global.city.ptrait.includes('dense')){
                 miner_base *= planetTraits.dense.vars()[0];
+            }
+            if (global.city.ptrait.includes('permafrost')){
+                miner_base *= planetTraits.permafrost.vars()[0];
             }
             miner_base *= (global.tech['pickaxe'] && global.tech['pickaxe'] > 0 ? global.tech['pickaxe'] * 0.15 : 0) + 1;
             if (global.tech['explosives'] && global.tech['explosives'] >= 2){
@@ -4694,6 +4730,9 @@ function fastLoop(){
                 if (global.city.biome === 'volcanic'){
                     copper_base *= biomes.volcanic.vars()[1];
                 }
+                else if (global.city.biome === 'ashland'){
+                    copper_base *= biomes.ashland.vars()[2];
+                }
 
                 let copper_power = power_mult;
                 copper_bd[loc('job_miner')] = (copper_base) + 'v';
@@ -4718,6 +4757,9 @@ function fastLoop(){
                     if (global.city.biome === 'volcanic'){
                         forage_base *= biomes.volcanic.vars()[1];
                     }
+                    else if (global.city.biome === 'ashland'){
+                        forage_base *= biomes.ashland.vars()[2];
+                    }
                     copper_bd[loc('job_forager')] = forage_base  + 'v';
                     modRes('Copper', forage_base * hunger * global_multiplier * time_multiplier);
                 }
@@ -4739,6 +4781,9 @@ function fastLoop(){
 
                 if (global.city.biome === 'volcanic'){
                     iron_base *= biomes.volcanic.vars()[2];
+                }
+                else if (global.city.biome === 'ashland'){
+                    iron_base *= biomes.ashland.vars()[2];
                 }
 
                 let space_iron = 0;
@@ -4778,6 +4823,9 @@ function fastLoop(){
                     }
                     if (global.city.biome === 'volcanic'){
                         forage_base *= biomes.volcanic.vars()[2];
+                    }
+                    else if (global.city.biome === 'ashland'){
+                        forage_base *= biomes.ashland.vars()[2];
                     }
                     iron_bd[loc('job_forager')] = forage_base  + 'v';
                     modRes('Iron', forage_base * hunger * global_multiplier * time_multiplier);
@@ -6890,6 +6938,9 @@ function midLoop(){
         if (global.city['university']){
             let multiplier = 1;
             let base = global.tech['science'] && global.tech['science'] >= 8 ? 700 : 500;
+            if (global.city.ptrait.includes('permafrost')){
+                base += planetTraits.permafrost.vars()[1];
+            }
             if (global.tech['science'] >= 4){
                 multiplier += global.city['library'].count * 0.02;
             }
@@ -6972,7 +7023,7 @@ function midLoop(){
         }
         if (global.city['wardenclyffe']){
             let gain_base = 1000;
-            if (global.city.ptrait === 'magnetic'){
+            if (global.city.ptrait.includes('magnetic')){
                 gain_base += planetTraits.magnetic.vars()[1];
             }
             let gain = global.city['wardenclyffe'].count * gain_base;
@@ -7840,7 +7891,7 @@ function midLoop(){
 
         if (global.arpa['sequence'] && global.arpa.sequence.on && gene_sequence){
             let labs = global.race['cataclysm'] ? support_on['exotic_lab'] : p_on['biolab'];
-            if (labs > 0 && global.city.ptrait === 'toxic'){
+            if (labs > 0 && global.city.ptrait.includes('toxic')){
                 labs += planetTraits.toxic.vars()[0];
             }
             global.arpa.sequence.labs = labs;
@@ -8557,7 +8608,7 @@ function longLoop(){
             global.civic.govern.rev = 0;
         }
 
-        if (global.city.ptrait === 'trashed' || global.race['scavenger']){
+        if (global.city.ptrait.includes('trashed') || global.race['scavenger']){
             global.civic.scavenger.display = true;
         }
         else {
@@ -8686,7 +8737,7 @@ function longLoop(){
                 global.city.calendar.season = -1;
             }
             else {
-                let s_segments = global.city.ptrait === 'elliptical' ? 6 : 4;
+                let s_segments = global.city.ptrait.includes('elliptical') ? 6 : 4;
                 let season_length = Math.round(global.city.calendar.orbit / s_segments);
                 let days = global.city.calendar.day;
                 let season = 0;
@@ -8694,7 +8745,7 @@ function longLoop(){
                     days -= season_length;
                     season++;
                 }
-                if (global.city.ptrait === 'elliptical'){
+                if (global.city.ptrait.includes('elliptical')){
                     switch (season){
                         case 0:
                             global.city.calendar.season = 0;
@@ -8728,11 +8779,13 @@ function longLoop(){
                 let wind = Math.rand(0,3);
                 switch(global.city.biome){
                     case 'oceanic':
+                    case 'swamp':
                         if (Math.rand(0,2) === 0 && sky > 0){
                             sky--;
                         }
                         break;
                     case 'tundra':
+                    case 'taiga':
                         if (global.city.calendar.season === 3){
                             temp = 0;
                         }
@@ -8745,6 +8798,15 @@ function longLoop(){
                             sky++;
                         }
                         break;
+                    case 'ashland':
+                        if (Math.rand(0,2) === 0){
+                            if (sky < 1){
+                                sky++;
+                            }
+                            else if (sky > 2){
+                                sky--;
+                            }
+                        }
                     case 'volcanic':
                         if (global.city.calendar.season === 1){
                             temp = 2;
@@ -8782,7 +8844,7 @@ function longLoop(){
                         break;
                 }
 
-                if (global.city.ptrait === 'stormy' && wind > 0 && Math.rand(0,2) === 0){
+                if (global.city.ptrait.includes('stormy') && wind > 0 && Math.rand(0,2) === 0){
                     wind--;
                 }
 
@@ -8950,6 +9012,21 @@ function longLoop(){
             }
             else if (global.tech['conflict'] && global.tech.piracy < 5000){
                 global.tech.piracy++;
+            }
+        }
+
+        if (global.portal['archaeology'] && global.tech.hasOwnProperty('hell_ruins') && global.tech.hell_ruins >= 2 && !global.tech['hell_vault']){
+            let sup = hellSupression('ruins');
+            let value = 250000;
+            if (global.race['high_pop']){
+                value = highPopAdjust(value);
+            }
+            value = Math.round(value * sup.supress) * global.civic.archaeologist.workers / 1000;
+            
+            if (Math.rand(0,10000) <= value){
+                global.tech['hell_vault'] = 1;
+                messageQueue(loc('portal_ruins_vault'),'info',false,['progress']);
+                renderFortress();
             }
         }
 

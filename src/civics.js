@@ -2,7 +2,7 @@ import { global, keyMultiplier, sizeApproximation } from './vars.js';
 import { loc } from './locale.js';
 import { calcPrestige, clearElement, popover, clearPopper, vBind, timeFormat, modRes, messageQueue, genCivName, darkEffect, eventActive, easterEgg, trickOrTreat } from './functions.js';
 import { universeAffix } from './achieve.js';
-import { races, racialTrait, traits, planetTraits } from './races.js';
+import { races, racialTrait, traits, planetTraits, biomes } from './races.js';
 import { loadIndustry } from './industry.js';
 import { defineGovernor, govActive } from './governor.js';
 import { drawTech } from  './actions.js';
@@ -1339,6 +1339,9 @@ function battleAssessment(gov){
     if (global.race['banana']){
         enemy *= 2;
     }
+    if (global.city.biome === 'swamp'){
+        enemy *= biomes.swamp.vars()[0];
+    }
 
     if (eventActive('fool',2021)){
         enemy /= 1.25;
@@ -1411,6 +1414,9 @@ function war_campaign(gov){
     if (global.race['banana']){
         enemy *= 2;
     }
+    if (global.city.biome === 'swamp'){
+        enemy *= biomes.swamp.vars()[0];
+    }
     if (global.race['mistrustful']){
         global.civic.foreign[`gov${gov}`].hstl += traits.mistrustful.vars()[0];
     }
@@ -1435,7 +1441,7 @@ function war_campaign(gov){
     if (army > enemy){
         let deathCap = Math.floor(global.civic.garrison.raid / (5 - global.civic.garrison.tactic));
         deathCap += wounded;
-        if (global.city.ptrait === 'rage'){
+        if (global.city.ptrait.includes('rage')){
             deathCap += planetTraits.rage.vars()[2];
         }
         if (deathCap < 1){
@@ -1746,7 +1752,7 @@ function war_campaign(gov){
         if (global.civic.garrison.tactic === 0){
             deathCap = Math.floor(deathCap / 2);
         }
-        if (global.city.ptrait === 'rage'){
+        if (global.city.ptrait.includes('rage')){
             deathCap += planetTraits.rage.vars()[2];
         }
         if (deathCap < 1){
@@ -1890,6 +1896,9 @@ function lootModify(val,gov){
     if (global.race['banana']){
         loot *= 0.5;
     }
+    if (global.city.biome === 'swamp'){
+        loot *= biomes.swamp.vars()[1];
+    }
 
     return Math.floor(loot * global.civic.foreign[`gov${gov}`].eco / 100);
 }
@@ -1959,7 +1968,7 @@ export function armyRating(val,type,wound){
         if (tacVal){
             army *= 1 + (tacVal / 100);
         }
-        if (global.city.ptrait === 'rage'){
+        if (global.city.ptrait.includes('rage')){
             army *= planetTraits.rage.vars()[0];
         }
         if (global.race['parasite']){
@@ -1988,11 +1997,14 @@ export function armyRating(val,type,wound){
         if (global.race['fragrant']){
             army *= 1 - (traits.fragrant.vars()[0] / 100);
         }
-        if (global.city.ptrait === 'rage'){
+        if (global.city.ptrait.includes('rage')){
             army *= planetTraits.rage.vars()[1];
         }
         if (global.race['cunning']){
             army *= 1 + (traits.cunning.vars()[0] * global.race['cunning'] / 100);
+        }
+        if (global.city.biome === 'savanna'){
+            army *= biomes.savanna.vars()[1];
         }
     }
     if (global.civic.govern.type === 'autocracy'){

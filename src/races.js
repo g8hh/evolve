@@ -4179,7 +4179,7 @@ export function racialTrait(workers,type){
     if (global.race['humpback'] && (type === 'miner' || type === 'lumberjack')){
         modifier *= 1.2;
     }
-    if (global.city.ptrait === 'magnetic' && type === 'miner'){
+    if (global.city.ptrait.includes('magnetic') && type === 'miner'){
         modifier *= planetTraits.magnetic.vars()[2];
     }
     if (global.race['weak'] && (type === 'miner' || type === 'lumberjack')){
@@ -4859,14 +4859,13 @@ export function cleanRemoveTrait(trait,rank){
                             let rank = global.race[t];
                             delete global.race[t];
                             cleanRemoveTrait(t,rank);
-                            global.race['iTraits'];
                         }
                         else {
                             global.race[t] = global.race.iTraits[t];
-                            delete global.race['iTraits'];
                         }
                     }
                 });
+                delete global.race['iTraits'];
             }
             break;
         case 'evil':
@@ -5061,7 +5060,7 @@ export const biomes = {
     forest: {
         label: loc('biome_forest_name'),
         desc: loc('biome_forest'),
-        vars(){ return [1.15]; }, // [Lumberjack Lumber]
+        vars(){ return [1.2]; }, // [Lumberjack Lumber]
         wiki: ['%']
     },
     desert: {
@@ -5081,6 +5080,30 @@ export const biomes = {
         desc: loc('biome_tundra'),
         vars(){ return [1.25,0.9]; }, // [Hunting Fur, Oil Well]
         wiki: ['%','%']
+    },
+    savanna: {
+        label: loc('biome_savanna_name'),
+        desc: loc('biome_savanna'),
+        vars(){ return [1.1, 1.18, 0.8]; }, // [Agriculture, Hunting, Lumberjack]
+        wiki: ['%','%','%']
+    },
+    swamp: {
+        label: loc('biome_swamp_name'),
+        desc: loc('biome_swamp'),
+        vars(){ return [1.4,1.25,1.1,0.88]; }, // [City Defense, War Loot, Lumber, Stone]
+        wiki: ['%','%','%','%']
+    },
+    ashland: {
+        label: loc('biome_ashland_name'),
+        desc: loc('biome_ashland'),
+        vars(){ return [0.62,1.25,1.1]; }, // [Agriculture, Ashcrete, Iron & Copper]
+        wiki: ['%','%','%']
+    },
+    taiga: {
+        label: loc('biome_taiga_name'),
+        desc: loc('biome_taiga'),
+        vars(){ return [1.1,1.5,0.92]; }, // [Lumber, Pop Growth Speed, Oil Well]
+        wiki: ['%','%','%']
     },
     hellscape: {
         label: loc('biome_hellscape_name'),
@@ -5150,7 +5173,13 @@ export const planetTraits = {
     unstable: {
         label: loc('planet_unstable'),
         desc: loc('planet_unstable_desc')
-    }
+    },
+    permafrost: {
+        label: loc('planet_permafrost'),
+        desc: loc('planet_permafrost_desc'),
+        vars(){ return [0.75,100]; }, // [Mining Production, University Base]
+        wiki: ['%','A']
+    },
 };
 
 function shellColor(){

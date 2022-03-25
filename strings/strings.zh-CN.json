@@ -6373,7 +6373,7 @@
   "wiki_faq_q_quantum": "量子水平影响哪些内容？",
   "wiki_faq_a_quantum": "蜂群工厂 降低 蜂群卫星 的成本比例， 量子制造 研究提升的 工厂 产量， 星际货仓 提升的 仓库 资源储量上限，以及 AI中枢要塞 的效果。",
   "wiki_faq_q_quantum_level": "基础量子水平是如何计算的？",
-  "wiki_faq_a_quantum_level": "ln(1+知识上限/25000)/ln(1.1)",
+  "wiki_faq_a_quantum_level": "ln(1+知识上限/250000)/ln(1.1)",
   "wiki_faq_q_exotic": "哪些物质在质量喷射器中算作奇异物质？",
   "wiki_faq_a_exotic": "超铀与地狱石。（译者注：在魔法宇宙中不存在奇异物质）",
   "wiki_faq_q_soul_gem": "我该如何获得灵魂宝石？",

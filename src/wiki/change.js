@@ -3,6 +3,29 @@ import { clearElement } from './../functions.js';
 
 const changeList = [
     {
+        version: `1.2.13`,
+        date: `3/31/2022`,
+        changes: [
+            `Restore Backup must now be clicked twice to trigger.`,
+        ]
+    },
+    {
+        version: `1.2.12`,
+        revision: `c`,
+        date: `3/7/2022`,
+        changes: [
+            `Fixed Double Density achievement.`,
+        ]
+    },
+    {
+        version: `1.2.12`,
+        revision: `b`,
+        date: `3/2/2022`,
+        changes: [
+            `Fixed logic fault with mech constructor inferno upgrades.`,
+        ]
+    },
+    {
         version: `1.2.12`,
         revision: `a`,
         date: `3/1/2022`,

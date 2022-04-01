@@ -976,8 +976,8 @@ if (convertVersion(global['version']) < 102012){
     }
 }
 
-global['version'] = '1.2.12';
-global['revision'] = 'a';
+global['version'] = '1.2.13';
+delete global['revision'];
 delete global['beta'];
 
 if (!global.hasOwnProperty('power')){
@@ -1039,6 +1039,10 @@ if (!global['settings']){
         locale: 'zh-CN',
         icon: 'star'
     };
+}
+
+if (!global.settings['restoreCheck']){
+    global.settings['restoreCheck'] = false;
 }
 
 if (!global.settings.hasOwnProperty('showMechLab')){

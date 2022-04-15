@@ -976,7 +976,7 @@ if (convertVersion(global['version']) < 102012){
     }
 }
 
-global['version'] = '1.2.13';
+global['version'] = '1.2.14';
 delete global['revision'];
 delete global['beta'];
 
@@ -1908,10 +1908,6 @@ global.settings.disableReset = false;
 
 if (global['arpa'] && global.arpa['launch_facility'] && global.arpa.launch_facility.rank > 0 && !global.tech['space']){
     global.tech['space'] = 1;
-}
-
-if (!(save.getItem('evolveBak'))){
-    save.setItem('evolveBak',LZString.compressToUTF16(JSON.stringify(global)));
 }
 
 function newGameData(){

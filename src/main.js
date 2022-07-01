@@ -2938,7 +2938,7 @@ function fastLoop(){
 
             let delta = generated - consume - tourism - spaceport - starport - starbase - space_station - space_marines - embassy - zoo;
 
-            food_bd[global.race['artifical'] ? loc('space_red_signal_tower_title') : loc('space_red_biodome_title')] = biodome + 'v';
+            food_bd[actions.space.spc_red.biodome.title()] = biodome + 'v';
             if (biodome > 0){
                 food_bd[`ᄂ${loc('space_red_ziggurat_title')}`] = ((zigVal - 1) * 100) + '%';
             }
@@ -4302,7 +4302,7 @@ function fastLoop(){
                     let lumber_bd = {};
                     let lumber = support_on['biodome'] * global.civic.colonist.workers * production('biodome','lumber');
 
-                    lumber_bd[loc('space_red_biodome_title')] = lumber  + 'v';
+                    lumber_bd[actions.space.spc_red.biodome.title()] = lumber  + 'v';
                     if (lumber > 0){
                         lumber_bd[`ᄂ${loc('space_red_ziggurat_title')}`] = ((zigVal - 1) * 100) + '%';
                     }
@@ -9379,8 +9379,6 @@ function longLoop(){
     else {
         delete global.tech['santa'];
     }
-
-    global.settings.restoreCheck = false;
 
     if (eventActive('fool')){
         if (!$(`body`).hasClass('fool')){

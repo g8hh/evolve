@@ -951,10 +951,11 @@ Misc ---------> Main template
             border: .0625rem solid @modal-child-popper-border;
             color: @popper;
 
-            >div:nth-child(2),
-            >div:nth-child(3),
-            >div:nth-child(4) {
+            >div {
                 border-top: solid .0625rem @modal-child-popper-border;
+            }
+            >div:first-child {
+                border-top: none;
             }
 
             .has-text-dark {
@@ -2554,6 +2555,11 @@ a {
             }
         }
 
+        .geck {
+            width: 100%;
+            text-align: center;
+        }
+
         .challenge {
             width: 100%;
             .actionWidth();
@@ -3568,6 +3574,12 @@ body .modal>div.popper {
         text-align: left;
         white-space: pre;
     }
+
+    .pGeoList {
+        .pGeo {
+            min-width: 49%;
+        }
+    }
 }
 
 .infoBox {
@@ -3804,6 +3816,10 @@ span.inline {
 
         .atime {
             margin-left: 1rem;
+        }
+
+        .infoTimer {
+            margin-right: 1rem;
         }
     }
 
@@ -4260,14 +4276,36 @@ div.bigbang {
 
         .trait_selection {
             margin-left: 2rem;
-
             section {
                 margin-top: .5rem;
                 display: flex;
                 flex-wrap: wrap;
-
                 >div {
                     width: 11.5rem;
+                }
+            }
+        }
+
+        .planet_selection {
+            margin-left: 2rem;
+            section {
+                margin-top: .5rem;
+                >div {
+                    width: 11.5rem;
+                }
+            }
+        }
+
+        .res_selection {
+            margin-left: 2rem;
+            section {
+                margin-top: .5rem;
+                >div {
+                    display: flex;
+                    justify-content: space-between;
+                    >div:first-child {
+                        margin-right: 0.25rem; 
+                    }
                 }
             }
         }
@@ -4277,6 +4315,11 @@ div.bigbang {
                 margin-bottom: 0;
             }
         }
+    }
+
+    .buttons {
+        display: flex;
+        justify-content: space-evenly;
     }
 
     .reset,

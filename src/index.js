@@ -9,7 +9,7 @@ import { setPowerGrid, gridDefs, clearGrids } from './industry.js';
 import { defineGovernment, defineIndustry, defineGarrison, buildGarrison, commisionGarrison, foreignGov } from './civics.js';
 import { races, shapeShift } from './races.js';
 import { drawCity, drawTech, resQueue, clearResDrag } from './actions.js';
-import { renderSpace, ascendLab } from './space.js';
+import { renderSpace, ascendLab, terraformLab } from './space.js';
 import { renderFortress, buildFortress, drawMechLab, clearMechDrag } from './portal.js';
 import { drawShipYard, clearShipDrag } from './truepath.js';
 import { arpa, clearGeneticsDrag } from './arpa.js';
@@ -399,8 +399,14 @@ export function loadTab(tab){
                     renderFortress();
                 }
                 if (global.race['noexport']){
-                    clearElement($(`#city`));
-                    ascendLab();
+                    if (global.race['noexport'] === 'Race'){
+                        clearElement($(`#city`));
+                        ascendLab();
+                    }
+                    else if (global.race['noexport'] === 'Planet'){
+                        clearElement($(`#city`));
+                        terraformLab();
+                    }
                 }
             }
             break;
@@ -846,6 +852,7 @@ export function index(){
         <h2 class="is-sr-only">Top Bar</h2>
         <span class="planetWrap"><span class="planet">{{ race.species | planet }}</span><span class="universe" v-show="showUniverse()">{{ race.universe | universe }}</span></span>
         <span class="calendar">
+            <span class="infoTimer" id="infoTimer"></span>
             <span v-show="city.calendar.day">
                 <b-tooltip :label="moon()" :aria-label="moon()" position="is-bottom" size="is-small" multilined animated><i id="moon" class="moon wi"></i></b-tooltip>
                 <span class="year">${loc('year')} <span class="has-text-warning">{{ city.calendar.year }}</span></span>

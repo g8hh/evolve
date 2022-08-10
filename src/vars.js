@@ -51,6 +51,8 @@ export function set_alevel(a_level){
 export function set_ulevel(u_level){
     universe_level = u_level;
 }
+export var hell_reports = {};
+export var hell_graphs = {};
 export var message_logs = {
     view: 'all'
 };
@@ -989,8 +991,86 @@ if (convertVersion(global['version']) < 102015){
     }
 }
 
-global['version'] = '1.2.16';
-global['revision'] = 'a';
+if (convertVersion(global['version']) < 102017){
+    if (global.portal.hasOwnProperty('fortress')){
+        global.portal.observe = {
+            settings: {
+                expanded: false,
+                average: false,
+                hyperSlow: false,
+                display: 'game_days',
+                dropKills: true,
+                dropGems: true
+            },
+            stats: {
+                total: {
+                    start: { year: global.city.calendar.year, day: global.city.calendar.day },
+                    days: 0,
+                    wounded: 0, died: 0, revived: 0, surveyors: 0, sieges: 0,
+                    kills: {
+                        drones: 0,
+                        patrols: 0,
+                        sieges: 0,
+                        guns: 0,
+                        soul_forge: 0,
+                        turrets: 0
+                    },
+                    gems: {
+                        patrols: 0,
+                        guns: 0,
+                        soul_forge: 0,
+                        crafted: 0,
+                        turrets: 0
+                    },
+                },
+                period: {
+                    start: { year: global.city.calendar.year, day: global.city.calendar.day },
+                    days: 0,
+                    wounded: 0, died: 0, revived: 0, surveyors: 0, sieges: 0,
+                    kills: {
+                        drones: 0,
+                        patrols: 0,
+                        sieges: 0,
+                        guns: 0,
+                        soul_forge: 0,
+                        turrets: 0
+                    },
+                    gems: {
+                        patrols: 0,
+                        guns: 0,
+                        soul_forge: 0,
+                        crafted: 0,
+                        turrets: 0
+                    },
+                }
+            },
+            graphID: 0,
+            graphs: {}
+        };
+    }
+    if (global.tech.hasOwnProperty('genetics') && global.tech.genetics > 1 && global.hasOwnProperty('arpa')){
+        if (!global.arpa.hasOwnProperty('sequence')){
+            global.arpa['sequence'] = {
+                max: 50000,
+                progress: 0,
+                time: 50000,
+                on: false
+            };
+        }
+        if (!global.arpa.sequence['boost']){
+            global.arpa.sequence['boost'] = false;
+        }
+        if (!global.arpa.sequence['auto']){
+            global.arpa.sequence['auto'] = false;
+        }
+        if (!global.arpa.sequence['labs']){
+            global.arpa.sequence['labs'] = 0;
+        }
+    }
+}
+
+global['version'] = '1.2.17';
+delete global['revision'];
 delete global['beta'];
 
 if (!global.hasOwnProperty('power')){
@@ -1330,6 +1410,9 @@ if (!global.settings['statsTabs']){
 }
 if (!global.settings['govTabs2']){
     global.settings['govTabs2'] = 0;
+}
+if (!global.settings['hellTabs']){
+    global.settings['hellTabs'] = 0;
 }
 if (!global.settings['locale']){
     global.settings['locale'] = 'zh-cn';
@@ -2330,6 +2413,7 @@ export function clearStates(){
     global.settings.civTabs = 0;
     global.settings.govTabs = 0;
     global.settings.govTabs2 = 0;
+    global.settings.hellTabs = 0;
     global.settings.resTabs = 0;
     global.settings.spaceTabs = 0;
     global.settings.marketTabs = 0

@@ -4842,7 +4842,7 @@ function fastLoop(){
                 modRes('Iron', delta * time_multiplier);
 
                 if (global.tech['titanium'] && global.tech['titanium'] >= 2){
-                    let labor_base = support_on['iron_ship'] ? (global.civic.miner.workers / 4) + (support_on['iron_ship'] / 2) : (global.civic.miner.workers / 4);
+                    let labor_base = support_on['iron_ship'] ? (highPopAdjust(global.civic.miner.workers) / 4) + (support_on['iron_ship'] / 2) : (global.civic.miner.workers / 4);
                     let iron = labor_base * iron_smelter * 0.1;
                     delta = iron * global_multiplier;
                     if (star_forge > 0){
@@ -6298,7 +6298,7 @@ function midLoop(){
             lCaps['coal_miner'] += jobScale(support_on['red_mine']);
         }
         if (!global.tech['world_control']){
-            let occ_amount = global.civic.govern.type === 'federation' ? 15 : 20
+            let occ_amount = jobScale(global.civic.govern.type === 'federation' ? 15 : 20);
             for (let i=2; i>=0; i--){
                 if (global.civic.foreign[`gov${i}`].occ){
                     lCaps['garrison'] -= occ_amount;
@@ -7145,7 +7145,7 @@ function midLoop(){
                 if (gal_on['freighter']){
                     crew += gal_on['freighter'] * (actions.galaxy.gxy_gorddon.freighter.ship.civ() + actions.galaxy.gxy_gorddon.freighter.ship.mil());
                 }
-                leave = crew * 300;
+                leave = +highPopAdjust(crew).toFixed(2) * 300;
             }
             let know = (dorm + gtrade + leave) * p_on['symposium'];
             caps['Knowledge'] += know;
@@ -8596,6 +8596,9 @@ function longLoop(){
             }
             if (global.race['cannibalize'] && global.city['s_alter'] && global.city.s_alter.regen > 0){
                 hc >= 20 ? hc *= (1 + traits.cannibalize.vars()[0] / 100) : hc += Math.floor(traits.cannibalize.vars()[0] / 5);
+            }
+            if (global.race['high_pop']){
+                hc *= traits.high_pop.vars()[2]
             }
             let painVal = govActive('nopain',0);
             if (painVal){

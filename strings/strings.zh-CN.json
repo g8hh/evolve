@@ -6132,7 +6132,7 @@
   "hell_report_log_patrol_killed": "1 名士兵阵亡。",
   "hell_report_log_patrol_killed_plural": "%0 名士兵阵亡。",
   "hell_report_log_patrol_casualties": "%0 名士兵受伤，%1 名士兵阵亡。",
-  "hell_report_log_soul_find": "击杀恶魔获得了 1 块灵魂宝石。",
+  "hell_report_log_soul_find": "击杀恶魔获得了 1 块%0。",
   "hell_report_log_revived": "1 名士兵复活了。",
   "hell_report_log_revived_plural": "%0 名士兵复活了。",
   "hell_report_log_patrols_lost": "由于缺乏士兵，%0 支巡逻队被迫解散。",

@@ -28,7 +28,6 @@ export var global = {
     }
 };
 export var tmp_vars = {};
-export var vues = {};
 export var breakdown = {
     c: {},
     p: {}
@@ -662,7 +661,6 @@ if (convertVersion(global['version']) < 100023){
             global.resource.Lumber.containers = 0;
             global.resource.Lumber.trade = 0;
             global.resource.Plywood.display = false;
-            global.city['lumber'] = 0;
             if (global.city['sawmill']){ delete global.city['sawmill']; }
             if (global.city['graveyard']){ delete global.city['graveyard']; }
             if (global.city['lumber_yard']){ delete global.city['lumber_yard']; }
@@ -678,7 +676,6 @@ if (convertVersion(global['version']) < 100023){
                 global.civic.craftsman.workers -= global.city.foundry['Plywood'];
                 global.city.foundry.crafting -= global.city.foundry['Plywood'];
                 global.city.foundry['Plywood'] = 0;
-                global['loadFoundry'] = true;
             }
             if (global.city['s_alter']) { global.city.s_alter.harvest = 0; }
             if (global.interstellar['mass_ejector']){
@@ -1069,8 +1066,8 @@ if (convertVersion(global['version']) < 102017){
     }
 }
 
-global['version'] = '1.2.19';
-global['revision'] = 'a';
+global['version'] = '1.2.20';
+delete global['revision'];
 delete global['beta'];
 
 if (!global.hasOwnProperty('power')){
@@ -1694,6 +1691,10 @@ if (global.city.hasOwnProperty('smelter') && !global.city.smelter.hasOwnProperty
     global.city.smelter['cap'] = 0;
 }
 
+if (!global.civic['homeless']){
+    global.civic.homeless = 0;
+}
+
 if (!global.civic['foreign']){
     global.civic['foreign'] = {
         gov0: {
@@ -1835,6 +1836,9 @@ if (!global.city.morale['tax']){
 }
 if (!global.city.morale['shrine']){
     global.city.morale['shrine'] = 0;
+}
+if (!global.city.morale['blood_thirst']){
+    global.city.morale['blood_thirst'] = 0;
 }
 if (!global.city.morale['broadcast']){
     global.city.morale['broadcast'] = 0;

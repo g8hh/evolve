@@ -3,6 +3,19 @@ import { clearElement } from './../functions.js';
 
 const changeList = [
     {
+        version: `1.3.3`,
+        date: `3/15/2023`,
+        changes: [
+            `Rebalanced Soul Gem drop mechanics.`,
+            `Added Annihilation Feat.`,
+            `Added additional Mass Ejector Optimizer config mode.`,
+            `Servants are no longer affected by most racial traits.`,
+            `The Lone Survivor can no longer benefit from Hivemind.`,
+            `Fixed High Pop issue with Pit Miners.`,
+            `Fixed bug with unlocking Replicator without a Governor.`,
+        ]
+    },
+    {
         version: `1.3.2`,
         revision: `c`,
         date: `3/8/2023`,

@@ -1170,7 +1170,7 @@ if (convertVersion(global['version']) < 103002){
     }
 }
 
-global['version'] = '1.3.3';
+global['version'] = '1.3.4';
 delete global['revision'];
 delete global['beta'];
 
@@ -1220,6 +1220,14 @@ if (!global['settings']){
     };
 }
 
+if (!global.settings['space']){
+    global.settings['space'] = {};
+}
+
+if (!global.settings.space.hasOwnProperty('home')){
+    global.settings.space['home'] = true;
+}
+
 setRegionStates(false);
 
 if (!global.settings['icon']){
@@ -1236,12 +1244,6 @@ if (!global.settings['showStorage']){
     }
     else {
         global.settings['showStorage'] = false;
-    }
-}
-
-if (!global.settings['space']){
-    global.settings['space'] = {
-        home: true,
     }
 }
 
@@ -1426,41 +1428,52 @@ if (!global.settings.hasOwnProperty('mtorder')){
     global.settings['mtorder'] = [];
 }
 
-// Stat Counters
-[
-    'reset','plasmid','antiplasmid','universes','phage','starved','tstarved','died','tdied',
-    'sac','tsac','know','tknow','portals','dkills','attacks','cfood','tfood','cstone','tstone',
-    'clumber','tlumber','mad','bioseed','cataclysm','blackhole','ascend','descend','terraform',
-    'aiappoc','matrix','retire','eden','geck','dark','harmony','blood','cores','artifact',
-].forEach(function(k){
-    if (!global.stats.hasOwnProperty(k)){
-        global.stats[k] = 0;
+export function setupStats(){
+    // Stat Counters
+    [
+        'reset','plasmid','antiplasmid','universes','phage','starved','tstarved','died','tdied',
+        'sac','tsac','know','tknow','portals','dkills','attacks','cfood','tfood','cstone','tstone',
+        'clumber','tlumber','mad','bioseed','cataclysm','blackhole','ascend','descend','terraform',
+        'aiappoc','matrix','retire','eden','geck','dark','harmony','blood','cores','artifact',
+    ].forEach(function(k){
+        if (!global.stats.hasOwnProperty(k)){
+            global.stats[k] = 0;
+        }
+    });
+
+    if (!global.stats['achieve']){
+        global.stats['achieve'] = {};
     }
-});
+    if (!global.stats['feat']){
+        global.stats['feat'] = {};
+    }
 
-if (!global.stats.hasOwnProperty('womling')){
-    global.stats['womling'] = {
-        god: {l:0},
-        lord: {l:0},
-        friend: {l:0}
-    };
+    if (!global.stats.hasOwnProperty('womling')){
+        global.stats['womling'] = {
+            god: {l:0},
+            lord: {l:0},
+            friend: {l:0}
+        };
+    }
+
+    if (!global.stats['spire']){
+        global.stats['spire'] = {};
+    }
+    if (!global.stats['synth']){
+        global.stats['synth'] = {};
+    }
+    if (!global.stats.hasOwnProperty('banana')){
+        global.stats['banana'] = {
+            b1: { l: false, h: false, a: false, e: false, m: false, mg: false }, 
+            b2: { l: false, h: false, a: false, e: false, m: false, mg: false }, 
+            b3: { l: false, h: false, a: false, e: false, m: false, mg: false }, 
+            b4: { l: false, h: false, a: false, e: false, m: false, mg: false }, 
+            b5: { l: false, h: false, a: false, e: false, m: false, mg: false }
+        };
+    }
 }
 
-if (!global.stats['spire']){
-    global.stats['spire'] = {};
-}
-if (!global.stats['synth']){
-    global.stats['synth'] = {};
-}
-if (!global.stats.hasOwnProperty('banana')){
-    global.stats['banana'] = {
-        b1: { l: false, h: false, a: false, e: false, m: false, mg: false }, 
-        b2: { l: false, h: false, a: false, e: false, m: false, mg: false }, 
-        b3: { l: false, h: false, a: false, e: false, m: false, mg: false }, 
-        b4: { l: false, h: false, a: false, e: false, m: false, mg: false }, 
-        b5: { l: false, h: false, a: false, e: false, m: false, mg: false }
-    };
-}
+setupStats();
 
 if (!global.race['seeded']){
     global.race['seeded'] = false;

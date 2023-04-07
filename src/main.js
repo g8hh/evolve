@@ -7,7 +7,7 @@ import { defineResources, resource_values, spatialReasoning, craftCost, plasmidB
 import { defineJobs, job_desc, loadFoundry, farmerValue, jobScale, workerScale, loadServants} from './jobs.js';
 import { defineIndustry, f_rate, manaCost, setPowerGrid, gridEnabled, gridDefs, nf_resources, replicator } from './industry.js';
 import { checkControlling, garrisonSize, armyRating, govTitle, govCivics, govEffect } from './civics.js';
-import { actions, updateDesc, checkTechRequirements, drawEvolution, BHStorageMulti, storageMultipler, checkAffordable, drawCity, drawTech, gainTech, housingLabel, updateQueueNames, wardenLabel, planetGeology, resQueue, bank_vault, start_cataclysm, orbitDecayed, postBuild } from './actions.js';
+import { actions, updateDesc, checkTechRequirements, drawEvolution, BHStorageMulti, storageMultipler, checkAffordable, drawCity, drawTech, gainTech, housingLabel, updateQueueNames, wardenLabel, planetGeology, resQueue, bank_vault, start_cataclysm, orbitDecayed, postBuild, skipRequirement } from './actions.js';
 import { renderSpace, convertSpaceSector, fuel_adjust, int_fuel_adjust, zigguratBonus, planetName, genPlanets, setUniverse, universe_types, gatewayStorage, piracy, spaceTech, universe_affixes } from './space.js';
 import { renderFortress, bloodwar, soulForgeSoldiers, hellSupression, genSpireFloor, mechRating, mechCollect, updateMechbay } from './portal.js';
 import { renderTauCeti, syndicate, shipFuelUse, spacePlanetStats, genXYcoord, shipCrewSize, tpStorageMultiplier, tritonWar, sensorRange, erisWar, calcAIDrift, drawMap, tauEnabled } from './truepath.js';
@@ -2610,7 +2610,11 @@ function fastLoop(){
 
                     let workers = global.civic[job].workers;
                     if (global.race['high_pop']){
-                        workers /= traits.high_pop.vars()[0]
+                        workers /= traits.high_pop.vars()[0];
+                    }
+
+                    if (global.race['sky_lover'] && ['miner','coal_miner','crystal_miner','pit_miner'].includes(job)){
+                        workers *= 1 + (traits.sky_lover.vars()[0] / 100);
                     }
 
                     stress -= workers / stress_level;
@@ -6838,7 +6842,7 @@ function fastLoop(){
 
     let easter = eventActive('easter');
     if (easter.active){
-        for (i=1; i<=15; i++){
+        for (i=1; i<=18; i++){
             if ($(`#egg${i}`).length > 0 && !$(`#egg${i}`).hasClass('binded')){
                 easterEggBind(i);
                 $(`#egg${i}`).addClass('binded');
@@ -7535,6 +7539,12 @@ function midLoop(){
             }
         }
 
+        if (global.tech['isolation'] && p_on['tau_farm'] && global.race['artifical']){
+            let gain = p_on['tau_farm'] * spatialReasoning(350);
+            caps['Food'] += gain;
+            bd_Food[loc('tau_home_tau_farm')] = gain+'v';
+        }
+
         if (global.galaxy['gateway_depot']){
             let containers = global.tech['world_control'] ? 150 : 100;
             caps['Crates'] += (global.galaxy.gateway_depot.count * containers);
@@ -8198,6 +8208,9 @@ function midLoop(){
             let routes = global.race['nomadic'] || global.race['xenophobic'] ? global.tech.trade : global.tech.trade + 1;
             if (global.tech['trade'] && global.tech['trade'] >= 3){
                 routes--;
+            }
+            if (global.race['flier']){
+                routes += traits.flier.vars()[1];
             }
             global.city.market.mtrade += routes * global.city.trade.count;
             breakdown.t_route[loc('city_trade')] = routes * global.city.trade.count;
@@ -8900,6 +8913,7 @@ function midLoop(){
 
         if (global.tech['foundry'] === 3 && (global.race['kindling_kindred'] || global.race['smoldering'])){
             global.tech['foundry'] = 4;
+            drawTech();
         }
 
         if (global.race['kindling_kindred'] || global.race['smoldering']){
@@ -9128,6 +9142,7 @@ function midLoop(){
             checkTechRequirements('club',q_techs);
             for (let i=0; i<global.r_queue.queue.length; i++){
                 Object.keys(actions.tech[global.r_queue.queue[i].type].reqs).forEach(function(req){
+                    if (skipRequirement(req, global.tech[req] || 0)){ return; }
                     if (
                         (!global.tech[req] || global.tech[req] < actions.tech[global.r_queue.queue[i].type].reqs[req])
                         &&

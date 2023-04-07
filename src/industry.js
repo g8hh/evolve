@@ -4,7 +4,7 @@ import { vBind, popover, clearElement, powerGrid, easterEgg, trickOrTreat } from
 import { actions, checkCityRequirements, checkPowerRequirements } from './actions.js';
 import { races, traits, genusVars } from './races.js';
 import { atomic_mass } from './resources.js';
-import { checkRequirements, checkSpaceRequirements, convertSpaceSector } from './space.js';
+import { checkRequirements, checkSpaceRequirements, convertSpaceSector, planetName } from './space.js';
 import { fortressTech } from './portal.js';
 import { checkPathRequirements } from './truepath.js';
 
@@ -1599,7 +1599,7 @@ export function setPowerGrid(){
             if (gridEnabled(c_action,region,parts[0],parts[1])){
                 idx++;
                 let circuit = $(`<div id="pg${c_action.id}${grid_type}" class="circuit" data-idx="${i}"></div>`);
-                circuit.append(`<span>${idx}</span> <span class="struct has-text-warning">${title}${extra}</span>`);
+                circuit.append(`<span v-html="$options.filters.idx(${idx})"></span> <span class="struct has-text-warning">${title}${extra}</span>`);
                 circuit.append(`<span role="button" class="sub off" @click="power_off" aria-label="Powered Off"><span>{{ on | off }}</span></span> <span role="button" class="add on" @click="power_on" aria-label="Powered On"><span>{{ on }}</span></span>`);
                 circuit.append(`<span role="button" class="sub is-sr-only" @click="higher" aria-label="Raise Power Priority"><span>&laquo;</span></span> <span role="button" class="add is-sr-only" @click="lower" aria-label="Lower Power Priority"><span>&raquo;</span></span>`);
                 grid.append(circuit);
@@ -1664,6 +1664,13 @@ export function setPowerGrid(){
                     filters: {
                         off(c){
                             return global[region][parts[1]].count - c;
+                        },
+                        idx(idx){
+                            let egg18 = easterEgg(18,11);
+                            if (idx === 10 && egg18.length > 0){
+                                return '1'+egg18;
+                            }
+                            return idx;
                         }
                     }
                 });
@@ -1694,11 +1701,10 @@ export function setPowerGrid(){
 }
 
 export function gridDefs(){
-    let type = races[global.race.species].type === 'organism' ? 'humanoid' : races[global.race.species].type;
     return {
         power: { l: global.power, n: loc(`power`), s: true, r: false, rs: false },
         moon: { l: global.support.moon, n: loc(`space_moon_info_name`), s: global.settings.space.moon, r: 'space', rs: 'moon_base' },
-        red: { l: global.support.red, n: races[global.race.species].solar.red, s: global.settings.space.red, r: 'space', rs: 'spaceport'  },
+        red: { l: global.support.red, n: planetName().red, s: global.settings.space.red, r: 'space', rs: 'spaceport'  },
         belt: { l: global.support.belt, n: loc(`space_belt_info_name`), s: global.settings.space.belt, r: 'space', rs: 'space_station'  },
         alpha: { l: global.support.alpha, n: loc(`interstellar_alpha_name`), s: global.settings.space.alpha, r: 'interstellar', rs: 'starport'  },
         nebula: { l: global.support.nebula, n: loc(`interstellar_nebula_name`), s: global.settings.space.nebula, r: 'interstellar', rs: 'nexus'  },
@@ -1706,11 +1712,11 @@ export function gridDefs(){
         alien2: { l: global.support.alien2, n: loc('galaxy_alien',[races[global.galaxy.hasOwnProperty('alien2') ? global.galaxy.alien2.id : global.race.species].name]), s: global.settings.space.alien2, r: 'galaxy', rs: 'foothold'  },
         lake: { l: global.support.lake, n: loc(`portal_lake_name`), s: global.settings.portal.lake, r: 'portal', rs: 'harbour'  },
         spire: { l: global.support.spire, n: loc(`portal_spire_name`), s: global.settings.portal.spire, r: 'portal', rs: 'purifier'  },
-        titan: { l: global.support.titan, n: genusVars[type].solar.titan, s: global.settings.space.titan, r: 'space', rs: 'electrolysis'  },
-        enceladus: { l: global.support.enceladus, n: genusVars[type].solar.enceladus, s: global.settings.space.enceladus, r: 'space', rs: 'titan_spaceport'  },
-        eris: { l: global.support.eris, n: genusVars[type].solar.eris, s: global.settings.space.eris, r: 'space', rs: 'drone_control'  },
+        titan: { l: global.support.titan, n: planetName().titan, s: global.settings.space.titan, r: 'space', rs: 'electrolysis'  },
+        enceladus: { l: global.support.enceladus, n: planetName().enceladus, s: global.settings.space.enceladus, r: 'space', rs: 'titan_spaceport'  },
+        eris: { l: global.support.eris, n: planetName().eris, s: global.settings.space.eris, r: 'space', rs: 'drone_control'  },
         tau_home: { l: global.support.tau_home, n: loc(`tau_planet`,[races[global.race.species].home]), s: global.settings.tau.home, r: 'tauceti', rs: 'orbital_station'  },
-        tau_red: { l: global.support.tau_red, n: loc(`tau_planet`,[races[global.race.species].solar.red]), s: global.settings.tau.red, r: 'tauceti', rs: 'orbital_platform'  },
+        tau_red: { l: global.support.tau_red, n: loc(`tau_planet`,[planetName().red]), s: global.settings.tau.red, r: 'tauceti', rs: 'orbital_platform'  },
         tau_roid: { l: global.support.tau_roid, n: loc(`tau_roid_title`), s: global.settings.tau.roid, r: 'tauceti', rs: 'patrol_ship'  },
     };
 }

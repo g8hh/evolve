@@ -4,7 +4,7 @@ import { vBind, clearElement, calcQueueMax, calcRQueueMax, calcPrestige, message
 import { unlockAchieve, alevel, universeAffix, unlockFeat } from './achieve.js';
 import { payCosts, housingLabel, wardenLabel, updateQueueNames, drawTech, fanaticism, checkAffordable, actions } from './actions.js';
 import { races, checkAltPurgatory } from './races.js';
-import { defineResources, resource_values, atomic_mass } from './resources.js';
+import { defineResources, drawResourceTab, resource_values, atomic_mass } from './resources.js';
 import { loadFoundry, jobScale } from './jobs.js';
 import { buildGarrison, checkControlling, govTitle } from './civics.js';
 import { renderSpace, planetName, int_fuel_adjust } from './space.js';
@@ -1438,7 +1438,7 @@ const techs = {
         cost: {
             Knowledge(){ return 45; }
         },
-        effect(){ return global.race['sappy'] ? loc('tech_amber_effect') : loc('tech_mining_effect'); },
+        effect(){ return global.race['sappy'] ? loc('tech_amber_effect') : loc(global.race['flier'] ? 'tech_mining_effect_alt' : 'tech_mining_effect'); },
         action(){
             if (payCosts($(this)[0])){
                 global.city['rock_quarry'] = {
@@ -1978,7 +1978,7 @@ const techs = {
         desc: loc('tech_containerization_desc'),
         category: 'storage',
         era: 'civilized',
-        reqs: { cement: 1 },
+        reqs: { cement: 1, mining: 1, storage: 1, science: 1 },
         grant: ['container',1],
         cost: {
             Knowledge(){ return 2700; }
@@ -4137,6 +4137,9 @@ const techs = {
                 return true;
             }
             return false;
+        },
+        post(){
+            defineGovernor();
         }
     },
     industrialization: {
@@ -4932,11 +4935,32 @@ const techs = {
         category: 'ai_core',
         era: 'interstellar',
         reqs: { high_tech: 15 },
+        not_trait: ['flier'],
         grant: ['ai_core',1],
         cost: {
             Knowledge(){ return 1750000; },
         },
         effect: loc('tech_cement_processing_effect'),
+        action(){
+            if (payCosts($(this)[0])){
+                return true;
+            }
+            return false;
+        }
+    },
+    adamantite_processing_flier: {
+        id: 'tech-adamantite_processing_flier',
+        title: loc('tech_adamantite_processing'),
+        desc: loc('tech_adamantite_processing'),
+        category: 'ai_core',
+        era: 'interstellar',
+        reqs: { high_tech: 15 },
+        trait: ['flier'],
+        grant: ['ai_core',2],
+        cost: {
+            Knowledge(){ return 2000000; },
+        },
+        effect: loc('tech_adamantite_processing_effect'),
         action(){
             if (payCosts($(this)[0])){
                 return true;
@@ -4951,6 +4975,7 @@ const techs = {
         category: 'ai_core',
         era: 'interstellar',
         reqs: { ai_core: 1 },
+        not_trait: ['flier'],
         grant: ['ai_core',2],
         cost: {
             Knowledge(){ return 2000000; },
@@ -7047,6 +7072,7 @@ const techs = {
         category: 'cement',
         era: 'civilized',
         reqs: { mining: 1, storage: 1, science: 1 },
+        not_trait: ['flier'],
         grant: ['cement',1],
         cost: {
             Knowledge(){ return 500; }
@@ -7070,6 +7096,7 @@ const techs = {
         category: 'cement',
         era: 'civilized',
         reqs: { mining: 3, cement: 1 },
+        not_trait: ['flier'],
         grant: ['cement',2],
         cost: {
             Knowledge(){ return 3200; },
@@ -7090,6 +7117,7 @@ const techs = {
         category: 'cement',
         era: 'civilized',
         reqs: { smelting: 2, cement: 2 },
+        not_trait: ['flier'],
         grant: ['cement',3],
         cost: {
             Knowledge(){ return 6750; },
@@ -7110,6 +7138,7 @@ const techs = {
         category: 'cement',
         era: 'industrialized',
         reqs: { cement: 3, high_tech: 3 },
+        not_trait: ['flier'],
         grant: ['cement',4],
         cost: {
             Knowledge(){ return 32000; }
@@ -7129,6 +7158,7 @@ const techs = {
         category: 'cement',
         era: 'globalized',
         reqs: { cement: 4, high_tech: 4 },
+        not_trait: ['flier'],
         grant: ['cement',5],
         cost: {
             Knowledge(){ return 72000; }
@@ -7148,7 +7178,7 @@ const techs = {
         category: 'cement',
         era: 'interstellar',
         reqs: { cement: 5, alpha: 2 },
-        not_trait: ['cataclysm'],
+        not_trait: ['cataclysm','flier'],
         grant: ['cement',6],
         cost: {
             Knowledge(){ return 500000; },
@@ -10353,6 +10383,9 @@ const techs = {
         post(){
             clearElement($('#resources'));
             defineResources();
+            if (global.settings.tabLoad){
+                drawResourceTab('alchemy');
+            }
         }
     },
     transmutation: {

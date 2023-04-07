@@ -171,7 +171,7 @@ export const supplyValue = {
 export function craftCost(){
     let costs = {
         Plywood: [{ r: 'Lumber', a: 100 }],
-        Brick: [{ r: 'Cement', a: 40 }],
+        Brick: global.race['flier'] ? [{ r: 'Stone', a: 60 }] : [{ r: 'Cement', a: 40 }],
         Wrought_Iron: [{ r: 'Iron', a: 80 }],
         Sheet_Metal: [{ r: 'Aluminium', a: 120 }],
         Mythril: [{ r: 'Iridium', a: 100 },{ r: 'Alloy', a: 250 }],
@@ -545,6 +545,74 @@ export function initResourceTabs(tab){
         initEjector();
         initSupply();
         initAlchemy();
+    }
+}
+
+export function drawResourceTab(tab){
+    if (tab === 'market'){
+        initResourceTabs('market');
+        if (tmp_vars.hasOwnProperty('resource')){
+            Object.keys(tmp_vars.resource).forEach(function(name){
+                let color = tmp_vars.resource[name].color;
+                let tradable = tmp_vars.resource[name].tradable;
+                if (tradable){
+                    var market_item = $(`<div id="market-${name}" class="market-item" v-show="r.display"></div>`);
+                    $('#market').append(market_item);
+                    marketItem(`#market-${name}`,market_item,name,color,true);
+                }
+            });
+        }
+        tradeSummery();
+    }
+    else if (tab === 'storage'){
+        initResourceTabs('storage');
+        if (tmp_vars.hasOwnProperty('resource')){
+            Object.keys(tmp_vars.resource).forEach(function(name){
+                let color = tmp_vars.resource[name].color;
+                let stackable = tmp_vars.resource[name].stackable;
+                if (stackable){
+                    var market_item = $(`<div id="stack-${name}" class="market-item" v-show="display"></div>`);
+                    $('#resStorage').append(market_item);
+                    containerItem(`#stack-${name}`,market_item,name,color,true);
+                }
+            });
+        }
+        tradeSummery();
+    }
+    else if (tab === 'ejector'){
+        initResourceTabs('ejector');
+        if (tmp_vars.hasOwnProperty('resource')){
+            Object.keys(tmp_vars.resource).forEach(function(name){
+                let color = tmp_vars.resource[name].color;
+                if (atomic_mass[name]){
+                    loadEjector(name,color);
+                }
+            });
+        }
+    }
+    else if (tab === 'supply'){
+        initResourceTabs('supply');
+        if (tmp_vars.hasOwnProperty('resource')){
+            Object.keys(tmp_vars.resource).forEach(function(name){
+                let color = tmp_vars.resource[name].color;
+                if (supplyValue[name]){
+                    loadSupply(name,color);
+                }
+            });
+        }
+    }
+    else if (tab === 'alchemy'){
+        initResourceTabs('alchemy');
+        if (tmp_vars.hasOwnProperty('resource')){
+            Object.keys(tmp_vars.resource).forEach(function(name){
+                let color = tmp_vars.resource[name].color;
+                let tradable = tmp_vars.resource[name].tradable;
+                if (tradeRatio[name] && global.race.universe === 'magic'){
+                    global['resource'][name]['basic'] = tradable;
+                    loadAlchemy(name,color,tradable);
+                }
+            });
+        }
     }
 }
 
@@ -979,6 +1047,16 @@ export function setResourceName(name){
         switch(name){
             case 'Stone':
                 global['resource'][name].name = loc('resource_Amber_name');
+                break;
+        }
+    }
+    else if (global.race['flier']){
+        switch(name){
+            case 'Stone':
+                global['resource'][name].name = loc('resource_Clay_name');
+                break;
+            case 'Brick':
+                global['resource'][name].name = loc('resource_Mud_Brick_name');
                 break;
         }
     }
@@ -2062,7 +2140,7 @@ function loadRouteCounter(){
     }
 
     let no_market = global.race['no_trade'] ? ' nt' : '';
-    var market_item = $(`<div id="tradeTotal" v-show="active" class="market-item"><div id="tradeTotalPopover"><span class="tradeTotal${no_market}"><span class="has-text-caution">${loc('resource_market_trade_routes')}</span> {{ trade }} / {{ mtrade }}</span></div></div>`);
+    var market_item = $(`<div id="tradeTotal" v-show="active" class="market-item"><div id="tradeTotalPopover"><span class="tradeTotal${no_market}"><span class="has-text-caution">${loc('resource_market_trade_routes')}</span> <span v-html="$options.filters.tdeCnt(trade)"></span> / {{ mtrade }}</span></div></div>`);
     market_item.append($(`<span role="button" class="zero has-text-advanced" @click="zero()">${loc('cancel_all_routes')}</span>`));
     $('#market').append(market_item);
     vBind({
@@ -2077,6 +2155,15 @@ function loadRouteCounter(){
                         tradeRouteColor(res);
                     }
                 });
+            }
+        },
+        filters: {
+            tdeCnt(ct){
+                let egg17 = easterEgg(17,11);
+                if (ct === 100 && egg17.length > 0){
+                    return '10'+egg17;
+                }
+                return ct;
             }
         }
     });

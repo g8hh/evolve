@@ -743,6 +743,10 @@ const outerTruth = {
                 let desc = `<div class="has-text-caution">${loc('space_used_support',[planetName().enceladus])}</div>`;
                 desc += `<div>${loc('galaxy_defense_platform_effect',[50])}</div>`;
                 desc += loc('plus_max_resource',[jobScale(4),loc('civics_garrison_soldiers')]);
+                if (global.race['orbit_decayed']){
+                    let healing = global.tech['medic'] * 5;
+                    desc += `<div>${loc('city_hospital_effect',[healing])}</div>`;
+                }
                 return desc + `<div class="has-text-caution">${loc('minus_power',[$(this)[0].powered()])}</div>`;
             },
             support(){ return -1; },
@@ -2416,7 +2420,7 @@ const tauCetiModules = {
             queue_complete(){ return global.tech.tau_red >= 5 ? 0 : 1; },
             cost: {
                 Money(){ return 600000000; },
-                Food(){ return 2500000; }
+                Food(){ return global.race['lone_survivor'] && global.race['artifical'] ? 62000 : 2500000; }
             },
             effect(){ return loc('tau_red_contact_effect'); },
             action(){

@@ -3,6 +3,26 @@ import { clearElement } from './../functions.js';
 
 const changeList = [
     {
+        version: `1.3.6`,
+        date: `4/22/2023`,
+        changes: [
+            `Added Astrological signs.`,
+            `Added Motivated Event.`,
+            `Operating Bases now function as Hospitals in Orbit Decay scenario.`,
+            `Stellar Forge is now locked to using Star Fuel for smelting.`,
+            `Species with the Forge trait can now use Inferno Fuel and Star Fuel.`,
+            `Reduced Wireless Signal needed to Contact womlings in Lone Survivor.`,
+        ]
+    },
+    {
+        version: `1.3.5`,
+        revision: `c`,
+        date: `4/16/2023`,
+        changes: [
+            `Made Egg #17 easier to get in Cataclysm mode.`,
+        ]
+    },
+    {
         version: `1.3.5`,
         revision: `b`,
         date: `4/9/2023`,

@@ -42,6 +42,7 @@ export var spire_on = {};
 export var quantum_level = 0;
 export var achieve_level = 0;
 export var universe_level = 0;
+export var atrack = {t:0};
 export function set_qlevel(q_level){
     quantum_level = q_level;
 }
@@ -1167,8 +1168,8 @@ if (convertVersion(global['version']) < 103002){
     }
 }
 
-global['version'] = '1.3.6';
-delete global['revision'];
+global['version'] = '1.3.7';
+global['revision'] = 'a';
 delete global['beta'];
 
 if (!global.hasOwnProperty('prestige')){
@@ -1432,6 +1433,7 @@ export function setupStats(){
         'sac','tsac','know','tknow','portals','dkills','attacks','cfood','tfood','cstone','tstone',
         'clumber','tlumber','mad','bioseed','cataclysm','blackhole','ascend','descend','terraform',
         'aiappoc','matrix','retire','eden','geck','dark','harmony','blood','cores','artifact',
+        'cattle','tcattle','murders','tmurders','psykill','tpsykill'
     ].forEach(function(k){
         if (!global.stats.hasOwnProperty(k)){
             global.stats[k] = 0;
@@ -2149,7 +2151,7 @@ function setRegionStates(reset){
             'showCiv','showCity','showIndustry','showPowerGrid','showMechLab','showShipYard',
             'showResearch','showCivic','showMil','showResources','showMarket','showStorage',
             'showGenetics','showSpace','showDeep','showGalactic','showPortal','showOuter',
-            'showTau','showEjector','showCargo','showAlchemy','showGovernor','arpa'
+            'showTau','showEjector','showCargo','showAlchemy','showGovernor','arpa','showPsychic'
         ],
         space: [
             'moon','red','hell','sun','gas','gas_moon','belt','dwarf','alpha','proxima',
@@ -2266,6 +2268,8 @@ export function clearStates(){
     global.stats.cstone = 0;
     global.stats.clumber = 0;
     global.stats.sac = 0;
+    global.stats.cattle = 0;
+    global.stats.murders = 0;
     global.settings.at = 0;
 
     global.settings.showEvolve = true;

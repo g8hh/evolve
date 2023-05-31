@@ -1,6 +1,6 @@
-import { global, seededRandom, p_on, support_on } from './vars.js';
+import { global, seededRandom, p_on, support_on, sizeApproximation } from './vars.js';
 import { loc } from './locale.js';
-import { races, traits } from './races.js';
+import { races, traits, fathomCheck } from './races.js';
 import { govTitle, garrisonSize, armyRating } from './civics.js';
 import { housingLabel, drawTech, actions } from './actions.js';
 import { tradeRatio } from './resources.js';
@@ -283,6 +283,18 @@ export const events = {
             return pillaged(`gov3`,true);
         }
     },
+    witch_hunt_crusade: {
+        reqs: {
+            tech: 'magic',
+        },
+        type: 'major',
+        condition(){
+            return global.race['witch_hunter'] && global.resource.Sus.amount >= 100 ? true : false;
+        },
+        effect(){
+            return pillaged(`witchhunt`,true);
+        }
+    },
     terrorist: {
         reqs: {
             tech: 'world_control',
@@ -485,6 +497,10 @@ export const events = {
             if (global.race['elusive']){
                 return false;
             }
+            let fathom = fathomCheck('satyr');
+            if (fathom > 0.25){
+                return false;
+            }
             for (let i=0; i<3; i++){
                 if (global.civic.foreign[`gov${i}`].spy > 0 && !global.civic.foreign[`gov${i}`].occ && !global.civic.foreign[`gov${i}`].anx && !global.civic.foreign[`gov${i}`].buy){
                     return true;
@@ -645,6 +661,21 @@ export const events = {
     shooting_star: basicEvent('shooting_star','primitive'),
     tumbleweed: basicEvent('tumbleweed','primitive'),
     flashmob: basicEvent('flashmob','high_tech'),
+    witch_hunt: {
+        reqs: {
+            tech: 'magic',
+        },
+        type: 'minor',
+        condition(){
+            return global.race['witch_hunter'] && global.resource.Sus.amount >= 50 && global.civic.scientist.workers > 0 ? true : false;
+        },
+        effect(){
+            global.resource[global.race.species].amount--;
+            global.civic.scientist.workers--;
+            global.civic.scientist.assigned--;
+            return loc(`witch_hunter_witch_hunt`);
+        }
+    },
     heatwave: {
         reqs: {
             tech: 'primitive',
@@ -860,7 +891,7 @@ function slaveLoss(type,string){
 function pillaged(gov,serious){
     let army = armyRating(garrisonSize(),'army',global.civic.garrison.wounded);
     let eAdv = global.tech['high_tech'] ? global.tech['high_tech'] + 1 : 1;
-    let enemy = global.civic.foreign[gov].mil * (1 + Math.floor(seededRandom(0,10) - 5) / 10) * eAdv;
+    let enemy = (gov === 'witchhunt' ? 1000 : global.civic.foreign[gov].mil) * (1 + Math.floor(seededRandom(0,10) - 5) / 10) * eAdv;
 
     let injured = global.civic.garrison.wounded > garrisonSize() ? garrisonSize() : global.civic.garrison.wounded;
     let killed = garrisonSize() > 0 ? Math.floor(seededRandom(1,injured)) : 0;
@@ -883,7 +914,7 @@ function pillaged(gov,serious){
         }
     }
 
-    let enemy_name = loc(`civics_gov${global.civic.foreign[gov].name.s0}`,[global.civic.foreign[gov].name.s1]);
+    let enemy_name = gov === 'witchhunt' ? loc(`witch_hunter_crusade`) : loc(`civics_gov${global.civic.foreign[gov].name.s0}`,[global.civic.foreign[gov].name.s1]);
 
     if (army > enemy){
         return loc('event_pillaged1',[enemy_name,killed.toLocaleString(),wounded.toLocaleString()]);
@@ -900,10 +931,10 @@ function pillaged(gov,serious){
                 if (remain < 0){ remain = 0; }
                 global.resource[res].amount = remain;
                 if (res === 'Money'){
-                    stolen.push(`$${loss}`);
+                    stolen.push(`$${sizeApproximation(loss)}`);
                 }
                 else {
-                    stolen.push(`${loss} ${global.resource[res].name}`);
+                    stolen.push(`${sizeApproximation(loss)} ${global.resource[res].name}`);
                 }
             }
         });
@@ -964,18 +995,21 @@ export function eventList(type){
                             isOk = false;
                         }
                         break;
+
                     case 'high_tax_rate':
-                        if (global.civic.taxes.tax_rate <= [events[event].reqs[req]]){
+                        // there are currently no events with the high_tax_rate requirement
+                        if (global.civic.taxes.tax_rate <= events[event].reqs[req]){
                             isOk = false;
                         }
                         break;
                     case 'low_morale':
-                        if (global.city.morale.current >= [events[event].reqs[req]]){
+                        if (global.city.morale.current >= events[event].reqs[req]){
                             isOk = false;
                         }
                         break;
                     case 'biome':
-                        if (global.city.biome !== [events[event].reqs[req]]){
+                        // there are currently no events with the biome requirement
+                        if (global.city.biome !== events[event].reqs[req]){
                             isOk = false;
                         }
                         break;

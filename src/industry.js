@@ -2,11 +2,12 @@ import { global, keyMultiplier, sizeApproximation, p_on, support_on, quantum_lev
 import { loc } from './locale.js';
 import { vBind, popover, clearElement, powerGrid, easterEgg, trickOrTreat } from './functions.js';
 import { actions, checkCityRequirements, checkPowerRequirements } from './actions.js';
-import { races, traits, genusVars } from './races.js';
+import { races, traits, fathomCheck } from './races.js';
 import { atomic_mass } from './resources.js';
 import { checkRequirements, checkSpaceRequirements, convertSpaceSector, planetName } from './space.js';
 import { fortressTech } from './portal.js';
 import { checkPathRequirements } from './truepath.js';
+import { production } from './prod.js';
 
 export function loadIndustry(industry,parent,bind){
     switch (industry){
@@ -678,25 +679,7 @@ function loadFactory(parent,bind){
         switch(type){
             case 'Lux':{
                 let demand = +(global.resource[global.race.species].amount * (assembly ? f_rate.Lux.demand[global.tech['factory']] : f_rate.Lux.demand[0]));
-                if (global.race['toxic']){
-                    demand *= 1 + (traits.toxic.vars()[0] / 100);
-                }
-                if (global.civic.govern.type === 'corpocracy'){
-                    demand *= 2.5;
-                }
-                if (global.civic.govern.type === 'socialist'){
-                    demand *= 0.8;
-                }
-                if (global.stats.achieve['iron_will'] && global.stats.achieve.iron_will.l >= 2){
-                    demand *= 1.1;
-                }
-                if (global.race['inflation']){
-                    demand *= 1 + (global.race.inflation / 1250);
-                }
-                if (global.tech['isolation']){
-                    demand *= 1 + ((support_on['colony'] || 0) * 0.5);
-                }
-                demand = demand.toFixed(2);
+                demand = luxGoodPrice(demand).toFixed(2);
                 let fur = assembly ? f_rate.Lux.fur[global.tech['factory']] : f_rate.Lux.fur[0];
                 return loc('modal_factory_lux_label',[fur,global.resource.Furs.name,demand]);
             }
@@ -743,6 +726,33 @@ function loadFactory(parent,bind){
             attach: '#main',
         });
     });
+}
+
+export function luxGoodPrice(demand){
+    if (global.race['toxic']){
+        demand *= 1 + (traits.toxic.vars()[0] / 100);
+    }
+    let fathom = fathomCheck('shroomi');
+    if (fathom > 0){
+        demand *= 1 + (traits.toxic.vars(1)[0] / 100 * fathom);
+    }
+    if (global.civic.govern.type === 'corpocracy'){
+        demand *= 2.5;
+    }
+    if (global.civic.govern.type === 'socialist'){
+        demand *= 0.8;
+    }
+    if (global.stats.achieve['iron_will'] && global.stats.achieve.iron_will.l >= 2){
+        demand *= 1.1;
+    }
+    if (global.race['inflation']){
+        demand *= 1 + (global.race.inflation / 1250);
+    }
+    if (global.tech['isolation']){
+        demand *= 1 + ((support_on['colony'] || 0) * 0.5);
+    }
+    demand *= production('psychic_cash');
+    return demand;
 }
 
 export const nf_resources = [
@@ -1141,6 +1151,9 @@ function loadPylon(parent,bind){
     }
     else if (global.race['cataclysm']){
         ritualList = ['science','factory','army','hunting','crafting'];
+    }
+    else if (global.race['unfathomable']){
+        ritualList = ['miner','lumberjack','science','factory','army','hunting','crafting'];
     }
     else {
         ritualList = ['farmer','miner','lumberjack','science','factory','army','hunting','crafting'];

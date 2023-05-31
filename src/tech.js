@@ -3,7 +3,7 @@ import { loc } from './locale.js';
 import { vBind, clearElement, calcQueueMax, calcRQueueMax, calcPrestige, messageQueue, clearPopper, popCost } from './functions.js';
 import { unlockAchieve, alevel, universeAffix, unlockFeat } from './achieve.js';
 import { payCosts, housingLabel, wardenLabel, updateQueueNames, drawTech, fanaticism, checkAffordable, actions } from './actions.js';
-import { races, checkAltPurgatory } from './races.js';
+import { races, checkAltPurgatory, renderPsychicPowers } from './races.js';
 import { defineResources, drawResourceTab, resource_values, atomic_mass } from './resources.js';
 import { loadFoundry, jobScale } from './jobs.js';
 import { buildGarrison, checkControlling, govTitle } from './civics.js';
@@ -93,8 +93,8 @@ const techs = {
     },
     sundial: {
         id: 'tech-sundial',
-        title: loc('tech_sundial'),
-        desc: loc('tech_sundial_desc'),
+        title(){ return global.race['unfathomable'] ? loc('tech_moondial') : loc('tech_sundial'); },
+        desc(){ return global.race['unfathomable'] ? loc('tech_moondial_desc') : loc('tech_sundial_desc'); },
         category: 'science',
         era: 'primitive',
         reqs: { primitive: 2 },
@@ -103,7 +103,7 @@ const techs = {
             Lumber(){ return 8; },
             Stone(){ return 10; }
         },
-        effect: loc('tech_sundial_effect'),
+        effect(){ return global.race['unfathomable'] ? loc('tech_moondial_effect') : loc('tech_sundial_effect'); },
         action(){
             if (payCosts($(this)[0])){
                 messageQueue(loc('tech_sundial_msg'),'info',false,['progress']);
@@ -360,6 +360,199 @@ const techs = {
             return false;
         }
     },
+    captive_housing: {
+        id: 'tech-captive_housing',
+        title: loc('tech_captive_housing'),
+        desc: loc('tech_captive_housing'),
+        category: 'eldritch',
+        era: 'civilized',
+        reqs: { housing: 1 },
+        trait: ['unfathomable'],
+        grant: ['unfathomable',1],
+        cost: {
+            Knowledge(){ return 12; }
+        },
+        effect: loc('tech_captive_housing_effect'),
+        action(){
+            if (payCosts($(this)[0])){
+                global.city['captive_housing'] = {
+                    count: 0, cattle: 0, cattleCatch: 0,
+                    race0: 0, jailrace0: 0,
+                    race1: 0, jailrace1: 0,
+                    race2: 0, jailrace2: 0,
+                    raceCap: 0, cattleCap: 0,
+                };
+                return true;
+            }
+            return false;
+        }
+    },
+    torture: {
+        id: 'tech-torture',
+        title: loc('tech_torture'),
+        desc: loc('tech_torture'),
+        category: 'eldritch',
+        era: 'civilized',
+        reqs: { unfathomable: 1 },
+        trait: ['unfathomable'],
+        grant: ['unfathomable',2],
+        cost: {
+            Knowledge(){ return 25; }
+        },
+        effect: loc('tech_torture_effect'),
+        action(){
+            if (payCosts($(this)[0])){
+                global.civic.torturer.display = true;
+                return true;
+            }
+            return false;
+        }
+    },
+    thrall_quarters: {
+        id: 'tech-thrall_quarters',
+        title: loc('tech_thrall_quarters'),
+        desc: loc('tech_thrall_quarters'),
+        category: 'eldritch',
+        era: 'civilized',
+        reqs: { unfathomable: 2, high_tech: 6 },
+        trait: ['unfathomable'],
+        grant: ['unfathomable',3],
+        cost: {
+            Knowledge(){ return 95000; },
+            Cement(){ return 50000; },
+            Wrought_Iron(){ return 12500; }
+        },
+        effect: loc('tech_thrall_quarters_effect'),
+        action(){
+            if (payCosts($(this)[0])){
+                global.civic.torturer.display = true;
+                return true;
+            }
+            return false;
+        }
+    },
+    psychic_energy: {
+        id: 'tech-psychic_energy',
+        title: loc('tech_psychic_energy'),
+        desc: loc('tech_psychic_energy'),
+        category: 'eldritch',
+        era: 'civilized',
+        reqs: { housing: 1 },
+        condition(){ return global.settings.showCivic; },
+        trait: ['psychic'],
+        grant: ['psychic',1],
+        cost: {
+            Knowledge(){ return 15; }
+        },
+        effect: loc('tech_psychic_energy_effect'),
+        action(){
+            if (payCosts($(this)[0])){
+                global.resource.Energy.display = true;
+                global.settings.showPsychic = true;
+                global.race['psychicPowers'] = { boost: { r: 'Food' }, boostTime: 0 };
+                return true;
+            }
+            return false;
+        },
+        post(){
+            renderPsychicPowers();
+        }
+    },
+    psychic_attack: {
+        id: 'tech-psychic_attack',
+        title: loc('tech_psychic_attack'),
+        desc: loc('tech_psychic_attack'),
+        category: 'eldritch',
+        era: 'civilized',
+        reqs: { psychic: 1, military: 1 },
+        condition(){ return global.stats.psykill >= 10; },
+        trait: ['psychic'],
+        grant: ['psychic',2],
+        cost: {
+            Knowledge(){ return 100; }
+        },
+        effect: loc('tech_psychic_attack_effect'),
+        action(){
+            if (payCosts($(this)[0])){
+                global.race.psychicPowers['assaultTime'] = 0;
+                return true;
+            }
+            return false;
+        },
+        post(){
+            renderPsychicPowers();
+        }
+    },
+    psychic_finance: {
+        id: 'tech-psychic_finance',
+        title: loc('tech_psychic_finance'),
+        desc: loc('tech_psychic_finance'),
+        category: 'eldritch',
+        era: 'civilized',
+        reqs: { psychic: 2, high_tech: 4 },
+        trait: ['psychic'],
+        grant: ['psychic',3],
+        cost: {
+            Knowledge(){ return 65000; }
+        },
+        effect: loc('tech_psychic_finance_effect'),
+        action(){
+            if (payCosts($(this)[0])){
+                global.race.psychicPowers['cash'] = 0;
+                return true;
+            }
+            return false;
+        },
+        post(){
+            renderPsychicPowers();
+        }
+    },
+    mind_break: {
+        id: 'tech-mind_break',
+        title: loc('tech_mind_break'),
+        desc: loc('tech_mind_break'),
+        category: 'eldritch',
+        era: 'civilized',
+        reqs: { psychic: 2, high_tech: 1, unfathomable: 2 },
+        trait: ['psychic'],
+        grant: ['psychicthrall',1],
+        cost: {
+            Knowledge(){ return 7000; }
+        },
+        effect: loc('tech_mind_break_effect'),
+        action(){
+            if (payCosts($(this)[0])){
+                return true;
+            }
+            return false;
+        },
+        post(){
+            renderPsychicPowers();
+        }
+    },
+    psychic_stun: {
+        id: 'tech-psychic_stun',
+        title: loc('tech_psychic_stun'),
+        desc: loc('tech_psychic_stun'),
+        category: 'eldritch',
+        era: 'civilized',
+        reqs: { psychicthrall: 1, high_tech: 3, unfathomable: 2 },
+        trait: ['psychic'],
+        grant: ['psychicthrall',2],
+        cost: {
+            Knowledge(){ return 32000; }
+        },
+        effect: loc('tech_psychic_stun_effect'),
+        action(){
+            if (payCosts($(this)[0])){
+                return true;
+            }
+            return false;
+        },
+        post(){
+            renderPsychicPowers();
+        }
+    },
     spear: {
         id: 'tech-spear',
         title: loc('tech_spear'),
@@ -484,6 +677,11 @@ const techs = {
                 return true;
             }
             return false;
+        },
+        post(){
+            if (global.tech['s_lodge']){
+                global.tech['hunting'] = 2;
+            }
         }
     },
     lodge: {
@@ -494,6 +692,7 @@ const techs = {
         category: 'agriculture',
         era: 'civilized',
         reqs: { hunting: 1, housing: 1, currency: 1 },
+        condition(){ return global.tech['s_lodge'] ? false : true; },
         grant: ['hunting',2],
         cost: {
             Knowledge(){ return 180; }
@@ -518,7 +717,7 @@ const techs = {
         grant: ['s_lodge',1],
         condition(){
             return (((global.race.species === 'wendigo' || global.race['detritivore']) && !global.race['carnivore'] && !global.race['herbivore'])
-              || (global.race['carnivore'] && global.race['soul_eater']) || global.race['artifical']) ? true : false;
+              || (global.race['carnivore'] && global.race['soul_eater']) || global.race['artifical'] || global.race['unfathomable']) ? true : false;
         },
         cost: {
             Knowledge(){ return global.race['artifical'] ? 10000 : 180; }
@@ -646,7 +845,7 @@ const techs = {
         condition(){
             return (global.race['herbivore'] || (!global.race['carnivore'] && !global.race['detritivore'] && !global.race['soul_eater'])) ? true : false;
         },
-        not_trait: ['cataclysm','artifical','lone_survivor'],
+        not_trait: ['cataclysm','artifical','lone_survivor','unfathomable'],
         grant: ['agriculture',1],
         cost: {
             Knowledge(){ return 10; }
@@ -779,20 +978,20 @@ const techs = {
     },
     wind_plant: {
         id: 'tech-wind_plant',
-        title: loc('tech_windmill'),
-        desc: loc('tech_windmill'),
+        title(){ return global.race['unfathomable'] ? loc('tech_watermill') : loc('tech_windmill'); },
+        desc(){ return global.race['unfathomable'] ? loc('tech_watermill') : loc('tech_windmill'); },
         category: 'power_generation',
         era: 'globalized',
         reqs: { high_tech: 4 },
         condition(){
-            return (global.race['carnivore'] || global.race['detritivore'] || global.race['artifical'] || global.race['soul_eater']) ? true : false;
+            return (global.race['carnivore'] || global.race['detritivore'] || global.race['artifical'] || global.race['soul_eater'] || global.race['unfathomable']) ? true : false;
         },
         not_trait: ['herbivore'],
         grant: ['wind_plant',1],
         cost: {
             Knowledge(){ return 66000; }
         },
-        effect: loc('tech_wind_plant_effect'),
+        effect(){ return global.race['unfathomable'] ? loc('tech_watermill_effect') : loc('tech_wind_plant_effect'); },
         action(){
             if (payCosts($(this)[0])){
                 checkAltPurgatory('city','windmill','mill',{ count: 0, on: 0 });
@@ -1472,7 +1671,7 @@ const techs = {
         cost: {
             Knowledge(){ return 4500; }
         },
-        effect: loc('tech_bayer_process_effect'),
+        effect(){ return global.race['sappy'] ? loc('tech_bayer_process_effect_alt') : loc('tech_bayer_process_effect'); },
         action(){
             if (payCosts($(this)[0])){
                 global.city['metal_refinery'] = { count: 0, on: 0 };
@@ -1568,6 +1767,7 @@ const techs = {
         },
         post(){
             defineIndustry();
+            renderPsychicPowers();
         }
     },
     blast_furnace: {
@@ -1798,6 +1998,9 @@ const techs = {
                 return true;
             }
             return false;
+        },
+        post(){
+            renderPsychicPowers();
         }
     },
     coal_mining: {
@@ -1822,6 +2025,9 @@ const techs = {
                 return true;
             }
             return false;
+        },
+        post(){
+            renderPsychicPowers();
         }
     },
     storage: {
@@ -4170,6 +4376,9 @@ const techs = {
                 return true;
             }
             return false;
+        },
+        post(){
+            renderPsychicPowers();
         }
     },
     electronics: {
@@ -4587,6 +4796,7 @@ const techs = {
         era: 'dimensional',
         reqs: { hell_spire: 10, b_stone: 2, waygate: 3 },
         grant: ['waygate',4],
+        not_trait: ['witch_hunter'],
         cost: {
             Species(){ return popCost(1000); },
             Knowledge(){ return 55000000; },
@@ -4666,6 +4876,113 @@ const techs = {
             return false;
         }
     },
+    study_corrupt_gem: {
+        id: 'tech-study_corrupt_gem',
+        title: loc('tech_study_corrupt_gem'),
+        desc: loc('tech_study_corrupt_gem'),
+        category: 'hell_dimension',
+        era: 'intergalactic',
+        reqs: { high_tech: 16, corrupt: 1 },
+        grant: ['corrupt',2],
+        trait: ['witch_hunter'],
+        cost: {
+            Mana(){ return global.race['no_plasmid'] ? 10000 : 50000; },
+            Knowledge(){ return 18500000; },
+            Corrupt_Gem(){ return 1; }
+        },
+        effect(){ return loc('tech_study_corrupt_gem_effect'); },
+        action(){
+            if (payCosts($(this)[0])){
+                messageQueue(loc('tech_study_corrupt_gem_result'),'info',false,['progress','hell']);
+                global.resource.Corrupt_Gem.display = false;
+                return true;
+            }
+            return false;
+        }
+    },
+    soul_binding: {
+        id: 'tech-soul_binding',
+        title: loc('tech_soul_binding'),
+        desc: loc('tech_soul_binding'),
+        category: 'hell_dimension',
+        era: 'intergalactic',
+        reqs: { corrupt: 2, science: 19 },
+        grant: ['forbidden',1],
+        trait: ['witch_hunter'],
+        cost: {
+            Knowledge(){ return 19000000; }
+        },
+        effect(){ return loc('tech_soul_binding_effect'); },
+        action(){
+            if (payCosts($(this)[0])){
+                return true;
+            }
+            return false;
+        }
+    },
+    soul_capacitor: {
+        id: 'tech-soul_capacitor',
+        title: loc('tech_soul_capacitor'),
+        desc: loc('tech_soul_capacitor'),
+        category: 'hell_dimension',
+        era: 'intergalactic',
+        reqs: { forbidden: 1 },
+        grant: ['forbidden',2],
+        trait: ['witch_hunter'],
+        cost: {
+            Knowledge(){ return 19500000; }
+        },
+        effect(){ return loc('tech_soul_capacitor_effect'); },
+        action(){
+            if (payCosts($(this)[0])){
+                global.portal['soul_capacitor'] = { count: 0, on: 0, energy: 0, ecap: 0 };
+                return true;
+            }
+            return false;
+        }
+    },
+    soul_capacitor: {
+        id: 'tech-soul_capacitor',
+        title: loc('tech_soul_capacitor'),
+        desc: loc('tech_soul_capacitor'),
+        category: 'hell_dimension',
+        era: 'intergalactic',
+        reqs: { forbidden: 1 },
+        grant: ['forbidden',2],
+        trait: ['witch_hunter'],
+        cost: {
+            Knowledge(){ return 19500000; }
+        },
+        effect(){ return loc('tech_soul_capacitor_effect'); },
+        action(){
+            if (payCosts($(this)[0])){
+                global.portal['soul_capacitor'] = { count: 0, on: 0, energy: 0, ecap: 0 };
+                return true;
+            }
+            return false;
+        }
+    },
+    absorption_chamber: {
+        id: 'tech-absorption_chamber',
+        title: loc('tech_absorption_chamber'),
+        desc: loc('tech_absorption_chamber'),
+        category: 'hell_dimension',
+        era: 'intergalactic',
+        reqs: { forbidden: 2 },
+        grant: ['forbidden',3],
+        trait: ['witch_hunter'],
+        cost: {
+            Knowledge(){ return 20000000; }
+        },
+        effect(){ return loc('tech_absorption_chamber_effect'); },
+        action(){
+            if (payCosts($(this)[0])){
+                global.portal['absorption_chamber'] = { count: 0 };
+                return true;
+            }
+            return false;
+        }
+    },
     corrupt_gem_analysis: {
         id: 'tech-corrupt_gem_analysis',
         title: loc('tech_corrupt_gem_analysis'),
@@ -4674,6 +4991,7 @@ const techs = {
         era: 'dimensional',
         reqs: { high_tech: 16, corrupt: 1 },
         grant: ['corrupt',2],
+        not_trait: ['witch_hunter'],
         cost: {
             Species(){ return 1; }, // Not scaled intentionally
             Knowledge(){ return 22000000; },
@@ -4871,7 +5189,7 @@ const techs = {
         era: 'intergalactic',
         reqs: { science: 19 },
         grant: ['ascension',1],
-        not_trait: ['orbit_decay'],
+        not_trait: ['orbit_decay','witch_hunter'],
         cost: {
             Knowledge(){ return 17500000; },
             Phage(){ return 25; }
@@ -4892,7 +5210,7 @@ const techs = {
         era: 'intergalactic',
         reqs: { ascension: 1 },
         grant: ['ascension',2],
-        not_trait: ['orbit_decay'],
+        not_trait: ['orbit_decay','witch_hunter'],
         cost: {
             Knowledge(){ return 18500000; },
             Plasmid(){ return 100; }
@@ -5123,6 +5441,9 @@ const techs = {
                 return true;
             }
             return false;
+        },
+        post(){
+            renderPsychicPowers();
         }
     },
     uranium_storage: {
@@ -5420,6 +5741,7 @@ const techs = {
         },
         post(){
             defineIndustry();
+            renderPsychicPowers();
         }
     },
     fluidized_bed_reactor: {
@@ -5486,6 +5808,9 @@ const techs = {
                 return true;
             }
             return false;
+        },
+        post(){
+            renderPsychicPowers();
         }
     },
     stanene: {
@@ -5512,6 +5837,7 @@ const techs = {
         },
         post(){
             defineIndustry();
+            renderPsychicPowers();
         }
     },
     nano_tubes: {
@@ -5538,6 +5864,7 @@ const techs = {
         },
         post(){
             defineIndustry();
+            renderPsychicPowers();
         }
     },
     scarletite: {
@@ -5574,6 +5901,9 @@ const techs = {
                 return true;
             }
             return false;
+        },
+        post(){
+            renderPsychicPowers();
         }
     },
     pillars: {
@@ -5633,6 +5963,7 @@ const techs = {
         reqs: { reclaimer: 1, mining: 2 },
         grant: ['reclaimer',2],
         trait: ['evil'],
+        not_trait: ['living_tool'],
         condition(){
             return global.race['kindling_kindred'] || global.race['smoldering'] ? false : global.race.species === 'wendigo' ? true : global.race['soul_eater'] ? false : true;
         },
@@ -5657,6 +5988,7 @@ const techs = {
         reqs: { reclaimer: 2, mining: 3 },
         grant: ['reclaimer',3],
         trait: ['evil'],
+        not_trait: ['living_tool'],
         condition(){
             return global.race['kindling_kindred'] || global.race['smoldering'] ? false : global.race.species === 'wendigo' ? true : global.race['soul_eater'] ? false : true;
         },
@@ -5681,6 +6013,7 @@ const techs = {
         reqs: { reclaimer: 3, smelting: 2 },
         grant: ['reclaimer',4],
         trait: ['evil'],
+        not_trait: ['living_tool'],
         condition(){
             return global.race['kindling_kindred'] || global.race['smoldering'] ? false : global.race.species === 'wendigo' ? true : global.race['soul_eater'] ? false : true;
         },
@@ -5705,6 +6038,7 @@ const techs = {
         reqs: { reclaimer: 4, high_tech: 3 },
         grant: ['reclaimer',5],
         trait: ['evil'],
+        not_trait: ['living_tool'],
         condition(){
             return global.race['kindling_kindred'] || global.race['smoldering'] ? false : global.race.species === 'wendigo' ? true : global.race['soul_eater'] ? false : true;
         },
@@ -5729,6 +6063,7 @@ const techs = {
         reqs: { reclaimer: 5, high_tech: 4 },
         grant: ['reclaimer',6],
         trait: ['evil'],
+        not_trait: ['living_tool'],
         condition(){
             return global.race['kindling_kindred'] || global.race['smoldering'] ? false : global.race.species === 'wendigo' ? true : global.race['soul_eater'] ? false : true;
         },
@@ -5753,6 +6088,7 @@ const techs = {
         reqs: { reclaimer: 6, space: 3 },
         grant: ['reclaimer',7],
         trait: ['evil'],
+        not_trait: ['living_tool'],
         condition(){
             return global.race['kindling_kindred'] || global.race['smoldering'] ? false : global.race.species === 'wendigo' ? true : global.race['soul_eater'] ? false : true;
         },
@@ -5794,8 +6130,8 @@ const techs = {
     },
     stone_axe: {
         id: 'tech-stone_axe',
-        title: loc('tech_stone_axe'),
-        desc: loc('tech_stone_axe_desc'),
+        title(){ return loc('tech_stone_axe'); },
+        desc(){ return loc('tech_stone_axe_desc'); },
         category: 'lumber_gathering',
         reqs: { primitive: 3 },
         era: 'civilized',
@@ -5806,7 +6142,10 @@ const techs = {
             Lumber(){ return 20; },
             Stone(){ return 20; }
         },
-        effect(){ return global.race['sappy'] ? loc('tech_amber_axe_effect') : loc('tech_stone_axe_effect'); },
+        effect(){
+            if (global.race['living_tool']){ return loc(`tech_basic_livingtools`); }
+            return global.race['sappy'] ? loc('tech_amber_axe_effect') : loc('tech_stone_axe_effect');
+        },
         action(){
             if (payCosts($(this)[0])){
                 global.civic.lumberjack.display = true;
@@ -5823,6 +6162,7 @@ const techs = {
         category: 'lumber_gathering',
         era: 'civilized',
         reqs: { axe: 1, mining: 2 },
+        not_trait: ['living_tool'],
         grant: ['axe',2],
         cost: {
             Knowledge(){ return 540; },
@@ -5888,6 +6228,7 @@ const techs = {
         category: 'lumber_gathering',
         era: 'civilized',
         reqs: { axe: 2, mining: 3 },
+        not_trait: ['living_tool'],
         grant: ['axe',3],
         cost: {
             Knowledge(){ return global.city.ptrait.includes('unstable') ? 1350 : 2700; },
@@ -5908,6 +6249,7 @@ const techs = {
         category: 'lumber_gathering',
         era: 'discovery',
         reqs: { axe: 3, smelting: 2 },
+        not_trait: ['living_tool'],
         grant: ['axe',4],
         cost: {
             Knowledge(){ return 9000; },
@@ -5928,6 +6270,7 @@ const techs = {
         category: 'lumber_gathering',
         era: 'industrialized',
         reqs: { axe: 4, high_tech: 3 },
+        not_trait: ['living_tool'],
         grant: ['axe',5],
         cost: {
             Knowledge(){ return 38000; },
@@ -5948,6 +6291,7 @@ const techs = {
         category: 'lumber_gathering',
         era: 'interstellar',
         reqs: { axe: 5, alpha: 2 },
+        not_trait: ['living_tool'],
         grant: ['axe',6],
         cost: {
             Knowledge(){ return 560000; },
@@ -5970,7 +6314,7 @@ const techs = {
         category: 'stone_gathering',
         era: 'civilized',
         reqs: { mining: 2 },
-        not_trait: ['cataclysm','sappy'],
+        not_trait: ['cataclysm','sappy','living_tool'],
         grant: ['hammer',1],
         cost: {
             Knowledge(){ return 540; },
@@ -5991,7 +6335,7 @@ const techs = {
         category: 'stone_gathering',
         era: 'civilized',
         reqs: { hammer: 1, mining: 3 },
-        not_trait: ['cataclysm','sappy'],
+        not_trait: ['cataclysm','sappy','living_tool'],
         grant: ['hammer',2],
         cost: {
             Knowledge(){ return global.city.ptrait.includes('unstable') ? 1350 : 2700; },
@@ -6012,7 +6356,7 @@ const techs = {
         category: 'stone_gathering',
         era: 'discovery',
         reqs: { hammer: 2, smelting: 2 },
-        not_trait: ['cataclysm','sappy'],
+        not_trait: ['cataclysm','sappy','living_tool'],
         grant: ['hammer',3],
         cost: {
             Knowledge(){ return 7200; },
@@ -6033,7 +6377,7 @@ const techs = {
         category: 'stone_gathering',
         era: 'industrialized',
         reqs: { hammer: 3, high_tech: 3 },
-        not_trait: ['cataclysm','sappy'],
+        not_trait: ['cataclysm','sappy','living_tool'],
         grant: ['hammer',4],
         cost: {
             Knowledge(){ return 40000; },
@@ -6054,7 +6398,7 @@ const techs = {
         category: 'mining',
         era: 'civilized',
         reqs: { mining: 2 },
-        not_trait: ['cataclysm'],
+        not_trait: ['cataclysm','living_tool'],
         grant: ['pickaxe',1],
         cost: {
             Knowledge(){ return 675; },
@@ -6075,7 +6419,7 @@ const techs = {
         category: 'mining',
         era: 'civilized',
         reqs: { pickaxe: 1, mining: 3 },
-        not_trait: ['cataclysm'],
+        not_trait: ['cataclysm','living_tool'],
         grant: ['pickaxe',2],
         cost: {
             Knowledge(){ return global.city.ptrait.includes('unstable') ? 1600 : 3200; },
@@ -6096,6 +6440,7 @@ const techs = {
         category: 'mining',
         era: 'discovery',
         reqs: { pickaxe: 2, smelting: 2},
+        not_trait: ['living_tool'],
         grant: ['pickaxe',3],
         cost: {
             Knowledge(){ return 9000; },
@@ -6116,6 +6461,7 @@ const techs = {
         category: 'mining',
         era: 'discovery',
         reqs: { pickaxe: 3, high_tech: 2},
+        not_trait: ['living_tool'],
         grant: ['pickaxe',4],
         cost: {
             Knowledge(){ return 22500; },
@@ -6136,6 +6482,7 @@ const techs = {
         category: 'mining',
         era: 'globalized',
         reqs: { pickaxe: 4, high_tech: 4},
+        not_trait: ['living_tool'],
         grant: ['pickaxe',5],
         cost: {
             Knowledge(){ return 67500; },
@@ -6157,6 +6504,7 @@ const techs = {
         category: 'mining',
         era: 'interstellar',
         reqs: { pickaxe: 5, alpha: 2},
+        not_trait: ['living_tool'],
         grant: ['pickaxe',6],
         cost: {
             Knowledge(){ return 535000; },
@@ -6177,7 +6525,7 @@ const techs = {
         category: 'agriculture',
         era: 'civilized',
         reqs: { mining: 2, agriculture: 1 },
-        not_trait: ['cataclysm'],
+        not_trait: ['cataclysm','living_tool'],
         grant: ['hoe',1],
         cost: {
             Knowledge(){ return 720; },
@@ -6198,6 +6546,7 @@ const techs = {
         category: 'agriculture',
         era: 'civilized',
         reqs: { hoe: 1, mining: 3, agriculture: 1 },
+        not_trait: ['living_tool'],
         grant: ['hoe',2],
         cost: {
             Knowledge(){ return global.city.ptrait.includes('unstable') ? 1800 : 3600; },
@@ -6218,6 +6567,7 @@ const techs = {
         category: 'agriculture',
         era: 'discovery',
         reqs: { hoe: 2, smelting: 2, agriculture: 1 },
+        not_trait: ['living_tool'],
         grant: ['hoe',3],
         cost: {
             Knowledge(){ return 12600; },
@@ -6238,6 +6588,7 @@ const techs = {
         category: 'agriculture',
         era: 'industrialized',
         reqs: { hoe: 3, high_tech: 3, agriculture: 1 },
+        not_trait: ['living_tool'],
         grant: ['hoe',4],
         cost: {
             Knowledge(){ return 44000; },
@@ -6258,6 +6609,7 @@ const techs = {
         category: 'agriculture',
         era: 'interstellar',
         reqs: { hoe: 4, alpha: 2 },
+        not_trait: ['living_tool'],
         grant: ['hoe',5],
         cost: {
             Knowledge(){ return 530000; },
@@ -7556,6 +7908,12 @@ const techs = {
                 return true;
             }
             return false;
+        },
+        post(){
+            if (global.race['terrifying']){
+                global.tech['fanaticism'] = 3;
+                drawTech();
+            }
         }
     },
     missionary: {
@@ -7565,6 +7923,7 @@ const techs = {
         category: 'religion',
         era: 'discovery',
         reqs: { fanaticism: 2 },
+        not_trait: ['terrifying'],
         grant: ['fanaticism',3],
         cost: {
             Knowledge(){ return 10000; }
@@ -8835,6 +9194,9 @@ const techs = {
                 return true;
             }
             return false;
+        },
+        post(){
+            renderPsychicPowers();
         }
     },
     mega_manufacturing: {
@@ -9928,6 +10290,9 @@ const techs = {
                 return true;
             }
             return false;
+        },
+        post(){
+            renderPsychicPowers();
         }
     },
     gateway_depot: {
@@ -10142,11 +10507,17 @@ const techs = {
                 global.resource.Mana.display = true;
                 global.resource.Crystal.display = true;
                 global.civic.crystal_miner.display = true;
+                if (global.race['witch_hunter']){
+                    global.resource.Sus.display = true;
+                }
                 return true;
             }
             return false;
         },
-        flair: loc('tech_mana_flair')
+        flair: loc('tech_mana_flair'),
+        post(){
+            renderPsychicPowers();
+        }
     },
     ley_lines: {
         id: 'tech-ley_lines',
@@ -10421,6 +10792,219 @@ const techs = {
             defineResources();
         }
     },
+    secret_society: {
+        id: 'tech-secret_society',
+        title: loc('tech_secret_society'),
+        desc: loc('tech_secret_society'),
+        category: 'magic',
+        era: 'civilized',
+        reqs: { magic: 1 },
+        grant: ['roguemagic',1],
+        condition(){
+            return global.race['universe'] === 'magic' && global.race['witch_hunter'] ? true : false;
+        },
+        cost: {
+            Mana(){ return 10; },
+            Knowledge(){ return 45; },
+        },
+        effect(){ return loc('tech_secret_society_effect'); },
+        action(){
+            if (payCosts($(this)[0])){
+                return true;
+            }
+            return false;
+        }
+    },
+    cultists: {
+        id: 'tech-cultists',
+        title: loc('tech_cultists'),
+        desc: loc('tech_cultists'),
+        category: 'magic',
+        era: 'civilized',
+        reqs: { roguemagic: 1, cleric: 1 },
+        grant: ['roguemagic',2],
+        condition(){
+            return global.race['universe'] === 'magic' && global.race['witch_hunter'] ? true : false;
+        },
+        cost: {
+            Mana(){ return 250; },
+            Knowledge(){ return 2125; }
+        },
+        effect(){ return loc('tech_cultists_effect'); },
+        action(){
+            if (payCosts($(this)[0])){
+                return true;
+            }
+            return false;
+        }
+    },
+    conceal_ward: {
+        id: 'tech-conceal_ward',
+        title: loc('tech_conceal_ward'),
+        desc: loc('tech_conceal_ward'),
+        category: 'magic',
+        era: 'discovery',
+        reqs: { roguemagic: 2, theatre: 3 },
+        grant: ['roguemagic',3],
+        condition(){
+            return global.race['universe'] === 'magic' && global.race['witch_hunter'] ? true : false;
+        },
+        cost: {
+            Mana(){ return 500; },
+            Knowledge(){ return 8200; },
+            Crystal(){ return 1000; }
+        },
+        effect(){ return loc('tech_conceal_ward_effect'); },
+        action(){
+            if (payCosts($(this)[0])){
+                global.city['conceal_ward'] = { count: 0 };
+                global.space['conceal_ward'] = { count: 0 };
+                return true;
+            }
+            return false;
+        }
+    },
+    subtle_rituals: {
+        id: 'tech-subtle_rituals',
+        title: loc('tech_subtle_rituals'),
+        desc: loc('tech_subtle_rituals'),
+        category: 'magic',
+        era: 'discovery',
+        reqs: { roguemagic: 3, magic: 4 },
+        grant: ['roguemagic',4],
+        condition(){
+            return global.race['universe'] === 'magic' && global.race['witch_hunter'] ? true : false;
+        },
+        cost: {
+            Mana(){ return 100; },
+            Knowledge(){ return 15000; },
+            Crystal(){ return 2500; }
+        },
+        effect(){ return loc('tech_subtle_rituals_effect'); },
+        action(){
+            if (payCosts($(this)[0])){
+                return true;
+            }
+            return false;
+        }
+    },
+    pylon_camouflage: {
+        id: 'tech-pylon_camouflage',
+        title: loc('tech_pylon_camouflage'),
+        desc: loc('tech_pylon_camouflage'),
+        category: 'magic',
+        era: 'industrialized',
+        reqs: { roguemagic: 4, high_tech: 3 },
+        grant: ['roguemagic',5],
+        condition(){
+            return global.race['universe'] === 'magic' && global.race['witch_hunter'] ? true : false;
+        },
+        cost: {
+            Mana(){ return 1000; },
+            Knowledge(){ return 30000; },
+            Crystal(){ return 3750; }
+        },
+        effect(){ return loc('tech_pylon_camouflage_effect'); },
+        action(){
+            if (payCosts($(this)[0])){
+                return true;
+            }
+            return false;
+        }
+    },
+    fake_tech: {
+        id: 'tech-fake_tech',
+        title: loc('tech_fake_tech'),
+        desc: loc('tech_fake_tech'),
+        category: 'magic',
+        era: 'industrialized',
+        reqs: { roguemagic: 5, high_tech: 4 },
+        grant: ['roguemagic',6],
+        condition(){
+            return global.race['universe'] === 'magic' && global.race['witch_hunter'] ? true : false;
+        },
+        cost: {
+            Mana(){ return 2250; },
+            Knowledge(){ return 60000; }
+        },
+        effect(){ return loc('tech_fake_tech_effect'); },
+        action(){
+            if (payCosts($(this)[0])){
+                return true;
+            }
+            return false;
+        }
+    },
+    concealment: {
+        id: 'tech-concealment',
+        title: loc('tech_concealment'),
+        desc: loc('tech_concealment'),
+        category: 'magic',
+        era: 'early_space',
+        reqs: { roguemagic: 6, magic: 5 },
+        grant: ['roguemagic',7],
+        condition(){
+            return global.race['universe'] === 'magic' && global.race['witch_hunter'] ? true : false;
+        },
+        cost: {
+            Mana(){ return 3000; },
+            Knowledge(){ return 185000; }
+        },
+        effect(){ return loc('tech_concealment_effect'); },
+        action(){
+            if (payCosts($(this)[0])){
+                return true;
+            }
+            return false;
+        }
+    },
+    improved_concealment: {
+        id: 'tech-improved_concealment',
+        title: loc('tech_improved_concealment'),
+        desc: loc('tech_improved_concealment'),
+        category: 'magic',
+        era: 'intergalactic',
+        reqs: { roguemagic: 7, forbidden: 1 },
+        grant: ['roguemagic',8],
+        condition(){
+            return global.race['universe'] === 'magic' && global.race['witch_hunter'] ? true : false;
+        },
+        cost: {
+            Mana(){ return global.race['no_plasmid'] ? 6000 : 25000; },
+            Knowledge(){ return 20000000; }
+        },
+        effect(){ return loc('tech_improved_concealment_effect'); },
+        action(){
+            if (payCosts($(this)[0])){
+                return true;
+            }
+            return false;
+        }
+    },
+    outerplane_summon: {
+        id: 'tech-outerplane_summon',
+        title: loc('tech_outerplane_summon'),
+        desc: loc('tech_outerplane_summon'),
+        category: 'magic',
+        era: 'dimensional',
+        reqs: { roguemagic: 8, forbidden: 4, hell_spire: 10, b_stone: 2, waygate: 3 },
+        grant: ['forbidden',5],
+        condition(){
+            return global.race['universe'] === 'magic' && global.race['witch_hunter'] ? true : false;
+        },
+        cost: {
+            Mana(){ return global.race['no_plasmid'] ? 12000 : 60000; },
+            Knowledge(){ return 60000000; },
+            Demonic_Essence(){ return 1; }
+        },
+        effect(){ return loc('tech_outerplane_summon_effect'); },
+        action(){
+            if (payCosts($(this)[0])){
+                return true;
+            }
+            return false;
+        }
+    },
     dark_bomb: {
         id: 'tech-dark_bomb',
         title: loc('tech_dark_bomb'),
@@ -10625,7 +11209,7 @@ const techs = {
         cost: {
             Knowledge(){ return 2250000; },
             Quantium(){ return 250000; },
-            Cipher(){ return 40000; }
+            Cipher(){ return 8000; }
         },
         effect: loc('tech_medkit_effect'),
         action(){
@@ -10864,6 +11448,9 @@ const techs = {
                 return true;
             }
             return false;
+        },
+        post(){
+            renderPsychicPowers();
         }
     },
     anitgrav_bunk: {
@@ -10967,7 +11554,7 @@ const techs = {
         grant: ['outer',4],
         cost: {
             Knowledge(){ return 1800000; },
-            Cipher(){ return 25000; }
+            Cipher(){ return 12500; }
         },
         effect: loc('tech_data_analysis_effect'),
         action(){
@@ -11062,7 +11649,7 @@ const techs = {
         grant: ['eris',3],
         cost: {
             Knowledge(){ return 3200000; },
-            Cipher(){ return 50000; }
+            Cipher(){ return 25000; }
         },
         effect(){ return loc('tech_dronewar_effect',[planetName().eris]); },
         action(){
@@ -11121,6 +11708,7 @@ const techs = {
         },
         post(){
             defineIndustry();
+            renderPsychicPowers();
         }
     },
     graphene_tp: {
@@ -11508,7 +12096,7 @@ const techs = {
         cost: {
             Knowledge(){ return 2250000; },
             Quantium(){ return 1000000; },
-            Cipher(){ return 50000; }
+            Cipher(){ return 25000; }
         },
         effect: loc('tech_warehouse_shelving_effect'),
         action(){
@@ -11530,7 +12118,7 @@ const techs = {
         cost: {
             Knowledge(){ return 2500000; },
             Orichalcum(){ return 100000; },
-            Cipher(){ return 20000; }
+            Cipher(){ return 12000; }
         },
         effect(){ return loc('tech_elerium_extraction_effect'); },
         action(){

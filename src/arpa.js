@@ -1,7 +1,7 @@
 import { global, keyMultiplier, sizeApproximation, srSpeak } from './vars.js';
-import { clearElement, popover, clearPopper, flib, eventActive, timeFormat, vBind, messageQueue, adjustCosts, calcQueueMax, calcRQueueMax, buildQueue, calcPrestige, calc_mastery, darkEffect, easterEgg, getTraitDesc, removeFromQueue, arpaTimeCheck, deepClone } from './functions.js';
+import { clearElement, popover, clearPopper, flib, fibonacci, eventActive, timeFormat, vBind, messageQueue, adjustCosts, calcQueueMax, calcRQueueMax, buildQueue, calcPrestige, calc_mastery, darkEffect, easterEgg, getTraitDesc, removeFromQueue, arpaTimeCheck, deepClone } from './functions.js';
 import { actions, updateQueueNames, drawTech, drawCity, addAction, removeAction, wardenLabel, checkCosts } from './actions.js';
-import { races, traits, cleanAddTrait, cleanRemoveTrait, traitSkin } from './races.js';
+import { races, traits, cleanAddTrait, cleanRemoveTrait, traitSkin, fathomCheck } from './races.js';
 import { renderSpace } from './space.js';
 import { drawMechLab } from './portal.js';
 import { govActive, defineGovernor } from './governor.js';
@@ -220,6 +220,9 @@ export const arpaProjects = {
         reqs: { magic: 5 },
         grant: 'nexus',
         effect(){
+            if (global.tech['roguemagic'] && global.tech.roguemagic >= 7){
+                return `<div>${loc('arpa_projects_nexus_effect1',[5])}</div><div>${loc('witch_hunter_nexus',[8])}</div>`;
+            }
             return loc('arpa_projects_nexus_effect1',[5]);
         },
         cost: {
@@ -231,12 +234,17 @@ export const arpaProjects = {
     syphon: {
         title: loc('arpa_syphon_title'),
         desc(){
+            let desc = '';
             if (global.tech['syphon'] && global.tech.syphon >= 0){
-                return `<div>${loc('arpa_syphon_desc')}</div><div class="has-text-danger">${loc('arpa_syphon_desc_warn2')}</div>`;
+                desc = `<div>${loc('arpa_syphon_desc')}</div><div class="has-text-danger">${loc('arpa_syphon_desc_warn2')}</div>`;
             }
             else {
-                return `<div>${loc('arpa_syphon_desc')}</div><div class="has-text-danger">${loc('arpa_syphon_desc_warn1')}</div>`;
+                desc = `<div>${loc('arpa_syphon_desc')}</div><div class="has-text-danger">${loc('arpa_syphon_desc_warn1')}</div>`;
             }
+            if (global.race['witch_hunter']){
+                desc += `<div class="has-text-caution">${loc(`witch_hunter_suspicion`)}</div>`;
+            }
+            return desc;
         },
         reqs: { veil: 2 },
         grant: 'syphon',
@@ -1603,8 +1611,16 @@ export function arpaAdjustCosts(costs,offset,wiki){
 function creativeAdjust(costs,offset,wiki){
     if ((wiki && wiki.creative) || (!wiki && global.race['creative'])){
         var newCosts = {};
+        let fathom = fathomCheck('human');
         Object.keys(costs).forEach(function (res){
-            newCosts[res] = function(){ return costs[res](offset,wiki) * (1 - traits.creative.vars()[1] / 100); }
+            newCosts[res] = function(){
+                let cost = costs[res](offset, wiki);
+                cost *= (1 - traits.creative.vars()[1] / 100);
+                if (fathom > 0){
+                    cost *= 1 - (traits.creative.vars(1)[1] / 100 * fathom);
+                }
+                return cost;
+            }
         });
         return newCosts;
     }
@@ -2221,13 +2237,6 @@ function bindTrait(breakdown,trait){
     m_trait.append(`<span class="has-text-warning name">${total}${traitSkin('name',trait)}</span>`);
 
     breakdown.append(m_trait);
-}
-
-function fibonacci(num, memo){
-    memo = memo || {};
-    if (memo[num]) return memo[num];
-    if (num <= 1) return 1;
-    return memo[num] = fibonacci(num - 1, memo) + fibonacci(num - 2, memo);
 }
 
 function crispr(){

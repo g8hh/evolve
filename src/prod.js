@@ -1,5 +1,5 @@
 import { global, p_on } from './vars.js';
-import { biomes, traits } from './races.js';
+import { biomes, traits, fathomCheck } from './races.js';
 import { govRelationFactor } from './civics.js';
 import { jobScale } from './jobs.js';
 import { hellSupression } from './portal.js';
@@ -333,6 +333,10 @@ export function production(id,val){
             if (global.race['tough']){
                 mats *= 1 + (traits.tough.vars()[0] / 100);
             }
+            let fathom = fathomCheck('ogre');
+            if (fathom > 0){
+                mats *= 1 + (traits.tough.vars(1)[0] / 100 * fathom);
+            }
             if (global.tech['tau_pit_mining']){
                 mats *= 1.18;
             }
@@ -473,6 +477,20 @@ export function production(id,val){
         case 'alien_outpost':
         {
             return 0.01;
+        }
+        case 'psychic_boost':
+        {
+            if (global.race['psychic'] && global.race['psychicPowers'] && global.race.psychicPowers.boostTime > 0){
+                return global.race.psychicPowers.boost.r === val ? (1 + (traits.psychic.vars()[3] / 100)) : 1;
+            }
+            return 1;
+        }
+        case 'psychic_cash':
+        {
+            if (global.race['psychic'] && global.race['psychicPowers'] && global.race.psychicPowers['cash'] && global.race.psychicPowers.cash > 0){
+                return 1 + (traits.psychic.vars()[3] / 100);
+            }
+            return 1;
         }
     }
 }

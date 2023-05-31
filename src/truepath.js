@@ -1721,6 +1721,7 @@ const tauCetiModules = {
                 return pop;
             }
         },
+        captive_housing: buildTemplate(`captive_housing`,'tauceti'),
         pylon: {
             id: 'tauceti-pylon',
             title: loc('tau_home_pylon'),
@@ -3974,6 +3975,8 @@ export function shipPower(ship, wiki){
             watts = Math.round(200 * out_inflate);
             break;
     }
+
+    watts = Math.round(powerModifier(watts));
 
     switch (ship.weapon){
         case 'railgun':

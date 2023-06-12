@@ -3,6 +3,24 @@ import { clearElement } from './../functions.js';
 
 const changeList = [
     {
+        version: `1.3.8`,
+        revision: `a`,
+        date: `6/1/2023`,
+        changes: [
+            `Fixed high pop scaling.`,
+        ]
+    },
+    {
+        version: `1.3.8`,
+        date: `6/1/2023`,
+        changes: [
+            `Unfathomable bug fixes.`,
+            `Psychic powers up time now scale with rank of Ancient Nightmare.`,
+            `Additional Psychic power upgrades.`,
+            `Intergalactic Raider renamed to Corsair.`,
+        ]
+    },
+    {
         version: `1.3.7`,
         revision: `a`,
         date: `5/30/2023`,

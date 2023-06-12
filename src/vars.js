@@ -1168,7 +1168,7 @@ if (convertVersion(global['version']) < 103002){
     }
 }
 
-global['version'] = '1.3.7';
+global['version'] = '1.3.8';
 global['revision'] = 'a';
 delete global['beta'];
 

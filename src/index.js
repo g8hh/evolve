@@ -1437,7 +1437,7 @@ export function index(){
                 <h2 class="is-sr-only">External Links</h2>
                 <ul class="external-links">
                     <li><a href="wiki.html" target="_blank">Wiki</a></li>
-                    <li><a href="https://shimo.im/sheets/tg6VPQgCKhrYW9QG/" target="_blank" style="color: green;">进化攻略本（作为wiki补充）</a></li>
+                    <li><a href="https://docs.qq.com/sheet/DSGZueEtwcHdZclNT" target="_blank" style="color: green;">进化攻略本（作为wiki补充）</a></li>
                     <li><a href="https://www.reddit.com/r/EvolveIdle/" target="_blank">Reddit</a></li>
                     <li><a href="https://discord.gg/dcwdQEr" target="_blank">Discord</a></li>
                     <li><a href="https://github.com/pmotschmann/Evolve" target="_blank">GitHub</a></li>

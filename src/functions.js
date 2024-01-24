@@ -423,6 +423,11 @@ export function buildQueue(){
         <span id="pausequeue" class="${global.queue.pause ? 'pause' : 'play'}" role="button" @click="pauseQueue()" :aria-label="pausedesc()"></span>
     `));
 
+    if (global.settings.queuestyle) {
+        $('#buildQueue').addClass(global.settings.queuestyle);
+
+    }
+
     let queue = $(`<ul class="buildList"></ul>`);
     $('#buildQueue').append(queue);
 

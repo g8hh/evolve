@@ -4,9 +4,27 @@ import { clearElement } from './../functions.js';
 export const changeList = [
     {
         version: `1.3.13`,
+        revision: `b`,
         date: `8/6/2024`,
         changes: [
-            `New Scenrio by CondoSlime: Fasting.`,
+            `Fixed issue with starting Cataclysm Scenerio.`,
+            `Fixed some issues with Fasting Scenario.`,
+            `Fixed an issue with Replicator scheduler and supplies.`
+        ]
+    },
+    {
+        version: `1.3.13`,
+        revision: `a`,
+        date: `8/6/2024`,
+        changes: [
+            `Fix a bug that prevented crafting in Cataclysm and Lone Survivor modes.`
+        ]
+    },
+    {
+        version: `1.3.13`,
+        date: `8/6/2024`,
+        changes: [
+            `New Scenario by CondoSlime: Fasting.`,
             `More queue config options.`,
             `Wiki Search feature by sm3232`,
             `Language Updates.`,

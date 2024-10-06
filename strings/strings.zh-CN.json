@@ -8684,7 +8684,7 @@
   "wiki_government_democracy_para3": "此效果只对%0有效。",
   "wiki_government_democracy_para4": "研究%1后艺人的效果变为 +%0；研究%3后艺人的效果变为 +%2。",
   "wiki_government_democracy_para5": "民主体制同时还会使工人的产量 -%0。",
-  "wiki_government_democracy_para6": "此产量惩罚对以下工作类型生效：%0、%1、%2、%3、%4、%5、%6、%7、%8和%9。%9的战斗评级也会降低相同数值。",
+  "wiki_government_democracy_para6": "此产量惩罚对以下工作类型生效：%0、%1、%2、%3、%4、%5、%6、%7、%8和%9。%10的战斗评级也会降低相同数值。",
   "wiki_government_oligarchy_para3": "研究%1后税收收入变为 -%0；研究%2以后消除税收惩罚。",
   "wiki_government_oligarchy_para4": "税收抵制只在税率超过 %0 时触发。",
   "wiki_government_oligarchy_para5": "税率超过 %1 的士气惩罚，每 1% 税率 -%0。",

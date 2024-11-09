@@ -3,6 +3,99 @@ import { clearElement } from './../functions.js';
 
 export const changeList = [
     {
+        version: `1.3.17`,
+        revision: `c`,
+        date: `11/1/2024`,
+        changes: [
+            `Non-Evil Wendigo can now Trick or Treat!`,
+        ]
+    },
+    {
+        version: `1.3.17`,
+        revision: `b`,
+        date: `10/29/2024`,
+        changes: [
+            `Fixed Ghost #3 with Forge Trait.`,
+            `Fixed Emocorn gloomy trait.`
+        ]
+    },
+    {
+        version: `1.3.17`,
+        revision: `a`,
+        date: `10/27/2024`,
+        changes: [
+            `Fixed Trick or Treat! Feat tracker.`
+        ]
+    },
+    {
+        version: `1.3.17`,
+        date: `10/13/2024`,
+        changes: [
+            `Cruisers now grant the correct number of soldiers in Fasting scenario.`,
+            `Mass Ejector will now show a timer until destabilization if T3 previously completed.`,
+            `Fixed Coal income in Cataclysm.`,
+            `Adjusted High Pop growth rates.`,
+            `Craftsmen have been renamed to Crafters.`,
+            `Fixed some issues with the Wiki.`,
+            `Fixed display error with Cultural Center.`
+        ]
+    },
+    {
+        version: `1.3.16`,
+        revision: `a`,
+        date: `9/30/2024`,
+        changes: [
+            `Fixed an issue with with Gravity Well challenge and having too many Railways.`
+        ]
+    },
+    {
+        version: `1.3.16`,
+        date: `9/29/2024`,
+        changes: [
+            `Pickaxes once again affect Coal Mines.`,
+            `Changed Scientific Notation to Engineering Notation.`,
+            `Added Scientific Notation option.`
+        ]
+    },
+    {
+        version: `1.3.15`,
+        revision: `a`,
+        date: `9/21/2024`,
+        changes: [
+            `Fixed Secret to Immortality feat not being awarded.`
+        ]
+    },
+    {
+        version: `1.3.15`,
+        date: `9/19/2024`,
+        changes: [
+            `Fasting scenario Demonic Infusion goal updated with new tastier experience.`,
+            `Starvation risk tooltips added for Fasting scenario.`,
+            `Mastery listed under stats tab now displays unmodified value.`,
+            `Dark Bomb will no longer appear as an option after the demon lord is defeated.`,
+        ]
+    },
+    {
+        version: `1.3.14`,
+        revision: `a`,
+        date: `9/2/2024`,
+        changes: [
+            `Fixed incorrect scientist label.`
+        ]
+    },
+    {
+        version: `1.3.14`,
+        date: `9/2/2024`,
+        changes: [
+            `Fixed various bugs with Fasting scenario.`,
+            `Difficulty tweaks to Fasting scenario.`,
+            `Added feat Icon for Fasting.`,
+            `Ships in route to the Dwarf planet now check their fuel consumption.`,
+            `Manual crafting is no longer affected by High Population trait.`,
+            `Misc bug fixes.`
+        ]
+    },
+    {
         version: `1.3.13`,
         revision: `b`,
         date: `8/6/2024`,

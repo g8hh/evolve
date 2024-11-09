@@ -7,7 +7,7 @@ import { atomic_mass } from './resources.js';
 import { checkRequirements, checkSpaceRequirements, convertSpaceSector, planetName } from './space.js';
 import { fortressTech } from './portal.js';
 import { checkPathRequirements } from './truepath.js';
-import { production } from './prod.js';
+import { highPopAdjust, production } from './prod.js';
 
 export function loadIndustry(industry,parent,bind){
     switch (industry){
@@ -187,7 +187,7 @@ function loadSmelter(parent,bind){
     }
 
     if (global.race['forge']){
-        let oil = $(`<span :aria-label="buildLabel('oil') + ariaCount('Oil')" class="current oil infoOnly">${loc('trait_forge_name')} {{ s.Oil }}</span>`);
+        let oil = $(`<span :aria-label="buildLabel('oil') + ariaCount('Oil')" class="current oil infoOnly">${loc('trait_forge_name')} <span v-html="$options.filters.altspook(s.Oil)"></span></span>`);
         fuelTypes.append(oil);
     }
     else if (global.resource.Oil.display){
@@ -419,7 +419,7 @@ function loadSmelter(parent,bind){
                 return v;
             },
             altspook(v){
-                if (bind && global.race['forge'] && global.city.smelter.Steel === 6){
+                if (bind && global.race['forge'] && global.city.smelter.Steel === 6 && global.city.smelter.Iron === 6){
                     let trick = trickOrTreat(3,12,true);
                     if (trick.length > 0){
                         return trick;
@@ -678,7 +678,7 @@ function loadFactory(parent,bind){
         let assembly = global.tech['factory'] ? true : false;
         switch(type){
             case 'Lux':{
-                let demand = +(global.resource[global.race.species].amount * (assembly ? f_rate.Lux.demand[global.tech['factory']] : f_rate.Lux.demand[0]));
+                let demand = +(highPopAdjust(global.resource[global.race.species].amount) * (assembly ? f_rate.Lux.demand[global.tech['factory']] : f_rate.Lux.demand[0]));
                 demand = luxGoodPrice(demand).toFixed(2);
                 let fur = assembly ? f_rate.Lux.fur[global.tech['factory']] : f_rate.Lux.fur[0];
                 return loc('modal_factory_lux_label',[fur,global.resource.Furs.name,demand]);
@@ -1452,7 +1452,7 @@ function loadReplicator(parent,bind){
                     }
                 },
                 avail(r){
-                    return global.resource[r].display;
+                    return global.resource[r].display && !(global.race['fasting'] && r === 'Food');
                 },
                 aria(){
                     return global.race.replicator.pow + 'MW';
@@ -1720,7 +1720,7 @@ export function gridDefs(){
         nebula: { l: global.support.nebula, n: loc(`interstellar_nebula_name`), s: global.settings.space.nebula, r: 'interstellar', rs: 'nexus'  },
         gateway: { l: global.support.gateway, n: loc(`galaxy_gateway`), s: global.settings.space.gateway, r: 'galaxy', rs: 'starbase'  },
         alien2: { l: global.support.alien2, n: loc('galaxy_alien',[races[global.galaxy.hasOwnProperty('alien2') ? global.galaxy.alien2.id : global.race.species].name]), s: global.settings.space.alien2, r: 'galaxy', rs: 'foothold'  },
-        lake: { l: global.support.lake, n: loc(`portal_lake_name`), s: global.settings.portal.lake, r: 'portal', rs: 'harbour'  },
+        lake: { l: global.support.lake, n: loc(`portal_lake_name`), s: global.settings.portal.lake, r: 'portal', rs: 'harbor'  },
         spire: { l: global.support.spire, n: loc(`portal_spire_name`), s: global.settings.portal.spire, r: 'portal', rs: 'purifier'  },
         titan: { l: global.support.titan, n: planetName().titan, s: global.settings.space.titan, r: 'space', rs: 'electrolysis'  },
         enceladus: { l: global.support.enceladus, n: planetName().enceladus, s: global.settings.space.enceladus, r: 'space', rs: 'titan_spaceport'  },

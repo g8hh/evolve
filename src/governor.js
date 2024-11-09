@@ -7,6 +7,7 @@ import { crateGovHook, atomic_mass } from './resources.js';
 import { checkHellRequirements, mechSize, mechCost } from './portal.js';
 import { loc } from './locale.js';
 import { jobScale } from './jobs.js';
+import { isStargateOn } from './space.js';
 
 export const gmen = {
     soldier: {
@@ -148,9 +149,9 @@ export const gov_traits = {
     },
     pious: {
         name: loc(`gov_trait_pious`),
-        effect(){
+        effect(wiki){
             let val = $(this)[0].vars()[1];
-            let xeno = global.tech['monument'] && global.tech.monument >= 3 && p_on['s_gate'] ? 3 : 1;
+            let xeno = global.tech['monument'] && global.tech.monument >= 3 && isStargateOn(wiki) ? 3 : 1;
             val = (global.civic.govern.type === 'corpocracy' ? (val * 2) : val) * xeno;
             return loc(`gov_trait_pious_effect`,[$(this)[0].vars()[0],val]);
         },
@@ -502,7 +503,7 @@ export function drawnGovernOffice(){
             };
         }
 
-        let contain = $(`<div class="tConfig" v-show="showTask('slave')"><div class="has-text-warning">${loc(`gov_task_slave`)}</div></div>`);
+        let contain = $(`<div class="tConfig" v-show="showTask('slave')"><div class="has-text-warning">${loc(`gov_task_slave`,[global.resource.Slave.name])}</div></div>`);
         options.append(contain);
         let slave = $(`<div class="storage"></div>`);
         contain.append(slave);
@@ -1032,7 +1033,7 @@ export const gov_tasks = {
         }
     },
     slave: { // Replace Slaves
-        name: loc(`gov_task_slave`),
+        name(){ return loc(`gov_task_slave`,[global.resource.Slave.name]); },
         req(){
             return !global.race['orbit_decayed'] && checkCityRequirements('slave_market') && global.race['slaver'] && global.city['slave_pen'] ? true : false;
         },
@@ -1355,7 +1356,7 @@ export const gov_tasks = {
                 }
                 let resSorted = Object.keys(tc.s).sort(function(a,b){return tc.s[b]-tc.s[a]});
                 for (let i=0; i<resSorted.length; i++){
-                    if (global.resource[resSorted[i]] && global.resource[resSorted[i]].display && atomic_mass[resSorted[i]]){
+                    if (global.resource[resSorted[i]] && global.resource[resSorted[i]].display && atomic_mass[resSorted[i]] && !(resSorted[i] === 'Food' && global.race['fasting'])){
                         global.race.replicator.res = resSorted[i];
                         rBal = true;
                         break;

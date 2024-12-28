@@ -9569,7 +9569,7 @@
   "wiki_mechanics_tp_ships_costs_para2": "大部分组件的资源成本是分开计算的，但%0将极显著地影响所有成本。",
   "wiki_mechanics_tp_ships_costs_para3": "每种%0都拥有成本蠕变。",
   "wiki_mechanics_tp_ships_crew": "船员需求",
-  "wiki_mechanics_tp_ships_crew_para1": "%0类型不同，每艘舰船需要的军人船员数量也不同。",
+  "wiki_mechanics_tp_ships_crew_para1": "%0不同，每艘舰船需要的军人船员数量也不同。",
   "wiki_mechanics_tp_ships_power": "舰船动力",
   "wiki_mechanics_tp_ships_power_para1": "舰船动力并不花费整个文明的电力，它完全由舰船本身产生，并为舰船其他部分供能。",
   "wiki_mechanics_tp_ships_power_para2": "因此，如果想要建造舰船，它的电力不可以为负数，您可以在建造过程中看到该数值，多余的电力没有任何作用。",

@@ -10062,7 +10062,7 @@
   "wiki_challenges_scenarios_truepath_foreign": "周边国家",
   "wiki_challenges_scenarios_truepath_foreign_para1": "周边国家开局时军事力量更高。",
   "wiki_challenges_scenarios_truepath_fuel": "燃料成本",
-  "wiki_challenges_scenarios_truepath_fuel_para1": "太空燃料成本 +%0，星际燃料成本 +%1。",
+  "wiki_challenges_scenarios_truepath_fuel_para1": "静态燃料成本（建造时的成本） +%0，动态燃料成本（后续的成本） +%1。",
   "wiki_challenges_scenarios_truepath_rival": "竞争国家",
   "wiki_challenges_scenarios_truepath_rival_para1": "研究火箭技术或统一城邦以后，会出现新的竞争国家。",
   "wiki_challenges_scenarios_truepath_rival_para2": "与该国家的双边关系将影响贸易路线的货物交易数量。",

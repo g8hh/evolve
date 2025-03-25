@@ -346,6 +346,8 @@ popover('morale',
                     value /= democracy;
                 }
 
+                let label = {  }
+
                 obj.popper.append(`<p class="modal_bd"><span>${loc(`morale_${morale}`)}</span> <span class="has-text-${type}"> ${+(value).toFixed(1)}%</span></p>`)
 
                 if (morale === 'entertain' && global.civic.govern.type === 'democracy'){
@@ -398,7 +400,7 @@ popover('morale',
         }
 
         if (global.race['artisan'] && global.civic.craftsman.workers > 0){
-            let boost = traits.artisan.vars()[2] * global.civic.craftsman.workers;
+            let boost = +(traits.artisan.vars()[2] * global.civic.craftsman.workers).toFixed(2);
             total += boost;
             obj.popper.append(`<p class="modal_bd"><span>${loc(`trait_artisan_name`)}</span> <span class="has-text-success"> ${boost}%</span></p>`)
         }
@@ -513,6 +515,9 @@ vBind({
         },
         moon(){
             return seasonDesc('moon');
+        },
+        season() {
+            return seasonDesc('season');
         },
         showUniverse(){
             return global.race.universe === 'standard' || global.race.universe === 'bigbang' ? false : true;
@@ -838,6 +843,18 @@ function fastLoop(){
             global_multiplier *= (1 + faith);
         }
     }
+    if (global.race.universe === 'evil' && global.resource.Authority.display){
+        if (global.resource.Authority.amount < 100){
+            let malus = (100 - global.resource.Authority.amount) * 0.0035;
+            breakdown.p['Global'][global.resource.Authority.name] = -(malus * 100).toFixed(2) + '%';
+            global_multiplier *= (1 - malus);
+        }
+        else if (global.resource.Authority.amount > 100){
+            let bonus = (global.resource.Authority.amount - 100) * 0.0015;
+            breakdown.p['Global'][global.resource.Authority.name] = +(bonus * 100).toFixed(2) + '%';
+            global_multiplier *= (1 + bonus);
+        }
+    }
     if (global.race['untapped']){
         if (global.race['untapped'] > 0){
             let untapped = +(global.race.untapped / (global.race.untapped + 20) / 10 + 0.00024).toFixed(4);
@@ -1112,7 +1129,7 @@ function fastLoop(){
         'Water','Deuterium','Neutronium','Adamantite','Infernite','Elerium','Nano_Tube','Graphene','Stanene',
         'Bolognium','Vitreloy','Orichalcum','Asphodel_Powder','Elysanite','Unobtainium','Quantium',
         'Plywood','Brick','Wrought_Iron','Sheet_Metal','Mythril','Aerogel','Nanoweave','Scarletite',
-        'Cipher','Nanite','Mana'
+        'Cipher','Nanite','Mana','Authority'
     ];
 
     breakdown.p['consume'] = {};
@@ -2756,99 +2773,126 @@ function fastLoop(){
         let crew_civ = 0;
         let crew_mil = 0;
         let total = 0;
+        let andromeda_helium = 0;
+        let andromeda_deuterium = 0;
 
         for (let j=0; j<galaxy_ship_types.length; j++){
             const area = galaxy_ship_types[j].area;
             const region = galaxy_ship_types[j].region;
+            const req = galaxy_ship_types[j].hasOwnProperty('req') ? p_on[galaxy_ship_types[j].req] > 0 : true;
             const support_home = actions[area][region].info?.support;
             let used_support = 0;
             for (let i=0; i<galaxy_ship_types[j].ships.length; i++){
                 const ship = galaxy_ship_types[j].ships[i];
+                if (global[area][ship]){
+                    let operating = 0;
+                    if (global[area][ship].hasOwnProperty('on') && req && (p_on['s_gate'] || area !== 'galaxy')){
+                        const id = actions[area][region][ship].id;
+                        const num_on = global[area][ship].on;
+                        operating = num_on;
 
-                if (global[area][ship] && global[area][ship].hasOwnProperty('on')){
-                    const id = actions[area][region][ship].id;
-                    const num_on = global[area][ship].on;
-                    let operating = (p_on['s_gate'] || area !== 'galaxy') ? num_on : 0;
+                        // Support cost
+                        const operating_cost = actions[area][region][ship].hasOwnProperty('support') ? -(actions[area][region][ship].support()) : 0;
+                        if (operating_cost > 0){
+                            const max_operating = Math.floor((global[area][support_home].s_max - used_support) / operating_cost);
+                            operating = Math.min(operating, max_operating);
+                        }
 
-                    // Support cost (currently only for gateway ships; others computed later)
-                    const operating_cost = actions[area][region][ship].hasOwnProperty('support') ? -(actions[area][region][ship].support()) : 0;
-                    if (operating_cost > 0){
-                        const max_operating = Math.floor((global[area][support_home].s_max - used_support) / operating_cost);
-                        operating = Math.min(operating, max_operating);
-                    }
-
-                    if (actions[area][region][ship].hasOwnProperty('ship')){
-                        if (actions[area][region][ship].ship.civ && global[area][ship].hasOwnProperty('crew')){
-                            // Civilian ships can only be crewed at a rate of 1 ship (per type) per fast tick
-                            let civPerShip = actions[area][region][ship].ship.civ();
-                            if (civPerShip > 0){
-                                if (global[area][ship].crew < 0){
-                                    global[area][ship].crew = 0;
-                                }
-                                if (global[area][ship].crew < operating * civPerShip){
-                                    if (total < global.resource[global.race.species].amount){
-                                        if (global.civic[global.civic.d_job].workers >= civPerShip){
-                                            global.civic[global.civic.d_job].workers -= civPerShip;
-                                            global.civic.crew.workers += civPerShip;
-                                            global[area][ship].crew += civPerShip;
+                        if (actions[area][region][ship].hasOwnProperty('ship')){
+                            if (actions[area][region][ship].ship.civ && global[area][ship].hasOwnProperty('crew')){
+                                // Civilian ships can only be crewed at a rate of 1 ship (per type) per fast tick
+                                let civPerShip = actions[area][region][ship].ship.civ();
+                                if (civPerShip > 0){
+                                    if (global[area][ship].crew < 0){
+                                        global[area][ship].crew = 0;
+                                    }
+                                    if (global[area][ship].crew < operating * civPerShip){
+                                        if (total < global.resource[global.race.species].amount){
+                                            if (global.civic[global.civic.d_job].workers >= civPerShip){
+                                                global.civic[global.civic.d_job].workers -= civPerShip;
+                                                global.civic.crew.workers += civPerShip;
+                                                global[area][ship].crew += civPerShip;
+                                            }
                                         }
                                     }
+                                    else if (global[area][ship].crew > operating * civPerShip){
+                                        global.civic[global.civic.d_job].workers += civPerShip;
+                                        global.civic.crew.workers -= civPerShip;
+                                        global[area][ship].crew -= civPerShip;
+                                    }
+                                    global.civic.crew.assigned = global.civic.crew.workers;
+                                    crew_civ += global[area][ship].crew;
+                                    total += global[area][ship].crew;
+                                    operating = Math.min(operating, Math.floor(global[area][ship].crew / civPerShip));
                                 }
-                                else if (global[area][ship].crew > operating * civPerShip){
-                                    global.civic[global.civic.d_job].workers += civPerShip;
-                                    global.civic.crew.workers -= civPerShip;
-                                    global[area][ship].crew -= civPerShip;
+                            }
+
+                            if (actions[area][region][ship].ship.mil && global[area][ship].hasOwnProperty('mil')){
+                                // All military ships can be crewed instantly
+                                let milPerShip = actions[area][region][ship].ship.mil();
+                                if (milPerShip > 0){
+                                    if (global[area][ship].mil !== operating * milPerShip){
+                                        global[area][ship].mil = operating * milPerShip;
+                                    }
+                                    if (global.civic.garrison.workers - global.portal.fortress.garrison < 0){
+                                        let underflow = global.civic.garrison.workers - global.portal.fortress.garrison;
+                                        global[area][ship].mil -= underflow;
+                                    }
+                                    if (crew_mil + global[area][ship].mil > global.civic.garrison.workers - global.portal.fortress.garrison){
+                                        global[area][ship].mil = global.civic.garrison.workers - global.portal.fortress.garrison - crew_mil;
+                                    }
+                                    if (global[area][ship].mil < 0){
+                                        global[area][ship].mil = 0;
+                                    }
+                                    crew_mil += global[area][ship].mil;
+                                    operating = Math.min(operating, Math.floor(global[area][ship].mil / milPerShip));
                                 }
-                                global.civic.crew.assigned = global.civic.crew.workers;
-                                crew_civ += global[area][ship].crew;
-                                total += global[area][ship].crew;
-                                operating = Math.min(operating, Math.floor(global[area][ship].crew / civPerShip));
+                            }
+
+                            if (actions[area][region][ship].ship.hasOwnProperty('helium')){
+                                let increment = +int_fuel_adjust(actions[area][region][ship].ship.helium).toFixed(2);
+                                let consume = operating * increment;
+                                while (consume * time_multiplier > global.resource.Helium_3.amount + (global.resource.Helium_3.diff > 0 ? global.resource.Helium_3.diff * time_multiplier : 0) && operating > 0){
+                                    consume -= increment;
+                                    operating--;
+                                }
+                                modRes('Helium_3', -(consume * time_multiplier));
+                                andromeda_helium += consume;
+                            }
+
+                            if (actions[area][region][ship].ship.hasOwnProperty('deuterium')){
+                                let increment = +int_fuel_adjust(actions[area][region][ship].ship.deuterium).toFixed(2);
+                                let consume = operating * increment;
+                                while (consume * time_multiplier > global.resource.Deuterium.amount + (global.resource.Deuterium.diff > 0 ? global.resource.Deuterium.diff * time_multiplier : 0) && operating > 0){
+                                    consume -= increment;
+                                    operating--;
+                                }
+                                modRes('Deuterium', -(consume * time_multiplier));
+                                andromeda_deuterium += consume;
                             }
                         }
 
-                        if (actions[area][region][ship].ship.mil && global[area][ship].hasOwnProperty('mil')){
-                            // All military ships can be crewed instantly
-                            let milPerShip = actions[area][region][ship].ship.mil();
-                            if (milPerShip > 0){
-                                if (global[area][ship].mil !== operating * milPerShip){
-                                    global[area][ship].mil = operating * milPerShip;
-                                }
-                                if (global.civic.garrison.workers - global.portal.fortress.garrison < 0){
-                                    let underflow = global.civic.garrison.workers - global.portal.fortress.garrison;
-                                    global[area][ship].mil -= underflow;
-                                }
-                                if (crew_mil + global[area][ship].mil > global.civic.garrison.workers - global.portal.fortress.garrison){
-                                    global[area][ship].mil = global.civic.garrison.workers - global.portal.fortress.garrison - crew_mil;
-                                }
-                                if (global[area][ship].mil < 0){
-                                    global[area][ship].mil = 0;
-                                }
-                                crew_mil += global[area][ship].mil;
-                                operating = Math.min(operating, Math.floor(global[area][ship].mil / milPerShip));
-                            }
+                        if (operating < num_on){
+                            $(`#${id} .on`).addClass('warn');
+                            $(`#${id} .on`).prop('title',`ON ${operating}/${num_on}`);
                         }
-                    }
+                        else {
+                            $(`#${id} .on`).removeClass('warn');
+                            $(`#${id} .on`).prop('title',`ON`);
+                        }
 
-                    if (operating < num_on){
-                        $(`#${id} .on`).addClass('warn');
-                        $(`#${id} .on`).prop('title',`ON ${operating}/${num_on}`);
+                        used_support += operating * operating_cost;
                     }
-                    else {
-                        $(`#${id} .on`).removeClass('warn');
-                        $(`#${id} .on`).prop('title',`ON`);
-                    }
-
-                    used_support += operating * operating_cost;
                     gal_on[ship] = operating;
-                }
-                else {
-                    gal_on[ship] = 0;
                 }
             }
             if (support_home && global?.[area]?.[support_home]?.hasOwnProperty('support')){
                 global[area][support_home].support = used_support;
             }
         }
+
+        breakdown.p.consume.Helium_3[loc('galaxy_fuel_consume')] = -(andromeda_helium);
+        breakdown.p.consume.Deuterium[loc('galaxy_fuel_consume')] = -(andromeda_deuterium);
 
         global.civic.crew.workers = crew_civ;
         if (global.civic.garrison.hasOwnProperty('crew')){
@@ -3839,65 +3883,6 @@ function fastLoop(){
             }
         }
 
-        let andromeda_helium = 0;
-        let andromeda_deuterium = 0;
-
-        for (let j=0; j<galaxy_ship_types.length; j++){
-            let area = galaxy_ship_types[j].area;
-            let region = galaxy_ship_types[j].region;
-            for (let i=0; i<galaxy_ship_types[j].ships.length; i++){
-                let ship = galaxy_ship_types[j].ships[i];
-                let req = galaxy_ship_types[j].hasOwnProperty('req') ? (p_on[galaxy_ship_types[j].req] > 0 ? true : false) : true;
-                if (p_on['s_gate'] && req && global[area][ship] && (global[area][ship].crew > 0 || global[area][ship].mil > 0)){
-                    let operating = 0;
-                    if (actions[area][region][ship].ship.civ() > 0){
-                        operating = Math.floor(global[area][ship].crew / actions[area][region][ship].ship.civ());
-                    }
-                    if (actions[area][region][ship].ship.mil() > 0){
-                        let mil_operating = Math.floor(global[area][ship].mil / actions[area][region][ship].ship.mil());
-                        if (actions[area][region][ship].ship.civ() === 0 || mil_operating < operating){
-                            operating = mil_operating;
-                        }
-                    }
-
-                    if (actions[area][region][ship].ship.hasOwnProperty('helium')){
-                        let increment = +int_fuel_adjust(actions[area][region][ship].ship.helium).toFixed(2);
-                        let consume = (operating * increment);
-                        while (consume * time_multiplier > global.resource.Helium_3.amount + (global.resource.Helium_3.diff > 0 ? global.resource.Helium_3.diff * time_multiplier : 0) && consume > 0){
-                            consume -= increment;
-                            operating--;
-                        }
-                        modRes('Helium_3', -(consume * time_multiplier));
-                        andromeda_helium += consume;
-                    }
-
-                    if (actions[area][region][ship].ship.hasOwnProperty('deuterium')){
-                        let increment = +int_fuel_adjust(actions[area][region][ship].ship.deuterium).toFixed(2);
-                        let consume = (operating * increment);
-                        while (consume * time_multiplier > global.resource.Deuterium.amount + (global.resource.Deuterium.diff > 0 ? global.resource.Deuterium.diff * time_multiplier : 0) && consume > 0){
-                            consume -= increment;
-                            operating--;
-                        }
-                        modRes('Deuterium', -(consume * time_multiplier));
-                        andromeda_deuterium += consume;
-                    }
-
-                    if (gal_on.hasOwnProperty(ship)){
-                        gal_on[ship] = gal_on[ship] > operating ? operating : gal_on[ship];
-                    }
-                    else {
-                        gal_on[ship] = operating;
-                    }
-                }
-                else {
-                    gal_on[ship] = 0;
-                }
-            }
-        }
-
-        breakdown.p.consume.Helium_3[loc('galaxy_fuel_consume')] = -(andromeda_helium);
-        breakdown.p.consume.Deuterium[loc('galaxy_fuel_consume')] = -(andromeda_deuterium);
-
         if (global.space['shipyard'] && global.space.shipyard['ships']){
             let fuels = {
                 Oil: 0,
@@ -4259,7 +4244,6 @@ function fastLoop(){
                 let ghost_base = workerScale(global.civic.ghost_trapper.workers,'ghost_trapper');
                 ghost_base *= racialTrait(ghost_base,'science');
                 ghost_base *= global.race['pompous'] ? (1 - traits.pompous.vars()[0] / 100) : 1;
-                ghost_base = highPopAdjust(ghost_base);
 
                 let ghost_gain = support_on['research_station'] * ghost_base * 0.0000325;
                 breakdown.p['Omniscience'][loc('eden_research_station_title')] = ghost_gain + 'v';
@@ -4274,7 +4258,6 @@ function fastLoop(){
                 let scientist = workerScale(global.civic.scientist.workers,'scientist');
                 scientist *= racialTrait(scientist,'science');
                 scientist *= global.race['pompous'] ? (1 - traits.pompous.vars()[0] / 100) : 1;
-                scientist = highPopAdjust(scientist);
 
                 let sci_gain = scientist * 0.000707;
                 breakdown.p['Omniscience'][global.civic.scientist.name] = sci_gain + 'v';
@@ -5028,6 +5011,9 @@ function fastLoop(){
                 }
                 if (dirtVal){
                     steel_smelter *= 1 + (dirtVal / 100);
+                }
+                if (global.race['elemental'] && traits.elemental.vars()[0] === 'fire'){
+                    steel_smelter *= 1 + highPopAdjust(traits.elemental.vars()[3] * global.resource[global.race.species].amount / 100);
                 }
                 if (salFathom > 0){
                     steel_smelter *= 1 + (0.2 * salFathom);
@@ -6424,38 +6410,40 @@ function fastLoop(){
                 }
             }
 
+            let synd = syndicate('spc_gas_moon');
             let fueled_oil_wells = global.city.oil_well.count;
             let fueled_oil_extractor = p_on['oil_extractor'];
+            let oil_prod = global.city['oil_well'] ? (production('oil_well') * q_multiplier) : 0;
+            let extract_prod = global.space['oil_extractor'] ? (production('oil_extractor') * qs_multiplier * synd * zigVal) : 0;
             if (global.race['blubber']){
                 let tick = traits.blubber.vars()[0] * time_multiplier / 5;
-                if (fueled_oil_wells > 0){
-                    if (global.city.oil_well.dead < fueled_oil_wells * tick){
-                        fueled_oil_wells = Math.floor(global.city.oil_well.dead / tick);
+                let check_dead = function(amount){
+                    if (amount > 0){
+                        if (global.city.oil_well.dead < amount * tick){
+                            amount = Math.floor(global.city.oil_well.dead / tick);
+                        }
+                        global.city.oil_well.dead -= amount * tick;
+                        if (global.city.oil_well.dead < tick){
+                            global.city.oil_well.dead = 0;
+                        }
                     }
-                    global.city.oil_well.dead -= fueled_oil_wells * tick;
-                    if (global.city.oil_well.dead < tick){
-                        global.city.oil_well.dead = 0;
-                    }
+                    return amount;
                 }
-                if (fueled_oil_extractor > 0){
-                    if (global.city.oil_well.dead < fueled_oil_extractor * tick){
-                        fueled_oil_extractor = Math.floor(global.city.oil_well.dead / tick);
-                    }
-                    global.city.oil_well.dead -= fueled_oil_wells * tick;
-                    if (global.city.oil_well.dead < tick){
-                        global.city.oil_well.dead = 0;
-                    }
+                if(oil_prod >= extract_prod){ /* swap order of extractors and wells based on which produces more */
+                    fueled_oil_wells = check_dead(fueled_oil_wells);
+                    fueled_oil_extractor = check_dead(fueled_oil_extractor);
+                }
+                else{
+                    fueled_oil_extractor = check_dead(fueled_oil_extractor);
+                    fueled_oil_wells = check_dead(fueled_oil_wells);
                 }
             }
-
-            let oil_well = global.city['oil_well'] ? production('oil_well') * fueled_oil_wells : 0;
-            let oil_extractor = global.space['oil_extractor'] ? fueled_oil_extractor * production('oil_extractor') : 0;
+            let oil_well = oil_prod * fueled_oil_wells;
+            let oil_extractor = extract_prod * fueled_oil_extractor;
             oil_extractor *= production('psychic_boost','Oil');
             oil_well *= production('psychic_boost','Oil');
 
-            let synd = syndicate('spc_gas_moon');
-
-            let delta = (oil_well * q_multiplier) + (oil_extractor * qs_multiplier * synd * zigVal) + (whale_oil * womling_technician);
+            let delta = oil_well + oil_extractor + (whale_oil * womling_technician);
             delta *= hunger * global_multiplier;
             if (global.race['gravity_well']){ delta = teamster(delta); }
 
@@ -6528,7 +6516,7 @@ function fastLoop(){
 
         if (p_on['s_gate'] && global.resource.Adamantite.display && global.galaxy['armed_miner'] && gal_on['armed_miner'] > 0){
             let base = gal_on['armed_miner'] * 0.65 * production('psychic_boost','Iridium');
-            let foothold = 1 + (gal_on['ore_processor'] * 0.1);
+            let foothold = 1 + ((gal_on['ore_processor'] ?? 0) * 0.1);
             let pirate = piracy('gxy_alien2');
             let delta = base * global_multiplier * pirate * foothold * hunger * shrineMetal.mult * iridium_smelter * zigVal;
             if (global.race['gravity_well']){ delta = teamster(delta); }
@@ -6836,7 +6824,7 @@ function fastLoop(){
 
         if (p_on['s_gate'] && global.resource.Adamantite.display && global.galaxy['armed_miner'] && gal_on['armed_miner'] > 0){
             let base = gal_on['armed_miner'] * 0.23 * production('psychic_boost','Adamantite');
-            let foothold = 1 + (gal_on['ore_processor'] * 0.1);
+            let foothold = 1 + ((gal_on['ore_processor'] ?? 0) * 0.1);
             let pirate = piracy('gxy_alien2');
             let delta = base * global_multiplier * pirate * foothold * shrineMetal.mult * zigVal;
 
@@ -6941,13 +6929,19 @@ function fastLoop(){
             if (global.civic.elysium_miner.display){
                 let miner_base = workerScale(global.civic.elysium_miner.workers,'elysium_miner');
                 miner_base *= racialTrait(miner_base,'miner') * 0.36;
-                miner_base = highPopAdjust(miner_base);
 
                 if (!global.race['living_tool'] && !global.race['tusk']){
                     miner_base *= (global.tech['pickaxe'] && global.tech.pickaxe > 0 ? global.tech.pickaxe * 0.15 : 0) + 1;
                 }
                 if (global.tech['explosives'] && global.tech.explosives >= 2){
                     miner_base *= 0.95 + (global.tech.explosives * 0.15);
+                }
+                if (global.race['tough']){
+                    miner_base *= 1 + (traits.tough.vars()[0] / 100);
+                }
+                let ogreFathom = fathomCheck('ogre');
+                if (ogreFathom > 0){
+                    miner_base *= 1 + (traits.tough.vars(1)[0] / 100 * ogreFathom);
                 }
 
                 breakdown.p['Elysanite'][loc('job_elysium_miner')] = miner_base + 'v';
@@ -7100,7 +7094,7 @@ function fastLoop(){
 
         if (p_on['s_gate'] && global.resource.Bolognium.display && global.galaxy['armed_miner'] && gal_on['armed_miner'] > 0){
             let base = gal_on['armed_miner'] * 0.032 * production('psychic_boost','Bolognium');
-            let foothold = 1 + (gal_on['ore_processor'] * 0.1);
+            let foothold = 1 + ((gal_on['ore_processor'] ?? 0)* 0.1);
             let pirate = piracy('gxy_alien2');
             let delta = base * global_multiplier * pirate * foothold * zigVal;
 
@@ -7733,6 +7727,8 @@ function fastLoop(){
                 global.portal.carport.repair = 0;
                 global.portal.carport.damaged--;
             }
+            //limit carport damage to account for removing high population
+            global.portal.carport.damaged = Math.min(global.portal.carport.damaged, jobScale(global.portal.carport.count));
         }
         else {
             if ($('#portal-carport .count').hasClass('has-text-alert')){
@@ -7840,6 +7836,7 @@ function midLoop(){
         var caps = {
             Money: 1000,
             Slave: 0,
+            Authority: 80,
             Mana: 0,
             Energy: 100,
             Sus: 100,
@@ -7970,6 +7967,72 @@ function midLoop(){
         Object.keys(caps).forEach(function(res){
             breakdown.c[res] = { [loc('base')]: caps[res]+'v' };
         });
+
+        if (global.race.universe === 'evil' && global.tech['primitive'] && global.tech.primitive >= 3){
+            global.resource.Authority.display = true;
+
+            if (global.civic.govern.type === 'autocracy'){
+                let gain = 10;
+                caps.Authority += gain;
+                breakdown.c.Authority[loc('govern_autocracy')] = gain+'v';
+            }
+            else if (global.civic.govern.type === 'oligarchy'){
+                let gain = 20;
+                caps.Authority += gain;
+                breakdown.c.Authority[loc('govern_oligarchy')] = gain+'v';
+            }
+            if (global.city['garrison']){
+                let gain = global.city.garrison.on * 0.5;
+                caps.Authority += gain;
+                breakdown.c.Authority[actions.city.garrison.title()] = gain+'v';
+            }
+            if (global.city['temple']){
+                let gain = templeCount() * 0.5;
+                caps.Authority += gain;
+                breakdown.c.Authority[structName('temple')] = gain+'v';
+            }
+            if (global.space['space_barracks']){
+                let gain = global.space.space_barracks.on;
+                caps.Authority += gain;
+                breakdown.c.Authority[loc('space_red_space_barracks_title')] = gain+'v';
+            }
+            if (global.interstellar['cruiser'] && int_on['cruiser']){
+                let gain = int_on['cruiser'];
+                caps.Authority += gain;
+                breakdown.c.Authority[loc('interstellar_cruiser_title')] = gain+'v';
+            }
+
+            global.resource.Authority.amount = 80;
+            if (global.city.morale.current > 100){
+                let excess = global.city.morale.current - 100;
+                if (global.civic.govern.type === 'democracy'){
+                    excess *= 0.9;
+                }
+                global.resource.Authority.amount -= excess;
+            }
+
+            if (global.civic['garrison']){
+                let adjust = 0.7;
+                if (global.tech['evil']){
+                    adjust += 0.1 * global.tech.evil;
+                }
+                let gain = highPopAdjust(garrisonSize()) * adjust;
+                if (global.race['grenadier']){ gain *= 1.75; }
+                if (global.civic.govern.type === 'autocracy'){
+                    gain *= 1.08;
+                }
+                else if (global.civic.govern.type === 'dictator'){
+                    gain *= 1.12;
+                }
+                global.resource.Authority.amount += gain;
+            }
+
+            global.resource.Authority.amount = Math.floor(global.resource.Authority.amount);
+            if (global.resource.Authority.amount < 0){ global.resource.Authority.amount = 0; }
+        }
+        else {
+            global.resource.Authority.display = false;
+        }
 
         if (global.race['unfathomable'] && global.city['captive_housing']){
             let strength = weaponTechModifer();
@@ -8234,7 +8297,7 @@ function midLoop(){
         }
         if (global.space['space_barracks'] && !global.race['fasting']){
             let soldiers = actions.space.spc_red.space_barracks.soldiers();
-            lCaps['garrison'] += global.space.space_barracks.on * soldiers;
+            lCaps['garrison'] += Math.round(global.space.space_barracks.on * soldiers);
         }
         if (global.interstellar['cruiser']){
             let soldiers = actions.interstellar.int_proxima.cruiser.soldiers();
@@ -9121,9 +9184,6 @@ function midLoop(){
             let sci = 200 + attact;
             if (global.tech['science'] && global.tech.science >= 22 && p_on['embassy'] && p_on['symposium']){
                 sci *= 1 + (p_on['symposium'] * piracy('gxy_gorddon'));
-            }
-            if (global.race['high_pop']){
-                sci = highPopAdjust(sci);
             }
             let gain = support_on['research_station'] * highPopAdjust(global.civic.ghost_trapper.workers) * sci;
             caps['Knowledge'] += gain;
@@ -11980,7 +12040,7 @@ function longLoop(){
             }
         }
 
-        if (!global.tech['xeno'] && global.galaxy['scout_ship'] && global.galaxy.scout_ship.on > 0 && Math.rand(0, 10) === 0){
+        if (!global.tech['xeno'] && global.galaxy['scout_ship'] && gal_on['scout_ship'] > 0 && Math.rand(0, 10) === 0){
             global.tech['xeno'] = 1;
             global.galaxy.scout_ship.count--;
             global.galaxy.scout_ship.on--;

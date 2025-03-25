@@ -1227,7 +1227,13 @@ if (convertVersion(global['version']) < 104001){
     }
 }
 
-global['version'] = '1.4.1';
+if (convertVersion(global['version']) < 104002){
+    if(global.city['amphitheatre'] && !global.city.amphitheatre.hasOwnProperty('evil')){
+        global.city.amphitheatre['evil'] = 0;
+    }
+}
+
+global['version'] = '1.4.2';
 delete global['revision'];
 delete global['beta'];
 
@@ -1934,14 +1940,13 @@ if (!global.civic['new']){
 }
 
 if (!global.race['purgatory']){
-    global.race['purgatory'] = {
-        city: {},
-        space: {},
-        portal: {},
-        eden: {},
-        tech: {},
-    };
+    global.race['purgatory'] = {};
 }
+['city', 'space', 'portal', 'eden', 'tech'].forEach((item) => {
+    if(!global.race['purgatory'][item]){
+        global.race['purgatory'][item] = {};
+    }
+})
 
 if (!global.civic['d_job']){
     if (global.race['carnivore'] || global.race['soul_eater']){

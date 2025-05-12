@@ -1909,9 +1909,7 @@ function war_campaign(gov){
             }
             if (infected > 0){
                 global.resource[global.race.species].amount += infected;
-                if (global.civic.d_job !== 'unemployed'){
-                    global.civic[global.civic.d_job].workers += infected;
-                }
+                global.civic[global.civic.d_job].workers += infected;
                 if (infected === 1){
                     messageQueue(loc('civics_garrison_soldier_infected'),'special',false,['combat']);
                 }
@@ -2083,6 +2081,9 @@ function lootModify(val,gov){
     }
     if (global.race['gravity_well']){
         loot *= 1 - (0.75 * darkEffect('heavy'));
+    }
+    if (global.race['parasite']){
+        loot *= 1 - (traits.parasite.vars()[0] / 100);
     }
 
     switch(global.civic.garrison.tactic){

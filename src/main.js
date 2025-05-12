@@ -919,11 +919,6 @@ function fastLoop(){
             global_multiplier *= 1 + (untapped);
         }
     }
-    if (global.race['overtapped'] && global.race.overtapped > 0){
-        let overtapped = +(global.race.overtapped * 0.01).toFixed(3);
-        breakdown.p['Global'][loc('trait_overtapped_bd')] = `-${overtapped * 100}%`;
-        global_multiplier *= 1 - (overtapped);
-    }
     if (global.race['rainbow_active'] && global.race['rainbow_active'] > 1){
         breakdown.p['Global'][loc('trait_rainbow_bd')] = `${traits.rainbow.vars()[0]}%`;
         global_multiplier *= 1 + (traits.rainbow.vars()[0] / 100);
@@ -3628,7 +3623,7 @@ function fastLoop(){
 
             let soldiers = global.civic.garrison.workers;
             if (global.race['parasite'] && !global.tech['isolation']){
-                soldiers -= 2;
+                soldiers -= jobScale(traits.parasite.vars()[0]);
                 if (soldiers < 0){
                     soldiers = 0;
                 }
@@ -3885,6 +3880,7 @@ function fastLoop(){
             let missing = Math.min(global.civic.homeless, global.resource[global.race.species].max - global.resource[global.race.species].amount);
             global.civic.homeless -= missing;
             global.resource[global.race.species].amount += missing;
+            global.civic[global.civic.d_job].workers++;
         }
         else if (((fed && global['resource']['Food'].amount > 0) || global.race['fasting']) && global['resource'][global.race.species].max > global['resource'][global.race.species].amount){
             if (global.race['artifical'] || (global.race['spongy'] && global.city.calendar.weather === 0)){
@@ -3952,6 +3948,7 @@ function fastLoop(){
                 upperBound *= (3 - (2 ** time_multiplier));
                 if(Math.rand(0, upperBound) <= lowerBound){
                     global['resource'][global.race.species].amount++;
+                    global.civic[global.civic.d_job].workers++;
                 }
             }
         }
@@ -8661,7 +8658,7 @@ function midLoop(){
             lCaps['cement_worker'] += jobScale(p_on['red_factory']);
         }
         if (global.race['parasite'] && !global.tech['isolation']){
-            lCaps['garrison'] += jobScale(2);
+            lCaps['garrison'] += jobScale(traits.parasite.vars()[0]);
         }
         if (global.city['garrison']){
             lCaps['garrison'] += global.city.garrison.on * actions.city.garrison.soldiers();
@@ -11038,7 +11035,7 @@ function midLoop(){
                 global.r_queue.queue[i].qa = global.settings.qAny_res ? true : false;
             }
             if (idx >= 0 && c_action && !global.r_queue.pause){
-                if (c_action.action()){
+                if (c_action.action({isQueue: true})){
                     messageQueue(loc('research_success',[global.r_queue.queue[idx].label]),'success',false,['queue','research_queue']);
                     gainTech(global.r_queue.queue[idx].type);
                     if (c_action['post']) {
@@ -11243,7 +11240,7 @@ function midLoop(){
                 let struct = global.queue.queue[idx];
                 let report_in = c_action['queue_complete'] ? c_action.queue_complete() : 1;
                 for (let i=0; i<attempts; i++){
-                    if (c_action.action() !== false){
+                    if (c_action.action({isQueue: true}) !== false){
                         triggerd = true;
                         if (report_in - i <= 1){
                             messageQueue(loc('build_success',[global.queue.queue[idx].label]),'success',false,['queue','building_queue']);
@@ -11609,6 +11606,7 @@ function longLoop(){
             }
             if (astroSign === 'cancer'){
                 hc += astroVal('cancer')[0];
+                if (hc < 0){ hc = 0; }
             }
             if (global.tech['medic'] && global.tech['medic'] >= 2){
                 hc *= global.tech['medic'];

@@ -3,6 +3,39 @@ import { clearElement } from './../functions.js';
 
 export const changeList = [
     {
+        version: `1.4.5`,
+        revision: `a`,
+        date: `5/12/2025`,
+        changes: [
+            `Parasite now scales with rank.`,
+            `Synthetic parasites can now only assemble new citizens when it's windy.`
+        ]
+    },
+    {
+        version: `1.4.5`,
+        date: `5/11/2025`,
+        changes: [
+            `New Custom/Hybrid Lab mechanics.`,
+            `Added New Theme GrubBox (RedGreen CB) for Red/Green color blind players.`,
+            `Technophobe perk race complexity changed to flat gene point bonus.`,
+            `Overtapped has been removed, Negative traits instead pay a complexity tax.`,
+            `Enviromentalist now scales with trait rank.`,
+            `Thalassophobia replaced with Unfavored.`,
+            `Optimistic cost lowered from 5 points to 3.`,
+            `Fixed bug that could cause archfiends to queue with extra weapons.`
+        ]
+    },
+    {
+        version: `1.4.4`,
+        date: `5/7/2025`,
+        changes: [
+            `The native rank of Empowered for Nephilim is now 2.`,
+            `Build queue will no longer spend Warlord skill points.`,
+            `Dreaded will no longer unlock from Apotheosis.`,
+            `Custom Hybrids will no longer unlock Gross.`
+        ]
+    },
+    {
         version: `1.4.3`,
         date: `5/4/2025`,
         changes: [
